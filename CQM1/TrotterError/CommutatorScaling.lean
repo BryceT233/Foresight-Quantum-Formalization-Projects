@@ -8,7 +8,7 @@ module
 public import CQM1.TrotterError.CommutatorExpansion
 public import CQM1.TrotterError.OrderCondition
 
-import CQM1.TrotterError.ListProd
+import CQM1.TrotterError.ListLemmas
 
 /-!
 # Commutator scaling bridge

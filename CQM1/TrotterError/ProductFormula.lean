@@ -8,7 +8,7 @@ module
 public import CQM1.TrotterError.Commutator
 public import CQM1.TrotterError.Calculus
 
-import CQM1.TrotterError.ListProd
+import CQM1.TrotterError.ListLemmas
 
 /-!
 # Product formulas
@@ -83,12 +83,31 @@ noncomputable def generator {Υ Γ : ℕ} (P : ProductFormulaData Υ Γ)
     [NormedSpace ℝ 𝔸] (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) : 𝔸 :=
   P.coeff i • H (P.perm i.1 i.2)
 
+/-- The norm of the `(υ,γ)`-th generator `a_{(υ,γ)} H_{π_υ(γ)}` is bounded by the norm of the
+permuted summand `H_{π_υ(γ)}` (the coefficient has `|a| ≤ 1`). -/
+lemma norm_generator_le [NormedSpace ℝ 𝔸] (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) :
+    ‖P.generator H i‖ ≤ ‖H (P.perm i.1 i.2)‖ := by
+  unfold ProductFormulaData.generator
+  rw [norm_smul, Real.norm_eq_abs]
+  exact mul_le_of_le_one_left (norm_nonneg _) (P.coeff_abs_le_one i)
+
 /-- The `(υ, γ)`-th factor `e^{t a_{(υ,γ)} H_{π_υ(γ)}}` of the product formula. -/
 noncomputable def evalFactor {Υ Γ : ℕ} (P : ProductFormulaData Υ Γ)
     {𝔸 : Type*} [NormedRing 𝔸]
     [NormedSpace ℝ 𝔸]
     (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) (t : ℝ) : 𝔸 :=
   exp (t • P.generator H i)
+
+/-- Per-factor norm bound `‖e^{s a_{(υ,γ)} H_{π_υ(γ)}}‖ ≤ Real.exp (|s| * ‖H_{π_υ(γ)}‖)`. -/
+lemma norm_evalFactor_le [NormedAlgebra ℚ 𝔸] [NormedSpace ℝ 𝔸] [NormOneClass 𝔸]
+    (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) (s : ℝ) :
+    ‖P.evalFactor H i s‖ ≤ Real.exp (|s| * ‖H (P.perm i.1 i.2)‖) := by
+  calc
+    ‖P.evalFactor H i s‖ = ‖exp (s • P.generator H i)‖ := rfl
+    _ ≤ Real.exp (‖s • P.generator H i‖) := norm_exp_le _
+    _ = Real.exp (|s| * ‖P.generator H i‖) := by rw [norm_smul, Real.norm_eq_abs]
+    _ ≤ Real.exp (|s| * ‖H (P.perm i.1 i.2)‖) :=
+        Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left (P.norm_generator_le H i) (abs_nonneg s))
 
 /-- The product formula `𝒮(t)` evaluated on summands `H` at time `t`. The product
 is taken in the paper's right-to-left order `∏_{γ=1}^{Γ} A_γ = A_Γ ⋯ A_1`. -/
@@ -249,11 +268,6 @@ lemma norm_derivProd_le [NormedAlgebra ℚ 𝔸] [NormedSpace ℝ 𝔸] [NormOne
         prod_le_prod (fun i _ => norm_nonneg _)
           (fun i _ => norm_factor_le P H i (q i) u t ht hu0 hu1)
 
-/-- `∑_γ ‖H_{π_υ(γ)}‖` is invariant under the stage permutation `π_υ`. -/
-lemma sum_norm_perm (H : Fin Γ → 𝔸) (υ : Fin Υ) :
-    (∑ γ : Fin Γ, ‖H (P.perm υ γ)‖) = ∑ γ : Fin Γ, ‖H γ‖ :=
-  Equiv.sum_comp (P.perm υ) (fun γ => ‖H γ‖)
-
 /-- `∑_{i : Fin Υ × Fin Γ} ‖H_{π_{i.1}(i.2)}‖ = Υ * ∑_γ ‖H_γ‖`. -/
 lemma sum_norm_prod (H : Fin Γ → 𝔸) :
     (∑ i : Fin Υ × Fin Γ, ‖H (P.perm i.1 i.2)‖) = (Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖ := by
@@ -264,7 +278,7 @@ lemma sum_norm_prod (H : Fin Γ → 𝔸) :
     _ = ∑ υ : Fin Υ, ∑ γ : Fin Γ, ‖H γ‖ := by
             apply sum_congr rfl
             intro υ hυ
-            exact sum_norm_perm P H υ
+            exact Equiv.sum_comp (P.perm υ) (fun γ => ‖H γ‖)
     _ = (Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖ := by
             rw [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]
 
@@ -379,21 +393,6 @@ lemma scale_eval (c : ℝ) (hc : |c| ≤ 1) [NormedSpace ℝ 𝔸] (H : Fin Γ �
         lia
       rw [dif_neg h]
       exact P.coeff_abs_le_one (⟨i.1.val - Υ₂, hlt⟩, i.2)
-
-/-- `List.finRange (n + m)` splits into the `n`-part and the `m`-part. -/
-private lemma finRange_add {n m : ℕ} :
-    List.finRange (n + m) =
-      (List.finRange n).map (Fin.castAdd m) ++ (List.finRange m).map (Fin.natAdd n) := by
-  rw [show List.finRange (n + m) = List.ofFn (fun i : Fin (n + m) => i) from rfl]
-  rw [List.ofFn_add, List.ofFn_eq_map, List.ofFn_eq_map]
-  rfl
-
-/-- The reversed `finRange` splits accordingly. -/
-private lemma finRange_reverse_add {n m : ℕ} :
-    (List.finRange (n + m)).reverse =
-      (List.finRange m).reverse.map (Fin.natAdd n) ++
-        (List.finRange n).reverse.map (Fin.castAdd m) := by
-  rw [finRange_add, List.reverse_append, List.map_reverse, List.map_reverse]
 
 /-- For a `Q`-stage, the `concat` generator is the `Q` generator. -/
 private lemma concat_generator_castAdd {Υ₁ Υ₂ : ℕ} (P : ProductFormulaData Υ₁ Γ)
@@ -542,12 +541,6 @@ lemma fullGenerators_eq_orderedSummandsEval {𝔸 : Type*} (H : Fin Γ → 𝔸)
   funext i
   simp [fullGenerators, orderedSummandsEval, evalIndexList_eq_ofFn]
 
-/-- Reindex a `Fin`-indexed `ℝ`-sum along `Fin.cast`. -/
-lemma sum_fin_cast {s t : ℕ} (h : s = t) (f : Fin s → ℝ) :
-    (∑ i : Fin t, f (Fin.cast h.symm i)) = ∑ i : Fin s, f i := by
-  subst h
-  simp
-
 /-- `Σ_k ‖fullGenerators P H k‖ = Υ · Σ_γ ‖H γ‖`: the sum of the norms of the
 coefficient-free generators (in `evalIndexList` order) is the stage count times the total
 summand norm. -/
@@ -638,16 +631,7 @@ lemma norm_eval_le [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [NormOneCla
             · intro i _
               exact norm_nonneg _
             · intro i _
-              have hgen : ‖P.generator H i‖ ≤ ‖H (P.perm i.1 i.2)‖ := by
-                unfold ProductFormulaData.generator
-                rw [norm_smul, Real.norm_eq_abs]
-                exact mul_le_of_le_one_left (norm_nonneg _) (P.coeff_abs_le_one i)
-              calc
-                ‖P.evalFactor H i s‖ = ‖exp (s • P.generator H i)‖ := rfl
-                _ ≤ Real.exp (‖s • P.generator H i‖) := norm_exp_le _
-                _ = Real.exp (|s| * ‖P.generator H i‖) := by rw [norm_smul, Real.norm_eq_abs]
-                _ ≤ Real.exp (|s| * ‖H (P.perm i.1 i.2)‖) :=
-                    Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hgen (abs_nonneg s))
+              exact P.norm_evalFactor_le H i s
     _ = ∏ i : Fin Υ × Fin Γ, Real.exp (|s| * ‖H (P.perm i.1 i.2)‖) := by
             rw [evalIndexList_map_prod (fun i => Real.exp (|s| * ‖H (P.perm i.1 i.2)‖))]
             rw [ProductFormulaData.nested_prod_eq_finset_prod

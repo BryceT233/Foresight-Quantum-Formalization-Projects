@@ -11,7 +11,7 @@ public import CQM1.TrotterError.ExpSMulConj
 public import CQM1.TrotterError.CommutatorExpansion
 public import CQM1.TrotterError.ErrorTypes
 public import CQM1.TrotterError.Integrals
-public import CQM1.TrotterError.ListProd
+public import CQM1.TrotterError.ListLemmas
 public import CQM1.TrotterError.OrderingRemoval
 public import CQM1.TrotterError.CommutatorScaling
 public import CQM1.TrotterError.MainTheorem

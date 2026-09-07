@@ -9,15 +9,14 @@ public import CQM1.TrotterError.OneNormScaling
 public import CQM1.TrotterError.OrderingRemoval
 public import CQM1.TrotterError.CommutatorScaling
 
-import CQM1.TrotterError.ListProd
+import CQM1.TrotterError.ListLemmas
 
 /-!
 # Main theorem: commutator scaling of Trotter error
 
 The main theorems of *A Theory of Trotter Error* (arXiv:1912.08854): the norm bound for the
 additive kernel `𝒯(τ)` and the commuting-scaling bounds for the Trotter error
-`thm:trotter_error_comm_scaling` together with the Trotter-number corollary
-`cor:trotter_number_comm_scaling` (anti-Hermitian branch).
+`thm:trotter_error_comm_scaling`.
 
 Supporting steps live in dedicated files:
 * `OrderingRemoval.lean` — `αCommConj_sum_le_αComm` (`papers/rep.tex` lines 129–139).
@@ -621,59 +620,6 @@ theorem trotter_error_comm_scaling_of_skewAdjoint
             trotter_error_bound_comm_scaling_of_skewAdjoint P H h_skew p hp h_order hΥ t ht
     _ = (2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1)) * (αComm p H * t ^ (p + 1)) := by ring
 
-/-- `cor:trotter_number_comm_scaling`: for anti-Hermitian summands, the `r`-step Trotter error with
-the commuting-scaling bound decays as `O(r^{-p})` as `r → ∞`. -/
-theorem trotter_number_comm_scaling
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
-    [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
-    (H : Fin Γ → 𝔸) (p : ℕ) (hp : 1 ≤ p) (h_skew : ∀ γ : Fin Γ, star (H γ) = -(H γ))
-    (h_order : P.IsOrderOf p H) (hΥ : 0 < Υ) (t : ℝ) (ht : 0 ≤ t) :
-    (fun r : ℕ => ‖(P.eval H (t / (r : ℝ))) ^ r - exp (t • ∑ γ : Fin Γ, H γ)‖) =O[Filter.atTop]
-      (fun r : ℕ => ((r : ℝ) ^ p)⁻¹) := by
-  let S : 𝔸 := ∑ γ : Fin Γ, H γ
-  let α : ℝ := αComm p H
-  have hS_skew : star S = -S := sum_skewAdjoint H h_skew
-  have hα : 0 ≤ α := αComm_nonneg p H
-  have hO' : (fun r : ℕ => ‖P.eval H (t / (r : ℝ)) - exp ((t / (r : ℝ)) • S)‖) =O[Filter.atTop]
-      (fun r : ℕ => α * (t / (r : ℝ)) ^ (p + 1)) := by
-    refine IsBigO.of_bound (2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1)) ?_
-    filter_upwards [Filter.eventually_ge_atTop 1] with r hr
-    have hnonneg_arg : 0 ≤ α * (t / (r : ℝ)) ^ (p + 1) := by positivity
-    rw [Real.norm_of_nonneg (norm_nonneg _), Real.norm_of_nonneg hnonneg_arg]
-    simpa [S, α] using
-      (trotter_error_bound_comm_scaling_of_skewAdjoint P H h_skew p hp h_order hΥ
-        (t / (r : ℝ)) (div_nonneg ht (le_of_lt (by positivity)))).trans_eq (by push_cast; ring)
-  obtain ⟨C, hC⟩ := hO'.bound
-  refine IsBigO.of_bound (C * α * t ^ (p + 1)) ?_
-  filter_upwards [hC, (Filter.eventually_ge_atTop 1)] with r hr_le hr1
-  have hA_le : ‖P.eval H (t / (r : ℝ))‖ ≤ 1 :=
-    norm_eval_le_one_of_skew P H h_skew (t / (r : ℝ))
-  have hB_le : ‖exp ((t / (r : ℝ)) • S)‖ ≤ 1 :=
-    le_of_eq (norm_exp_smul_of_skewAdjoint hS_skew (t / (r : ℝ)))
-  have hnonneg_arg : 0 ≤ α * (t / (r : ℝ)) ^ (p + 1) := by positivity
-  have hr_le' : ‖P.eval H (t / (r : ℝ)) - exp ((t / (r : ℝ)) • S)‖ ≤
-      C * ‖α * (t / (r : ℝ)) ^ (p + 1)‖ := by
-    rwa [← Real.norm_of_nonneg (norm_nonneg (P.eval H (t / (r : ℝ)) - exp ((t / (r : ℝ)) • S)))]
-  rw [Real.norm_of_nonneg (norm_nonneg ((P.eval H (t / (r : ℝ))) ^ r - exp (t • S)))]
-  calc
-    ‖(P.eval H (t / (r : ℝ))) ^ r - exp (t • S)‖
-        = ‖(P.eval H (t / (r : ℝ))) ^ r - exp ((t / (r : ℝ)) • S) ^ r‖ := by
-            rw [exp_smul_eq_pow_of_div S t (by positivity : 0 < r)]
-    _ ≤ (r : ℝ) * ‖P.eval H (t / (r : ℝ)) - exp ((t / (r : ℝ)) • S)‖ :=
-            norm_pow_sub_pow_le_of_norm_le_one (P.eval H (t / (r : ℝ)))
-              (exp ((t / (r : ℝ)) • S)) r hA_le hB_le
-    _ ≤ (r : ℝ) * (C * ‖α * (t / (r : ℝ)) ^ (p + 1)‖) :=
-            mul_le_mul_of_nonneg_left hr_le' (by positivity)
-    _ = C * α * t ^ (p + 1) * ‖((r : ℝ) ^ p)⁻¹‖ := by
-            rw [Real.norm_of_nonneg hnonneg_arg,
-              Real.norm_of_nonneg (inv_nonneg.mpr (pow_nonneg (by positivity) p))]
-            calc
-              (r : ℝ) * (C * (α * (t / (r : ℝ)) ^ (p + 1)))
-                  = C * (α * ((r : ℝ) * (t / (r : ℝ)) ^ (p + 1))) := by ring
-              _ = C * (α * (t ^ (p + 1) * ((r : ℝ) ^ p)⁻¹)) := by
-                      rw [natCast_mul_pow_div_pow_succ t r p (by positivity)]
-              _ = C * α * t ^ (p + 1) * ((r : ℝ) ^ p)⁻¹ := by ring
-
 /-! ### R3g-multiplicative: the multiplicative error commuting-scaling bound -/
 
 /-- The multiplicative error as an integral of the additive residual (rep.tex:115-123):
@@ -825,6 +771,27 @@ theorem multiplicative_error_comm_scaling
     _ = (2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1)) *
           (αComm p H * t ^ (p + 1) * Real.exp (2 * t * (Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖)) := by ring
 
+/-- In the skew-adjoint case, the multiplicative error is the additive error left-multiplied by a
+unitary, hence its norm is bounded by the additive-error norm. -/
+lemma norm_multiplicativeError_le_norm_sub_of_skewAdjoint
+    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+    [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
+    (H : Fin Γ → 𝔸) (h_skew : ∀ γ, star (H γ) = -(H γ)) (t : ℝ) :
+    ‖multiplicativeError P H t‖ ≤ ‖P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)‖ := by
+  let S : 𝔸 := ∑ γ : Fin Γ, H γ
+  have hS_skew : star S = -S := sum_skewAdjoint H h_skew
+  have hrel : multiplicativeError P H t = exp (-(t • S)) * (P.eval H t - exp (t • S)) := by
+    rw [mul_sub]
+    have hkey : exp (-(t • S)) * P.eval H t = 1 + multiplicativeError P H t := by
+      rw [errorType_multiplicative P H t, ← mul_assoc, exp_neg_mul_self (t • S), one_mul]
+    rw [hkey, exp_neg_mul_self (t • S)]
+    abel
+  calc
+    ‖multiplicativeError P H t‖ = ‖exp (-(t • S)) * (P.eval H t - exp (t • S))‖ := by rw [hrel]
+    _ ≤ ‖exp (-(t • S))‖ * ‖P.eval H t - exp (t • S)‖ := norm_mul_le _ _
+    _ = ‖P.eval H t - exp (t • S)‖ := by
+        rw [← neg_smul t S, norm_exp_smul_of_skewAdjoint hS_skew (-t), one_mul]
+
 /-- `thm:trotter_error_comm_scaling` (anti-Hermitian branch, multiplicative): the multiplicative
 error pointwise commuting-scaling bound, valid for all `t ≥ 0` (no exponential prefactor). -/
 theorem multiplicative_error_bound_comm_scaling_of_skewAdjoint
@@ -835,61 +802,9 @@ theorem multiplicative_error_bound_comm_scaling_of_skewAdjoint
     ∀ t : ℝ, 0 ≤ t →
       ‖multiplicativeError P H t‖ ≤
         2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1) * αComm p H * t ^ (p + 1) := by
-  let S : 𝔸 := ∑ γ : Fin Γ, H γ
-  let sAlpha : ℝ := ∑ γ : Fin Γ, αCommConj (orderedSummandsEval P H) (H γ) p
-  let C : ℝ := 2 * (Υ : ℝ) * sAlpha
-  have hS_skew : star S = -S := sum_skewAdjoint H h_skew
-  have hkernel : ∀ τ, ‖additiveKernel P H τ‖ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) := by
-    intro τ
-    simpa [C, sAlpha] using norm_additiveKernel_le_of_skewAdjoint P H h_skew p hp h_order hΥ τ
-  have hintegral (t : ℝ) (ht : 0 ≤ t) :
-      ∫ τ in 0..t, C * |τ| ^ p / (Nat.factorial p : ℝ) =
-        (C / (Nat.factorial p : ℝ)) * (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ)) :=
-    intervalIntegral_const_mul_abs_pow_div_factorial C p t ht
   intro t ht
-  calc
-    ‖multiplicativeError P H t‖
-        = ‖∫ τ in 0..t, exp ((-τ) • S) * additiveResidual P H τ‖ := by
-            rw [multiplicativeError_eq_integral_residual P H t]
-    _ = ‖∫ τ in 0..t, (exp ((-τ) • S) * P.eval H τ) * additiveKernel P H τ‖ := by
-            congr 1
-            refine intervalIntegral.integral_congr_uIoo ?_
-            intro τ _
-            change exp ((-τ) • S) * additiveResidual P H τ =
-              (exp ((-τ) • S) * P.eval H τ) * additiveKernel P H τ
-            rw [additiveResidual_eq_eval_mul_kernel P H τ, ← mul_assoc]
-    _ ≤ ∫ τ in 0..t, C * |τ| ^ p / (Nat.factorial p : ℝ) := by
-            have hpoint : ∀ τ ∈ Set.Ioc (0 : ℝ) t,
-                ‖(exp ((-τ) • S) * P.eval H τ) * additiveKernel P H τ‖ ≤
-                  C * |τ| ^ p / (Nat.factorial p : ℝ) := by
-              intro τ hτ
-              have hfac : ‖exp ((-τ) • S) * P.eval H τ‖ ≤ 1 := by
-                calc
-                  ‖exp ((-τ) • S) * P.eval H τ‖ ≤ ‖exp ((-τ) • S)‖ * ‖P.eval H τ‖ := norm_mul_le _ _
-                  _ = 1 * ‖P.eval H τ‖ := by rw [norm_exp_smul_of_skewAdjoint hS_skew (-τ)]
-                  _ = ‖P.eval H τ‖ := one_mul _
-                  _ ≤ 1 := norm_eval_le_one_of_skew P H h_skew τ
-              calc
-                ‖(exp ((-τ) • S) * P.eval H τ) * additiveKernel P H τ‖
-                    ≤ ‖exp ((-τ) • S) * P.eval H τ‖ * ‖additiveKernel P H τ‖ := norm_mul_le _ _
-                _ ≤ 1 * ‖additiveKernel P H τ‖ := mul_le_mul_of_nonneg_right hfac (norm_nonneg _)
-                _ = ‖additiveKernel P H τ‖ := one_mul _
-                _ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) := hkernel τ
-            have hg_cont : Continuous (fun τ : ℝ => C * |τ| ^ p / (Nat.factorial p : ℝ)) := by
-              fun_prop
-            exact intervalIntegral.norm_integral_le_of_norm_le ht
-              (by filter_upwards with τ hτ; exact hpoint τ hτ) (hg_cont.intervalIntegrable 0 t)
-    _ = (C / (Nat.factorial p : ℝ)) * (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ)) := hintegral t ht
-    _ ≤ 2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1) * αComm p H * t ^ (p + 1) := by
-            have hC_le : C / (Nat.factorial p : ℝ) ≤ 2 * (Υ : ℝ) ^ (p + 1) * αComm p H := by
-              simpa [C, sAlpha] using two_mul_commScaling_div_factorial_le P H p
-            have hnonneg : 0 ≤ t ^ (p + 1) / ((p + 1 : ℕ) : ℝ) := by positivity
-            have h1 := mul_le_mul_of_nonneg_right hC_le hnonneg
-            calc
-              C / (Nat.factorial p : ℝ) * (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ))
-                  ≤ 2 * (Υ : ℝ) ^ (p + 1) * αComm p H *
-                      (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ)) := h1
-              _ = 2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1) * αComm p H * t ^ (p + 1) := by ring
+  exact (norm_multiplicativeError_le_norm_sub_of_skewAdjoint P H h_skew t).trans
+    (trotter_error_bound_comm_scaling_of_skewAdjoint P H h_skew p hp h_order hΥ t ht)
 
 /-- `thm:trotter_error_comm_scaling` (anti-Hermitian branch, multiplicative): the
 multiplicative-error commuting-scaling bound as `t → ∞`. -/

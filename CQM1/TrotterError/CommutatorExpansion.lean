@@ -7,7 +7,7 @@ module
 
 public import CQM1.TrotterError.ExpSMulConj
 
-import CQM1.TrotterError.ListProd
+import CQM1.TrotterError.ListLemmas
 import CQM1.TrotterError.Integrals
 import CQM1.TrotterError.TimeOrderedExp
 
@@ -78,7 +78,7 @@ noncomputable def commutatorRemainder {𝔸 : Type*} [NormedRing 𝔸] [NormedAl
 
 /-- The `τ^j` coefficient of the multi-layer conjugation, as the multinomial-weighted sum
 `Σ_{q ∈ finAntidiagonal s j} (∏ i, q_i!⁻¹) • adSequence A q B`. -/
-noncomputable def conjCoeff {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
+noncomputable def conjCoeff {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸]
     {s : ℕ} (A : Fin s → 𝔸) (B : 𝔸) (j : ℕ) : 𝔸 :=
   ∑ q ∈ finAntidiagonal s j,
     ((∏ i : Fin s, (Nat.factorial (q i) : ℝ))⁻¹ : ℝ) • adSequence A q B
@@ -1077,7 +1077,7 @@ lemma conjCoeff_snoc_summand {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] {s : 
 
 /-- The `m`-th coefficient of the `(s+1)`-layer expansion is obtained from the inner `s`-layer
 coefficients by one further `ad` layer. -/
-lemma conjCoeff_succ {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] {s : ℕ}
+lemma conjCoeff_succ {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] {s : ℕ}
     (A : Fin (s + 1) → 𝔸) (B : 𝔸) (m : ℕ) :
     conjCoeff A B m = ∑ j ∈ range (m + 1),
       ((Nat.factorial j : ℝ)⁻¹ : ℝ) •
@@ -1236,7 +1236,7 @@ lemma commutatorRemainder_succ {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgeb
 
 /-- The polynomial part of the single-layer Taylor expansion reassembles, after reindexing by the
 total degree, into `Σ_{m < p} conjCoeff A B m · τ^m`. -/
-lemma conjCoeff_sum_of_taylor {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
+lemma conjCoeff_sum_of_taylor {s} {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸]
     (A : Fin (s + 1) → 𝔸) (B : 𝔸) (p : ℕ) (τ : ℝ) :
     (∑ j ∈ range p,
         (∑ i ∈ range (p - j), (Nat.factorial i : ℝ)⁻¹ •

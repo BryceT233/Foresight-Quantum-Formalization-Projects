@@ -737,11 +737,6 @@ lemma continuous_exp_smul_const {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra 
   intro t
   exact (contDiffAt_exp_smul_const A 1 t).continuousAt
 
-/-- `exp x` is a unit, with inverse `exp (-x)`. -/
-lemma isUnit_exp {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (x : 𝔸) :
-    IsUnit (exp x) :=
-  isUnit_iff_exists.mpr ⟨exp (-x), exp_mul_neg_self x, exp_neg_mul_self x⟩
-
 /-! ### General scalar / norm / star lemmas -/
 
 /-- In an ℝ-algebra, the scalar action `r • a` equals right multiplication `a * (r : 𝔸)`. -/

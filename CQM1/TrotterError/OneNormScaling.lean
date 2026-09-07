@@ -336,9 +336,7 @@ lemma norm_factor_le_skew
     star_smul_of_skew (h_skew (P.perm i.1 i.2))
   have hnorm_exp : ‖exp ((u * t) • (P.generator H i))‖ = 1 :=
     norm_exp_smul_of_skewAdjoint hA_skew (u * t)
-  have hA_le : ‖P.generator H i‖ ≤ ‖H (P.perm i.1 i.2)‖ :=
-    norm_smul_le_of_abs_le_one (P.coeff i)
-      (H (P.perm i.1 i.2)) (P.coeff_abs_le_one i)
+  have hA_le := P.norm_generator_le H i
   have harg : (u * t * P.coeff i) • H (P.perm i.1 i.2) =
       (u * t) • (P.generator H i) := by
     rw [mul_smul, ProductFormulaData.generator]

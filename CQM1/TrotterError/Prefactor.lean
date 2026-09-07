@@ -188,21 +188,20 @@ theorem firstOrder_twoTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ �
 
 /-- `upperSum K j` is the sum of `K γ` over `γ > j` (the paper's `Σ_{γ₂ = γ₁+1}^Γ H_{γ₂}`). -/
 abbrev upperSum {𝔸 : Type*} [AddCommMonoid 𝔸] {Γ : ℕ} (K : Fin Γ → 𝔸) (j : Fin Γ) :
-    𝔸 :=
-  Finset.sum ((Finset.univ : Finset (Fin Γ)).filter (fun γ => j < γ)) (fun γ => K γ)
+    𝔸 := Finset.sum (univ.filter (fun γ => j < γ)) (fun γ => K γ)
 
 /-- The `0`-upper sum is the whole tail: `upperSum K 0 = Σ_{i} K i.succ`. -/
 lemma upperSum_zero_eq {𝔸 : Type*} [AddCommMonoid 𝔸] {n : ℕ} (K : Fin (n + 1) → 𝔸) :
     upperSum K 0 = ∑ i : Fin n, K i.succ := by
   unfold upperSum
-  rw [Finset.sum_filter, Fin.sum_univ_succ]
+  rw [sum_filter, Fin.sum_univ_succ]
   simp
 
 /-- `upperSum (K ∘ Fin.succ) i = upperSum K i.succ`. -/
 lemma upperSum_succ {𝔸 : Type*} [AddCommMonoid 𝔸] {n : ℕ} (K : Fin (n + 1) → 𝔸) (i : Fin n) :
     upperSum (fun j : Fin n => K j.succ) i = upperSum K i.succ := by
   unfold upperSum
-  rw [Finset.sum_filter, Finset.sum_filter, Fin.sum_univ_succ]
+  rw [sum_filter, sum_filter, Fin.sum_univ_succ]
   simp
 
 /-- The Lie-Trotter product of anti-Hermitian factors has norm at most `1` (each factor is
@@ -280,7 +279,7 @@ theorem firstOrder_bound {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ �
               rw [Fin.sum_univ_succ, upperSum_zero_eq K, mul_add, add_comm]
               congr 1
               congr 1
-              apply Finset.sum_congr rfl
+              apply sum_congr rfl
               intro i hi
               rw [upperSum_succ K i]
 
@@ -423,7 +422,7 @@ lemma expSMulConj_taylor_two {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ
       ∫ s in 0..τ, expSMulConj A (adPow A 2 X) (τ - s) * (s : 𝔸) := by
   rw [expSMulConj_taylor A X 2 τ (by norm_num)]
   congr 1
-  · rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_zero]
+  · rw [sum_range_succ, sum_range_succ, sum_range_zero]
     simp [adPow, Nat.factorial, pow_succ, pow_zero]
   · apply intervalIntegral.integral_congr_uIoo
     intro s _

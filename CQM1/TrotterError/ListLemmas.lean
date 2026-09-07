@@ -9,13 +9,13 @@ public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
-# General `List.prod` lemmas
+# General list lemmas
 
-General results about ordered (`List.prod`) products and sums, at the `Monoid` / `AddCommMonoid` /
-`NormedAlgebra` level, used by the Trotter error theory (arXiv:1912.08854).
-
-These are the `List`-level facts that the product-formula lemmas in `ErrorTypes.lean`
-(`factorProdOver`, `prefixFactorProd`, `strictSuffixFactorProd`, …) specialize.
+General results about `List` (ordered `List.prod` products, `List.finRange`/`List.ofFn`
+reindexing, `Fin`-indexed sums) at the `Monoid` / `AddCommMonoid` / `NormedAlgebra` level,
+used by the Trotter error theory (arXiv:1912.08854). This is the shared home for list- and
+`Fin`-level facts that the product-formula lemmas in `ErrorTypes.lean` (`factorProdOver`,
+`prefixFactorProd`, `strictSuffixFactorProd`, …) and the commutator-expansion lemmas specialize.
 
 ## Main results
 
@@ -30,6 +30,9 @@ These are the `List`-level facts that the product-formula lemmas in `ErrorTypes.
   product-of-units identities.
 * `ofFn_castSucc_drop_prod`, `ofFn_castSucc_drop_reverse_prod`: peeling the outermost entry
   off a dropped `List.ofFn` suffix.
+* `finRange_add`, `finRange_reverse_add`: splitting `List.finRange (n + m)` into its parts.
+* `finRange_reverse_map_comp_revPerm`: `Fin.revPerm` reindexing of the reversed `finRange`.
+* `sum_fin_cast`: reindexing a `Fin`-indexed sum along `Fin.cast`.
 
 **Assisted by Deepseek Harness**
 -/
@@ -250,5 +253,37 @@ lemma product_ofFn {α β : Type*} {m n : ℕ} (f : Fin m → α) (g : Fin n →
             apply Fin.ext
             rw [Fin.coe_modNat, Fin.coe_modNat, Fin.val_cast, Fin.val_natAdd,
               congrArg (fun x => (x + k.val) % n) (Nat.mul_one n).symm, Nat.mul_add_mod]
+
+/-! ### `List.finRange` / `Fin.cast` reindexing -/
+
+/-- `List.finRange (n + m)` splits into the `n`-part and the `m`-part. -/
+lemma finRange_add {n m : ℕ} :
+    List.finRange (n + m) =
+      (List.finRange n).map (Fin.castAdd m) ++ (List.finRange m).map (Fin.natAdd n) := by
+  rw [show List.finRange (n + m) = List.ofFn (fun i : Fin (n + m) => i) from rfl]
+  rw [List.ofFn_add, List.ofFn_eq_map, List.ofFn_eq_map]
+  rfl
+
+/-- The reversed `finRange` splits accordingly. -/
+lemma finRange_reverse_add {n m : ℕ} :
+    (List.finRange (n + m)).reverse =
+      (List.finRange m).reverse.map (Fin.natAdd n) ++
+        (List.finRange n).reverse.map (Fin.castAdd m) := by
+  rw [finRange_add, List.reverse_append, List.map_reverse, List.map_reverse]
+
+/-- Mapping `g ∘ Fin.revPerm` over the reversed `finRange` is mapping `g` over `finRange`. -/
+lemma finRange_reverse_map_comp_revPerm {n : ℕ} {α : Type*} (g : Fin n → α) :
+    ((List.finRange n).reverse).map (g ∘ Fin.revPerm) = (List.finRange n).map g := by
+  rw [List.finRange_reverse, List.map_map]
+  congr 1
+  funext γ
+  change g (Fin.revPerm (Fin.rev γ)) = g γ
+  rw [Fin.revPerm_apply, Fin.rev_rev]
+
+/-- Reindex a `Fin`-indexed sum along `Fin.cast`. -/
+lemma sum_fin_cast {s t : ℕ} (h : s = t) {A : Type*} [AddCommMonoid A] (f : Fin s → A) :
+    (∑ i : Fin t, f (Fin.cast h.symm i)) = ∑ i : Fin s, f i := by
+  subst h
+  simp
 
 end TrotterError.List

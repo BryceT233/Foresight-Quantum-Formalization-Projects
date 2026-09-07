@@ -9,7 +9,7 @@ public import CQM1.TrotterError.Calculus
 public import CQM1.TrotterError.TimeOrderedExp
 public import CQM1.TrotterError.ErrorTypes
 
-import CQM1.TrotterError.ListProd
+import CQM1.TrotterError.ListLemmas
 
 /-!
 # Order conditions for Trotter error

@@ -7,6 +7,8 @@ module
 
 public import CQM1.TrotterError.ProductFormula
 
+import CQM1.TrotterError.ListLemmas
+
 /-!
 # The Lie-Trotter and Suzuki formulas
 
@@ -94,8 +96,7 @@ stage `0` in order and stage `1` reversed (`eq:pf2k`). -/
   coeff_abs_le_one := by intro i; norm_num
 
 /-- `lieTrotterData Γ`'s index list: the single stage `0` in reversed order. -/
-lemma lieTrotterData_evalIndexList :
-    ProductFormulaData.evalIndexList 1 Γ =
+lemma lieTrotterData_evalIndexList : ProductFormulaData.evalIndexList 1 Γ =
       ((List.finRange Γ).reverse).map (fun γ => ((0 : Fin 1), γ)) := by
   unfold ProductFormulaData.evalIndexList
   have h1 : (List.finRange 1).reverse = [0] := by decide
@@ -103,8 +104,7 @@ lemma lieTrotterData_evalIndexList :
   simp [List.product]
 
 /-- `lieTrotterData Γ` evaluates to `∏_{γ=Γ-1}^0 e^{t H_γ}`. -/
-lemma lieTrotterData_eval_eq [NormedSpace ℝ 𝔸]
-    (H : Fin Γ → 𝔸) (t : ℝ) :
+lemma lieTrotterData_eval_eq [NormedSpace ℝ 𝔸] (H : Fin Γ → 𝔸) (t : ℝ) :
     (lieTrotterData Γ).eval H t =
       (((List.finRange Γ).reverse).map (fun γ => exp (t • H γ))).prod := by
   change ((ProductFormulaData.evalIndexList 1 Γ).map
@@ -134,22 +134,11 @@ lemma lieTrotter_eq_prod [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
 
 /-- `lieTrotter` is `(lieTrotterData Γ).eval` (`prelim.tex:127,142`). -/
 theorem lieTrotter_eq_eval [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
-    (K : Fin Γ → 𝔸) (t : ℝ) :
-    lieTrotter K t = (lieTrotterData Γ).eval K t := by
+    (K : Fin Γ → 𝔸) (t : ℝ) : lieTrotter K t = (lieTrotterData Γ).eval K t := by
   rw [lieTrotter_eq_prod, lieTrotterData_eval_eq]
 
-/-- Mapping `g ∘ Fin.revPerm` over the reversed `finRange` is mapping `g` over `finRange`. -/
-lemma finRange_reverse_map_comp_revPerm {α : Type*} (g : Fin Γ → α) :
-    ((List.finRange Γ).reverse).map (g ∘ Fin.revPerm) = (List.finRange Γ).map g := by
-  rw [List.finRange_reverse, List.map_map]
-  congr 1
-  funext γ
-  change g (Fin.revPerm (Fin.rev γ)) = g γ
-  rw [Fin.revPerm_apply, Fin.rev_rev]
-
 /-- `suzuki2Data Γ`'s index list: stage `1` (reversed) followed by stage `0` (in order). -/
-lemma suzuki2Data_evalIndexList :
-    ProductFormulaData.evalIndexList 2 Γ =
+lemma suzuki2Data_evalIndexList : ProductFormulaData.evalIndexList 2 Γ =
       ((List.finRange Γ).reverse).map (fun γ => ((1 : Fin 2), γ)) ++
         ((List.finRange Γ).reverse).map (fun γ => ((0 : Fin 2), γ)) := by
   unfold ProductFormulaData.evalIndexList
@@ -158,8 +147,7 @@ lemma suzuki2Data_evalIndexList :
   simp [List.product]
 
 /-- `suzuki2Data Γ` evaluates to the increasing-times-decreasing product. -/
-lemma suzuki2Data_eval_eq [NormedSpace ℝ 𝔸]
-    (H : Fin Γ → 𝔸) (t : ℝ) :
+lemma suzuki2Data_eval_eq [NormedSpace ℝ 𝔸] (H : Fin Γ → 𝔸) (t : ℝ) :
     (suzuki2Data Γ).eval H t =
       (((List.finRange Γ).map (fun γ => exp ((t / 2) • H γ))).prod) *
         (((List.finRange Γ).reverse).map (fun γ => exp ((t / 2) • H γ))).prod := by
@@ -179,7 +167,8 @@ lemma suzuki2Data_eval_eq [NormedSpace ℝ 𝔸]
       simp [ProductFormulaData.evalFactor, ProductFormulaData.generator, smul_smul,
         div_eq_mul_inv]
     rw [hfac]
-    rw [finRange_reverse_map_comp_revPerm (g := fun γ : Fin Γ => exp ((t / 2) • H γ))]
+    rw [TrotterError.List.finRange_reverse_map_comp_revPerm
+      (g := fun γ : Fin Γ => exp ((t / 2) • H γ))]
   · rw [List.map_map]
     congr 1
     apply congrArg (fun f : Fin Γ → 𝔸 => List.map f ((List.finRange Γ).reverse))
@@ -188,8 +177,7 @@ lemma suzuki2Data_eval_eq [NormedSpace ℝ 𝔸]
       div_eq_mul_inv]
 
 /-- `suzuki2` equals the increasing-times-decreasing product. -/
-lemma suzuki2_eq_prod [NormedAlgebra ℝ 𝔸]
-    (K : Fin Γ → 𝔸) (t : ℝ) :
+lemma suzuki2_eq_prod [NormedAlgebra ℝ 𝔸] (K : Fin Γ → 𝔸) (t : ℝ) :
     suzuki2 K t = (((List.finRange Γ).map (fun γ => exp ((t / 2) • K γ))).prod) *
         (((List.finRange Γ).reverse).map (fun γ => exp ((t / 2) • K γ))).prod := by
   induction Γ with
@@ -304,8 +292,7 @@ noncomputable def suzukiData : (k : ℕ) → (Γ : ℕ) → ProductFormulaData (
 
 /-- The `(k + 2)`-nd Suzuki data evaluates as the paper's `S_{2k}` recursion
 (`eq:pf2k`): `S_{2k}(t) = S_{2k-2}(u_k t)² · S_{2k-2}((1-4u_k) t) · S_{2k-2}(u_k t)²`. -/
-lemma suzukiData_succ_eval (k : ℕ) [NormedSpace ℝ 𝔸]
-    (K : Fin Γ → 𝔸) (t : ℝ) :
+lemma suzukiData_succ_eval (k : ℕ) [NormedSpace ℝ 𝔸] (K : Fin Γ → 𝔸) (t : ℝ) :
     (suzukiData (k + 2) Γ).eval K t =
       (suzukiData (k + 1) Γ).eval K (suzukiU (k + 2) * t) ^ 2 *
         (suzukiData (k + 1) Γ).eval K ((1 - 4 * suzukiU (k + 2)) * t) *
@@ -331,8 +318,7 @@ lemma suzukiData_succ_eval (k : ℕ) [NormedSpace ℝ 𝔸]
   noncomm_ring
 
 /-- `suzuki (k + 1)` is `(suzukiData (k + 1) Γ).eval`, by induction on `k`. -/
-lemma suzuki_succ_eq_eval [NormedAlgebra ℝ 𝔸]
-    (K : Fin Γ → 𝔸) (k : ℕ) (t : ℝ) :
+lemma suzuki_succ_eq_eval [NormedAlgebra ℝ 𝔸] (K : Fin Γ → 𝔸) (k : ℕ) (t : ℝ) :
     suzuki (k + 1) K t = (suzukiData (k + 1) Γ).eval K t := by
   induction k generalizing t with
   | zero =>
@@ -348,8 +334,7 @@ lemma suzuki_succ_eq_eval [NormedAlgebra ℝ 𝔸]
 
 /-- `suzuki` is `(suzukiData k Γ).eval` (`prelim.tex:136,142`), for the meaningful range `1 ≤ k`
 (the `suzuki 0` case is a junk identity). -/
-theorem suzuki_eq_eval [NormedAlgebra ℝ 𝔸]
-    (K : Fin Γ → 𝔸) (k : ℕ) (hk : 1 ≤ k) (t : ℝ) :
+theorem suzuki_eq_eval [NormedAlgebra ℝ 𝔸] (K : Fin Γ → 𝔸) (k : ℕ) (hk : 1 ≤ k) (t : ℝ) :
     suzuki k K t = (suzukiData k Γ).eval K t := by
   cases k with
   | zero => lia
