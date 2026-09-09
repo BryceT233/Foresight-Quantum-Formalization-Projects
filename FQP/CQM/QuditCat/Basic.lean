@@ -5,7 +5,7 @@ Authors: Bingyu Xia
 -/
 module
 
-public import CQM1.Category.DaggerCategory
+public import FQP.CQM.Category.DaggerCategory
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 public import Mathlib.RingTheory.PicardGroup

@@ -5,7 +5,7 @@ Authors: Bingyu Xia
 -/
 module
 
-public import CQM1.Category.DaggerCategory
+public import FQP.CQM.Category.DaggerCategory
 public import Mathlib.CategoryTheory.Category.RelCat
 public import Mathlib.CategoryTheory.Monoidal.Types.Basic
 public import Mathlib.Data.Set.BooleanAlgebra
@@ -49,7 +49,7 @@ namespace CategoryTheory.RelCat
 
 /-- The monoidal category structure on `RelCat`: the tensor product is the cartesian
 product of types, and the tensor unit is `PUnit`. -/
-instance : MonoidalCategoryStruct RelCat.{u} where
+instance instMonoidalCategoryStructRelCat : MonoidalCategoryStruct RelCat.{u} where
   tensorObj X Y := X × Y
   whiskerLeft _ _ _ f := .ofRel {((x, y₁), (x', y₂)) | x = x' ∧ (y₁, y₂) ∈ f.rel}
   whiskerRight f _ := .ofRel {((x, y), (x', y')) | (x, x') ∈ f.rel ∧ y = y'}
@@ -90,7 +90,7 @@ lemma mem_rightUnitor_hom (x : X) (u : PUnit) (y : X) :
     ((x, u), y) ∈ (ρ_ X).hom.rel ↔ x = y := Iff.rfl
 
 /-- `RelCat` is a monoidal category. -/
-instance : MonoidalCategory RelCat.{u} where
+instance instMonoidalCategoryRelCat : MonoidalCategory RelCat.{u} where
   id_tensorHom_id X₁ X₂ := by
     ext ⟨⟨x₁, x₂⟩, ⟨y₁, y₂⟩⟩
     rw [mem_tensorHom, Hom.rel_id, mem_id, Hom.rel_id, mem_id, Hom.rel_id, mem_id,
@@ -214,7 +214,7 @@ instance monoidalDaggerCategory : MonoidalDaggerCategory RelCat.{u} where
   isUnitary_rightUnitor _ := DaggerCategory.isUnitary_of_dagger_eq_inv _ <|
     Hom.ext _ _ (Equiv.graph_inv (Equiv.prodPUnit ..)).symm
 
-instance : BraidedCategory RelCat.{u} where
+instance instBraidedCategoryRelCat : BraidedCategory RelCat.{u} where
   braiding X Y := graphFunctor.mapIso (Equiv.prodComm X Y).toIso
   braiding_naturality_left f Z := by
     apply Hom.ext; ext ⟨⟨x, z⟩, ⟨z'', y'⟩⟩

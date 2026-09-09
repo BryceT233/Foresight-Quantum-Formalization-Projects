@@ -5,10 +5,10 @@ Authors: Foresight Quantum
 -/
 module
 
-public import CQM1.TrotterError.CommutatorExpansion
-public import CQM1.TrotterError.OrderCondition
+public import FQP.TrotterError.CommutatorExpansion
+public import FQP.TrotterError.OrderCondition
 
-import CQM1.TrotterError.ListLemmas
+import FQP.TrotterError.ListLemmas
 
 /-!
 # Commutator scaling bridge

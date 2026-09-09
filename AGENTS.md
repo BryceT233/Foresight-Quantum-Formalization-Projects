@@ -10,7 +10,7 @@ Always run these steps in order before committing:
 
 ```bash
 lake exe cache get                # fetch Mathlib cached oleans (skip if already cached)
-lake build CQM1                   # build only our project, not all of Mathlib
+lake build FQP                   # build only our project, not all of Mathlib
 lake exe runLinter                # the actual Mathlib declaration linter
 lake exe lint-style               # Mathlib style checker (line length, etc.)
 ```

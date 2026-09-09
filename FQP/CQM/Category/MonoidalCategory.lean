@@ -5,7 +5,7 @@ Authors: Bingyu Xia
 -/
 module
 
-public import CQM1.Category.DaggerCategory
+public import FQP.CQM.Category.DaggerCategory
 public import Mathlib
 
 /-!

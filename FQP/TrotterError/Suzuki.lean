@@ -5,9 +5,9 @@ Authors: Foresight Quantum
 -/
 module
 
-public import CQM1.TrotterError.ProductFormula
+public import FQP.TrotterError.ProductFormula
 
-import CQM1.TrotterError.ListLemmas
+import FQP.TrotterError.ListLemmas
 
 /-!
 # The Lie-Trotter and Suzuki formulas

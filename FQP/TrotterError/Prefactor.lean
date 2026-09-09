@@ -5,11 +5,11 @@ Authors: Foresight Quantum
 -/
 module
 
-public import CQM1.TrotterError.ExpSMulConj
-public import CQM1.TrotterError.ProductFormula
-public import CQM1.TrotterError.Suzuki
+public import FQP.TrotterError.ExpSMulConj
+public import FQP.TrotterError.ProductFormula
+public import FQP.TrotterError.Suzuki
 
-import CQM1.TrotterError.TimeOrderedExp
+import FQP.TrotterError.TimeOrderedExp
 
 /-!
 # Error bounds with small prefactors (§5.1)

@@ -5,8 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-public import CQM1.TrotterError.Commutator
-public import CQM1.TrotterError.ProductFormula
+public import FQP.TrotterError.Commutator
+public import FQP.TrotterError.ProductFormula
 
 /-!
 # Ordering removal (`α_comm ≲ p!·Υ^p·α~_comm`)
