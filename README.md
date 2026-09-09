@@ -14,6 +14,7 @@ at **Foresight Quantum**. Each company project lives in its own directory under
   `Category/MonoidalCategory`, `QuditCat/Basic`, `HilbCat`, `RelCat`.
 - **`FQP/TrotterError`** — Trotter/Suzuki product-formula error bounds
   (Childs–Su–Tran–Wiebe–Zhu). Entry point is `FQP/TrotterError/MainTheorem`.
+  See the [formalization site](https://brycet233.github.io/TrotterError/).
 
 New projects are added as further top-level directories under `FQP/` and
 imported from `FQP.lean`.
