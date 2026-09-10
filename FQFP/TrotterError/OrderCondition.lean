@@ -5,11 +5,11 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQP.TrotterError.Calculus
-public import FQP.TrotterError.TimeOrderedExp
-public import FQP.TrotterError.ErrorTypes
+public import FQFP.TrotterError.Calculus
+public import FQFP.TrotterError.TimeOrderedExp
+public import FQFP.TrotterError.ErrorTypes
 
-import FQP.TrotterError.ListLemmas
+import FQFP.TrotterError.ListLemmas
 
 /-!
 # Order conditions for Trotter error

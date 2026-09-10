@@ -5,11 +5,11 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQP.TrotterError.ExpSMulConj
+public import FQFP.TrotterError.ExpSMulConj
 
-import FQP.TrotterError.ListLemmas
-import FQP.TrotterError.Integrals
-import FQP.TrotterError.TimeOrderedExp
+import FQFP.TrotterError.ListLemmas
+import FQFP.TrotterError.Integrals
+import FQFP.TrotterError.TimeOrderedExp
 
 /-!
 # Multi-layer conjugation: commutator expansion and remainder norm bounds

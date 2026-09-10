@@ -6,7 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-public import FQP.TrotterError.Calculus
+public import FQFP.TrotterError.Calculus
 
 /-!
 # Interval integrals used in the Trotter error bounds

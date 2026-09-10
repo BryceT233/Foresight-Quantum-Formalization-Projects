@@ -5,9 +5,9 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQP.TrotterError.Commutator
-public import FQP.TrotterError.Calculus
-public import FQP.TrotterError.Integrals
+public import FQFP.TrotterError.Commutator
+public import FQFP.TrotterError.Calculus
+public import FQFP.TrotterError.Integrals
 
 /-!
 # Single-layer conjugation

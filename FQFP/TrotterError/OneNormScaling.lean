@@ -5,9 +5,9 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQP.TrotterError.Integrals
-public import FQP.TrotterError.ProductFormula
-public import FQP.TrotterError.OrderCondition
+public import FQFP.TrotterError.Integrals
+public import FQFP.TrotterError.ProductFormula
+public import FQFP.TrotterError.OrderCondition
 
 /-!
 # Trotter error with `1`-norm scaling

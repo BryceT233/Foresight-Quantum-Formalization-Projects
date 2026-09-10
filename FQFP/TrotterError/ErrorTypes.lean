@@ -5,10 +5,10 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQP.TrotterError.ProductFormula
-public import FQP.TrotterError.TimeOrderedExp
+public import FQFP.TrotterError.ProductFormula
+public import FQFP.TrotterError.TimeOrderedExp
 
-import FQP.TrotterError.ListLemmas
+import FQFP.TrotterError.ListLemmas
 
 /-!
 # Three types of Trotter error

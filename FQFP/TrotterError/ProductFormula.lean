@@ -5,10 +5,10 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQP.TrotterError.Commutator
-public import FQP.TrotterError.Calculus
+public import FQFP.TrotterError.Commutator
+public import FQFP.TrotterError.Calculus
 
-import FQP.TrotterError.ListLemmas
+import FQFP.TrotterError.ListLemmas
 
 /-!
 # Product formulas

@@ -2,7 +2,7 @@
 
 ## 0. 论文定位
 
-本文拟将 `FQP/TrotterError` 描述为对 Childs、Su、Tran、Wiebe、Zhu 的
+本文拟将 `FQFP/TrotterError` 描述为对 Childs、Su、Tran、Wiebe、Zhu 的
 *A Theory of Trotter Error* 的 Lean 4 + Mathlib 机器核验，而不是把工作包装成一个
 “AI 自动证明”项目。
 
@@ -35,7 +35,7 @@
 ## 2. 形式化范围的冻结
 
 以已推送的 `D:\project\CQM1` 仓库和论文提交时指定的 commit 为唯一 artifact 来源。
-核心代码位于 `FQP/TrotterError/`，入口为 `FQP.lean`。
+核心代码位于 `FQFP/TrotterError/`，入口为 `FQFP.lean`。
 
 论文应明确说明：
 
@@ -179,7 +179,7 @@ MainTheorem
 
 ```text
 lake exe cache get
-lake build FQP
+lake build FQFP
 lake exe runLinter
 lake exe lint-style
 ```
@@ -202,7 +202,7 @@ lake exe lint-style
 ### 阶段 A：仓库和范围冻结
 
 - [ ] 记录 GitHub URL 和提交 commit；
-- [ ] 确认 `FQP/TrotterError` 的公开入口；
+- [ ] 确认 `FQFP/TrotterError` 的公开入口；
 - [ ] 确认 Lean、Mathlib 和 Lake 版本；
 - [ ] 列出明确不属于论文贡献的仓库内容。
 

@@ -5,11 +5,11 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQP.TrotterError.OneNormScaling
-public import FQP.TrotterError.OrderingRemoval
-public import FQP.TrotterError.CommutatorScaling
+public import FQFP.TrotterError.OneNormScaling
+public import FQFP.TrotterError.OrderingRemoval
+public import FQFP.TrotterError.CommutatorScaling
 
-import FQP.TrotterError.ListLemmas
+import FQFP.TrotterError.ListLemmas
 
 /-!
 # Main theorem: commutator scaling of Trotter error

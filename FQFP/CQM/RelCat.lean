@@ -5,7 +5,7 @@ Authors: Bingyu Xia
 -/
 module
 
-public import FQP.CQM.Category.DaggerCategory
+public import FQFP.CQM.Category.DaggerCategory
 public import Mathlib.CategoryTheory.Category.RelCat
 public import Mathlib.CategoryTheory.Monoidal.Types.Basic
 public import Mathlib.Data.Set.BooleanAlgebra
