@@ -1,0 +1,9 @@
+-- Style-linter exceptions for this project, in the format of Mathlib's `lint-style`.
+--
+-- Format: `<path> : line <n> : <code> : <message>`, where `<code>` is one of
+-- `ERR_ADN` (adaptation note), `ERR_SEM` (semicolon), `ERR_TWS` (trailing whitespace),
+-- `ERR_WIN` (Windows line ending), `ERR_UNICODE`, `ERR_UNICODE_VARIANT`.
+-- Only the path components and the error code are compared; the line number is ignored.
+--
+-- `lake exe lint-style` runs these linters over every module of `FQFP` and `_spike`.
+-- There are currently no exceptions.

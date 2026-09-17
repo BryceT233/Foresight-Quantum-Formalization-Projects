@@ -25,10 +25,7 @@ lake exe lint-style               # Mathlib style checker (line length, etc.)
 
 - **`lia`** for all Nat/Fin/Int linear arithmetic (bounds, equalities from negation, etc.).
   Never use `omega`. The codebase is `omega`-free and should stay that way.
-- **`grind`** is powerful but expensive in category-theoretic contexts. A single `grind` on
-  a Fin/Nat goal can consume 100M+ heartbeats exploring irrelevant Subobject/Functor context.
-  Use `lia` instead for arithmetic goals.
-- **`linarith`** for ℝ/ℚ linear arithmetic. Don't use `grind` for these either.
+- **`linarith`** for ℝ/ℚ linear arithmetic.
 
 ## Diagnosing Heartbeat Issues
 
