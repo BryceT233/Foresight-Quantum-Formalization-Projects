@@ -265,7 +265,7 @@ lemma norm_derivProd_le [NormedAlgebra ℚ 𝔸] [NormedSpace ℝ 𝔸] [NormOne
         rw [evalIndexList_map_prod (fun i => ‖g i‖), nested_prod_eq_finset_prod (fun i => ‖g i‖)]
     _ ≤ ∏ i : Fin Υ × Fin Γ,
           ‖H (P.perm i.1 i.2)‖ ^ q i * Real.exp (t * ‖H (P.perm i.1 i.2)‖) :=
-        prod_le_prod (fun i _ => norm_nonneg _)
+        prod_le_prod₀ (fun i _ => norm_nonneg _)
           (fun i _ => norm_factor_le P H i (q i) u t ht hu0 hu1)
 
 /-- `∑_{i : Fin Υ × Fin Γ} ‖H_{π_{i.1}(i.2)}‖ = Υ * ∑_γ ‖H_γ‖`. -/
@@ -385,13 +385,13 @@ lemma scale_eval (c : ℝ) (hc : |c| ≤ 1) [NormedSpace ℝ 𝔸] (H : Fin Γ �
         lia⟩
   coeff_abs_le_one := fun i => by
     by_cases h : (i.1 : ℕ) < Υ₂
-    · rw [dif_pos h]
+    · rw [dite_eq_left h]
       exact Q.coeff_abs_le_one (⟨i.1.val, h⟩, i.2)
     · have hle : Υ₂ ≤ i.1.val := Nat.le_of_not_gt h
       have hlt : i.1.val - Υ₂ < Υ₁ := by
         have hlt' : i.1.val < Υ₂ + Υ₁ := i.1.isLt
         lia
-      rw [dif_neg h]
+      rw [dite_eq_right h]
       exact P.coeff_abs_le_one (⟨i.1.val - Υ₂, hlt⟩, i.2)
 
 /-- For a `Q`-stage, the `concat` generator is the `Q` generator. -/

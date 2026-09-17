@@ -443,7 +443,7 @@ lemma αCommConj_smul_fun_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ
   rw [adSequence_smul_fun c A q B, norm_smul, Real.norm_eq_abs]
   have hprod : |∏ i : Fin s, (c i) ^ q i| ≤ 1 := by
     rw [abs_prod]
-    exact prod_le_one (fun i _ => abs_nonneg _) (fun i _ => by
+    exact prod_le_one₀ (fun i _ => abs_nonneg _) (fun i _ => by
       rw [abs_pow]
       exact pow_le_one₀ (abs_nonneg _) (hc i))
   exact mul_le_mul_of_nonneg_left

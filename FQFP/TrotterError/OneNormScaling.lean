@@ -374,7 +374,7 @@ lemma norm_derivProd_le_skew
     _ = ∏ i : Fin Υ × Fin Γ, ‖g i‖ := by
         rw [evalIndexList_map_prod (fun i => ‖g i‖),
           ProductFormulaData.nested_prod_eq_finset_prod (fun i => ‖g i‖)]
-    _ ≤ ∏ i : Fin Υ × Fin Γ, ‖H (P.perm i.1 i.2)‖ ^ q i := Finset.prod_le_prod
+    _ ≤ ∏ i : Fin Υ × Fin Γ, ‖H (P.perm i.1 i.2)‖ ^ q i := Finset.prod_le_prod₀
       (fun i _ => norm_nonneg _) (fun i _ => norm_factor_le_skew P H h_skew i (q i) u t)
 
 /-- The `(p+1)`-st derivative of `eval` is bounded by `(Υ·Σ_γ ‖H_γ‖)^{p+1}` in the

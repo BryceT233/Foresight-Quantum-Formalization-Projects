@@ -85,7 +85,7 @@ omit [NormedAlgebra ℚ 𝔸] [NormedAlgebra 𝕂 𝔸] in
 lemma norm_word_le [NormOneClass 𝔸] {n : ℕ} (w : Fin n → 𝔸) {s : ℝ}
     (hw : ∀ i, ‖w i‖ ≤ s) : ‖(List.ofFn w).prod‖ ≤ s ^ n := by
   calc ‖(List.ofFn w).prod‖ ≤ ∏ i, ‖w i‖ := norm_prod_le_ofFn w
-    _ ≤ ∏ _i : Fin n, s := prod_le_prod (fun i _ => norm_nonneg _) (fun i _ => hw i)
+    _ ≤ ∏ _i : Fin n, s := prod_le_prod₀ (fun i _ => norm_nonneg _) (fun i _ => hw i)
     _ = s ^ n := by simp
 
 /-! ### Homogeneity -/

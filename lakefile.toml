@@ -12,16 +12,10 @@ maxSynthPendingDepth = 3
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "v4.33.0"
+rev = "v4.34.0"
 
 [[lean_lib]]
 name = "FQFP"
-
-# TEMPORARY: phase-0 spike target (see artifacts/spike-0/). Delete when the
-# spike concludes and the real FQFP.BCH / FQFP.LieTrotter trees land.
-[[lean_lib]]
-name = "FQFP.Spike"
-srcDir = "_spike"
 
 # `lake exe lint-style` runs Mathlib's text-based style linters (line length, trailing
 # whitespace, tabs, ...) over this project. The linters come from

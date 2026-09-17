@@ -155,7 +155,7 @@ lemma finAntidiagonal_zero (n : ℕ) : Finset.finAntidiagonal 0 n = if n = 0 the
   by_cases h : n = 0
   · subst n
     simp [funext_iff]
-  · simp only [if_neg h, Finset.notMem_empty, iff_false, Fin.sum_univ_zero]
+  · simp only [ite_eq_right h, Finset.notMem_empty, iff_false, Fin.sum_univ_zero]
     intro hsum
     exact h hsum.symm
 

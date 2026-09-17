@@ -173,7 +173,7 @@ noncomputable irreducible_def log (x : 𝔸) : 𝔸 :=
 /-- The junk value. Counterpart of `NormedSpace.exp_of_isEmpty_algebra_rat`. -/
 @[simp]
 theorem log_of_isEmpty_algebra_rat [IsEmpty (Algebra ℚ 𝔸)] (x : 𝔸) : log x = 0 := by
-  rw [log, dif_neg (not_nonempty_iff.mpr ‹IsEmpty (Algebra ℚ 𝔸)›)]
+  rw [log, dite_eq_right (not_nonempty_iff.mpr ‹IsEmpty (Algebra ℚ 𝔸)›)]
 
 section General
 
@@ -184,7 +184,7 @@ variable (𝕂) in
 theorem log_eq_logSeries_sum [CharZero 𝕂] :
     log = fun x : 𝔸 => (logSeries 𝕂 𝔸).sum (x - 1) := by
   ext x
-  rw [log, dif_pos ⟨RestrictScalars.algebra ℚ 𝕂 𝔸⟩, ← @logSeries_sum_eq_rat (𝕂 := 𝕂)]
+  rw [log, dite_eq_left ⟨RestrictScalars.algebra ℚ 𝕂 𝔸⟩, ← @logSeries_sum_eq_rat (𝕂 := 𝕂)]
 
 variable (𝕂) in
 /-- **`log` as an explicit `tsum`.** Counterpart of `NormedSpace.exp_eq_tsum`. -/
@@ -335,7 +335,6 @@ theorem logSeries_radius_eq_one : (logSeries ℚ 𝔸).radius = 1 := by
   convert FormalMultilinearSeries.ofScalars_radius_eq_of_tendsto (E := 𝔸)
     (fun n : ℕ => ((-1 : ℚ) ^ (n + 1) / n)) (r := 1) one_ne_zero
     tendsto_norm_logSeries_coeff_ratio using 1
-  simp
 
 end Radius
 
@@ -349,7 +348,6 @@ theorem logSeries_radius_eq_one_real : (logSeries ℝ 𝔸).radius = 1 := by
   convert FormalMultilinearSeries.ofScalars_radius_eq_of_tendsto (E := 𝔸)
     (fun n : ℕ => ((-1 : ℝ) ^ (n + 1) / n)) (r := 1) one_ne_zero
     tendsto_norm_logSeries_coeff_ratio_real using 1
-  simp
 
 end RadiusReal
 

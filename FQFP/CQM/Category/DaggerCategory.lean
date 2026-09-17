@@ -193,8 +193,13 @@ attribute [local instance] HasZeroObject.zero' in
 @[simp]
 lemma dagger_zero [HasZeroObject C] [HasZeroMorphisms C] {c c' : C} : (0 : c ⟶ c')† = 0 := by
   have := HasZeroObject.uniqueTo c
-  rw [← zero_comp (X := c) (Y := 0) (Z := c') (f := 0), dagger_comp,
-    Subsingleton.elim (0† : 0 ⟶ c) 0, comp_zero]
+  have h : (0 : c ⟶ 0) ≫ (0 : 0 ⟶ c') = (0 : c ⟶ c') :=
+    zero_comp (X := c') (Y := 0) (Z := c) (f := 0)
+  calc (0 : c ⟶ c')†
+      = ((0 : c ⟶ 0) ≫ (0 : 0 ⟶ c'))† := (congrArg dagger h).symm
+    _ = (0 : 0 ⟶ c')† ≫ (0 : c ⟶ 0)† := dagger_comp (0 : c ⟶ 0) (0 : 0 ⟶ c')
+    _ = (0 : 0 ⟶ c')† ≫ 0 := by rw [Subsingleton.elim (0† : 0 ⟶ c) 0]
+    _ = 0 := comp_zero
 
 lemma isZero_of_isInitial {c : C} (init : IsInitial c) : IsZero c where
   unique_to c' := ⟨isInitialEquivUnique _ _ init c'⟩
