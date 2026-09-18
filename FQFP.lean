@@ -1,5 +1,8 @@
 module
 
+public import FQFP.BCH.BCHElement
+public import FQFP.BCH.BCHCommutator
+public import FQFP.BCH.BCHSymmetric
 public import FQFP.BCH.ChildsBasis
 public import FQFP.BCH.ExpNorm
 public import FQFP.BCH.Logarithm

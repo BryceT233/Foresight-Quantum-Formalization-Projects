@@ -122,6 +122,111 @@ theorem norm_exp_sub_sum_le [NormOneClass 𝔸] (x : 𝔸) (n : ℕ) :
   convert hasSum_real_exp_tail ‖x‖ n using 2
   rw [inv_mul_eq_div]
 
+/-! ### Taylor remainders of the real exponential
+
+The third-order remainder of `Real.exp` on `[0, 1)`, in the two forms the BCH estimates consume:
+a `1/(1 - r)`-shaped one valid on `[0, 1)`, and the polynomial `r³` one valid on `[0, 5/6)` — the
+latter is the shape appearing in the cubic and higher-order BCH bounds, which is why it carries the
+numerically convenient threshold `5/6` rather than the sharp `1`. Both come from the termwise
+bound `1/k! ≤ 1/6` for `k ≥ 3`.
+
+These are statements about `Real.exp` alone, so they carry no algebra variables. -/
+
+/-- **Third-order Taylor remainder of `Real.exp`, `1/(1 - r)` form**:
+`exp r - 1 - r - r²/2 ≤ r³ / (6 (1 - r))` for `0 ≤ r < 1`. -/
+theorem real_exp_third_order_le_div {r : ℝ} (hr : 0 ≤ r) (hr1 : r < 1) :
+    Real.exp r - 1 - r - r ^ 2 / 2 ≤ r ^ 3 / (6 * (1 - r)) := by
+  have h3 : (∑ i ∈ Finset.range 3, (Nat.factorial i : ℝ)⁻¹ * r ^ i) = 1 + r + r ^ 2 / 2 := by
+    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
+    norm_num
+    ring
+  have hval : HasSum (fun n : ℕ => (Nat.factorial (n + 3) : ℝ)⁻¹ * r ^ (n + 3))
+      (Real.exp r - 1 - r - r ^ 2 / 2) := by
+    have h := hasSum_real_exp_tail r 3
+    rw [h3] at h
+    convert h using 1
+    ring
+  have hgeom : HasSum (fun n : ℕ => r ^ (n + 3) * (6 : ℝ)⁻¹)
+      (r ^ 3 * (1 - r)⁻¹ * (6 : ℝ)⁻¹) := by
+    have hg := (hasSum_geometric_of_lt_one hr hr1).mul_left (r ^ 3)
+    rw [show (fun n : ℕ => r ^ 3 * r ^ n) = (fun n : ℕ => r ^ (n + 3)) from
+      funext fun n => by ring] at hg
+    exact hg.mul_right (6 : ℝ)⁻¹
+  have hterm : ∀ n : ℕ,
+      (Nat.factorial (n + 3) : ℝ)⁻¹ * r ^ (n + 3) ≤ r ^ (n + 3) * (6 : ℝ)⁻¹ := by
+    intro n
+    rw [mul_comm]
+    refine mul_le_mul_of_nonneg_left ?_ (pow_nonneg hr _)
+    rw [inv_le_inv₀ (by positivity) (by norm_num : (0 : ℝ) < 6)]
+    exact_mod_cast Nat.factorial_le (by lia : 3 ≤ n + 3)
+  have hsumm : Summable fun n : ℕ => (Nat.factorial (n + 3) : ℝ)⁻¹ * r ^ (n + 3) :=
+    (summable_nat_add_iff 3).mpr (hasSum_real_exp r).summable
+  calc Real.exp r - 1 - r - r ^ 2 / 2
+      = ∑' n : ℕ, (Nat.factorial (n + 3) : ℝ)⁻¹ * r ^ (n + 3) := hval.tsum_eq.symm
+    _ ≤ ∑' n : ℕ, r ^ (n + 3) * (6 : ℝ)⁻¹ := hsumm.tsum_le_tsum hterm hgeom.summable
+    _ = r ^ 3 * (1 - r)⁻¹ * (6 : ℝ)⁻¹ := hgeom.tsum_eq
+    _ = r ^ 3 / (6 * (1 - r)) := by rw [div_eq_mul_inv, mul_inv_rev]; ring
+
+/-- **Third-order Taylor remainder of `Real.exp`, cubic form**:
+`exp r - 1 - r - r²/2 ≤ r³` for `0 ≤ r < 5/6`. -/
+theorem real_exp_third_order_le_cube {r : ℝ} (hr : 0 ≤ r) (hr1 : r < 5 / 6) :
+    Real.exp r - 1 - r - r ^ 2 / 2 ≤ r ^ 3 := by
+  have hr1' : r < 1 := by linarith
+  calc Real.exp r - 1 - r - r ^ 2 / 2 ≤ r ^ 3 / (6 * (1 - r)) :=
+        real_exp_third_order_le_div hr hr1'
+    _ ≤ r ^ 3 := by
+        rw [div_le_iff₀ (by linarith : (0 : ℝ) < 6 * (1 - r))]
+        nlinarith [sq_nonneg r, pow_nonneg hr 3]
+
+/-! ### Taylor remainders in a normed algebra
+
+The low-order cases of `norm_exp_sub_sum_le` written in the form every caller uses: the remainder
+after subtracting `1 + x` (resp. `1 + x + x²/2`). These are the second- and third-order inputs of
+the BCH estimates in `BCHElement.lean` and `BCHCommutator.lean`. -/
+
+section ExpRemainder
+
+variable {𝕂 : Type*} [RCLike 𝕂]
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormedAlgebra 𝕂 𝔸] [CompleteSpace 𝔸]
+  [NormOneClass 𝔸]
+
+/-- **Second-order Taylor remainder of `exp`**:
+`‖exp x - 1 - x‖ ≤ Real.exp ‖x‖ - 1 - ‖x‖`. -/
+theorem norm_exp_sub_one_sub_id_le (x : 𝔸) :
+    ‖exp x - 1 - x‖ ≤ Real.exp ‖x‖ - 1 - ‖x‖ := by
+  have h := norm_exp_sub_sum_le x 2
+  have hsum : (∑ i ∈ Finset.range 2, (Nat.factorial i : ℚ)⁻¹ • x ^ i) = 1 + x := by
+    rw [Finset.sum_range_succ, Finset.sum_range_one]
+    norm_num
+  have hsum' : (∑ i ∈ Finset.range 2, ‖x‖ ^ i / (Nat.factorial i : ℝ)) = 1 + ‖x‖ := by
+    rw [Finset.sum_range_succ, Finset.sum_range_one]
+    norm_num
+  rw [hsum, hsum'] at h
+  rw [show exp x - (1 + x) = exp x - 1 - x by abel] at h
+  refine h.trans_eq ?_
+  ring
+
+/-- **Third-order Taylor remainder of `exp`**:
+`‖exp x - 1 - x - x²/2‖ ≤ Real.exp ‖x‖ - 1 - ‖x‖ - ‖x‖²/2`. -/
+theorem norm_exp_sub_one_sub_id_sub_sq_le (x : 𝔸) :
+    ‖exp x - 1 - x - (2 : ℚ)⁻¹ • x ^ 2‖ ≤ Real.exp ‖x‖ - 1 - ‖x‖ - ‖x‖ ^ 2 / 2 := by
+  have h := norm_exp_sub_sum_le x 3
+  have hsum : (∑ i ∈ Finset.range 3, (Nat.factorial i : ℚ)⁻¹ • x ^ i)
+      = 1 + x + (2 : ℚ)⁻¹ • x ^ 2 := by
+    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
+    norm_num
+  have hsum' : (∑ i ∈ Finset.range 3, ‖x‖ ^ i / (Nat.factorial i : ℝ))
+      = 1 + ‖x‖ + ‖x‖ ^ 2 / 2 := by
+    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
+    norm_num
+  rw [hsum, hsum'] at h
+  rw [show exp x - (1 + x + (2 : ℚ)⁻¹ • x ^ 2) = exp x - 1 - x - (2 : ℚ)⁻¹ • x ^ 2 by
+    abel] at h
+  refine h.trans_eq ?_
+  ring
+
+end ExpRemainder
+
 end
 
 end FQFP.BCH

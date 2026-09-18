@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.Analysis.Calculus.SmoothSeries
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 
+import FQFP.BCH.RealScalar
+
 /-!
 # The Banach-algebra logarithm
 
@@ -512,6 +514,185 @@ theorem mem_eball_logSeries_radius_real {x : 𝔸} (hx : ‖x‖ < 1) :
 
 end BallRealRadius
 
+/-! ### Remainder bounds for `log (1 + ·)`
+
+The logarithm is `x ↦ log (1 + x) = ∑ₙ cₙ • xⁿ` with `cₙ = (-1)^(n+1)/n`, so its remainder after
+the partial sum through `x^(n-1)` is the tail of that series and is bounded by the corresponding
+geometric tail. The statements here are parametrized by `n`: the eight arity-indexed lemmas of
+`Lean-BCH/BCH/LogSeries.lean` (`norm_logOnePlus_le` and the `norm_logOnePlus_sub_…_le` chain
+through order eight) are the cases `n = 0, …, 7` of `norm_log_one_add_sub_logPartialSum_le`.
+
+Following `exp`'s treatment in `Mathlib/Analysis/Normed/Algebra/Exponential.lean`, the *truncated*
+form `1 + x` is the one used: there is deliberately no separate `logOnePlus` name. -/
+
+section PartialSum
+
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+
+/-- The coefficients of the log series: `logCoeff i = (-1)^(i+1)/i`, so that
+`log (1 + x) = ∑ᵢ logCoeff i • xⁱ`. Naming them keeps the coercions out of the statements below,
+where `logCoeff` is only ever applied to a *natural-number* index. -/
+noncomputable def logCoeff (i : ℕ) : ℚ := (-1 : ℚ) ^ (i + 1) / i
+
+@[simp] theorem logCoeff_zero : logCoeff 0 = 0 := by norm_num [logCoeff]
+@[simp] theorem logCoeff_one : logCoeff 1 = 1 := by norm_num [logCoeff]
+@[simp] theorem logCoeff_two : logCoeff 2 = -(2 : ℚ)⁻¹ := by norm_num [logCoeff]
+@[simp] theorem logCoeff_three : logCoeff 3 = (3 : ℚ)⁻¹ := by norm_num [logCoeff]
+
+/-- **The log coefficients have norm at most `1`.** -/
+theorem norm_logCoeff_le_one (i : ℕ) : ‖logCoeff i‖ ≤ 1 := by
+  rw [logCoeff, norm_logSeries_coeff]
+  rcases Nat.eq_zero_or_pos i with h | h
+  · rw [h]; norm_num
+  · rw [inv_le_one₀ (by positivity)]
+    exact_mod_cast (Nat.succ_le_iff.mpr h)
+
+/-- The partial sum `∑_{i<n} logCoeff i • xⁱ` of the log series. The subscript `n` is the degree of
+the *first omitted* term, which is what makes it line up with the split point of
+`Summable.sum_add_tsum_nat_add`: `logPartialSum 𝔸 0 x = 0`, `logPartialSum 𝔸 1 x = 0` (the constant
+coefficient is `(-1)/0 = 0`), `logPartialSum 𝔸 2 x = x`, `logPartialSum 𝔸 3 x = x - x²/2`. -/
+noncomputable def logPartialSum (𝔸 : Type*) [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (n : ℕ)
+    (x : 𝔸) : 𝔸 :=
+  ∑ i ∈ Finset.range n, logCoeff i • x ^ i
+
+@[simp]
+theorem logPartialSum_zero (x : 𝔸) : logPartialSum 𝔸 0 x = 0 :=
+  Finset.sum_range_zero _
+
+/-- **A tail of the log series is bounded by the geometric tail of `x`.** The `k`-th term is
+`logCoeff (k + n) • x^(k + n)`, and `‖logCoeff i‖ ≤ 1`. -/
+private lemma norm_logSeries_tail_le (x : 𝔸) {n : ℕ} (hx : ‖x‖ < 1) :
+    ‖∑' k : ℕ, logCoeff (k + n) • x ^ (k + n)‖ ≤ ‖x‖ ^ n * (1 - ‖x‖)⁻¹ := by
+  have hterm : ∀ k : ℕ, ‖logCoeff (k + n) • x ^ (k + n)‖ ≤ ‖x‖ ^ n * ‖x‖ ^ k := by
+    intro k
+    rcases Nat.eq_zero_or_pos (k + n) with hzero | hpos
+    · -- `k + n = 0`: the coefficient is `(-1)/0 = 0`, so the term vanishes.
+      have hk : k = 0 := by omega
+      have hn : n = 0 := by omega
+      subst hk; subst hn
+      simp
+    · -- Otherwise `norm_pow_le'` applies; `norm_pow` would need `‖1‖ = 1`, which a bare
+      -- `NormedRing` does not supply, and the inequality is all that is used here.
+      calc ‖logCoeff (k + n) • x ^ (k + n)‖
+          = ‖logCoeff (k + n)‖ * ‖x ^ (k + n)‖ := norm_smul _ _
+        _ ≤ 1 * ‖x‖ ^ (k + n) :=
+            mul_le_mul (norm_logCoeff_le_one (k + n)) (norm_pow_le' x hpos) (norm_nonneg _)
+              (by norm_num)
+        _ = ‖x‖ ^ n * ‖x‖ ^ k := by rw [one_mul, pow_add]; ring
+  exact tsum_of_norm_bounded
+    (f := fun k : ℕ => logCoeff (k + n) • x ^ (k + n))
+    ((hasSum_geometric_of_lt_one (norm_nonneg x) hx).mul_left (‖x‖ ^ n)) hterm
+
+end PartialSum
+
+section PartialSumTsum
+
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+
+/-- The log series is summable on the unit ball: each term is dominated by the geometric series.
+This avoids the radius API, which would need `‖1‖ = 1`. -/
+private lemma summable_logCoeff_smul (x : 𝔸) (hx : ‖x‖ < 1) :
+    Summable fun i : ℕ => logCoeff i • x ^ i := by
+  refine Summable.of_norm_bounded (summable_geometric_of_lt_one (norm_nonneg x) hx) fun i => ?_
+  rcases Nat.eq_zero_or_pos i with hzero | hpos
+  · subst hzero; simp
+  · calc ‖logCoeff i • x ^ i‖ = ‖logCoeff i‖ * ‖x ^ i‖ := norm_smul _ _
+      _ ≤ 1 * ‖x‖ ^ i :=
+          mul_le_mul (norm_logCoeff_le_one i) (norm_pow_le' x hpos) (norm_nonneg _) (by norm_num)
+      _ = ‖x‖ ^ i := one_mul _
+
+/-- `log (1 + x)` is the partial sum through degree `n - 1` plus the tail of the log series. -/
+theorem log_one_add_eq_logPartialSum_add_tsum (x : 𝔸) (n : ℕ) (hx : ‖x‖ < 1) :
+    log (1 + x) = logPartialSum 𝔸 n x
+      + ∑' k : ℕ, logCoeff (k + n) • x ^ (k + n) := by
+  have hS := summable_logCoeff_smul x hx
+  rw [congrFun (log_eq_tsum ℚ) (1 + x), add_sub_cancel_left]
+  exact (hS.sum_add_tsum_nat_add n).symm
+
+/-- **The `n`-th remainder of `log (1 + ·)` is bounded by `‖x‖ ^ n · (1 - ‖x‖)⁻¹`.**
+For `n ≥ 1` the first omitted term is `cₙ • xⁿ`, of norm `(1/n) ‖x‖ⁿ ≤ ‖x‖ⁿ`, and the remaining
+tail is smaller by at least the factor `n/(n+1)`; both are dominated by the geometric tail of
+`x`. At `n = 0` the statement is the bound `‖log (1 + x)‖ ≤ (1 - ‖x‖)⁻¹` on the function itself.
+
+This is the parametrized form of the eight arity-indexed lemmas of
+`Lean-BCH/BCH/LogSeries.lean` (`norm_logOnePlus_le` and the `norm_logOnePlus_sub_…_le` chain
+through order eight). Only `‖cᵢ‖ = 1/i ≤ 1` enters, so no arithmetic identity of the coefficients
+is used, and the dominating series is the geometric one. -/
+theorem norm_log_one_add_sub_logPartialSum_le (x : 𝔸) (n : ℕ) (hx : ‖x‖ < 1) :
+    ‖log (1 + x) - logPartialSum 𝔸 n x‖ ≤ ‖x‖ ^ n * (1 - ‖x‖)⁻¹ := by
+  rw [log_one_add_eq_logPartialSum_add_tsum x n hx, add_sub_cancel_left]
+  exact norm_logSeries_tail_le x hx
+
+end PartialSumTsum
+
+section PartialSumExplicit
+
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+
+/-- The first partial sum of the log series vanishes: its constant coefficient is `(-1)/0 = 0`. -/
+theorem logPartialSum_one (x : 𝔸) : logPartialSum 𝔸 1 x = 0 := by
+  rw [logPartialSum, Finset.sum_range_one, logCoeff_zero, zero_smul]
+
+/-- The second partial sum of the log series is the linear term `x`. -/
+theorem logPartialSum_two (x : 𝔸) : logPartialSum 𝔸 2 x = x := by
+  rw [logPartialSum, Finset.sum_range_succ, Finset.sum_range_one, logCoeff_zero, zero_smul,
+    zero_add, logCoeff_one, one_smul, pow_one]
+
+/-- The third partial sum of the log series is `x - x²/2`. -/
+theorem logPartialSum_three (x : 𝔸) :
+    logPartialSum 𝔸 3 x = x - (2 : ℚ)⁻¹ • x ^ 2 := by
+  rw [logPartialSum, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one,
+    logCoeff_zero, logCoeff_one, logCoeff_two, zero_smul, one_smul, zero_add, pow_one, pow_two,
+    neg_smul, sub_eq_add_neg]
+
+/-- The fourth partial sum of the log series is `x - x²/2 + x³/3`. -/
+theorem logPartialSum_four (x : 𝔸) :
+    logPartialSum 𝔸 4 x = x - (2 : ℚ)⁻¹ • x ^ 2 + (3 : ℚ)⁻¹ • x ^ 3 := by
+  rw [logPartialSum, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+    Finset.sum_range_one, logCoeff_zero, logCoeff_one, logCoeff_two, logCoeff_three,
+    zero_smul, one_smul, zero_add, pow_one, pow_two, pow_succ, neg_smul, sub_eq_add_neg]
+
+end PartialSumExplicit
+
+section PartialSumBounds
+
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+
+/-- **`log (1 + x)` is bounded by `1 / (1 - ‖x‖)` on the unit ball.** -/
+theorem norm_log_one_add_le (x : 𝔸) (hx : ‖x‖ < 1) :
+    ‖log (1 + x)‖ ≤ 1 / (1 - ‖x‖) := by
+  have h := norm_log_one_add_sub_logPartialSum_le (𝔸 := 𝔸) x 0 hx
+  rw [logPartialSum_zero, sub_zero, pow_zero, one_mul] at h
+  rw [one_div]
+  exact h
+
+/-- `‖log (1 + x) - x‖ ≤ ‖x‖ ^ 2 * (1 - ‖x‖)⁻¹` for `‖x‖ < 1`. -/
+theorem norm_log_one_add_sub_le (x : 𝔸) (hx : ‖x‖ < 1) :
+    ‖log (1 + x) - x‖ ≤ ‖x‖ ^ 2 * (1 - ‖x‖)⁻¹ := by
+  have h := norm_log_one_add_sub_logPartialSum_le (𝔸 := 𝔸) x 2 hx
+  rwa [logPartialSum_two] at h
+
+/-- `‖log (1 + x) - x + x²/2‖ ≤ ‖x‖ ^ 3 * (1 - ‖x‖)⁻¹` for `‖x‖ < 1`. -/
+theorem norm_log_one_add_sub_add_sq_le (x : 𝔸) (hx : ‖x‖ < 1) :
+    ‖log (1 + x) - x + (2 : ℚ)⁻¹ • x ^ 2‖ ≤ ‖x‖ ^ 3 * (1 - ‖x‖)⁻¹ := by
+  have h := norm_log_one_add_sub_logPartialSum_le (𝔸 := 𝔸) x 3 hx
+  rw [logPartialSum_three] at h
+  have hsub : log (1 + x) - (x - (2 : ℚ)⁻¹ • x ^ 2)
+      = log (1 + x) - x + (2 : ℚ)⁻¹ • x ^ 2 := by abel
+  rwa [hsub] at h
+
+/-- `‖log (1 + x) - x + x²/2 - x³/3‖ ≤ ‖x‖ ^ 4 * (1 - ‖x‖)⁻¹` for `‖x‖ < 1`. -/
+theorem norm_log_one_add_sub_add_sq_sub_cu_le (x : 𝔸) (hx : ‖x‖ < 1) :
+    ‖log (1 + x) - x + (2 : ℚ)⁻¹ • x ^ 2 - (3 : ℚ)⁻¹ • x ^ 3‖
+      ≤ ‖x‖ ^ 4 * (1 - ‖x‖)⁻¹ := by
+  have h := norm_log_one_add_sub_logPartialSum_le (𝔸 := 𝔸) x 4 hx
+  rw [logPartialSum_four] at h
+  have hsub : log (1 + x) - (x - (2 : ℚ)⁻¹ • x ^ 2 + (3 : ℚ)⁻¹ • x ^ 3)
+      = log (1 + x) - x + (2 : ℚ)⁻¹ • x ^ 2 - (3 : ℚ)⁻¹ • x ^ 3 := by abel
+  rwa [hsub] at h
+
+end PartialSumBounds
+
 section BallReal
 
 variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
@@ -767,8 +948,7 @@ end ExpLogExp
 
 section ExpLogMain
 
-variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸]
-  [CompleteSpace 𝔸]
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸] [CompleteSpace 𝔸]
 
 /-- **`exp (log (1 + x)) = 1 + x` for `‖x‖ < 1`.**
 
@@ -776,6 +956,7 @@ The ODE/constancy argument: `Q t = exp (-(log (1 + t • x))) * (1 + t • x)` h
 `Q' = 0`, because the derivative of `log (1 + t • x)` is the `tsum` whose product with `1 + t • x`
 is `x` (`geom_series_mul_neg`). -/
 theorem exp_log_one_add (x : 𝔸) (hx : ‖x‖ < 1) : exp (log (1 + x)) = 1 + x := by
+  have : NormedAlgebra ℝ 𝔸 := normedAlgebraReal 𝔸
   suffices h : exp (-(log (1 + x))) * (1 + x) = 1 by
     have hinv : exp (log (1 + x)) * exp (-(log (1 + x))) = 1 := by
       rw [← exp_add_of_commute (Commute.neg_right (Commute.refl _)), add_neg_cancel, exp_zero]
