@@ -189,6 +189,27 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
      （`List (Fin 3)` 字面量）与系数数据，加 `∑` 形式定义，`taylor2_decomp` 用「展开求和 +
      `noncomm_ring`」证明，总界用 `norm_sum_smul_wordProdList_le` 一行。
 
+   **已完成（生成器 + 数据 + 定义）**：
+
+   * `scripts/gen_bch_quintic_taylor2.py`（零依赖，用标准库 `Fraction`；源脚本依赖 `sympy`）：
+     自己从非交换多项式重算 `log(exp a·exp b)` 的五次分量，再做单 `V` / 多 `V` 替换，
+     发射模式数据（`List (Fin 3)`）与系数数据（`ℤ`，以 `720` 为分母），并写成
+     `FQFP/BCH/QuinticTaylor2.lean`（150 行，可整体重生成）。
+   * 定义：`bchWordSum`、`bchQuinticTermLinDiff`、`bchQuinticTermTaylor2Remainder{2V,3V,4V}`，
+     以及 `bchQuinticTermTaylor2Remainder`。**余项在定义层面就按 V 的个数拆成三块**，所以拆分
+     恒等式是 `rfl`，而每块词形一致——这正是把界常数固定到 `2430/720` 的关键。
+   * **常数对齐已核实**：源用的是「每组词数 × 组内最大系数」而非 `Σ|c|`——`70×24 = 1680`、
+     `30×24 = 720`、`5×6 = 30`，合计 `2430/720` ✓。即 `norm_sum_smul_wordProdList_le` 的
+     `cb` 参数形状正好够用，不需要 `Σ|c|` 版本。（生成器算出的 `Σ|c|` 是 `440/384/136/16`，
+     与源的常数无关，仅作诊断输出。）
+   * **忠实性已机器核实**：`artifacts/bch-audit-round-one/_check_taylor2_words.py` 解析源里五条
+     显式链（`lin_diff`、三个 `_kV`、`taylor2_remainder`），与生成的数据逐词逐系数比对，
+     并检查每块词的 V 个数：**75 / 70 / 30 / 5 / 105 全部 MATCH**。
+   * **仍未做**：`bchQuinticTermTaylor2Decomp`（恒等式，只被 SymmetricSeptic* 用）与四条范数界。
+     界的写法已定：需要一条「词内恰好 `k` 个 `V` ⟹ 范数 ≤ `M^(5-k)·‖V‖^k`」的 profile 引理
+     （在 `List (Fin 3)` 上对模式归纳，用 `decide` 提供每块的 `count 1 = k`），然后每块一次
+     `norm_sum_smul_wordProdList_le` + 三步三角不等式即得 `2430/720`。
+
 ---
 
 ## 4. 仍然适用的设计约定
