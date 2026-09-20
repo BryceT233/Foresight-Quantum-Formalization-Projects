@@ -24,18 +24,17 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
 | `ExpNorm.lean` | 230 | 指数估计：实数与范数代数的 Taylor 余项界 |
 | `RealScalar.lean` | 83 | 完备 `ℚ`-代数上的唯一 `ℝ`-代数结构 |
 | `WordNorm.lean` | 179 | 词乘积范数（arity-free） |
-| `WordExpansion.lean` | 87 | 二元词模式与加权词和的分组界（阶段 3 的 API） |
+| `WordExpansion.lean` | 243 | 二元词模式、加权词和的分组界、`_diff` 界（telescoping） |
 | `NestedCommNorm.lean` | 92 | 嵌套交换子范数 |
 | `ChildsBasis.lean` | 165 | Childs 四重交换子基 |
 | `BCHElement.lean` | 287 | **结构层**：`bch` 是什么 |
 | `BCHCommutator.lean` | 573 | **偏差层**：`bch` 与 `a+b` 差多少 |
 | `BCHSymmetric.lean` | 315 | **对称层**：Strang 乘积的误差 |
-| `BCHTerms.lean` | 712 | **级数项层**：`bch` 展开的三次/四次/五次项及其范数界 |
+| `BCHTerms.lean` | 591 | **级数项层**：`bch` 展开的三次/四次/五次项及其范数界 |
+| `QuinticRemainder.lean` | 233 | 五次项的一阶 Lipschitz 界（阶段 3 首个文件） |
 
 依赖链：`Logarithm/ExpNorm → BCHElement → BCHCommutator → BCHSymmetric`；
-`WordNorm → WordExpansion`；`BCHTerms` 只依赖 Mathlib（`Normed.Ring.Basic`、`Normed.Module.Basic`、
-`Tactic.Module`、`Algebra.Order.Ring.Unbundled.Basic`）——它只用 docstring 提到 `bch`，正文不引用
-阶段 1 的任何声明。
+`WordNorm → WordExpansion → BCHTerms → QuinticRemainder`。
 
 阶段 1 拆成三个文件的原因：H2 会把 `BCHElement.lean` 推到 1000+ 行；三个文件的主题
 （「`bch` 是什么」/「`bch` 与 `a+b` 差多少」/「对称乘积的误差」）边界清楚。阶段 2 单独成
@@ -109,7 +108,8 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
 
 | 源 | 行数 | 目标 | 依赖 |
 |---|---|---|---|
-| `Basic:2120–4830` 五次项二阶分解：group `_diff_le`/`_LQ_decomp`、`bch_quintic_term_lin_diff`、taylor2 余项 `{,_2V,_3V,_4V}` | 2.7k | `QuinticRemainder.lean` | 阶段 2 |
+| `Basic:2120–3027` 五次组 `_diff_le`（**已完成**）+ `_LQ_decomp`（推迟，见下） | 0.9k | `QuinticRemainder.lean`（已建） | 阶段 2 |
+| `Basic:3028–4830` `bch_quintic_term_lin_diff` + taylor2 余项 `{,_2V,_3V,_4V}` | 1.8k | `QuinticRemainder.lean` | 阶段 2 |
 | `Basic:4830–8714` 双线性二阶差分 + `QuinticMixed.lean` | 5.5k | `QuinticMixed.lean` | 阶段 2 |
 | `SmallSDischarge.lean` | 8.4k | 同名 | 阶段 1 |
 | `RemainderBounds.lean` | 8.7k | 同名 | SmallSDischarge |
@@ -140,20 +140,30 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
    `WordExpansion.lean` 的单次调用。**这是把 95k 行压下来的最大杠杆，且必须在生成器层面做，
    事后手改是不可行的。**
 
-   阶段 2 已经量过这笔账：五次项四个组的范数界（`norm_bchQuinticGroup{1,4,6,24}_le`）为了
-   30 个 5 字母词，写了 **30 次 `norm_word5_le` 调用 + 27 条 `norm_add_le` 步骤 + 4 次
-   `linarith only`**，共约 180 行。
+   阶段 2 量过这笔账，阶段 3 开工前又付清了一次：五次项四个组的范数界曾为 30 个 5 字母词写
+   180 行（30 次 `norm_word5_le` + 27 条 `norm_add_le` + 4 次 `linarith only`）；改造后每个是
+   一行 `simpa [bchQuinticGroupN] using norm_sum_wordEval_le bchQuinticGroupNWords a b`。
 
-   **`WordExpansion.lean` 已经把这个 API 建好了**：
+   **本轮已完成**：
 
-   * `wordEval v a b`：词模式是数据（`Fin n → Bool`），第 `i` 个字母按 `v i` 取 `a` 或 `b`；
-   * `norm_wordEval_le`：`‖∏ i, wordEval v a b i‖ ≤ (‖a‖ + ‖b‖) ^ n`；
-   * `norm_sum_smul_wordEval_le`：**组引理**，`m` 项 ℚ-加权词和 ≤ `m * cb * (‖a‖+‖b‖)^n`。
+   * `WordExpansion.lean` 补齐了 `_diff` 侧：`norm_prod_sub_prod_le`（telescoping 原语）、
+     `norm_wordEval_sub_le`、`norm_sum_wordEval_diff_le`（组级差分界，常数即该组 a-位置总数），
+     以及无权组界 `norm_sum_wordEval_le` 与齐次性 `wordEval_smul` / `sum_wordEval_smul`。
+   * `BCHTerms.lean` 的四个组改成词模式数据（`bchQuinticGroup*Words : Fin m → Fin 5 → Bool`）
+     加 `Finset.sum`，`_le` / `_smul` 各一行；词表已用
+     `artifacts/bch-audit-round-one/_check_quintic_words.py` 与源逐字比对（4 / 10 / 14 / 2 全 MATCH）。
+   * `QuinticRemainder.lean`：四个组 `_diff_le`（常数 10 / 25 / 35 / 5）+ `norm_bchQuinticTerm_diff_le`
+     （常数 1，因 `(1/720)(10 + 4·25 + 6·35 + 24·5) = 440/720 ≤ 1`）。
 
-   于是每个组界是一行 `norm_sum_smul_wordEval_le c v a b hc hcb`。**stage 3 开工前还差的**是
-   (a) 把四个组 `bchQuinticGroup{1,4,6,24}` 的定义改成「词向量上的 `Finset.sum`」，
-   (b) 用它重写四个 `_le` 界（以及 `norm_bchCubicTerm_diff_le` 的 12 项三角不等式），
-   (c) 再往上补 `_diff_le` / `_LQ_decomp` 伴生引理。生成器应直接发射 (a) 的形状。
+   **代价与偏差**：`_diff_le` 现在需要 `NormOneClass 𝔸`（源里这三条用 `omit` 去掉了它），因为
+   telescoping 原语经 `norm_word_le` 归结到 `‖1‖ = 1`；BCH 层的一切本来就带 `NormOneClass`。
+
+   **`_LQ_decomp` 伴生引理（有意推迟）**：源把它们写成逐项展开的显式非交换多项式恒等式
+   （组 1：32 项；组 6：76 项，且带 `set_option maxHeartbeats 3200000`），只能由 `noncomm_ring`
+   证明。它们只被 `SymmetricSepticPhaseBC` / `SymmetricSepticPieces`（阶段 3 后段）使用，
+   而更早的 `QuinticMixed` / `SexticMixed` / `SepticTaylor` 只需要 `_diff_le` 与 taylor2 余项。
+   因此推迟到移植那两个消费者时再做；届时先定形状：**逐组显式展开**（忠实于源，但组 6 需处理
+   心跳，本项目禁止 bump），还是**按词模式生成 W-次数分解**（可能免 bump，但需先看消费者要点什么）。
 
 ---
 
