@@ -34,7 +34,7 @@ Ported from `Lean-BCH/BCH/Basic.lean` (`norm_bch_sub_add_le`,
 source's cubic bound carried `set_option maxHeartbeats 16000000`, which this version does not need:
 the real arithmetic is isolated in `bch_cubic_real_core`, and each estimate there is an explicit
 chain of order-theoretic steps rather than one large `linarith`.
-See `artifacts/bch-phase1-log-remainder-continuation.md` §2 for the diagnosis.
+See `artifacts/bch-port.md` §5.2 for the diagnosis and the measured heartbeat counts.
 
 The source's `norm_bch_sub_add_le'` is deliberately not ported: it is the quadratic bound verbatim
 under a second name.

@@ -4,10 +4,10 @@
 `D:\project\CQM1\FQFP\BCH`（目标，Lean 4.34.0 / Mathlib v4.34.0），**重写架构与代码风格**，
 而不只是搬运。
 
-**当前状态：阶段 1（BCH 核心）完成。** `lake build FQFP` ✔、`lake exe runLinter` ✔、
-`lake exe lint-style` ✔；阶段 1 的全部定理 `#print axioms` 只剩
-`[propext, Classical.choice, Quot.sound]`，零 `sorry`、零自定义公理、零 `maxHeartbeats` bump。
-阶段 2/3 未开始（见 §3）。
+**当前状态：阶段 1（BCH 核心）、阶段 2（三次/四次/五次项）完成。** `lake build FQFP` ✔、
+`lake exe runLinter` ✔、`lake exe lint-style` ✔，零 `sorry`、零自定义公理、零 `maxHeartbeats`
+bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Quot.sound]`。
+阶段 3（机器生成层）未开始（见 §3）。
 
 本文合并了原先的三份记录（`bch-port-progress-and-next.md`、
 `bch-phase1-log-remainder-continuation.md`、`bch-phase1-complete.md`），删去了已过时的规划内容。
@@ -29,15 +29,18 @@
 | `BCHElement.lean` | 285 | **结构层**：`bch` 是什么 |
 | `BCHCommutator.lean` | 549 | **偏差层**：`bch` 与 `a+b` 差多少 |
 | `BCHSymmetric.lean` | 312 | **对称层**：Strang 乘积的误差 |
+| `BCHTerms.lean` | 710 | **级数项层**：`bch` 展开的三次/四次/五次项及其范数界 |
 
-依赖链：`Logarithm/ExpNorm → BCHElement → BCHCommutator → BCHSymmetric`。
+依赖链：`Logarithm/ExpNorm → BCHElement → BCHCommutator → BCHSymmetric`；
+`BCHTerms` 只依赖 `BCHElement`。
 
 阶段 1 拆成三个文件的原因：H2 会把 `BCHElement.lean` 推到 1000+ 行；三个文件的主题
-（「`bch` 是什么」/「`bch` 与 `a+b` 差多少」/「对称乘积的误差」）边界清楚。
+（「`bch` 是什么」/「`bch` 与 `a+b` 差多少」/「对称乘积的误差」）边界清楚。阶段 2 单独成
+`BCHTerms.lean`（710 行）：它按「`bch` 的展开系数」组织，与前三层的「误差估计」是两件事。
 
 ---
 
-## 2. 阶段 1 已完成：源↔目标对照
+## 2. 阶段 1、2 已完成：源↔目标对照
 
 | 源的声明 / 文件 | 目标 | 备注 |
 |---|---|---|
@@ -53,6 +56,20 @@
 | `Basic:1374,1382` Lie 重复件 | **不移植** | 与原定理逐字相同 |
 | `norm_bch_sub_add_le'` | **不移植** | 与二次界逐字相同 |
 | `LogSeries.lean` 的 `logOnePlus_eq_real` + 手工 `restrictScalars` | `RealScalar.lean` 类型类实例 | |
+| `Basic:1397–1670` 三次项族 | `BCHTerms.lean` | def 改名 `bchCubicTerm`（见下） |
+| `Basic:1671–1770` 四次项族 | `BCHTerms.lean` | def 改名 `bchQuarticTerm` |
+| `Basic:1772–2118` 五次项族（4 组 + 项 + 界） | `BCHTerms.lean` | def 改名 `bchQuinticGroup{1,4,6,24}`、`bchQuinticTerm` |
+
+**阶段 2 的两条约定**（与阶段 1 的差异，供阶段 3 沿用）：
+
+1. **`def` 名必须 lowerCamelCase。** Mathlib 的 `defsWithUnderscore` linter 只检查 `def`
+   （`Style.lean:557` 先要求 `isDefinition`），`theorem` 不受限——所以 `bch_cubic_term` 这类
+   源名必须改写为 `bchCubicTerm`，而定理名仍是源的 `bchCubicTerm_smul`、
+   `norm_bchCubicTerm_le`、`bchCubicTerm_LQ_decomp`（Mathlib 先例：`Complex.normSq` 与其
+   `normSq_apply`、`norm_compContinuousLinearMap_le`）。
+2. **`unusedSectionVars` 靠显式 binder 而不是 `omit`。** 五次项的四个组 `bchQuinticGroup{1,4,6,24}`
+   及其范数界只需要 `NormedRing 𝔸`（源亦然），但它们位于 `NormedAlgebra ℚ 𝔸` 的 section 内；
+   由于本项目禁止 `omit`，改用显式 `{𝔸 : Type*} [NormedRing 𝔸]` binder 遮蔽 section 变量。
 
 ### 阶段 1 的公开声明
 
@@ -68,25 +85,28 @@
   `lie_eq_commutator`、`norm_bch_sub_add_sub_lie_le`。
 - `BCHSymmetric.lean`：`norm_symmetric_bch_sub_add_le`（H2）。
 
+### 阶段 2 的公开声明（`BCHTerms.lean`）
+
+- 三次：`bchCubicTerm`、`bchCubicTerm_smul`、`norm_bchCubicTerm_le`、
+  `norm_bchCubicTerm_diff_le`、`bchCubicTerm_LQ_decomp`。
+- 四次：`bchQuarticTerm`、`bchQuarticTerm_smul`、`norm_bchQuarticTerm_le`、
+  `bchQuarticTerm_LQ_decomp`。
+- 五次：`bchQuinticGroup1`、`bchQuinticGroup4`、`bchQuinticGroup6`、`bchQuinticGroup24`、
+  `bchQuinticTerm`、`bchQuinticTerm_smul`、`norm_bchQuinticTerm_le`。
+
+私有辅助（阶段 3 会反复需要同类）：`norm_mul_sub_mul_le`、`norm_double_commutator_le`、
+`norm_mul_w_mul_le`、`norm_w_mul_mul_le`、`norm_mul_mul_w_le`、`norm_word5_le`、
+`smul_five_fold`。
+
 ---
 
 ## 3. 待做
 
-### 3.1 阶段 2：Suzuki 三次系数 + 五次余项（≈700 行，手写）
-
-源 `Basic.lean:1387–2100` → 目标 `FQFP/BCH/SuzukiCubic.lean`。内容：`bch_cubic_term`
-（源 `Basic:1393` 的 `(1/12)([a,[a,b]] + [b,[b,a]])`）、齐次性
-`bch_cubic_term (c•a) (c•b) = c³ • bch_cubic_term a b`、`bch_quintic_term`、四组范数界、
-`norm_bch_quintic_remainder_le`。依赖：阶段 1。
-
-之后才可能有 `Palindromic.lean`（源 5.5k 行），其中含
-`IsSuzukiCubic p ↔ 4p³ + (1-4p)³ = 0`（源 `Palindromic:1362`）与 `suzukiP`。
-`ChildsBasis.lean` 已就位，所以 `Palindromic` 的 Childs 依赖已满足。
-
-### 3.2 阶段 3：机器生成层（≈95k 行，真正的成本中心）
+### 3.1 阶段 3：机器生成层（≈95k 行，真正的成本中心）
 
 | 源 | 行数 | 目标 | 依赖 |
 |---|---|---|---|
+| `Basic:2120–4830` 五次项二阶分解：group `_diff_le`/`_LQ_decomp`、`bch_quintic_term_lin_diff`、taylor2 余项 `{,_2V,_3V,_4V}` | 2.7k | `QuinticRemainder.lean` | 阶段 2 |
 | `Basic:4830–8714` 双线性二阶差分 + `QuinticMixed.lean` | 5.5k | `QuinticMixed.lean` | 阶段 2 |
 | `SmallSDischarge.lean` | 8.4k | 同名 | 阶段 1 |
 | `RemainderBounds.lean` | 8.7k | 同名 | SmallSDischarge |
@@ -99,12 +119,16 @@
 | `Palindromic.lean` | 5.5k | 同名 | 阶段 1, SymmetricQuinticCore, ChildsBasis |
 | `SuzukiSepticMatch{,Words}.lean` | 1.3k | `SuzukiSepticMatch.lean` | Palindromic |
 | `Suzuki5Quintic.lean` | 6.8k | 同名 | Palindromic, SuzukiSepticMatch, ChildsBasis |
-| `Basic:11460–19314` τ⁷/τ⁸ + Lipschitz | 7.9k | `BCHHigherOrder.lean` | 阶段 1 |
+| `Basic:11460–18070` τ⁷/τ⁸ + Lipschitz | 6.6k | `BCHHigherOrder.lean` | 阶段 1 |
+| `Basic:18071–19314` exp 四至九阶余项 + `quartic_identity` + `norm_bch_quartic_remainder_le` | 1.2k | `BCHHigherOrder.lean` | 阶段 2 |
 
 **开工前必须先解决三件事：**
 
-1. **生成器**：源用 `scripts/gen_*.py`（CAS 校验 + Lean 发射）。需确认脚本是否随源仓库保留、
-   以及它发射的目标 Lean/Mathlib 版本是否还是 4.34。
+1. **生成器**：已确认存在——源 `scripts/` 下约 90 个 Python，生成器与独立 CAS 校验器成对出现
+   （`gen_bch_quintic_term_taylor2{,_bound}.py`、`gen_bch_sextic_*`、`gen_bch_septic_*`、
+   `gen_bch_octic_*`、`gen_d8_*`），`build_safe.sh` 与 `mem_watchdog.sh` 也在。**待确认的只剩
+   发射代码对 4.34 的兼容性**：源大量使用 `match_scalars <;> ring`、`noncomm_ring`、
+   `dsimp only` 这类对 Mathlib 内部 simp 集敏感的手法。
 2. **构建内存**：源已因单模块峰值 RSS 把 42k 行的 `SymmetricQuintic` 拆成 4 个模块，并用
    `scripts/build_safe.sh` 顺序构建（Lake 5 没有 `-j` 节流）。目标仓库必须预先规划同样的拆分，
    不能等到 OOM。
@@ -112,6 +136,11 @@
    `norm_smul_le → norm_Nprod_le → gcongr → ring`，这些应当全部改成对 `WordNorm.lean` 的
    `norm_smul_word_le` / `norm_word_le` 的单次调用。**这是把 95k 行压下来的最大杠杆，
    且必须在生成器层面做，事后手改是不可行的。**
+
+   阶段 2 已经量过这笔账：五次项四个组的范数界（`norm_bchQuinticGroup{1,4,6,24}_le`）为了
+   30 个 5 字母词，写了 **30 次 `norm_word5_le` 调用 + 27 条 `norm_add_le` 步骤 + 4 次
+   `linarith only`**，共约 180 行。若把「一组词」表示成 `Fin n → 𝔸` 向量（词表由生成器给出），
+   同样的界只是 `norm_sum_le` + 逐项 `norm_word_le` 两行。**这是阶段 3 的第一个该做的 API。**
 
 ---
 
