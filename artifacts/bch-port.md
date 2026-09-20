@@ -165,6 +165,30 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
    因此推迟到移植那两个消费者时再做；届时先定形状：**逐组显式展开**（忠实于源，但组 6 需处理
    心跳，本项目禁止 bump），还是**按词模式生成 W-次数分解**（可能免 bump，但需先看消费者要点什么）。
 
+   **`Basic:3028–4830`（`lin_diff` + taylor2 余项，1.8k 行）的勘察结论**（本轮完成，实现待下轮）：
+
+   * **消费者只用 4 条**：`bch_quintic_term_taylor2_decomp`（恒等式）、`lin_diff` 与
+     `taylor2_remainder`（定义）、`norm_bch_quintic_term_taylor2_remainder_le`（总界）。
+     2V / 3V / 4V 三个子块、`taylor2_remainder_split` 与它们的三个界**在 `Basic.lean` 之外无人
+     使用**，纯属内部脚手架——源为此写了约 1200 行（每项一条 `..._eq_sum` + `...Term_norm_le`）。
+     按现在的词 API 这整块可以不要，总界由组引理直接给出。
+   * **源的界形状**：`≤ (2430/720) M³‖V‖²`，`M = ‖x‖ + ‖V‖ + ‖y‖`；三个子块共用这一形状
+     （常数 `1680/720`、`720/720`、`30/720`）。若用「每词 ≤ `M³‖V‖²`」的粗界加最大系数 `1/30`，
+     得 `105/30 = 3.5`，比源的 `3.375` 弱 3.7%；要精确对齐需按 V 的个数分类并用各组的 `Σ|c|`。
+   * **`WordExpansion.lean` 本轮补上了字母表无关的 API**：`wordProdList`（模式为 `List κ`）、
+     `norm_wordProdList_le`、`norm_sum_smul_wordProdList_le`。动机有两条：Taylor 余项的词在
+     **三**字母 `{x, V, y}` 上，二元的 `wordEval` 覆盖不到；且模式必须是 `List` 而不是 `Fin n → κ`
+     ——`wordProdList` 的定义方程是 `rfl`，具体模式按定义约简，而 `wordEval` 的
+     `if (v i) then a else b` 会卡成 `if true = true then a else b`（`simp only [↓reduceIte]`
+     与 `simp only [cond_true]` 在该语境下都不触发，`abel`/`noncomm_ring` 于是把它当成与 `a`
+     不同的原子）。已实测通过：`x*x*V*V*y = wordProdList ![x,V,y] [0,0,1,1,2]` 由
+     `simp only [wordProdList, mul_one]; noncomm_ring` 一次解决；`Fin` 求和展开本身也可行
+     （`Fin.sum_univ_succ` + `Fin.sum_univ_one` + `Finset.univ_eq_empty`/`Finset.sum_empty`）。
+   * **下一步**：改造 `gen_bch_quintic_term_taylor2.py`（194 行，已通读）：它已用非交换多项式算出
+     `lin_diff`（75 词）与 `taylor2_remainder`（105 词）；只需把 `emit_def` 改成发射模式数据
+     （`List (Fin 3)` 字面量）与系数数据，加 `∑` 形式定义，`taylor2_decomp` 用「展开求和 +
+     `noncomm_ring`」证明，总界用 `norm_sum_smul_wordProdList_le` 一行。
+
 ---
 
 ## 4. 仍然适用的设计约定

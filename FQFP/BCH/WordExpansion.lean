@@ -240,4 +240,72 @@ theorem norm_sum_wordEval_diff_le {ι : Type*} [Fintype ι] {n : ℕ} (v : ι �
 
 end Telescoping
 
+/-! ### Words over an arbitrary alphabet
+
+The Taylor remainders of `BCHTerms.lean` are sums of monomials on **three** letters (`x`, `V`, `y`),
+so the binary `wordEval` above does not reach them. `wordProdList` generalizes to an arbitrary
+alphabet `κ`, and represents the pattern as a `List κ` rather than a `Fin n → κ`.
+
+The pattern representation is not cosmetic. A generated monomial sum is emitted with its words as
+data and is *also* compared, downstream, against explicitly written polynomials; bridging the two
+needs the concrete patterns to evaluate. `wordProdList`'s defining equations are `rfl`, so a literal
+pattern evaluates definitionally. `wordEval`'s `if (v i) then a else b` does not: the `Bool`-coerced
+condition reaches the goal as `if true = true then a else b`, which neither
+`simp only [↓reduceIte]` nor `simp only [cond_true]` reduces in that context, and `abel` /
+`noncomm_ring` then see it as an atom distinct from `a`. -/
+
+section WordProdList
+
+/-- The product of the letters selected by a word pattern over an alphabet `κ`: the empty pattern is
+`1`, and a pattern is read left to right. -/
+def wordProdList {κ 𝔸 : Type*} [Monoid 𝔸] (letters : κ → 𝔸) : List κ → 𝔸
+  | [] => 1
+  | k :: t => letters k * wordProdList letters t
+
+@[simp]
+lemma wordProdList_nil {κ 𝔸 : Type*} [Monoid 𝔸] (letters : κ → 𝔸) :
+    wordProdList letters [] = 1 := rfl
+
+@[simp]
+lemma wordProdList_cons {κ 𝔸 : Type*} [Monoid 𝔸] (letters : κ → 𝔸) (k : κ) (t : List κ) :
+    wordProdList letters (k :: t) = letters k * wordProdList letters t := rfl
+
+variable {κ 𝔸 : Type*} [NormedRing 𝔸] [NormOneClass 𝔸]
+
+/-- Letter-wise norm bound for `wordProdList`: if the letter `k` has norm at most `b k`, then the
+product has norm at most the product of the bounds of the letters occurring in the pattern. -/
+lemma norm_wordProdList_le (letters : κ → 𝔸) {b : κ → ℝ} (hb : ∀ k, ‖letters k‖ ≤ b k)
+    (w : List κ) : ‖wordProdList letters w‖ ≤ (w.map b).prod := by
+  induction w with
+  | nil => simp
+  | cons k t ih =>
+      rw [wordProdList_cons, List.map_cons, List.prod_cons]
+      calc ‖letters k * wordProdList letters t‖
+          ≤ ‖letters k‖ * ‖wordProdList letters t‖ := norm_mul_le _ _
+        _ ≤ b k * (List.map b t).prod :=
+            mul_le_mul (hb k) ih (norm_nonneg _) (le_trans (norm_nonneg _) (hb k))
+
+end WordProdList
+
+/-- **The alphabet-free group bound**: an `ι`-indexed `ℚ`-weighted sum of words over an alphabet `κ`
+is bounded by `card ι * cb * B` as soon as every coefficient has norm at most `cb`, every word has
+norm at most `B`, and `cb` is nonnegative.
+
+This is `norm_sum_smul_wordEval_le` with the alphabet freed, and it is what a generated Taylor
+remainder bounds itself with, one application per group. -/
+lemma norm_sum_smul_wordProdList_le {ι κ : Type*} [Fintype ι] {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] (c : ι → ℚ) (letters : κ → 𝔸) (w : ι → List κ)
+    {B cb : ℝ} (hc : ∀ i, ‖c i‖ ≤ cb) (hw : ∀ i, ‖wordProdList letters (w i)‖ ≤ B)
+    (hcb : 0 ≤ cb) :
+    ‖∑ i, c i • wordProdList letters (w i)‖ ≤ (Fintype.card ι : ℝ) * cb * B := by
+  calc ‖∑ i, c i • wordProdList letters (w i)‖
+      ≤ ∑ i, ‖c i • wordProdList letters (w i)‖ := norm_sum_le _ _
+    _ ≤ ∑ _i : ι, cb * B := Finset.sum_le_sum fun i _ => by
+        calc ‖c i • wordProdList letters (w i)‖
+            ≤ ‖c i‖ * ‖wordProdList letters (w i)‖ := norm_smul_le _ _
+          _ ≤ cb * B := mul_le_mul (hc i) (hw i) (norm_nonneg _) hcb
+    _ = (Fintype.card ι : ℝ) * (cb * B) := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+    _ = (Fintype.card ι : ℝ) * cb * B := by ring
+
 end FQFP.BCH
