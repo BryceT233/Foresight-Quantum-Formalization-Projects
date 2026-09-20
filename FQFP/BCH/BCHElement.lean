@@ -19,7 +19,7 @@ Banach-algebra logarithm to the product:
 
 `bch a b = log (exp a * exp b)`,
 
-which is the form `Lean-BCH` writes as `logOnePlus (exp a * exp b - 1)`. Centring `log` at `1`
+which is the form `Lean-BCH` writes as `logOnePlus (exp a * exp b - 1)`. Centering `log` at `1`
 (see `FQFP/BCH/Logarithm.lean`) removes the subtraction from every statement, and `exp_bch` is then
 read straight off `exp_log`.
 
@@ -32,9 +32,8 @@ correction is the Lie bracket — is in `FQFP/BCH/BCHCommutator.lean`.
 Everything is stated over `[NormedAlgebra ℚ 𝔸]` alone, because `NormedSpace.exp` and `FQFP.log`
 carry no scalar field: both are `ℚ`-series with a junk value when no `ℚ`-algebra structure exists.
 The `ℝ`-algebra structure that `Logarithm.lean`'s ODE argument needs is therefore *not* a
-hypothesis but a local instance, obtained inside the proofs from
-`FQFP.BCH.normedAlgebraReal` (`RealScalar.lean`), which supplies it from `ℚ` plus completeness and
-proves it unique.
+hypothesis but a local instance, obtained inside the proofs from `normedAlgebraReal`
+(`RealScalar.lean`), which supplies it from `ℚ` plus completeness and proves it unique.
 
 ## Main definitions
 
@@ -48,8 +47,10 @@ proves it unique.
 * `exp_bch` — **the structural BCH theorem**: `exp (bch a b) = exp a * exp b` for
   `‖a‖ + ‖b‖ < log 2`.
 * `log_exp_sub_one` — **the inverse identity**: `log (exp a) = a` for `‖a‖ < log 2`. The source's
-  chain-of-neighbourhoods argument, using `exp_eq_one_of_norm_lt` and
+  chain-of-neighborhoods argument, using `exp_eq_one_of_norm_lt` and
   `continuousOn_log_one_add`.
+* `exp_eq_one_of_norm_lt` — `exp z = 1` with `‖z‖ < log 2` forces `z = 0`.
+* `continuousOn_log_one_add` — `log (1 + ·)` is continuous on every closed ball of radius `< 1`.
 
 ## Provenance
 
@@ -57,9 +58,7 @@ Ported and re-architected from `Lean-BCH/BCH/Basic.lean`
 (`norm_exp_mul_exp_sub_one_lt_one`, `norm_exp_sub_one_lt_one`, `bch`, `exp_bch`,
 `exp_eq_one_of_norm_lt`, `continuousOn_logOnePlus`, `logOnePlus_exp_sub_one`). The source carried an
 `RCLike 𝕂` scalar field and a hand-rolled `logOnePlus`, and unfolded `exp_logOnePlus` by hand in
-`exp_bch`; here the definition is the centred `log` and `exp_bch` is `exp_log` itself.
-
-**Assisted by Deepseek Harness**
+`exp_bch`; here the definition is the centered `log` and `exp_bch` is `exp_log` itself.
 -/
 
 @[expose] public section
@@ -127,7 +126,7 @@ theorem exp_bch (a b : 𝔸) (hab : ‖a‖ + ‖b‖ < Real.log 2) :
 `ExpNorm.norm_exp_sub_one_sub_id_le`. -/
 
 /-- **If `exp z = 1` and `‖z‖ < log 2` then `z = 0`.** This is what upgrades the
-chain-of-neighbourhoods argument for `log_exp_sub_one` from `exp (h t) = 1` to `h t = 0`. -/
+chain-of-neighborhoods argument for `log_exp_sub_one` from `exp (h t) = 1` to `h t = 0`. -/
 theorem exp_eq_one_of_norm_lt (z : 𝔸) (hz : exp z = 1) (hn : ‖z‖ < Real.log 2) : z = 0 := by
   have hkey : z = -(exp z - 1 - z) := by rw [hz]; simp
   have hbound : ‖z‖ ≤ Real.exp ‖z‖ - 1 - ‖z‖ := by
@@ -177,7 +176,7 @@ theorem continuousOn_log_one_add {r : ℝ} (hr : r < 1) :
 
 /-! ### The `log ∘ exp` identity
 
-`log (exp a) = a` for `‖a‖ < log 2`. The source's chain-of-neighbourhoods argument: put
+`log (exp a) = a` for `‖a‖ < log 2`. The source's chain-of-neighborhoods argument: put
 `h t = log (1 + (exp (t • a) - 1)) - t • a`; then `h 0 = 0`, `exp (h t) = 1` throughout, and `h`
 is continuous on the compact interval `[0, 1]`, so it is *uniformly* continuous there; a fixed-step
 induction then propagates `h (k/N) = 0` from `k = 0` to `k = N`. Only two inputs are used: the
@@ -282,7 +281,6 @@ theorem log_exp_sub_one (a : 𝔸) (ha : ‖a‖ < Real.log 2) : log (exp a) = a
             _ = ‖a‖ := one_mul _
             _ < Real.log 2 := ha) hk1N_mem.1
       exact exp_eq_one_of_norm_lt _ hexp1 hnorm_small
-
 
 end
 

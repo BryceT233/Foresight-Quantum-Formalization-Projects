@@ -32,8 +32,6 @@ The list form is proved first and the `Fin` form by induction on `p`, because `n
 its *last* argument: the recursive call is `nestedComm (fun i => H i.castSucc)`, whose product
 is a `Fin p`-product of doubly-`castSucc`ed indices. Reducing that to a `Fin (p+1)`-product needs
 the `Fin.prod_univ_castSucc` orientation recorded in the local `hprod` step.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section
@@ -49,12 +47,6 @@ attribute [local instance] LieRing.ofAssociativeRing
 
 variable {𝔸 : Type*} [NormedRing 𝔸]
 
-/-- A product of norms is nonnegative. -/
-lemma prod_norm_nonneg (L : List 𝔸) : 0 ≤ (L.map norm).prod := by
-  induction L with
-  | nil => simp
-  | cons y L ih => simp only [List.map_cons, List.prod_cons]; positivity
-
 /-- The norm of `nestedCommOfList b L` is bounded by `2 ^ L.length` times the product of the
 norms of the seed and the list entries. -/
 theorem norm_nestedCommOfList_le (b : 𝔸) (L : List 𝔸) :
@@ -68,7 +60,10 @@ theorem norm_nestedCommOfList_le (b : 𝔸) (L : List 𝔸) :
           ≤ 2 ^ L.length * (‖⁅x, b⁆‖ * (L.map norm).prod) := ih ⁅x, b⁆
         _ ≤ 2 ^ L.length * ((2 * ‖x‖ * ‖b‖) * (L.map norm).prod) :=
             mul_le_mul_of_nonneg_left
-              (mul_le_mul_of_nonneg_right (norm_commutator_le x b) (prod_norm_nonneg L))
+              (mul_le_mul_of_nonneg_right (norm_commutator_le x b)
+                (List.prod_nonneg fun a ha => by
+                  obtain ⟨x, -, rfl⟩ := List.mem_map.mp ha
+                  exact norm_nonneg x))
               (by positivity)
         _ = 2 ^ L.length * 2 * (‖x‖ * (‖b‖ * (L.map norm).prod)) := by ring
         _ = 2 * 2 ^ L.length * (‖b‖ * (‖x‖ * (L.map norm).prod)) := by ring

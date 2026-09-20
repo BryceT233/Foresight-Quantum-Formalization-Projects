@@ -41,9 +41,13 @@ and is the reason this file exists.
 
 * `logSeries 𝕂 𝔸` — the formal multilinear series `∑ n, ((-1)^(n+1)/n) • ∏ xᵢ`.
 * `log x` — its sum at `x - 1`.
+* `logCoeff i = (-1)^(i+1)/i` — the `i`-th coefficient of the series, as a function of a *natural*
+  index, which keeps the coercions out of the statements below.
+* `logPartialSum 𝔸 n x = ∑_{i<n} logCoeff i • xⁱ` — the partial sum whose first omitted term is the
+  one of degree `n`.
 
 Statements near `0` are phrased directly as `log (1 + x)`; there is deliberately no separate
-origin-centred name for the same function.
+origin-centered name for the same function.
 
 ## Main results
 
@@ -52,8 +56,6 @@ origin-centred name for the same function.
 * `hasStrictFDerivAt_log_one` — `log` is strictly differentiable at `1`, derivative the identity.
 * `exp_log_one_add`, `exp_log` — `exp (log (1 + x)) = 1 + x` for `‖x‖ < 1`, and `exp (log y) = y`
   for `‖y - 1‖ < 1`, by the ODE route.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section
@@ -196,8 +198,8 @@ theorem log_eq_tsum [CharZero 𝕂] :
 
 end General
 
-/-- **`log 1 = 0`.** The constant term of the log series vanishes, so the sum at the centre is `0`.
-Counterpart of `NormedSpace.exp_zero`; this is the centre condition `HasFPowerSeriesAt.comp` needs
+/-- **`log 1 = 0`.** The constant term of the log series vanishes, so the sum at the center is `0`.
+Counterpart of `NormedSpace.exp_zero`; this is the center condition `HasFPowerSeriesAt.comp` needs
 when composing with `exp`. -/
 @[simp]
 theorem log_one : log (1 : 𝔸) = 0 := by
@@ -460,7 +462,7 @@ theorem log_hasFPowerSeriesOnBall :
     exact logSeries_hasSum_log_one_add_of_mem_ball (𝔸 := 𝔸) y
       (mem_eball_logSeries_radius hy')
 
-/-- **`log` has a power series at its centre.** Counterpart of
+/-- **`log` has a power series at its center.** Counterpart of
 `hasFPowerSeriesAt_exp_zero_of_radius_pos`. -/
 theorem log_hasFPowerSeriesAt_one : HasFPowerSeriesAt log (logSeries ℚ 𝔸) 1 :=
   log_hasFPowerSeriesOnBall.hasFPowerSeriesAt
@@ -484,7 +486,7 @@ end Ball
 
 /-! ### The `ℝ`-power series of `log (1 + ·)`
 
-The `ℝ` counterpart of the power series used above, recentred at `0`. It is what the derivative
+The `ℝ` counterpart of the power series used above, recentered at `0`. It is what the derivative
 along a real parameter is read off. -/
 
 section BallRealHasSum
@@ -518,9 +520,10 @@ end BallRealRadius
 
 The logarithm is `x ↦ log (1 + x) = ∑ₙ cₙ • xⁿ` with `cₙ = (-1)^(n+1)/n`, so its remainder after
 the partial sum through `x^(n-1)` is the tail of that series and is bounded by the corresponding
-geometric tail. The statements here are parametrized by `n`: the eight arity-indexed lemmas of
+geometric tail. The statements here are parametrized by `n`: the nine arity-indexed lemmas of
 `Lean-BCH/BCH/LogSeries.lean` (`norm_logOnePlus_le` and the `norm_logOnePlus_sub_…_le` chain
-through order eight) are the cases `n = 0, …, 7` of `norm_log_one_add_sub_logPartialSum_le`.
+through order nine) are the cases `n = 0, 2, 3, …, 9` of `norm_log_one_add_sub_logPartialSum_le`
+(there is no source lemma for `n = 1`, whose constant coefficient vanishes).
 
 Following `exp`'s treatment in `Mathlib/Analysis/Normed/Algebra/Exponential.lean`, the *truncated*
 form `1 + x` is the one used: there is deliberately no separate `logOnePlus` name. -/
@@ -567,8 +570,8 @@ private lemma norm_logSeries_tail_le (x : 𝔸) {n : ℕ} (hx : ‖x‖ < 1) :
     intro k
     rcases Nat.eq_zero_or_pos (k + n) with hzero | hpos
     · -- `k + n = 0`: the coefficient is `(-1)/0 = 0`, so the term vanishes.
-      have hk : k = 0 := by omega
-      have hn : n = 0 := by omega
+      have hk : k = 0 := by lia
+      have hn : n = 0 := by lia
       subst hk; subst hn
       simp
     · -- Otherwise `norm_pow_le'` applies; `norm_pow` would need `‖1‖ = 1`, which a bare
@@ -614,9 +617,9 @@ For `n ≥ 1` the first omitted term is `cₙ • xⁿ`, of norm `(1/n) ‖x‖�
 tail is smaller by at least the factor `n/(n+1)`; both are dominated by the geometric tail of
 `x`. At `n = 0` the statement is the bound `‖log (1 + x)‖ ≤ (1 - ‖x‖)⁻¹` on the function itself.
 
-This is the parametrized form of the eight arity-indexed lemmas of
+This is the parametrized form of the nine arity-indexed lemmas of
 `Lean-BCH/BCH/LogSeries.lean` (`norm_logOnePlus_le` and the `norm_logOnePlus_sub_…_le` chain
-through order eight). Only `‖cᵢ‖ = 1/i ≤ 1` enters, so no arithmetic identity of the coefficients
+through order nine). Only `‖cᵢ‖ = 1/i ≤ 1` enters, so no arithmetic identity of the coefficients
 is used, and the dominating series is the geometric one. -/
 theorem norm_log_one_add_sub_logPartialSum_le (x : 𝔸) (n : ℕ) (hx : ‖x‖ < 1) :
     ‖log (1 + x) - logPartialSum 𝔸 n x‖ ≤ ‖x‖ ^ n * (1 - ‖x‖)⁻¹ := by
@@ -630,15 +633,18 @@ section PartialSumExplicit
 variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
 
 /-- The first partial sum of the log series vanishes: its constant coefficient is `(-1)/0 = 0`. -/
+@[simp]
 theorem logPartialSum_one (x : 𝔸) : logPartialSum 𝔸 1 x = 0 := by
   rw [logPartialSum, Finset.sum_range_one, logCoeff_zero, zero_smul]
 
 /-- The second partial sum of the log series is the linear term `x`. -/
+@[simp]
 theorem logPartialSum_two (x : 𝔸) : logPartialSum 𝔸 2 x = x := by
   rw [logPartialSum, Finset.sum_range_succ, Finset.sum_range_one, logCoeff_zero, zero_smul,
     zero_add, logCoeff_one, one_smul, pow_one]
 
 /-- The third partial sum of the log series is `x - x²/2`. -/
+@[simp]
 theorem logPartialSum_three (x : 𝔸) :
     logPartialSum 𝔸 3 x = x - (2 : ℚ)⁻¹ • x ^ 2 := by
   rw [logPartialSum, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one,
@@ -646,6 +652,7 @@ theorem logPartialSum_three (x : 𝔸) :
     neg_smul, sub_eq_add_neg]
 
 /-- The fourth partial sum of the log series is `x - x²/2 + x³/3`. -/
+@[simp]
 theorem logPartialSum_four (x : 𝔸) :
     logPartialSum 𝔸 4 x = x - (2 : ℚ)⁻¹ • x ^ 2 + (3 : ℚ)⁻¹ • x ^ 3 := by
   rw [logPartialSum, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
@@ -682,7 +689,7 @@ theorem norm_log_one_add_sub_add_sq_le (x : 𝔸) (hx : ‖x‖ < 1) :
   rwa [hsub] at h
 
 /-- `‖log (1 + x) - x + x²/2 - x³/3‖ ≤ ‖x‖ ^ 4 * (1 - ‖x‖)⁻¹` for `‖x‖ < 1`. -/
-theorem norm_log_one_add_sub_add_sq_sub_cu_le (x : 𝔸) (hx : ‖x‖ < 1) :
+theorem norm_log_one_add_sub_add_sq_sub_cube_le (x : 𝔸) (hx : ‖x‖ < 1) :
     ‖log (1 + x) - x + (2 : ℚ)⁻¹ • x ^ 2 - (3 : ℚ)⁻¹ • x ^ 3‖
       ≤ ‖x‖ ^ 4 * (1 - ‖x‖)⁻¹ := by
   have h := norm_log_one_add_sub_logPartialSum_le (𝔸 := 𝔸) x 4 hx
@@ -712,10 +719,10 @@ theorem hasFPowerSeriesOnBall_log_one_add_real :
 
 end BallReal
 
-/-! ### The derivative at the centre
+/-! ### The derivative at the center
 
 The derivative is read off the power series rather than computed: the differential of a power series
-at its centre is its linear coefficient, and the linear coefficient of the log series is the
+at its center is its linear coefficient, and the linear coefficient of the log series is the
 identity. -/
 
 section Deriv
@@ -806,7 +813,7 @@ variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
 
 /-- **The log series along the curve `s ↦ s • x` as an explicit `tsum`.**
 
-`log (1 + s • x) = ∑' n, ((-1)^(n+1)/n) • (s • x)^n`, which is `log_eq_tsum` with the centre
+`log (1 + s • x) = ∑' n, ((-1)^(n+1)/n) • (s • x)^n`, which is `log_eq_tsum` with the center
 shifted. This is the form in which the term-by-term differentiation is stated; the `n = 0` term
 vanishes, its coefficient being `(-1)/0 = 0`, so no reindexing is needed. -/
 private lemma log_one_add_smul_eq_tsum (x : 𝔸) (s : ℝ) :
@@ -1017,7 +1024,7 @@ theorem exp_log_one_add (x : 𝔸) (hx : ‖x‖ < 1) : exp (log (1 + x)) = 1 + 
       (fun t ht => (hQderiv t (hbound t ht)).differentiableAt.differentiableWithinAt)
       (fun t ht => (hQderiv t (hbound t ht)).deriv) h1mem h0mem
 
-/-- **`exp (log y) = y` for `‖y - 1‖ < 1`.** The form of `exp_log_one_add` at centre `1`. -/
+/-- **`exp (log y) = y` for `‖y - 1‖ < 1`.** The form of `exp_log_one_add` at center `1`. -/
 theorem exp_log {y : 𝔸} (hy : ‖y - 1‖ < 1) : exp (log y) = y := by
   have h := exp_log_one_add (y - 1) hy
   rwa [show (1 : 𝔸) + (y - 1) = y from by rw [add_comm]; exact sub_add_cancel y 1] at h

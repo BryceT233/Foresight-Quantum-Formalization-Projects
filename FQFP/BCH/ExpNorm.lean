@@ -43,8 +43,6 @@ the weaker statement can see exactly which hypothesis to drop.
 `norm_exp_sub_sum_le` replaces the eight hand-unrolled tail bounds of `Lean-BCH`
 (`norm_exp_sub_one_le`, `norm_exp_sub_one_sub_le`, … up to order nine), each of which was
 the same proof at a different `n`.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

@@ -28,18 +28,14 @@ remaining pieces are then bounded by `10 s₂³ / (2 - e^{s₂})`, `(3 s² / (2 
 `10 s₁³ / (2 - e^{s₁})` where `s₁ = ‖a'‖ + ‖b‖` and `s₂ = ‖z‖ + ‖a'‖`, giving
 `240 + 24/11 + 160/11 ≈ 256.7` in place of the stated `300`.
 
-## Provenance
+## Provenance and design
 
-Ported from `Lean-BCH/BCH/Basic.lean` (`norm_symmetric_bch_sub_add_le`). The source carried
-`set_option maxHeartbeats 6400000`; this version needs no bump, for the same reason as
-`BCHCommutator.lean`: the real arithmetic is isolated in `symmetric_bch_scale_bounds` and
-`symmetric_bch_real_core`, and each estimate there is an explicit chain of order-theoretic steps
-rather than one large `linarith`.
+Ported from `Lean-BCH/BCH/Basic.lean` (`norm_symmetric_bch_sub_add_le`). The real-arithmetic
+bookkeeping is isolated in `symmetric_bch_scale_bounds` and `symmetric_bch_real_core`, each estimate
+being an explicit chain of order-theoretic steps rather than one large `linarith`.
 
 The source's `norm_symmetric_bch_sub_add_lie_le` is deliberately not ported: it is this statement
 verbatim under a second name.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section
@@ -58,13 +54,11 @@ The real-arithmetic inputs of the Strang estimate, in the order the proof consum
 quantity `2 - e^{s₁}` is the denominator of the two bounds at scale `s₁`, and it is bounded below
 because `s₁ ≤ s < 1/4` forces `e^{s₁} ≤ 1 + s + s² ≤ 21/16`. -/
 
-/-- The scalar facts used before the final assembly: `2 - e^{s₁}` is bounded below, the cubic
-correction at scale `s₁` is at most `(160/11) s³`, and `s²/8 + (160/11) s³ ≤ s`. -/
-private lemma symmetric_bch_scale_bounds {s s₁ : ℝ} (hs_nn : 0 ≤ s) (hs14 : s < 1 / 4)
-    (hs₁_nn : 0 ≤ s₁) (hs₁_le : s₁ ≤ s) :
-    (11 : ℝ) / 16 ≤ 2 - Real.exp s₁ ∧
-      10 * s₁ ^ 3 / (2 - Real.exp s₁) ≤ 160 / 11 * s ^ 3 ∧
-      s ^ 2 / 8 + 160 / 11 * s ^ 3 ≤ s := by
+/-- The exponential estimates the Strang bound consumes: `eˢ ≤ 1 + s + s²`,
+`2 - e^{s₁} ≥ 11/16`, and the two power bounds `s² ≤ s/4`, `s³ ≤ s²/4` for `s ≤ 1/4`. -/
+private lemma exp_bounds {s s₁ : ℝ} (hs_nn : 0 ≤ s) (hs14 : s < 1 / 4) (hs₁_le : s₁ ≤ s) :
+    Real.exp s ≤ 1 + s + s ^ 2 ∧ (11 : ℝ) / 16 ≤ 2 - Real.exp s₁ ∧
+      s ^ 2 ≤ s / 4 ∧ s ^ 3 ≤ s ^ 2 / 4 := by
   have hs56 : s < 5 / 6 := by linarith only [hs14]
   have hs_le : s ≤ 1 / 4 := le_of_lt hs14
   have hs2_le : s ^ 2 ≤ s / 4 :=
@@ -78,10 +72,19 @@ private lemma symmetric_bch_scale_bounds {s s₁ : ℝ} (hs_nn : 0 ≤ s) (hs14 
   have hexp_le : Real.exp s ≤ 1 + s + s ^ 2 := by
     have hcube := real_exp_third_order_le_cube hs_nn hs56
     linarith only [hcube, hs3_le, sq_nonneg s]
-  have hdenom₁_lb : (11 : ℝ) / 16 ≤ 2 - Real.exp s₁ := by
-    have h₁ : Real.exp s₁ ≤ Real.exp s := Real.exp_le_exp.mpr hs₁_le
-    have h₂ : 1 + s + s ^ 2 ≤ 21 / 16 := by linarith only [hs2_le, hs_le]
-    linarith only [h₁, h₂, hexp_le]
+  refine ⟨hexp_le, ?_, hs2_le, hs3_le⟩
+  have h₁ : Real.exp s₁ ≤ Real.exp s := Real.exp_le_exp.mpr hs₁_le
+  have h₂ : 1 + s + s ^ 2 ≤ 21 / 16 := by linarith only [hs2_le, hs_le]
+  linarith only [h₁, h₂, hexp_le]
+
+/-- The scalar facts used before the final assembly: `2 - e^{s₁}` is bounded below, the cubic
+correction at scale `s₁` is at most `(160/11) s³`, and `s²/8 + (160/11) s³ ≤ s`. -/
+private lemma symmetric_bch_scale_bounds {s s₁ : ℝ} (hs_nn : 0 ≤ s) (hs14 : s < 1 / 4)
+    (hs₁_nn : 0 ≤ s₁) (hs₁_le : s₁ ≤ s) :
+    (11 : ℝ) / 16 ≤ 2 - Real.exp s₁ ∧
+      10 * s₁ ^ 3 / (2 - Real.exp s₁) ≤ 160 / 11 * s ^ 3 ∧
+      s ^ 2 / 8 + 160 / 11 * s ^ 3 ≤ s := by
+  obtain ⟨_, hdenom₁_lb, hs2_le, hs3_le⟩ := exp_bounds hs_nn hs14 hs₁_le
   have hdenom₁ : 0 < 2 - Real.exp s₁ := by linarith only [hdenom₁_lb]
   have hcubic_div_bound : 10 * s₁ ^ 3 / (2 - Real.exp s₁) ≤ 160 / 11 * s ^ 3 := by
     rw [div_le_iff₀ hdenom₁]
@@ -106,25 +109,7 @@ private lemma symmetric_bch_real_core {s s₁ s₂ : ℝ} (hs_nn : 0 ≤ s) (hs1
     (hs₁_nn : 0 ≤ s₁) (hs₁_le : s₁ ≤ s) (hs₂_nn : 0 ≤ s₂) (hs₂_le : s₂ ≤ 2 * s) :
     10 * s₂ ^ 3 / (2 - Real.exp s₂) + 3 * s ^ 2 / (2 - Real.exp s₁) * (s / 2) +
       10 * s₁ ^ 3 / (2 - Real.exp s₁) ≤ 300 * s ^ 3 := by
-  have hs56 : s < 5 / 6 := by linarith only [hs14]
-  have hs_le : s ≤ 1 / 4 := le_of_lt hs14
-  -- `2 - e^{s₁} ≥ 11/16`
-  have hexp_le : Real.exp s ≤ 1 + s + s ^ 2 := by
-    have hcube := real_exp_third_order_le_cube hs_nn hs56
-    have hs3_le : s ^ 3 ≤ s ^ 2 / 4 :=
-      calc s ^ 3 = s ^ 2 * s := by ring
-        _ ≤ s ^ 2 * (1 / 4) := mul_le_mul_of_nonneg_left hs_le (sq_nonneg s)
-        _ = s ^ 2 / 4 := by ring
-    linarith only [hcube, hs3_le, sq_nonneg s]
-  have hdenom₁_lb : (11 : ℝ) / 16 ≤ 2 - Real.exp s₁ := by
-    have h₁ : Real.exp s₁ ≤ Real.exp s := Real.exp_le_exp.mpr hs₁_le
-    have h₂ : 1 + s + s ^ 2 ≤ 21 / 16 := by
-      have hs2 : s ^ 2 ≤ s / 4 :=
-        calc s ^ 2 = s * s := by ring
-          _ ≤ s * (1 / 4) := mul_le_mul_of_nonneg_left hs_le hs_nn
-          _ = s / 4 := by ring
-      linarith only [hs2, hs_le]
-    linarith only [h₁, h₂, hexp_le]
+  obtain ⟨-, hdenom₁_lb, -, -⟩ := exp_bounds hs_nn hs14 hs₁_le
   have hdenom₁ : 0 < 2 - Real.exp s₁ := by linarith only [hdenom₁_lb]
   -- `2 - e^{s₂} ≥ 1/3`, via `e^{s₂} ≤ 1 + s₂ + s₂²/2 + s₂³/3` and `s₂ ≤ 2s`
   have hs₂_lt : s₂ < 1 / 2 := by linarith
@@ -189,7 +174,6 @@ The second-order commutators `½[a/2, b]` and `½[bch (a/2) b, a/2]` cancel, whi
 makes the Strang splitting a second-order integrator. -/
 theorem norm_symmetric_bch_sub_add_le (a b : 𝔸) (hab : ‖a‖ + ‖b‖ < 1 / 4) :
     ‖bch (bch ((2 : ℚ)⁻¹ • a) b) ((2 : ℚ)⁻¹ • a) - (a + b)‖ ≤ 300 * (‖a‖ + ‖b‖) ^ 3 := by
-  have : NormedAlgebra ℝ 𝔸 := normedAlgebraReal 𝔸
   set a' : 𝔸 := (2 : ℚ)⁻¹ • a with ha'_def
   set s : ℝ := ‖a‖ + ‖b‖ with hs_def
   have hhalf_norm : ‖(2 : ℚ)⁻¹‖ = (2 : ℝ)⁻¹ := by
@@ -215,6 +199,7 @@ theorem norm_symmetric_bch_sub_add_le (a b : 𝔸) (hab : ‖a‖ + ‖b‖ < 1 
     have h := real_exp_third_order_le_cube (by norm_num : (0 : ℝ) ≤ 1 / 4)
       (by norm_num : (1 : ℝ) / 4 < 5 / 6)
     linarith
+  -- needed for `s₂`, which is only known to satisfy `s₂ < 1 / 2`
   have hlog2_half : (1 : ℝ) / 2 < Real.log 2 := by
     rw [Real.lt_log_iff_exp_lt (by norm_num : (0 : ℝ) < 2)]
     have h := real_exp_third_order_le_cube (by norm_num : (0 : ℝ) ≤ 1 / 2)

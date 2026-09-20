@@ -20,23 +20,26 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
 
 | 文件 | 行数 | 主题 |
 |---|---|---|
-| `Logarithm.lean` | 1014 | Banach 代数对数；`log (1+·)` 的余项界 |
-| `ExpNorm.lean` | 229 | 指数估计：实数与范数代数的 Taylor 余项界 |
-| `RealScalar.lean` | 92 | 完备 `ℚ`-代数上的唯一 `ℝ`-代数结构 |
-| `WordNorm.lean` | 177 | 词乘积范数（arity-free） |
-| `NestedCommNorm.lean` | 93 | 嵌套交换子范数 |
+| `Logarithm.lean` | 1034 | Banach 代数对数；`log (1+·)` 的余项界 |
+| `ExpNorm.lean` | 230 | 指数估计：实数与范数代数的 Taylor 余项界 |
+| `RealScalar.lean` | 83 | 完备 `ℚ`-代数上的唯一 `ℝ`-代数结构 |
+| `WordNorm.lean` | 179 | 词乘积范数（arity-free） |
+| `WordExpansion.lean` | 87 | 二元词模式与加权词和的分组界（阶段 3 的 API） |
+| `NestedCommNorm.lean` | 92 | 嵌套交换子范数 |
 | `ChildsBasis.lean` | 165 | Childs 四重交换子基 |
-| `BCHElement.lean` | 285 | **结构层**：`bch` 是什么 |
-| `BCHCommutator.lean` | 549 | **偏差层**：`bch` 与 `a+b` 差多少 |
-| `BCHSymmetric.lean` | 312 | **对称层**：Strang 乘积的误差 |
-| `BCHTerms.lean` | 710 | **级数项层**：`bch` 展开的三次/四次/五次项及其范数界 |
+| `BCHElement.lean` | 287 | **结构层**：`bch` 是什么 |
+| `BCHCommutator.lean` | 573 | **偏差层**：`bch` 与 `a+b` 差多少 |
+| `BCHSymmetric.lean` | 315 | **对称层**：Strang 乘积的误差 |
+| `BCHTerms.lean` | 712 | **级数项层**：`bch` 展开的三次/四次/五次项及其范数界 |
 
 依赖链：`Logarithm/ExpNorm → BCHElement → BCHCommutator → BCHSymmetric`；
-`BCHTerms` 只依赖 `BCHElement`。
+`WordNorm → WordExpansion`；`BCHTerms` 只依赖 Mathlib（`Normed.Ring.Basic`、`Normed.Module.Basic`、
+`Tactic.Module`、`Algebra.Order.Ring.Unbundled.Basic`）——它只用 docstring 提到 `bch`，正文不引用
+阶段 1 的任何声明。
 
 阶段 1 拆成三个文件的原因：H2 会把 `BCHElement.lean` 推到 1000+ 行；三个文件的主题
 （「`bch` 是什么」/「`bch` 与 `a+b` 差多少」/「对称乘积的误差」）边界清楚。阶段 2 单独成
-`BCHTerms.lean`（710 行）：它按「`bch` 的展开系数」组织，与前三层的「误差估计」是两件事。
+`BCHTerms.lean`（712 行）：它按「`bch` 的展开系数」组织，与前三层的「误差估计」是两件事。
 
 ---
 
@@ -44,16 +47,16 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
 
 | 源的声明 / 文件 | 目标 | 备注 |
 |---|---|---|
-| `LogSeries.lean` 全部 + `Basic:326` 的 `exp∘log` | `Logarithm.lean` | 重定中心到 `1`，去掉定义中的范数 |
-| 8 个 `norm_logOnePlus_sub…le` | `norm_log_one_add_sub_logPartialSum_le` + 4 个具体阶 | **参数化**（见 §5.1） |
-| 23 个按 arity 展开的词范数引理 | `WordNorm.lean` 1 个引理 | arity-free 重写 |
+| `LogSeries.lean` 全部 + `Basic:326` 的 `exp∘log` | `Logarithm.lean` | 重定中心到 `1`，去掉定义中的范数；**除**三个 `Complex.log` 互操作引理（`hasSum_logSeriesTerm_complex`、`logOnePlus_complex_eq`、`exp_logOnePlus_complex`）外全部移植 |
+| 9 个 `norm_logOnePlus_*` | `norm_log_one_add_sub_logPartialSum_le` + 4 个具体阶 | **参数化**（见 §5.1）；对应目标索引 `n = 0, 2, 3, …, 9` |
+| 23 个按 arity 展开的词范数引理 | `List.norm_prod_le` + `WordNorm.lean` 的 `norm_prod_le_ofFn` | arity-free 重写 |
 | `Basic:40–216` exp 范数界 | `ExpNorm.lean` | 去重后只留 `TrotterError` 没有的 |
 | `Basic:223,251,261,271,176,299,326` | `BCHElement.lean` | 小性条件、`bch`、`exp_bch`、`log_exp_sub_one` |
 | `Basic:470` 二次界 `3s²/(2-eˢ)` | `BCHCommutator.lean` | |
 | `Basic:612` **H1** `10s³/(2-eˢ)` | `BCHCommutator.lean` | **无心跳 bump**（源带 `maxHeartbeats 16000000`） |
 | `Basic:1061` **H2** `300s³` | `BCHSymmetric.lean` | **无心跳 bump**（源带 `6400000`） |
 | `Basic:1359,1365` Lie 括号 | `BCHCommutator.lean` | |
-| `Basic:1374,1382` Lie 重复件 | **不移植** | 与原定理逐字相同 |
+| `Basic:1374,1382` Lie 括号形式 | `BCHCommutator.lean`（`lie_eq_commutator`、`norm_bch_sub_add_sub_lie_le`） | 与下面的公开声明列表一致 |
 | `norm_bch_sub_add_le'` | **不移植** | 与二次界逐字相同 |
 | `LogSeries.lean` 的 `logOnePlus_eq_real` + 手工 `restrictScalars` | `RealScalar.lean` 类型类实例 | |
 | `Basic:1397–1670` 三次项族 | `BCHTerms.lean` | def 改名 `bchCubicTerm`（见下） |
@@ -76,7 +79,7 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
 - `Logarithm.lean`：`logCoeff`、`norm_logCoeff_le_one`、`logPartialSum`、
   `log_one_add_eq_logPartialSum_add_tsum`、`norm_log_one_add_sub_logPartialSum_le`（主引理）、
   `norm_log_one_add_le`、`norm_log_one_add_sub_le`、`norm_log_one_add_sub_add_sq_le`、
-  `norm_log_one_add_sub_add_sq_sub_cu_le`、`logPartialSum_{zero,one,two,three,four}`。
+  `norm_log_one_add_sub_add_sq_sub_cube_le`、`logPartialSum_{zero,one,two,three,four}`。
 - `ExpNorm.lean`：`real_exp_third_order_le_div`、`real_exp_third_order_le_cube`、
   `norm_exp_sub_one_sub_id_le`、`norm_exp_sub_one_sub_id_sub_sq_le`。
 - `BCHElement.lean`：`norm_exp_mul_exp_sub_one_lt_one`、`norm_exp_sub_one_lt_one`、`bch`、
@@ -94,9 +97,9 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
 - 五次：`bchQuinticGroup1`、`bchQuinticGroup4`、`bchQuinticGroup6`、`bchQuinticGroup24`、
   `bchQuinticTerm`、`bchQuinticTerm_smul`、`norm_bchQuinticTerm_le`。
 
-私有辅助（阶段 3 会反复需要同类）：`norm_mul_sub_mul_le`、`norm_double_commutator_le`、
-`norm_mul_w_mul_le`、`norm_w_mul_mul_le`、`norm_mul_mul_w_le`、`norm_word5_le`、
-`smul_five_fold`。
+阶段 3 复用的范数辅助（审核后已从 `private` 提升为公开）：`norm_mul_sub_mul_le`、
+`norm_double_commutator_le`、`norm_mul_w_mul_le`、`norm_w_mul_mul_le`、`norm_mul_mul_w_le`、
+`norm_word5_le`；`smul_five_fold` 仍是 `BCHTerms.lean` 的私有辅助。
 
 ---
 
@@ -133,14 +136,24 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
    `scripts/build_safe.sh` 顺序构建（Lake 5 没有 `-j` 节流）。目标仓库必须预先规划同样的拆分，
    不能等到 OOM。
 3. **arity-free 重写的机会**：生成代码里每个 monomial 分支都重复
-   `norm_smul_le → norm_Nprod_le → gcongr → ring`，这些应当全部改成对 `WordNorm.lean` 的
-   `norm_smul_word_le` / `norm_word_le` 的单次调用。**这是把 95k 行压下来的最大杠杆，
-   且必须在生成器层面做，事后手改是不可行的。**
+   `norm_smul_le → norm_Nprod_le → gcongr → ring`，这些应当全部改成对 `WordNorm.lean` /
+   `WordExpansion.lean` 的单次调用。**这是把 95k 行压下来的最大杠杆，且必须在生成器层面做，
+   事后手改是不可行的。**
 
    阶段 2 已经量过这笔账：五次项四个组的范数界（`norm_bchQuinticGroup{1,4,6,24}_le`）为了
    30 个 5 字母词，写了 **30 次 `norm_word5_le` 调用 + 27 条 `norm_add_le` 步骤 + 4 次
-   `linarith only`**，共约 180 行。若把「一组词」表示成 `Fin n → 𝔸` 向量（词表由生成器给出），
-   同样的界只是 `norm_sum_le` + 逐项 `norm_word_le` 两行。**这是阶段 3 的第一个该做的 API。**
+   `linarith only`**，共约 180 行。
+
+   **`WordExpansion.lean` 已经把这个 API 建好了**：
+
+   * `wordEval v a b`：词模式是数据（`Fin n → Bool`），第 `i` 个字母按 `v i` 取 `a` 或 `b`；
+   * `norm_wordEval_le`：`‖∏ i, wordEval v a b i‖ ≤ (‖a‖ + ‖b‖) ^ n`；
+   * `norm_sum_smul_wordEval_le`：**组引理**，`m` 项 ℚ-加权词和 ≤ `m * cb * (‖a‖+‖b‖)^n`。
+
+   于是每个组界是一行 `norm_sum_smul_wordEval_le c v a b hc hcb`。**stage 3 开工前还差的**是
+   (a) 把四个组 `bchQuinticGroup{1,4,6,24}` 的定义改成「词向量上的 `Finset.sum`」，
+   (b) 用它重写四个 `_le` 界（以及 `norm_bchCubicTerm_diff_le` 的 12 项三角不等式），
+   (c) 再往上补 `_diff_le` / `_LQ_decomp` 伴生引理。生成器应直接发射 (a) 的形状。
 
 ---
 
@@ -158,6 +171,11 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
    `Logarithm.lean` 的 ODE 论证需要 `NormedAlgebra ℝ 𝔸`，在证明里用
    `have : NormedAlgebra ℝ 𝔸 := normedAlgebraReal 𝔸`（`RealScalar.lean`）临时引入。
    这样假设更弱，且不产生 `unusedSectionVars` 警告。
+   **`WordNorm`/`WordExpansion` 的标量域是 `[NormedField 𝕂]`（不是源的 `RCLike 𝕂`）**：
+   `RCLike ℚ` 不存在，而 BCH 层的一切都在 `ℚ` 上，`RCLike` binder 会让缩放引理在唯一需要它的
+   地方无法使用。`RealScalar.lean` 原有的 `NormedAlgebra.coe_rat_smul`（`(q : ℝ) • a = q • a`）
+   已删除：它的 ℝ-smul 被文件内 `attribute [local instance] normedAlgebraReal` 烧死，任何用
+   `have/letI` 引入 ℝ-结构的调用点都点不着它。
 3. **一个 `𝔸`，一个命名空间。** 全部在 `namespace FQFP.BCH`；源的 `namespace BCH` 不沿用。
    `LieRing.ofAssociativeRing` 用 `attribute [local instance]` 局部打开（与
    `ChildsBasis.lean`、`NestedCommNorm.lean` 一致），且必须在**用到 `⁅·,·⁆` 的 section 内**
@@ -165,7 +183,8 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
 4. **重复的定义不移植。** 目标库已有的（`TrotterError.norm_exp_le`、
    `ExpNorm.norm_exp_sub_one_le`、`ExpNorm.norm_exp_sub_sum_le`、`RealScalar` 全套）以及源里
    逐字重复的孪生定理，都不再抄一遍——docstring 指向即可。
-5. **用 section 边界代替 `omit`/`include 𝕂`。** 目标不许出现 `omit`。
+5. **用 section 边界代替 `omit`/`include 𝕂`。** 目标不许出现 `omit`。（审核后 `WordNorm.lean`
+   已按此重写：按所需结构拆 section，12 处 `omit` 全部消失。）
 
 ---
 
@@ -173,8 +192,9 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
 
 ### 5.1 参数化，而不是按阶展开
 
-源 `LogSeries.lean` 有 8 个 `norm_logOnePlus_sub…sub_le`，是同一个证明在 `n = 1..8` 上的重复
-（每个阶还要配一个 `summable_logSeriesTerm_shiftK` 与 `…_eq_tsum`）。目标用**一个**参数化引理：
+源 `LogSeries.lean` 有 9 个 `norm_logOnePlus_*`（1 个不带减项 + 8 个 `sub…sub_le`），是同一个证明
+在逐阶上的重复（每个阶还要配一个 `summable_logSeriesTerm_shiftK` 与 `…_eq_tsum`）。目标用**一个**
+参数化引理：
 
 ```lean
 theorem norm_log_one_add_sub_logPartialSum_le (x : 𝔸) (n : ℕ) (hx : ‖x‖ < 1) :
@@ -316,9 +336,10 @@ statement 只含纯实数命题、`𝔸` 不出现；每个估计用显式 `calc
 
 ## 7. 仓库状态与待办
 
-- 阶段 1 的改动**全部未 commit**：修改 `FQFP.lean`（+3 import）、`FQFP/BCH/ExpNorm.lean`、
-  `FQFP/BCH/Logarithm.lean`；新建 `FQFP/BCH/{BCHElement,BCHCommutator,BCHSymmetric}.lean`。
-- 工作树里 `xxxxyyyytest.lean`、`xxxxyyyytest1.lean` 是遗留文件，应删除或归档。
+- 阶段 1、阶段 2 的改动**已提交**（`a946626`、`c1b774e`、`33c578b`）。工作树当前有审核修复
+  （见 `artifacts/bch-audit-round-one/bch-code-review.md` 的「修复记录」）：`FQFP.lean`（+1 import）、
+  `FQFP/BCH/` 下 10 个文件、新增 `FQFP/BCH/WordExpansion.lean` 与仓库根的 `LICENSE`。
+- 遗留文件 `xxxxyyyytest.lean` 已删除（`xxxxyyyytest1.lean` 早已不在）。
 - 每次提交前的验收（顺序不可省）：
 
   ```
@@ -327,3 +348,10 @@ statement 只含纯实数命题、`𝔸` 不出现；每个估计用显式 `calc
   lake exe runLinter
   lake exe lint-style
   ```
+
+  **注意工具链的覆盖范围**：`lake exe runLinter` 是 **Batteries 的驱动**
+  （`mathlib/lakefile.lean` 的 `lintDriver := "batteries/runLinter"`，其 `opts := {}`），
+  **不打开** `linter.mathlibStandardSet`；`lake exe lint-style` 只跑 4 个 TextBased linter
+  （不含行长）。真正会让 `longLine`/`maxHeartbeats`/`emptyLine`/`header` 等 Mathlib 标准集
+  生效的是 **`lake build`**（lakefile 的 `[leanOptions] weak.linter.mathlibStandardSet = true`）。
+  单文件复核可用 `lake env lean "-Dlinter.mathlibStandardSet=true" FQFP\BCH\X.lean`。

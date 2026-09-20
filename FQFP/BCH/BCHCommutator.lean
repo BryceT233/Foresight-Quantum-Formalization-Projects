@@ -3,7 +3,6 @@ Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Foresight Quantum
 -/
-
 module
 
 public import FQFP.BCH.BCHElement
@@ -27,19 +26,15 @@ How far `bch a b` is from `a + b`, and what the leading correction is. Two estim
 The symmetric (Strang) refinement of the cubic bound — where `½[a, b]` cancels — is in
 `BCHSymmetric.lean`.
 
-## Provenance
+## Provenance and design
 
 Ported from `Lean-BCH/BCH/Basic.lean` (`norm_bch_sub_add_le`,
 `norm_bch_sub_add_sub_bracket_le`, `lie_eq_commutator`, `norm_bch_sub_add_sub_lie_le`). The
-source's cubic bound carried `set_option maxHeartbeats 16000000`, which this version does not need:
-the real arithmetic is isolated in `bch_cubic_real_core`, and each estimate there is an explicit
-chain of order-theoretic steps rather than one large `linarith`.
-See `artifacts/bch-port.md` §5.2 for the diagnosis and the measured heartbeat counts.
+real-arithmetic bookkeeping of the cubic bound is isolated in `bch_cubic_real_core`, whose estimates
+are explicit chains of order-theoretic steps rather than one large `linarith`.
 
 The source's `norm_bch_sub_add_le'` is deliberately not ported: it is the quadratic bound verbatim
 under a second name.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section
@@ -157,9 +152,9 @@ section CubicBound
 
 variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
 
-/-- **The real-arithmetic core of the cubic BCH bound.** For `s = α + β` with `α, β ≥ 0` and
-`s < 5/6` (hence `eˢ < 2`), the cubic exponential remainder `(eˢ - 1)³` plus the exponential-
-remainder block times `2 - eˢ` is at most `10 s³`.
+/-- **The real-arithmetic core of the cubic BCH bound.** For `s = α + β` with `α, β ≥ 0`,
+`s < 5/6` and `Real.exp s < 2` (which holds whenever `s < log 2`), the cubic exponential remainder
+`(eˢ - 1)³` plus the exponential-remainder block times `2 - eˢ` is at most `10 s³`.
 
 The two ingredients are the third-order Taylor bounds `e^t - 1 - t - t²/2 ≤ t³` (`t = α, β, s`) and
 `e^s - 1 ≤ s + s²`; the bookkeeping is split into the individual `hRB*` estimates, each a scoped
@@ -339,7 +334,6 @@ private lemma bch_cubic_real_core {α β s : ℝ} (hα : 0 ≤ α) (hβ : 0 ≤ 
 theorem norm_bch_sub_add_sub_bracket_le (a b : 𝔸) (hab : ‖a‖ + ‖b‖ < Real.log 2) :
     ‖bch a b - (a + b) - (2 : ℚ)⁻¹ • (a * b - b * a)‖ ≤
       10 * (‖a‖ + ‖b‖) ^ 3 / (2 - Real.exp (‖a‖ + ‖b‖)) := by
-  have : NormedAlgebra ℝ 𝔸 := normedAlgebraReal 𝔸
   set y : 𝔸 := exp a * exp b - 1 with hy_def
   set s : ℝ := ‖a‖ + ‖b‖ with hs_def
   set α : ℝ := ‖a‖ with hα_def
@@ -552,7 +546,9 @@ variable {𝔸 : Type*} [Ring 𝔸]
 
 attribute [local instance] LieRing.ofAssociativeRing
 
-/-- In an associative ring the Lie bracket is the ring commutator, `⁅a, b⁆ = a * b - b * a`. -/
+/-- In an associative ring the Lie bracket is the ring commutator, `⁅a, b⁆ = a * b - b * a`.
+This is the project alias of Mathlib's `LieRing.of_associative_ring_bracket` (equivalently
+`Ring.lie_def`), kept under the source's name. -/
 theorem lie_eq_commutator (a b : 𝔸) : ⁅a, b⁆ = a * b - b * a :=
   LieRing.of_associative_ring_bracket a b
 
@@ -573,6 +569,5 @@ theorem norm_bch_sub_add_sub_lie_le (a b : 𝔸) (hab : ‖a‖ + ‖b‖ < Real
   exact norm_bch_sub_add_sub_bracket_le a b hab
 
 end CubicBoundLie
-
 
 end FQFP.BCH

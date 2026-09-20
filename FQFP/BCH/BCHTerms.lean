@@ -3,21 +3,20 @@ Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Foresight Quantum
 -/
-
 module
 
-public import FQFP.BCH.BCHElement
-public import Mathlib.Algebra.Lie.OfAssociative
+public import Mathlib.Analysis.Normed.Ring.Basic
+public import Mathlib.Analysis.Normed.Module.Basic
 
-import FQFP.BCH.RealScalar
 import Mathlib.Algebra.Order.Ring.Unbundled.Basic
+import Mathlib.Tactic.Module
 
 /-!
 # The graded terms of the BCH series
 
 The BCH element expands as `bch a b = a + b + ½[a,b] + C₃(a,b) + C₄(a,b) + ⋯`, where `Cₙ` is
 homogeneous of degree `n`. Throughout, `[x,y] = x * y - y * x` is written out; the Lie-bracket form
-of the same statements is in `BCHCommutator.lean`.
+of the bounds on `bch a b - (a + b)` is in `BCHCommutator.lean`.
 
 * `bchCubicTerm` — `C₃(a,b) = (1/12)([a,[a,b]] + [b,[b,a]])`, the leading correction after `½[a,b]`.
   `bchCubicTerm_smul` records the homogeneity `C₃(c·a, c·b) = c³·C₃(a,b)`, which is what lets the
@@ -39,15 +38,8 @@ of the same statements is in `BCHCommutator.lean`.
 Ported from `Lean-BCH/BCH/Basic.lean` (`bch_cubic_term`, `bch_quartic_term`, `bch_quintic_group_*`,
 `bch_quintic_term`, their `_smul` lemmas, the `norm_…_le` bounds and the `_LQ_decomp` lemmas). The
 source states the terms over an arbitrary `RCLike 𝕂`; this file uses the `ℚ`-scalar interface of the
-rest of `FQFP.BCH` (see `artifacts/bch-port.md` §4.2), which is all these terms need — their
-coefficients are rational. The source's `nlinarith [sq_nonneg (‖a‖ - ‖b‖)]` is replaced by the
-ready-made `four_mul_le_sq_add` (see §5.2 there), and its triangle-inequality assemblies by
-`linarith only` on explicitly listed hypotheses.
-
-Only the definitions are renamed to Mathlib's `lowerCamelCase` (the `defsWithUnderscore` linter
-enforces this for `def`s, though not for theorems); the theorem names are the source's.
-
-**Assisted by Deepseek Harness**
+rest of `FQFP.BCH`, which is all these terms need, since their coefficients are rational. The
+definitions are renamed to Mathlib's `lowerCamelCase`; the theorem names are the source's.
 -/
 
 @[expose] public section
@@ -93,7 +85,8 @@ private lemma eight_mul_sq_mul_sq_le_pow_four (x y : ℝ) (hx : 0 ≤ x) (hy : 0
 
 variable {𝔸 : Type*} [NormedRing 𝔸]
 
-private lemma norm_mul_sub_mul_le (u v : 𝔸) : ‖u * v - v * u‖ ≤ 2 * ‖u‖ * ‖v‖ := by
+/-- `‖u * v - v * u‖ ≤ 2 ‖u‖ ‖v‖`: the norm of the ring commutator. -/
+lemma norm_mul_sub_mul_le (u v : 𝔸) : ‖u * v - v * u‖ ≤ 2 * ‖u‖ * ‖v‖ := by
   calc ‖u * v - v * u‖ ≤ ‖u * v‖ + ‖v * u‖ := norm_sub_le _ _
     _ ≤ ‖u‖ * ‖v‖ + ‖v‖ * ‖u‖ :=
         add_le_add (norm_mul_le _ _) (norm_mul_le _ _)
@@ -101,7 +94,7 @@ private lemma norm_mul_sub_mul_le (u v : 𝔸) : ‖u * v - v * u‖ ≤ 2 * ‖
 
 /-- `‖a * (a * b - b * a) - (a * b - b * a) * a‖ ≤ 4 ‖a‖² ‖b‖`: the norm of the double bracket
 `[a,[a,b]]`, written out rather than in `⁅·,·⁆` notation. -/
-private lemma norm_double_commutator_le (a b : 𝔸) :
+lemma norm_double_commutator_le (a b : 𝔸) :
     ‖a * (a * b - b * a) - (a * b - b * a) * a‖ ≤ 4 * ‖a‖ ^ 2 * ‖b‖ := by
   have hcomm := norm_mul_sub_mul_le a b
   calc ‖a * (a * b - b * a) - (a * b - b * a) * a‖
@@ -114,7 +107,7 @@ private lemma norm_double_commutator_le (a b : 𝔸) :
     _ = 4 * ‖a‖ ^ 2 * ‖b‖ := by ring
 
 /-- `‖P * w * Q‖ ≤ M² ‖w‖` when `‖P‖, ‖Q‖ ≤ M`. -/
-private lemma norm_mul_w_mul_le {P w Q : 𝔸} {M : ℝ} (hP : ‖P‖ ≤ M) (hQ : ‖Q‖ ≤ M) :
+lemma norm_mul_w_mul_le {P w Q : 𝔸} {M : ℝ} (hP : ‖P‖ ≤ M) (hQ : ‖Q‖ ≤ M) :
     ‖P * w * Q‖ ≤ M ^ 2 * ‖w‖ := by
   have hM : 0 ≤ M := le_trans (norm_nonneg P) hP
   calc ‖P * w * Q‖ ≤ ‖P * w‖ * ‖Q‖ := norm_mul_le _ _
@@ -125,7 +118,7 @@ private lemma norm_mul_w_mul_le {P w Q : 𝔸} {M : ℝ} (hP : ‖P‖ ≤ M) (h
     _ = M ^ 2 * ‖w‖ := by ring
 
 /-- `‖w * Q * R‖ ≤ M² ‖w‖` when `‖Q‖, ‖R‖ ≤ M`. -/
-private lemma norm_w_mul_mul_le {w Q R : 𝔸} {M : ℝ} (hQ : ‖Q‖ ≤ M) (hR : ‖R‖ ≤ M) :
+lemma norm_w_mul_mul_le {w Q R : 𝔸} {M : ℝ} (hQ : ‖Q‖ ≤ M) (hR : ‖R‖ ≤ M) :
     ‖w * Q * R‖ ≤ M ^ 2 * ‖w‖ := by
   have hM : 0 ≤ M := le_trans (norm_nonneg Q) hQ
   calc ‖w * Q * R‖ ≤ ‖w * Q‖ * ‖R‖ := norm_mul_le _ _
@@ -136,7 +129,7 @@ private lemma norm_w_mul_mul_le {w Q R : 𝔸} {M : ℝ} (hQ : ‖Q‖ ≤ M) (h
     _ = M ^ 2 * ‖w‖ := by ring
 
 /-- `‖P * Q * w‖ ≤ M² ‖w‖` when `‖P‖, ‖Q‖ ≤ M`. -/
-private lemma norm_mul_mul_w_le {P Q w : 𝔸} {M : ℝ} (hP : ‖P‖ ≤ M) (hQ : ‖Q‖ ≤ M) :
+lemma norm_mul_mul_w_le {P Q w : 𝔸} {M : ℝ} (hP : ‖P‖ ≤ M) (hQ : ‖Q‖ ≤ M) :
     ‖P * Q * w‖ ≤ M ^ 2 * ‖w‖ := by
   have hM : 0 ≤ M := le_trans (norm_nonneg P) hP
   calc ‖P * Q * w‖ ≤ ‖P * Q‖ * ‖w‖ := norm_mul_le _ _
@@ -146,7 +139,7 @@ private lemma norm_mul_mul_w_le {P Q w : 𝔸} {M : ℝ} (hP : ‖P‖ ≤ M) (h
     _ = M ^ 2 * ‖w‖ := by ring
 
 /-- Any 5-letter word on `{a, b}` has norm at most `s⁵`, where `s = ‖a‖ + ‖b‖`. -/
-private lemma norm_word5_le (a b x₁ x₂ x₃ x₄ x₅ : 𝔸)
+lemma norm_word5_le (a b x₁ x₂ x₃ x₄ x₅ : 𝔸)
     (h₁ : x₁ = a ∨ x₁ = b) (h₂ : x₂ = a ∨ x₂ = b) (h₃ : x₃ = a ∨ x₃ = b)
     (h₄ : x₄ = a ∨ x₄ = b) (h₅ : x₅ = a ∨ x₅ = b) :
     ‖x₁ * x₂ * x₃ * x₄ * x₅‖ ≤ (‖a‖ + ‖b‖) ^ 5 := by
@@ -342,8 +335,7 @@ theorem bchQuarticTerm_smul (a b : 𝔸) (c : ℚ) :
   unfold bchQuarticTerm
   simp only [smul_mul_assoc, mul_smul_comm, smul_sub, mul_sub, sub_mul, smul_smul,
     smul_neg, neg_inj]
-  congr 1; congr 1
-  all_goals (try (congr 1; ring)); try ring
+  ring_nf
 
 /-- Norm bound for `bchQuarticTerm`: `‖C₄(a,b)‖ ≤ s⁴` where `s = ‖a‖ + ‖b‖`.
 

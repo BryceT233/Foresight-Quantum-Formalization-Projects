@@ -10,6 +10,7 @@ public import FQFP.BCH.Logarithm
 public import FQFP.BCH.NestedCommNorm
 public import FQFP.BCH.RealScalar
 public import FQFP.BCH.WordNorm
+public import FQFP.BCH.WordExpansion
 public import FQFP.CQM.Category.DaggerCategory
 public import FQFP.CQM.Category.MonoidalCategory
 public import FQFP.CQM.QuditCat.Basic

@@ -22,7 +22,6 @@ structure, and that structure is unique.
 * `normedAlgebraReal` — the `NormedAlgebra ℝ 𝔸` structure, obtained by extending the continuous
   ring homomorphism `algebraMap ℚ 𝔸` along the dense inclusion `ℚ → ℝ`.
 * `realNormedAlgebraUnique` — that structure is unique.
-* `NormedAlgebra.coe_rat_smul` — its action agrees with the `ℚ`-action at rational scalars.
 
 -/
 
@@ -82,11 +81,3 @@ noncomputable instance realNormedAlgebraUnique [CompleteSpace 𝔸] :
     · exact isClosed_eq (by fun_prop) (by simp only [algebraMap]; fun_prop)
     · rw [← eq_ratCast (algebraMap ℚ ℝ), ← IsScalarTower.rat.algebraMap_apply,
         ← @(@IsScalarTower.rat _ _ _ _ (normedAlgebraReal 𝔸).toModule ..).algebraMap_apply]
-
-attribute [local instance] normedAlgebraReal
-
-/-- The action of `normedAlgebraReal` agrees with the `ℚ`-action at rational scalars. -/
-@[simp]
-lemma NormedAlgebra.coe_rat_smul [CompleteSpace 𝔸] {q : ℚ} {a : 𝔸} : (q : ℝ) • a = q • a := by
-  rw [Algebra.smul_def, ← eq_ratCast (algebraMap ℚ ℝ), ← IsScalarTower.rat.algebraMap_apply,
-    ← Algebra.smul_def]
