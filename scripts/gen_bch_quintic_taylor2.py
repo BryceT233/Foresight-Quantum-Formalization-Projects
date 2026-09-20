@@ -152,14 +152,90 @@ def wrap(entries, indent, width=94):
 
 
 def emit_data(kind, name, items, doc):
-    """A `Fin m → List (Fin 3)` word vector or a `Fin m → ℤ` coefficient vector."""
+    """A `Fin m → List (Fin 3)` word vector or a `Fin m → ℚ` coefficient vector."""
     if kind == "words":
         entries = ["[" + ", ".join(str(a) for a in w) + "]" for w, _ in items]
         ty = "List (Fin 3)"
     else:
-        entries = [str(int(c * DENOM)) for _, c in items]
-        ty = "ℤ"
+        entries = []
+        for _, c in items:
+            num = int(c * DENOM)
+            entries.append(f"{num} / {DENOM}" if abs(num) != 1 else
+                           ("1 / " + str(DENOM) if num == 1 else "-1 / " + str(DENOM)))
+        ty = "ℚ"
     return f"/-- {doc} -/\ndef {name} : Fin {len(items)} → {ty} :=\n  {wrap(entries, 4)}\n\n"
+
+
+RELAX = {
+    2: "exact le_refl _",
+    3: """calc (M ^ 2 * Vn ^ 3 : ℝ) = M ^ 2 * Vn ^ 2 * Vn := by ring
+          _ ≤ M ^ 2 * Vn ^ 2 * M :=
+            mul_le_mul_of_nonneg_left hVnM (mul_nonneg (pow_nonneg hM0 2) (pow_nonneg hVn0 2))
+          _ = M ^ 3 * Vn ^ 2 := by ring""",
+    4: """calc (M * Vn ^ 4 : ℝ) = M * Vn ^ 2 * Vn ^ 2 := by ring
+          _ ≤ M * Vn ^ 2 * M ^ 2 :=
+            mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hVn0 hVnM 2)
+              (mul_nonneg hM0 (pow_nonneg hVn0 2))
+          _ = M ^ 3 * Vn ^ 2 := by ring""",
+}
+
+
+def emit_bounds(pieces):
+    """The norm bounds for the three pieces, with the constants the source uses: the number of words
+    of the piece times the largest absolute coefficient of the piece, over `720`."""
+    out = []
+    for k in (2, 3, 4):
+        tag = f"{k}V"
+        profile = f"({ {2: 'M ^ 3 * Vn ^ 2', 3: 'M ^ 2 * Vn ^ 3', 4: 'M * Vn ^ 4'}[k] } : ℝ)"
+        items = pieces[k]
+        count = len(items)
+        maxabs = max(abs(int(c * DENOM)) for _, c in items)
+        const = count * maxabs
+        out.append(f"""/-- Norm bound for the `{tag}` piece: `≤ ({const}/720) * (M³ * ‖V‖²)` with
+`M = ‖x‖ + ‖V‖ + ‖y‖` and `Vn = ‖V‖`. The constant is the source's: the `{count}` words of the piece
+times its largest coefficient `{maxabs}/720`. The piece's own profile is `{profile}`, relaxed to
+`M ^ 3 * Vn ^ 2` by `Vn ≤ M`. -/
+theorem norm_bchQuinticTermTaylor2Remainder{tag}_le {{𝔸 : Type*}} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸] (x V y : 𝔸) :
+    ‖bchQuinticTermTaylor2Remainder{tag} x V y‖ ≤
+      ({const} / 720 : ℝ) * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) := by
+  set M := ‖x‖ + ‖V‖ + ‖y‖ with hM
+  set Vn := ‖V‖ with hVn
+  have hM0 : 0 ≤ M := by rw [hM]; positivity
+  have hVn0 : 0 ≤ Vn := norm_nonneg _
+  have hx : ‖x‖ ≤ M := by rw [hM]; linarith [norm_nonneg V, norm_nonneg y]
+  have hV : ‖V‖ ≤ Vn := le_refl _
+  have hy : ‖y‖ ≤ M := by rw [hM]; linarith [norm_nonneg x, norm_nonneg V]
+  have hVnM : Vn ≤ M := by rw [hM]; linarith [norm_nonneg x, norm_nonneg y]
+  have hw : ∀ i, ‖wordProdList ![x, V, y] (bchQuinticTermTaylor2Remainder{tag}Words i)‖ ≤
+      {profile} := by
+    intro i
+    calc ‖wordProdList ![x, V, y] (bchQuinticTermTaylor2Remainder{tag}Words i)‖
+        ≤ ((bchQuinticTermTaylor2Remainder{tag}Words i).map ![M, Vn, M]).prod :=
+          norm_wordProdList_le (letters := ![x, V, y]) (b := ![M, Vn, M])
+            (fun j => by fin_cases j <;> simp [hx, hV, hy])
+            (bchQuinticTermTaylor2Remainder{tag}Words i)
+      _ = {profile} := by
+          fin_cases i <;> simp [bchQuinticTermTaylor2Remainder{tag}Words] <;> ring_nf
+  have hc : ∀ i, ‖bchQuinticTermTaylor2Remainder{tag}Coeffs i‖ ≤ {maxabs} / 720 := by
+    intro i
+    fin_cases i <;> simp only [bchQuinticTermTaylor2Remainder{tag}Coeffs] <;>
+      rw [← Rat.norm_cast_real] <;> norm_num
+  have hcb : (0 : ℝ) ≤ {maxabs} / 720 := by norm_num
+  unfold bchQuinticTermTaylor2Remainder{tag} bchWordSum
+  calc ‖∑ i, bchQuinticTermTaylor2Remainder{tag}Coeffs i •
+        wordProdList ![x, V, y] (bchQuinticTermTaylor2Remainder{tag}Words i)‖
+      ≤ (Fintype.card (Fin {count}) : ℝ) * ({maxabs} / 720) * {profile} :=
+        norm_sum_smul_wordProdList_le _ _ _ hc hw hcb
+    _ = ({const} / 720 : ℝ) * {profile} := by
+        rw [Fintype.card_fin]
+        norm_num
+    _ ≤ ({const} / 720 : ℝ) * (M ^ 3 * Vn ^ 2) := by
+        refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
+        {RELAX[k]}
+
+""")
+    return out
 
 
 def main():
@@ -232,10 +308,10 @@ letters `V`."))
 
     R.append("""/-! ### The definitions -/
 
-/-- The weighted sum of the words named by `words` with the numerators `coeffs`, over `720`. -/
+/-- The weighted sum of the words named by `words` with the coefficients `coeffs`. -/
 noncomputable def bchWordSum {𝔸 : Type*} [Ring 𝔸] [SMul ℚ 𝔸] {m : ℕ}
-    (coeffs : Fin m → ℤ) (words : Fin m → List (Fin 3)) (x V y : 𝔸) : 𝔸 :=
-  (720 : ℚ)⁻¹ • ∑ i, (coeffs i : ℚ) • wordProdList ![x, V, y] (words i)
+    (coeffs : Fin m → ℚ) (words : Fin m → List (Fin 3)) (x V y : 𝔸) : 𝔸 :=
+  ∑ i, coeffs i • wordProdList ![x, V, y] (words i)
 
 /-- **First-order directional difference** of `bchQuinticTerm` in its first argument: one `V` at
 each `x`-position of each degree-5 word. -/
@@ -258,6 +334,33 @@ noncomputable def bchQuinticTermTaylor2Remainder {𝔸 : Type*} [Ring 𝔸] [SMu
     (x V y : 𝔸) : 𝔸 :=
   bchQuinticTermTaylor2Remainder2V x V y + bchQuinticTermTaylor2Remainder3V x V y +
     bchQuinticTermTaylor2Remainder4V x V y
+
+/-! ### The norm bounds
+
+Each piece has a uniform letter profile, so one `fin_cases` script per piece evaluates every word of
+the piece at once. The constants are the source's `Basic.lean:4254/4664/4774/4797`. -/
+
+""")
+    R.extend(emit_bounds(pieces))
+    R.append("""/-- **Norm bound for the second-order Taylor remainder**:
+`‖C₅(x+V,y) - C₅(x,y) - linDiff‖ ≤ (2430/720) M³‖V‖²` with `M = ‖x‖ + ‖V‖ + ‖y‖`.
+
+`(1680 + 720 + 30)/720 = 2430/720` is the sum of the three pieces' constants. -/
+theorem norm_bchQuinticTermTaylor2Remainder_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+    [NormOneClass 𝔸] (x V y : 𝔸) :
+    ‖bchQuinticTermTaylor2Remainder x V y‖ ≤
+      (2430 / 720 : ℝ) * (‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2 := by
+  have h2 := norm_bchQuinticTermTaylor2Remainder2V_le x V y
+  have h3 := norm_bchQuinticTermTaylor2Remainder3V_le x V y
+  have h4 := norm_bchQuinticTermTaylor2Remainder4V_le x V y
+  have s1 := norm_add_le (bchQuinticTermTaylor2Remainder2V x V y +
+    bchQuinticTermTaylor2Remainder3V x V y) (bchQuinticTermTaylor2Remainder4V x V y)
+  have s2 := norm_add_le (bchQuinticTermTaylor2Remainder2V x V y)
+    (bchQuinticTermTaylor2Remainder3V x V y)
+  have hsum : (2430 / 720 : ℝ) = 1680 / 720 + 720 / 720 + 30 / 720 := by norm_num
+  unfold bchQuinticTermTaylor2Remainder
+  rw [hsum]
+  linarith only [s1, s2, h2, h3, h4]
 
 end
 
