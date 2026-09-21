@@ -205,6 +205,44 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 **P2** 伸缩与 `I1/I2` 残差分解 → **P3** `pieceB_*_decomp`（1e9–8e9 那四处）→
 **P4** `norm_bch_{sextic,septic,octic}_remainder_le`。
 
+### 3.3ter P1 进展与一条硬踩点（degree-5 恒等式）
+
+P1 已起步（commit `7ba2f2f`）：`FQFP/BCH/SmallSDischarge.lean` 收了 degree-4 那一对
+（源里唯一不带 `maxHeartbeats` 的），`(N:𝕂)⁻¹ → (N:ℚ)⁻¹` 后**证明脚本原样可用、无 bump**。
+
+degree-5（`sextic_pure_identity`，源 bump 16M）的实验结论有三条：
+
+1. **恒等式本身是对的。** `scripts/check_pure_identity.py` 把两边独立展开成自由代数上的
+   `{词: ℚ}` 映射再作差：degree 5 两边各 **30 个词、差集为空**。（这个校验器同时是
+   P0 三张表的旁证：它走的是目标 `BCHTerms.lean` 的四组词表。）
+2. **源的证明脚本不能原样搬过来。** 目标的 `bchQuinticGroup{1,4,6,24}` 是
+   `∑ i, (List.ofFn (wordEval …)).prod`（词数据），`unfold` 之后 `match_scalars` 会
+   **静默错配**：它把「未展开的 `Finset.sum`」和组系数当成单项式去配，于是留下**假命题**残局
+   `⊢ -1 / 720 = 0`、`⊢ 1 / 180 = 0`（正好是 `bchQuinticTerm` 的组系数）。**注意这不是超时**，
+   全文件在默认预算下 14s 就跑完——所以这一片**根本不需要 bump**，源那 16M 花在别处。
+3. **修法已确认可行**：在 `unfold` 之后、`match_scalars` 之前插一步显式展开
+
+   ```lean
+   simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, List.ofFn_succ, List.ofFn_zero, wordEval,
+     bchQuinticGroup1Words, bchQuinticGroup4Words, bchQuinticGroup6Words, bchQuinticGroup24Words,
+     Matrix.cons_val_zero, Matrix.cons_val_succ, Fin.isValue, Fin.succ_mk, Fin.zero_eta]
+   ```
+
+   加进去后目标确实变成单项式层（`(2⁻¹*60⁻¹) • (a*a*a*a*a) + …`）。剩下只是把这条展开的
+   simp 集收敛干净（当时还有 4 个 unusedSimpArgs）——纯粹是机械收尾。
+
+**工具本轮新增**（都可复用）：
+
+* `scripts/port_small_s_discharge.py`：源→目标语句变换器（去 `𝕂`、`(N:𝕂)⁻¹→(N:ℚ)⁻¹`、
+  `bch_*_term → bch*Term`、`bch_*_group_N → bch*GroupN`、去 `omit` 与
+  `set_option maxHeartbeats`）；`--list` 报五条恒等式及 bump 状态，`--emit <名>` 出目标文本。
+* `scripts/check_pure_identity.py`：把恒等式两边展开成 `{词: ℚ}` 独立核对（degree 5 已通）。
+
+**踩点**：**别用 PowerShell 的 here-string 去改 Lean 文件**——反引号会被当转义吃掉（本轮把
+`` `bchQuinticGroup*` `` 变成了带退格控制字符的 `chQuinticGroup*`，还把两行 `simp only` 拼成了
+一行）。改 Lean 文本用 `edit` 工具，或 PowerShell 里用单引号字符串 + `MatchEvaluator`。
+
+
 **开工前提（两件硬约束）**：
 
 1. **生成代码的兼容性**：源 `scripts/` 下约 90 个 Python（生成器 + 独立 CAS 校验器成对）。
