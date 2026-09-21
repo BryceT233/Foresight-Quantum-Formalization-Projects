@@ -33,10 +33,11 @@ The degree-4 pair and the degree-5 identity are ported, both without a heartbeat
 names are offset by one from the degree they clear: `sextic_pure_identity` is the degree-5 step.)
 
 `bchSexticTerm_expand` is the word-table expansion of `bchSexticTerm`, proved in its own small goal.
-It does *not* make the degree-6 identity fit: profiling that identity gives 37.0M heartbeats for the
-statement alone plus 163M for the proof, against a 200k budget. The higher degrees need the
-named-`def` statement and word-indexed sum bookkeeping described in `artifacts/bch-port.md`
-§3.3quater.
+The degree-6 identity is not in the file yet. Its pieces are now stated as `private def`s (the
+source's `let` chain costs 37.0M heartbeats to elaborate as a *statement*, 185× the default budget;
+the same statement with named `def`s costs 344k), and the identity still needs the word-indexed
+assembly described in `artifacts/bch-port.md` §3.3quater: a single `noncomm_ring` over the expanded
+degree-6 polynomial costs 172M heartbeats and gives up.
 
 **Assisted by Deepseek Harness**
 -/
@@ -144,6 +145,66 @@ private theorem sextic_pure_identity [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] 
     bchQuinticGroup24Words]
   noncomm_ring; module
 
+
+/-! ### The `y`-degree pieces
+
+The source states the degree-5…8 identities with a `let` chain of abbreviations (`z`, `T₂`, …,
+`W6`, `y3_6`, …). In a *statement*, a chain that size costs 37M heartbeats to elaborate — 185× the
+default budget — and no proof tactic can recover from that, so the target names the pieces as
+`private def`s instead. The mathematical content is unchanged; each body is the source's own
+expression, with `z` and `Tₖ` read as the `def`s above it. -/
+
+/-- `z = a + b`: the degree-1 part of `y = exp a * exp b - 1`. -/
+private def bchZ {𝔸 : Type*} [Add 𝔸] (a b : 𝔸) : 𝔸 :=
+  a + b
+
+/-- `T₂`: the degree-2 part of `y = exp a * exp b - 1`. -/
+private def bchT2 {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
+  a * b + (2 : ℚ)⁻¹ • a ^ 2 + (2 : ℚ)⁻¹ • b ^ 2
+
+/-- `T₃`: the degree-3 part of `y`. -/
+private def bchT3 {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
+  (6 : ℚ)⁻¹ • a ^ 3 + (2 : ℚ)⁻¹ • (a ^ 2 * b) + (2 : ℚ)⁻¹ • (a * b ^ 2) + (6 : ℚ)⁻¹ • b ^ 3
+
+/-- `T₄`: the degree-4 part of `y`. -/
+private def bchT4 {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
+  (24 : ℚ)⁻¹ • a ^ 4 + (6 : ℚ)⁻¹ • (a ^ 3 * b) + (4 : ℚ)⁻¹ • (a ^ 2 * b ^ 2) +
+    (6 : ℚ)⁻¹ • (a * b ^ 3) + (24 : ℚ)⁻¹ • b ^ 4
+
+/-- `T₅`: the degree-5 part of `y`. -/
+private def bchT5 {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
+  (120 : ℚ)⁻¹ • a ^ 5 + (24 : ℚ)⁻¹ • (a ^ 4 * b) + (12 : ℚ)⁻¹ • (a ^ 3 * b ^ 2) +
+    (12 : ℚ)⁻¹ • (a ^ 2 * b ^ 3) + (24 : ℚ)⁻¹ • (a * b ^ 4) + (120 : ℚ)⁻¹ • b ^ 5
+
+/-- `W6 = 2·y_d6 - (y²)_d6`, the degree-6 part of `2y - y²`: the explicit degree-6 words minus the
+degree-6 part of `y² = z·T₅ + T₂·T₄ + T₃·T₃ + T₄·T₂ + T₅·z`. -/
+private def bchW6 {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
+  (360 : ℚ)⁻¹ • a ^ 6 + (60 : ℚ)⁻¹ • (a ^ 5 * b) + (24 : ℚ)⁻¹ • (a ^ 4 * b ^ 2) +
+    (18 : ℚ)⁻¹ • (a ^ 3 * b ^ 3) + (24 : ℚ)⁻¹ • (a ^ 2 * b ^ 4) + (60 : ℚ)⁻¹ • (a * b ^ 5) +
+    (360 : ℚ)⁻¹ • b ^ 6 -
+    (bchZ a b * bchT5 a b + bchT2 a b * bchT4 a b + bchT3 a b * bchT3 a b +
+      bchT4 a b * bchT2 a b + bchT5 a b * bchZ a b)
+
+/-- `y3₆ = (y³)_d6`: the ten degree-6 products of three `y`-parts. -/
+private def bchY3Deg6 {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
+  bchZ a b ^ 2 * bchT4 a b + bchZ a b * bchT4 a b * bchZ a b + bchT4 a b * bchZ a b ^ 2 +
+    bchZ a b * bchT2 a b * bchT3 a b + bchZ a b * bchT3 a b * bchT2 a b +
+    bchT2 a b * bchZ a b * bchT3 a b + bchT2 a b * bchT3 a b * bchZ a b +
+    bchT3 a b * bchZ a b * bchT2 a b + bchT3 a b * bchT2 a b * bchZ a b + bchT2 a b ^ 3
+
+/-- `y4₆ = (y⁴)_d6`: the ten degree-6 products of four `y`-parts. -/
+private def bchY4Deg6 {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
+  bchZ a b ^ 3 * bchT3 a b + bchZ a b ^ 2 * bchT3 a b * bchZ a b +
+    bchZ a b * bchT3 a b * bchZ a b ^ 2 + bchT3 a b * bchZ a b ^ 3 +
+    bchZ a b ^ 2 * bchT2 a b ^ 2 + bchZ a b * bchT2 a b * bchZ a b * bchT2 a b +
+    bchZ a b * bchT2 a b ^ 2 * bchZ a b + bchT2 a b * bchZ a b ^ 2 * bchT2 a b +
+    bchT2 a b * bchZ a b * bchT2 a b * bchZ a b + bchT2 a b ^ 2 * bchZ a b ^ 2
+
+/-- `y5₆ = (y⁵)_d6`: the five degree-6 products of five `y`-parts. -/
+private def bchY5Deg6 {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
+  bchZ a b ^ 4 * bchT2 a b + bchZ a b ^ 3 * bchT2 a b * bchZ a b +
+    bchZ a b ^ 2 * bchT2 a b * bchZ a b ^ 2 + bchZ a b * bchT2 a b * bchZ a b ^ 3 +
+    bchT2 a b * bchZ a b ^ 4
 
 /-- `bchSexticTerm` as an explicit monomial chain, for the cancellation identities: proving the
 expansion in its own small goal keeps those identities inside the default heartbeat

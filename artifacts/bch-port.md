@@ -295,6 +295,29 @@ degree-6 剩下的超支与词表无关，纯粹是 `let` 语句 + 单块归一�
 `"a" if x else "b"`。校验器 `scripts/diff_sextic_chain.py` 做链↔词表逐词差分（正/反两种字母约定都报），
 `--expand` 的输出现在报 `forward: 0 differing words`。
 
+**本轮续测（结构改造第一步已落地，2026-02 续）**
+
+1. **语句换形有效，且是必须的**：把 `let` 链换成 `private def`（九条：`bchZ`、`bchT2`…`bchT5`、
+   `bchW6`、`bchY3Deg6`/`bchY4Deg6`/`bchY5Deg6`，数学内容一字不差）后，
+   `Elab.definition.header` 从 **37.0M → 344k**（107×）。但证明侧仍死：`simp only [<九条 def>]`
+   232k，接着单块 `noncomm_ring` **172M**（其中它内部的分配律 `simp only [add_mul, mul_add, …]`
+   占 44M）。**单块归一化路线到此为止。**
+2. **平面链（flat）实测**（`scripts/gen_sextic_flat_chain.py` → `artifacts/examples/sextic-flat-probe.lean`）：
+   * 该生成器把恒等式两边在「两个生成元 a、b 的自由 ℚ-代数」里独立展开：`taylor − sextic = 0`
+     （两边各 28 个词），**独立确认 degree-6 恒等式为真**。
+   * **已收集**的平面链（28 = 28 项）：`noncomm_ring` 2.36M heartbeats，**编过、无 bump、无报错** ✓。
+   * **未收集**的平面链（六段拼起来 ~220 项）：`noncomm_ring` 先 `maxRecDepth` 爆（给 8000 后仍
+     `unsolved goals`）→ 它**静默放弃**（注意：是 `unsolved goals`，不是超时——又一种要当数据读的
+     失败模式）。
+   * 结论：最终目标必须**按词索引收集**（每片 ≤64 项），不能是几百项的裸和。
+3. **装配路线（下一步）**：
+   1. `bchWord6 : Fin 64 → Fin 6 → Bool`（64 个六字母词）+ 每片一张 `Fin 64 → ℚ` 系数表（Python
+      算；`gen_sextic_flat_chain.py` 里的符号展开器现成）；
+   2. 六条小引理 `bchW6 a b = ∑ i, cW i • wordProdList ![a, b] (wordEvalPattern (bchWord6 i))`
+      （W6 / Y3 / Y4 / Y5 / Z⁶ / bchSexticTerm 各一条），每条在自己的小目标里证；
+   3. 恒等式用 `Finset.sum` 簿记合成同一个索引上的和，最后 `fin_cases i <;> norm_num [<六张表>]`
+      逐词配系数——**不再用 `noncomm_ring`**。
+
 **开工前提（两件硬约束）**：
 
 1. **生成代码的兼容性**：源 `scripts/` 下约 90 个 Python（生成器 + 独立 CAS 校验器成对）。
