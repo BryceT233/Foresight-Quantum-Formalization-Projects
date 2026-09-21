@@ -4,45 +4,51 @@
 `D:\project\CQM1\FQFP\BCH`（目标，Lean 4.34.0 / Mathlib v4.34.0），**重写架构与代码风格**，
 而不只是搬运。
 
-**当前状态：阶段 1（BCH 核心）、阶段 2（三次/四次/五次项）完成。** `lake build FQFP` ✔、
-`lake exe runLinter` ✔、`lake exe lint-style` ✔，零 `sorry`、零自定义公理、零 `maxHeartbeats`
-bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Quot.sound]`。
-阶段 3（机器生成层）未开始（见 §3）。
+**当前状态：阶段 1（BCH 核心）、阶段 2（三次/四次/五次项）、阶段 3 的五次项 taylor2 完成。**
+`lake build FQFP` ✔（零警告）、`lake exe runLinter` ✔、`lake exe lint-style` ✔，零 `sorry`、零自定义公理、
+零 `maxHeartbeats` bump；阶段 1 的定理 `#print axioms` 只剩
+`[propext, Classical.choice, Quot.sound]`。五次项的 `_diff_le` 与 taylor2 的四条范数界 +
+`bchQuinticTermLinDiff` / `bchQuinticTermTaylor2Remainder` 的定义均已落地；**仍缺**
+`bchQuinticTermTaylor2Decomp`（一阶展开恒等式，见 §3.2）。剩余 95k 行的机器生成层未动。
 
 本文合并了原先的三份记录（`bch-port-progress-and-next.md`、
-`bch-phase1-log-remainder-continuation.md`、`bch-phase1-complete.md`），删去了已过时的规划内容。
+`bch-phase1-log-remainder-continuation.md`、`bch-phase1-complete.md`）。已删去的内容包括：已完成
+步骤的逐轮流水账、已被推翻的 `bchWordSum`/`∑ i : Fin m` 系数据形式（含其真实卡点，见 §3.2）、
+以及所有指向已删除 `artifacts/bch-audit-round-one/*` 与
+`artifacts/bch-phase3-taylor2-word-data.md` 的引用。
 
 ---
 
 ## 1. 目标文件布局
 
-按**数学陈述**分层，不按源文件分层。
+按**数学陈述**分层，不按源文件分层。行数为当前工作树实测值。
 
 | 文件 | 行数 | 主题 |
 |---|---|---|
-| `Logarithm.lean` | 1034 | Banach 代数对数；`log (1+·)` 的余项界 |
-| `ExpNorm.lean` | 230 | 指数估计：实数与范数代数的 Taylor 余项界 |
-| `RealScalar.lean` | 83 | 完备 `ℚ`-代数上的唯一 `ℝ`-代数结构 |
-| `WordNorm.lean` | 179 | 词乘积范数（arity-free） |
-| `WordExpansion.lean` | 243 | 二元词模式、加权词和的分组界、`_diff` 界（telescoping） |
-| `NestedCommNorm.lean` | 92 | 嵌套交换子范数 |
-| `ChildsBasis.lean` | 165 | Childs 四重交换子基 |
-| `BCHElement.lean` | 287 | **结构层**：`bch` 是什么 |
-| `BCHCommutator.lean` | 573 | **偏差层**：`bch` 与 `a+b` 差多少 |
-| `BCHSymmetric.lean` | 315 | **对称层**：Strang 乘积的误差 |
-| `BCHTerms.lean` | 591 | **级数项层**：`bch` 展开的三次/四次/五次项及其范数界 |
-| `QuinticRemainder.lean` | 233 | 五次项的一阶 Lipschitz 界（阶段 3 首个文件） |
+| `Logarithm.lean` | 1021 | Banach 代数对数；`log (1+·)` 的余项界 |
+| `ExpNorm.lean` | 227 | 指数估计：实数与范数代数的 Taylor 余项界 |
+| `RealScalar.lean` | 82 | 完备 `ℚ`-代数上的唯一 `ℝ`-代数结构 |
+| `WordNorm.lean` | 178 | 词乘积范数（arity-free） |
+| `WordExpansion.lean` | 418 | 词展开：二元词模式界、telescoping `_diff` 界、任意字母表词积、加权词表 |
+| `NestedCommNorm.lean` | 88 | 嵌套交换子范数 |
+| `ChildsBasis.lean` | 163 | Childs 四重交换子基 |
+| `BCHElement.lean` | 283 | **结构层**：`bch` 是什么 |
+| `BCHCommutator.lean` | 557 | **偏差层**：`bch` 与 `a+b` 差多少 |
+| `BCHSymmetric.lean` | 303 | **对称层**：Strang 乘积的误差 |
+| `BCHTerms.lean` | 555 | **级数项层**：`bch` 展开的三次/四次/五次项及其范数界 |
+| `QuinticRemainder.lean` | 224 | 五次项的一阶 Lipschitz 界（阶段 3 首个完成件） |
+| `QuinticTaylor2.lean` | 429 | 五次项 taylor2：`linDiff` / 三块余项的定义 + 四条范数界（**缺** `bchQuinticTermTaylor2Decomp`，见 §3.2） |
 
 依赖链：`Logarithm/ExpNorm → BCHElement → BCHCommutator → BCHSymmetric`；
-`WordNorm → WordExpansion → BCHTerms → QuinticRemainder`。
+`WordNorm → WordExpansion → BCHTerms → QuinticRemainder / QuinticTaylor2`。
 
 阶段 1 拆成三个文件的原因：H2 会把 `BCHElement.lean` 推到 1000+ 行；三个文件的主题
 （「`bch` 是什么」/「`bch` 与 `a+b` 差多少」/「对称乘积的误差」）边界清楚。阶段 2 单独成
-`BCHTerms.lean`（712 行）：它按「`bch` 的展开系数」组织，与前三层的「误差估计」是两件事。
+`BCHTerms.lean`：它按「`bch` 的展开系数」组织，与前三层的「误差估计」是两件事。
 
 ---
 
-## 2. 阶段 1、2 已完成：源↔目标对照
+## 2. 阶段 1、2 的源↔目标对照
 
 | 源的声明 / 文件 | 目标 | 备注 |
 |---|---|---|
@@ -60,25 +66,17 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
 | `LogSeries.lean` 的 `logOnePlus_eq_real` + 手工 `restrictScalars` | `RealScalar.lean` 类型类实例 | |
 | `Basic:1397–1670` 三次项族 | `BCHTerms.lean` | def 改名 `bchCubicTerm`（见下） |
 | `Basic:1671–1770` 四次项族 | `BCHTerms.lean` | def 改名 `bchQuarticTerm` |
-| `Basic:1772–2118` 五次项族（4 组 + 项 + 界） | `BCHTerms.lean` | def 改名 `bchQuinticGroup{1,4,6,24}`、`bchQuinticTerm` |
+| `Basic:1772–2118` 五次项族（4 组 + 项 + 界） | `BCHTerms.lean` | 组改为词模式数据，见 §3.1；def 改名 `bchQuinticGroup{1,4,6,24}`、`bchQuinticTerm` |
+| `Basic:2120–3027` 五次组 `_diff_le` | `QuinticRemainder.lean` | 阶段 3；`_LQ_decomp` 推迟（见 §3.1） |
 
-**阶段 2 的两条约定**（与阶段 1 的差异，供阶段 3 沿用）：
-
-1. **`def` 名必须 lowerCamelCase。** Mathlib 的 `defsWithUnderscore` linter 只检查 `def`
-   （`Style.lean:557` 先要求 `isDefinition`），`theorem` 不受限——所以 `bch_cubic_term` 这类
-   源名必须改写为 `bchCubicTerm`，而定理名仍是源的 `bchCubicTerm_smul`、
-   `norm_bchCubicTerm_le`、`bchCubicTerm_LQ_decomp`（Mathlib 先例：`Complex.normSq` 与其
-   `normSq_apply`、`norm_compContinuousLinearMap_le`）。
-2. **`unusedSectionVars` 靠显式 binder 而不是 `omit`。** 五次项的四个组 `bchQuinticGroup{1,4,6,24}`
-   及其范数界只需要 `NormedRing 𝔸`（源亦然），但它们位于 `NormedAlgebra ℚ 𝔸` 的 section 内；
-   由于本项目禁止 `omit`，改用显式 `{𝔸 : Type*} [NormedRing 𝔸]` binder 遮蔽 section 变量。
-
-### 阶段 1 的公开声明
+### 公开声明
 
 - `Logarithm.lean`：`logCoeff`、`norm_logCoeff_le_one`、`logPartialSum`、
   `log_one_add_eq_logPartialSum_add_tsum`、`norm_log_one_add_sub_logPartialSum_le`（主引理）、
   `norm_log_one_add_le`、`norm_log_one_add_sub_le`、`norm_log_one_add_sub_add_sq_le`、
-  `norm_log_one_add_sub_add_sq_sub_cube_le`、`logPartialSum_{zero,one,two,three,four}`。
+  `norm_log_one_add_sub_add_sq_sub_cube_le`、`logPartialSum_{zero,one,two,three,four}`；
+  另有 `logSeries` 族、`log_{one,op}`、`Commute.log*`、`exp_log{,_one_add}` 等（`logSeries` 的
+  上游命运见 §5.2）。
 - `ExpNorm.lean`：`real_exp_third_order_le_div`、`real_exp_third_order_le_cube`、
   `norm_exp_sub_one_sub_id_le`、`norm_exp_sub_one_sub_id_sub_sq_le`。
 - `BCHElement.lean`：`norm_exp_mul_exp_sub_one_lt_one`、`norm_exp_sub_one_lt_one`、`bch`、
@@ -86,30 +84,137 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
 - `BCHCommutator.lean`：`norm_bch_sub_add_le`、`norm_bch_sub_add_sub_bracket_le`（H1）、
   `lie_eq_commutator`、`norm_bch_sub_add_sub_lie_le`。
 - `BCHSymmetric.lean`：`norm_symmetric_bch_sub_add_le`（H2）。
+- `BCHTerms.lean`：三次 `bchCubicTerm`、`bchCubicTerm_smul`、`norm_bchCubicTerm_le`、
+  `norm_bchCubicTerm_diff_le`、`bchCubicTerm_LQ_decomp`；四次 `bchQuarticTerm`、
+  `bchQuarticTerm_smul`、`norm_bchQuarticTerm_le`、`bchQuarticTerm_LQ_decomp`；五次
+  `bchQuinticGroup{1,4,6,24}Words`、`bchQuinticGroup{1,4,6,24}`、
+  `bchQuinticGroup{1,4,6,24}_smul`、`bchQuinticTerm`、`bchQuinticTerm_smul`、
+  `norm_bchQuinticGroup{1,4,6,24}_le`、`norm_bchQuinticTerm_le`。
+  跨层复用的范数辅助（公开）：`norm_mul_sub_mul_le`、`norm_double_commutator_le`、
+  `norm_mul_w_mul_le`、`norm_w_mul_mul_le`、`norm_mul_mul_w_le`、`norm_word5_le`。
+- `WordExpansion.lean`：二元侧 `wordEval`、`norm_wordEval_le`、`norm_sum_smul_wordEval_le`、
+  `norm_sum_wordEval_le`、`wordEval_smul`、`sum_wordEval_smul`、`norm_prod_sub_prod_le`、
+  `norm_wordEval_sub_le`、`norm_sum_wordEval_diff_le`；任意字母表侧 `wordProdList`、
+  `norm_wordProdList_le`、`norm_sum_smul_wordProdList_le`、`smul_wordProdList`、
+  `WeightedWord`、`WeightedWord.eval`、`wordSum`、`wordSum_smul`、`norm_wordSum_le`、
+  `norm_wordSum_le_sum_coeff`、`norm_list_sum_le`、`sum_map_const`。
+- `QuinticRemainder.lean`：`norm_bchQuinticGroup{1,4,6,24}_diff_le`（常数 10 / 25 / 35 / 5）、
+  `norm_bchQuinticTerm_diff_le`（常数 1）。
 
-### 阶段 2 的公开声明（`BCHTerms.lean`）
+### 阶段 2 的两条约定（阶段 3 沿用）
 
-- 三次：`bchCubicTerm`、`bchCubicTerm_smul`、`norm_bchCubicTerm_le`、
-  `norm_bchCubicTerm_diff_le`、`bchCubicTerm_LQ_decomp`。
-- 四次：`bchQuarticTerm`、`bchQuarticTerm_smul`、`norm_bchQuarticTerm_le`、
-  `bchQuarticTerm_LQ_decomp`。
-- 五次：`bchQuinticGroup1`、`bchQuinticGroup4`、`bchQuinticGroup6`、`bchQuinticGroup24`、
-  `bchQuinticTerm`、`bchQuinticTerm_smul`、`norm_bchQuinticTerm_le`。
-
-阶段 3 复用的范数辅助（审核后已从 `private` 提升为公开）：`norm_mul_sub_mul_le`、
-`norm_double_commutator_le`、`norm_mul_w_mul_le`、`norm_w_mul_mul_le`、`norm_mul_mul_w_le`、
-`norm_word5_le`；`smul_five_fold` 仍是 `BCHTerms.lean` 的私有辅助。
+1. **`def` 名必须 lowerCamelCase。** Mathlib 的 `defsWithUnderscore` linter 只检查 `def`
+   （`Style.lean:557` 先要求 `isDefinition`），`theorem` 不受限——所以 `bch_cubic_term` 这类
+   源名必须改写为 `bchCubicTerm`，而定理名仍是源的 `bchCubicTerm_smul`、
+   `norm_bchCubicTerm_le`、`bchCubicTerm_LQ_decomp`（Mathlib 先例：`Complex.normSq` 与其
+   `normSq_apply`、`norm_compContinuousLinearMap_le`）。
+2. **`unusedSectionVars` 靠显式 binder 而不是 `omit`。** 五次项的四个组
+   `bchQuinticGroup{1,4,6,24}` 及其范数界只需要 `NormedRing 𝔸`（源亦然），但它们位于
+   `NormedAlgebra ℚ 𝔸` 的 section 内；由于本项目禁止 `omit`，改用显式
+   `{𝔸 : Type*} [NormedRing 𝔸]` binder 遮蔽 section 变量。
 
 ---
 
-## 3. 待做
+## 3. 阶段 3：机器生成层
 
-### 3.1 阶段 3：机器生成层（≈95k 行，真正的成本中心）
+### 3.1 已完成：arity-free 词 API 与五次项 `_diff_le`
+
+**这是把 95k 行压下来的最大杠杆，且必须在生成器层面做，事后手改不可行。** 生成代码里每个
+monomial 分支都重复 `norm_smul_le → norm_Nprod_le → gcongr → ring`，这些全部改成对
+`WordNorm.lean` / `WordExpansion.lean` 的单次调用。
+
+付清的第一笔账：五次项四个组的范数界曾为 30 个 5 字母词写 180 行（30 次 `norm_word5_le` +
+27 条 `norm_add_le` + 4 次 `linarith only`）；改造后每个是一行
+`simpa [bchQuinticGroupN] using norm_sum_wordEval_le bchQuinticGroupNWords a b`。源的对应部分
+（`Basic:2120–3027`，约 0.9k 行）为每个 `a`-位置花一个 `calc` 块。
+
+- `WordExpansion.lean` 补齐 `_diff` 侧：`norm_prod_sub_prod_le`（telescoping 原语）、
+  `norm_wordEval_sub_le`、`norm_sum_wordEval_diff_le`（组级差分界，常数即该组 a-位置总数），
+  以及无权组界 `norm_sum_wordEval_le` 与齐次性 `wordEval_smul` / `sum_wordEval_smul`。
+- `BCHTerms.lean` 的四个组是词模式数据（`bchQuinticGroup*Words : Fin m → Fin 5 → Bool`）加
+  `Finset.sum`，`_le` / `_smul` 各一行。词表（4 / 10 / 14 / 2）曾与源逐字比对，全部 MATCH。
+- `QuinticRemainder.lean`：四个组 `_diff_le`（常数 10 / 25 / 35 / 5）+
+  `norm_bchQuinticTerm_diff_le`（常数 1，因 `(1/720)(10 + 4·25 + 6·35 + 24·5) = 440/720 ≤ 1`）。
+
+**代价与偏差**：`_diff_le` 需要 `NormOneClass 𝔸`（源里这三条用 `omit` 去掉了它），因为
+telescoping 原语经 `norm_word_le` 归结到 `‖1‖ = 1`；BCH 层的一切本来就带 `NormOneClass`。
+
+**`_LQ_decomp` 伴生引理（有意推迟）**：源把它们写成逐项展开的显式非交换多项式恒等式
+（组 1：32 项；组 6：76 项，且带 `set_option maxHeartbeats 3200000`），只能由 `noncomm_ring`
+证明。它们只被 `SymmetricSepticPhaseBC` / `SymmetricSepticPieces`（阶段 3 后段）使用，而更早的
+`QuinticMixed` / `SexticMixed` / `SepticTaylor` 只需要 `_diff_le` 与 taylor2 余项。因此推迟到
+移植那两个消费者时再做；届时先定形状：**逐组显式展开**（忠实于源，但组 6 需处理心跳，本项目
+禁止 bump），还是**按词模式生成 W-次数分解**（可能免 bump，但需先看消费者要点什么）。
+
+### 3.2 已落地：五次项 taylor2 余项（`Basic:3028–4830`）
+
+**消费者只用 4 条**：`bchQuinticTermTaylor2Decomp`（恒等式，**仍缺**）、`bchQuinticTermLinDiff` 与
+`bchQuinticTermTaylor2Remainder`（定义）、`norm_bchQuinticTermTaylor2Remainder_le`（总界）。源里的
+2V / 3V / 4V 三个子块、`taylor2_remainder_split` 及它们的三个界**在 `Basic.lean` 之外无人使用**，
+纯属内部脚手架——源为此写了约 1200 行。目标保留三块拆分（因为拆分是 `rfl`、且每块词形一致），
+但每块只有一条界。
+
+源的界形状：`≤ (2430/720) M³‖V‖²`，`M = ‖x‖ + ‖V‖ + ‖y‖`；三个子块共用这一形状（常数
+`1680/720`、`720/720`、`30/720`）。**常数对齐已核实**：源用的是「每组词数 × 组内最大系数」
+而非 `Σ|c|`——`70×24 = 1680`、`30×24 = 720`、`5×6 = 30`，合计 `2430/720` ✓。（生成器另外算出
+的 `Σ|c|` 是 `440/384/136/16`，与源的常数无关，仅作诊断。）
+
+**数据与表示（终版）**：数据用 `Fin m → ℚ`（系数，分母 720）与 `Fin m → List (Fin 3)`（模式，
+`0 = x`、`1 = V`、`2 = y`），定义是 `bchWordSum` 的一个 `∑`。词数 **75 / 70 / 30 / 5**，与源逐词逐
+系数一致，`linDiff` 的 `Σ|c| = 440/720`。旧记录里「改用 `List ℚ` + `List (List (Fin 3))`」的方案
+**没有采用**：`Fin` 向量的 `![]` 字面量在默认 `simp` 集下能正常摊平（见「旧方案到底卡在哪」一节），
+换成 `List` 只会把 `Fin` 索引的界证明问题换成 `List.getElem` 的界证明问题，收益为零。
+
+**四条范数界的写法（已定型，见 `QuinticTaylor2.lean`）**：全文件只用两条新引理，不展开逐项：
+
+* `sum_abs_le_card_mul_sup'`：`∑ i, |c i| ≤ card ι * (univ.sup' fun i => |c i|)`。这把「一组 `m` 个系数
+  的绝对值和」的界归结为「组内最大系数 × 词数」，正是源常数的来源。**不要**用
+  `norm_num [<系数 def>]` 直接算 `∑ i : Fin 70`：那会展开 70 项（旧记录里 `Fin.sum_univ_succ` 的写法
+  就是这个思路的残留），而且对 `Fin 70 → ℚ` 的 `![]` 字面量并不稳。
+* `profile_le`：`M ^ (5 - k) * Vn ^ k ≤ M ^ 3 * Vn ^ 2`（`k ∈ {2,3,4}`，用 `Vn ≤ M`）。字母 profile 本身
+  是每块一行 `fin_cases i <;> simp [<词表>] <;> ring_nf ;try simp`。
+* 每块一次 `norm_sum_le` + `Finset.sum_le_sum` + `Finset.sum_mul` 即得常数；三条界再合成
+  `2430/720`（见文件末的 `norm_bchQuinticTermTaylor2Remainder_le`）。
+
+**已实测的坑（可运行复现见 `artifacts/examples/`）**：
+
+* **`Σ` 不是 `∑`**。生成器曾发射 `≤ Σ i : Fin 70, …`——`Σ` 是 sigma 类型构造子，于是整条 `calc`
+  报 `failed to synthesize instance ...` / `invalid 'calc' step, failed to synthesize Trans instance`。
+  这类「实例合成失败」错误十有八九是**项的语法形状**不对，不是真的缺实例。
+* **`positivity` 判不了 `M ^ 3 * Vn ^ 2`**：`M`、`Vn` 是 `set` 出来的局部定义，`positivity` 不会去
+  展开它们，`0 ≤ M` 要显式给。`by positivity` 在这里失败会表现为 `⊢ 0 ≤ ?m`（元变量）。
+* **`ring_nf` 会与 `mul_eq_mul_left_iff` 打架**：4V 块最后一个词化简成
+  `M * (Vn * (Vn * (Vn * Vn))) = M * Vn ^ 4` 后，`simp` 默认集里的 `mul_eq_mul_left_iff`
+  （`c * a = c * b ↔ a = b ∨ c = 0`，**不需要** `c ≠ 0`）把它化成
+  `Vn * (Vn * (Vn * Vn)) = Vn ^ 4 ∨ M = 0`，而 `ring`/`ring_nf`/`tauto`/`simp_all`
+  **都收不了这个残局**（`simp` 也不再前进）。可行的收尾是 `ring_nf ;try simp`——注意必须是 `;` 而不是
+  `<;>`，否则 `lint-style` 报 `Used tac1 <;> tac2 where (tac1; tac2) would suffice`；而
+  `<;> try simp` 在 2V/3V 两块（`ring_nf` 已经收尾）会报 `unusedTactic`。
+* **`try simp` 不能写成单独一行**：`tac1 <;> tac2` 之后另起一行写 `simp`，会在 2V/3V 的分支上报
+  `No goals to be solved`（那时目标已空）。要用 `;try simp` 接在同一行。
+* **`longLine` 由 `lake build` 把关**，不是 `lint-style`：`lakefile` 里
+  `weak.linter.mathlibStandardSet = true`，行长上限 100。写生成代码时把每行控制在 100 列内是硬约束
+  （`QuinticTaylor2.lean` 里用 `set c`/`set w` 给长名字起局部别名，就是为了这个）。
+
+**与生成器的关系（重要）**：`QuinticTaylor2.lean` 的文件头写着 generated by
+`scripts/gen_bch_quintic_taylor2.py`，但**两者已不同步**：生成器发射的 2V/3V profile 行是
+`<;> ring_nf`，磁盘上是 `<;> ring_nf ;try simp`（见上一条）。这些 `try simp` 属于手工调优，
+**不要为了「重新生成」而跑脚本覆盖文件**；脚本可留作数据来源与忠实性交叉核对。若确实要重新生成，
+先把生成器对齐到磁盘版本，再逐行 diff。
+
+**待做**：
+
+* `bchQuinticTermTaylor2Decomp`：`bchQuinticTerm (x + V) y - bchQuinticTerm x y =
+  bchQuinticTermLinDiff x V y + bchQuinticTermTaylor2Remainder x V y`。被
+  `SymmetricSepticPhaseBC`（`septic_d7_P3_C5_lin_poly_eq_taylor2_remainder`）与
+  `SymmetricSepticPieces` 使用，是这两个文件的**硬依赖**。源把它写成
+  `unfold … ; simp only […] ; match_scalars <;> ring` 并带 `maxHeartbeats 1024000000`——本项目
+  禁止 bump，所以这一步需要先定形状（见 §3.3 的开工前提）。
+
+### 3.3 剩余文件与开工前提
 
 | 源 | 行数 | 目标 | 依赖 |
 |---|---|---|---|
-| `Basic:2120–3027` 五次组 `_diff_le`（**已完成**）+ `_LQ_decomp`（推迟，见下） | 0.9k | `QuinticRemainder.lean`（已建） | 阶段 2 |
-| `Basic:3028–4830` `bch_quintic_term_lin_diff` + taylor2 余项 `{,_2V,_3V,_4V}` | 1.8k | `QuinticRemainder.lean` | 阶段 2 |
 | `Basic:4830–8714` 双线性二阶差分 + `QuinticMixed.lean` | 5.5k | `QuinticMixed.lean` | 阶段 2 |
 | `SmallSDischarge.lean` | 8.4k | 同名 | 阶段 1 |
 | `RemainderBounds.lean` | 8.7k | 同名 | SmallSDischarge |
@@ -125,9 +230,14 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
 | `Basic:11460–18070` τ⁷/τ⁸ + Lipschitz | 6.6k | `BCHHigherOrder.lean` | 阶段 1 |
 | `Basic:18071–19314` exp 四至九阶余项 + `quartic_identity` + `norm_bch_quartic_remainder_le` | 1.2k | `BCHHigherOrder.lean` | 阶段 2 |
 
-**开工前必须先解决三件事：**
+源共 17 个 `.lean`（`Basic`、`LogSeries`、`ChildsBasis` + 14 个生成件），上表逐条覆盖：`Basic`
+按行段拆成若干目标，`SymmetricQuintic.lean`（1.3k 的纯聚合模块）的 42k 行内容已先被源自己拆进
+`SymmetricQuinticCore` / `PhaseBC` / `Pieces` / `Assembly`，`SuzukiSepticMatchWords.lean` 并入
+`SuzukiSepticMatch`。
 
-1. **生成器**：已确认存在——源 `scripts/` 下约 90 个 Python，生成器与独立 CAS 校验器成对出现
+**开工前必须先解决两件事：**
+
+1. **生成器**：源 `scripts/` 下约 90 个 Python，生成器与独立 CAS 校验器成对出现
    （`gen_bch_quintic_term_taylor2{,_bound}.py`、`gen_bch_sextic_*`、`gen_bch_septic_*`、
    `gen_bch_octic_*`、`gen_d8_*`），`build_safe.sh` 与 `mem_watchdog.sh` 也在。**待确认的只剩
    发射代码对 4.34 的兼容性**：源大量使用 `match_scalars <;> ring`、`noncomm_ring`、
@@ -135,80 +245,6 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
 2. **构建内存**：源已因单模块峰值 RSS 把 42k 行的 `SymmetricQuintic` 拆成 4 个模块，并用
    `scripts/build_safe.sh` 顺序构建（Lake 5 没有 `-j` 节流）。目标仓库必须预先规划同样的拆分，
    不能等到 OOM。
-3. **arity-free 重写的机会**：生成代码里每个 monomial 分支都重复
-   `norm_smul_le → norm_Nprod_le → gcongr → ring`，这些应当全部改成对 `WordNorm.lean` /
-   `WordExpansion.lean` 的单次调用。**这是把 95k 行压下来的最大杠杆，且必须在生成器层面做，
-   事后手改是不可行的。**
-
-   阶段 2 量过这笔账，阶段 3 开工前又付清了一次：五次项四个组的范数界曾为 30 个 5 字母词写
-   180 行（30 次 `norm_word5_le` + 27 条 `norm_add_le` + 4 次 `linarith only`）；改造后每个是
-   一行 `simpa [bchQuinticGroupN] using norm_sum_wordEval_le bchQuinticGroupNWords a b`。
-
-   **本轮已完成**：
-
-   * `WordExpansion.lean` 补齐了 `_diff` 侧：`norm_prod_sub_prod_le`（telescoping 原语）、
-     `norm_wordEval_sub_le`、`norm_sum_wordEval_diff_le`（组级差分界，常数即该组 a-位置总数），
-     以及无权组界 `norm_sum_wordEval_le` 与齐次性 `wordEval_smul` / `sum_wordEval_smul`。
-   * `BCHTerms.lean` 的四个组改成词模式数据（`bchQuinticGroup*Words : Fin m → Fin 5 → Bool`）
-     加 `Finset.sum`，`_le` / `_smul` 各一行；词表已用
-     `artifacts/bch-audit-round-one/_check_quintic_words.py` 与源逐字比对（4 / 10 / 14 / 2 全 MATCH）。
-   * `QuinticRemainder.lean`：四个组 `_diff_le`（常数 10 / 25 / 35 / 5）+ `norm_bchQuinticTerm_diff_le`
-     （常数 1，因 `(1/720)(10 + 4·25 + 6·35 + 24·5) = 440/720 ≤ 1`）。
-
-   **代价与偏差**：`_diff_le` 现在需要 `NormOneClass 𝔸`（源里这三条用 `omit` 去掉了它），因为
-   telescoping 原语经 `norm_word_le` 归结到 `‖1‖ = 1`；BCH 层的一切本来就带 `NormOneClass`。
-
-   **`_LQ_decomp` 伴生引理（有意推迟）**：源把它们写成逐项展开的显式非交换多项式恒等式
-   （组 1：32 项；组 6：76 项，且带 `set_option maxHeartbeats 3200000`），只能由 `noncomm_ring`
-   证明。它们只被 `SymmetricSepticPhaseBC` / `SymmetricSepticPieces`（阶段 3 后段）使用，
-   而更早的 `QuinticMixed` / `SexticMixed` / `SepticTaylor` 只需要 `_diff_le` 与 taylor2 余项。
-   因此推迟到移植那两个消费者时再做；届时先定形状：**逐组显式展开**（忠实于源，但组 6 需处理
-   心跳，本项目禁止 bump），还是**按词模式生成 W-次数分解**（可能免 bump，但需先看消费者要点什么）。
-
-   **`Basic:3028–4830`（`lin_diff` + taylor2 余项，1.8k 行）的勘察结论**（本轮完成，实现待下轮）：
-
-   * **消费者只用 4 条**：`bch_quintic_term_taylor2_decomp`（恒等式）、`lin_diff` 与
-     `taylor2_remainder`（定义）、`norm_bch_quintic_term_taylor2_remainder_le`（总界）。
-     2V / 3V / 4V 三个子块、`taylor2_remainder_split` 与它们的三个界**在 `Basic.lean` 之外无人
-     使用**，纯属内部脚手架——源为此写了约 1200 行（每项一条 `..._eq_sum` + `...Term_norm_le`）。
-     按现在的词 API 这整块可以不要，总界由组引理直接给出。
-   * **源的界形状**：`≤ (2430/720) M³‖V‖²`，`M = ‖x‖ + ‖V‖ + ‖y‖`；三个子块共用这一形状
-     （常数 `1680/720`、`720/720`、`30/720`）。若用「每词 ≤ `M³‖V‖²`」的粗界加最大系数 `1/30`，
-     得 `105/30 = 3.5`，比源的 `3.375` 弱 3.7%；要精确对齐需按 V 的个数分类并用各组的 `Σ|c|`。
-   * **`WordExpansion.lean` 本轮补上了字母表无关的 API**：`wordProdList`（模式为 `List κ`）、
-     `norm_wordProdList_le`、`norm_sum_smul_wordProdList_le`。动机有两条：Taylor 余项的词在
-     **三**字母 `{x, V, y}` 上，二元的 `wordEval` 覆盖不到；且模式必须是 `List` 而不是 `Fin n → κ`
-     ——`wordProdList` 的定义方程是 `rfl`，具体模式按定义约简，而 `wordEval` 的
-     `if (v i) then a else b` 会卡成 `if true = true then a else b`（`simp only [↓reduceIte]`
-     与 `simp only [cond_true]` 在该语境下都不触发，`abel`/`noncomm_ring` 于是把它当成与 `a`
-     不同的原子）。已实测通过：`x*x*V*V*y = wordProdList ![x,V,y] [0,0,1,1,2]` 由
-     `simp only [wordProdList, mul_one]; noncomm_ring` 一次解决；`Fin` 求和展开本身也可行
-     （`Fin.sum_univ_succ` + `Fin.sum_univ_one` + `Finset.univ_eq_empty`/`Finset.sum_empty`）。
-   * **下一步**：改造 `gen_bch_quintic_term_taylor2.py`（194 行，已通读）：它已用非交换多项式算出
-     `lin_diff`（75 词）与 `taylor2_remainder`（105 词）；只需把 `emit_def` 改成发射模式数据
-     （`List (Fin 3)` 字面量）与系数数据，加 `∑` 形式定义，`taylor2_decomp` 用「展开求和 +
-     `noncomm_ring`」证明，总界用 `norm_sum_smul_wordProdList_le` 一行。
-
-   **已完成（生成器 + 数据 + 定义）**：
-
-   * `scripts/gen_bch_quintic_taylor2.py`（零依赖，用标准库 `Fraction`；源脚本依赖 `sympy`）：
-     自己从非交换多项式重算 `log(exp a·exp b)` 的五次分量，再做单 `V` / 多 `V` 替换，
-     发射模式数据（`List (Fin 3)`）与系数数据（`ℤ`，以 `720` 为分母），并写成
-     `FQFP/BCH/QuinticTaylor2.lean`（150 行，可整体重生成）。
-   * 定义：`bchWordSum`、`bchQuinticTermLinDiff`、`bchQuinticTermTaylor2Remainder{2V,3V,4V}`，
-     以及 `bchQuinticTermTaylor2Remainder`。**余项在定义层面就按 V 的个数拆成三块**，所以拆分
-     恒等式是 `rfl`，而每块词形一致——这正是把界常数固定到 `2430/720` 的关键。
-   * **常数对齐已核实**：源用的是「每组词数 × 组内最大系数」而非 `Σ|c|`——`70×24 = 1680`、
-     `30×24 = 720`、`5×6 = 30`，合计 `2430/720` ✓。即 `norm_sum_smul_wordProdList_le` 的
-     `cb` 参数形状正好够用，不需要 `Σ|c|` 版本。（生成器算出的 `Σ|c|` 是 `440/384/136/16`，
-     与源的常数无关，仅作诊断输出。）
-   * **忠实性已机器核实**：`artifacts/bch-audit-round-one/_check_taylor2_words.py` 解析源里五条
-     显式链（`lin_diff`、三个 `_kV`、`taylor2_remainder`），与生成的数据逐词逐系数比对，
-     并检查每块词的 V 个数：**75 / 70 / 30 / 5 / 105 全部 MATCH**。
-   * **仍未做**：`bchQuinticTermTaylor2Decomp`（恒等式，只被 SymmetricSeptic* 用）与四条范数界。
-     界的写法已定：需要一条「词内恰好 `k` 个 `V` ⟹ 范数 ≤ `M^(5-k)·‖V‖^k`」的 profile 引理
-     （在 `List (Fin 3)` 上对模式归纳，用 `decide` 提供每块的 `count 1 = k`），然后每块一次
-     `norm_sum_smul_wordProdList_le` + 三步三角不等式即得 `2430/720`。
 
 ---
 
@@ -240,10 +276,14 @@ bump；阶段 1 的定理 `#print axioms` 只剩 `[propext, Classical.choice, Qu
    逐字重复的孪生定理，都不再抄一遍——docstring 指向即可。
 5. **用 section 边界代替 `omit`/`include 𝕂`。** 目标不许出现 `omit`。（审核后 `WordNorm.lean`
    已按此重写：按所需结构拆 section，12 处 `omit` 全部消失。）
+6. **`norm_*_rat` 这类单例辅助不要留。** `‖(4 : ℚ)‖ = 4` 之类的引理只服务一个调用点，直接写
+   `by simp [← Rat.norm_cast_real]`（或 `rw [← Rat.norm_cast_real]; norm_num`）即可。曾经有
+   `norm_{four,six,twentyFour,sevenTwenty}_rat` 四个引理，已删并原地内联；删的时候记得检查
+   `BCHTerms.lean` 之外的调用点（`QuinticRemainder.lean` 里还有四处）。
 
 ---
 
-## 5. 技术经验（阶段 2/3 会反复用到）
+## 5. 技术经验
 
 ### 5.1 参数化，而不是按阶展开
 
@@ -352,7 +392,7 @@ statement 只含纯实数命题、`𝔸` 不出现；每个估计用显式 `calc
 - **`norm_pow` 需要 `‖1‖ = 1`**（`NormOneClass`）；裸 `NormedRing` 只有 `norm_pow_le'`
   （要求 `0 < n`），零情形要单独处理。
 - **`‖(2 : ℚ)‖`/`‖(2 : ℚ)⁻¹‖` 的 `norm_num` 无效**（报 `‖2‖ = 2` 未解决）：要
-  `rw [← Rat.norm_cast_real]; norm_num`。
+  `rw [← Rat.norm_cast_real]; norm_num`（或 `simp [← Rat.norm_cast_real]`）。
 - **`Real.norm_exp_sub_one_sub_id_le`** 在 `Mathlib/Analysis/Complex/Exponential.lean:456`，
   是 `_root_.Real.…`（由 ℂ 版 `exact_mod_cast` 得到）；配合 `Real.norm_eq_abs` +
   `abs_of_nonneg` 使用。
@@ -365,36 +405,53 @@ statement 只含纯实数命题、`𝔸` 不出现；每个估计用显式 `calc
   `UTF8Encoding($false)` 且手动把 `\r\n` 换成 `\n`（`lake exe lint-style --fix` 对行尾**无效**）。
   **不要用 `Set-Content`/`Get-Content -Raw` 改 Lean 文件**（破坏 UTF-8 的 `‖` 等字符）；
   用 `[System.IO.File]::ReadAllLines/WriteAllLines` 或 `edit` 工具。
+- **`simp only` 会关掉 simp 的默认集，遇到字面量要当心**（见 §3.2，复现见
+  `artifacts/examples/vec-cons-simplification.lean`）：向量字面量 `![-1, 4, -6, 4, -1]`
+  上的 `get`，靠的是默认集里的 `Matrix.cons_val_zero` / `Matrix.cons_val_succ`。所以
+  `simp only [<数据 def>]` 化简不动它（残局 `⊢ ↑(![-1, …] 0) = -1`），而 `simp [<数据 def>]`
+  一条过。要保留 `simp only` 就显式补 `Matrix.cons_val_zero/succ`（`simp?` 会给出完整清单），
+  或者干脆换 `List`（`List.getElem_cons_*` 是真 simp 引理）。写生成代码时这是个反复踩的点：
+  **发射 `simp only` 之前先确认它在完整 `simp` 下成立**，否则会得到「展开后没人收尾」的残局。
+- **`decide` 不能判 `ℝ` 命题**：`Real.decidableLE` 经 `Classical.choice` 定义，`decide` 展开后
+  卡在 `Classical.choice` 上（报错会明说）。`decide` 只对 `ℕ`/`ℤ`/`ℚ`/`Bool`/`List` 上的
+  可计算目标可靠，例如「词表里 `a`-位置的总数 = 10」。
+- **`Rat.norm_cast_real` 只认 `ℚ`**：形状是 `‖(↑q : ℝ)‖ = ‖q‖`（`q : ℚ`）。`ℤ` 经 `Int.cast`
+  直接进 `ℝ` 的话（`‖↑↑z‖`）这条套不上，要先降到 `ℚ`。
+- **`List.getElem` 的界证明会进目标**：`getElem w ⟨i, by decide⟩` 化简后会露出
+  `decide (2 < w.length)`，与已展开的 `true` 对不上，`simp only` 报
+  `Application type mismatch ... @Eq Bool (decide (2 < w.length)) true`。索引改用
+  `match` 式访问函数或 `nameWords[i.val]'(…)` 形式即可。
 
 ---
 
-## 6. 风险
+## 6. 仓库状态与待办
 
-1. **版本漂移。** 源在 Lean 4.29.0-rc8，目标 v4.34.0。阶段 1 的手写移植顺利（说明漂移可控），
-   但生成代码大量使用 `match_scalars <;> ring`、`noncomm_ring`、`dsimp only` 这类对 Mathlib
-   内部 simp 集敏感的手法（源 `CLAUDE.md` 记了 7 条此类技巧）。**生成代码的移植成本很可能
-   远高于它的行数比例。**
-2. **`Logarithm.lean` 的最终命运。** 该文件的代数半部分与 `NormedSpace.log`
-   （[mathlib4#43670](https://github.com/leanprover-community/mathlib4/pull/43670)）重复，
-   pin 一过就应删除。已核实目标 checkout 是 `v4.34.0`(`5ed2965256`, 2026-09-15)，全树搜索
-   `logSeries` **零命中**，`Mathlib/**/Logarithm*.lean` **不存在**——即该 PR 尚未进入目标 pin，
-   `FQFP/BCH/Logarithm.lean` 仍是必需的本地实现。下次 Mathlib bump 时做机械替换：删 vendored
-   代数层 + 改名 `FQFP.log → NormedSpace.log`。
-3. **已归档的设计记录。** `artifacts/log-upstream-alignment.md`、
-   `artifacts/abstractions/LogOnePlus.md`、`artifacts/exp-log-plan.md`、
-   `artifacts/rat-to-real-scalars.md` 已从工作树删除、但在 `HEAD` 中完好。它们是
-   `Logarithm.lean` / `ExpNorm.lean` / `RealScalar.lean` 的设计依据（对齐 #43670 的接口决策、
-   `log` 中心在 `1`、定义不需要范数、"shim 试过又删掉了"）。**要继续保留就
-   `git checkout HEAD -- artifacts/`；否则本文 §4 与代码 docstring 已覆盖其结论性内容。**
+- **工作树的改动**（本次会话）：
+  - `FQFP/BCH/BCHTerms.lean`：删掉 `norm_{four,six,twentyFour,sevenTwenty}_rat` 与两个不再需要的
+    import，调用点改用 `simp [← Rat.norm_cast_real]`（见 §4.6）。
+  - `FQFP/BCH/QuinticRemainder.lean`：上面那次删除留下的四处悬空调用（`norm_four_rat`、
+    `norm_six_rat`、`norm_twentyFour_rat`、`norm_sevenTwenty_rat`）已按同一写法内联修好。
+  - `FQFP/BCH/QuinticTaylor2.lean`：taylor2 一线从「只有数据、缺界」推到「定义 + 四条范数界」，
+    见 §3.2；`bchQuinticTermTaylor2Decomp` 仍缺。
+  - `scripts/gen_bch_quintic_taylor2.py`：与磁盘文件**已不同步**（2V/3V 的 profile 行差
+    `;try simp`），保留作数据来源与交叉核对，不要直接跑它覆盖文件（见 §3.2 末）。
+  - `artifacts/examples/`：新增几个可运行的勘察脚本（`taylor2-*.lean`、`vec-cons-simplification.lean`）。
+  - `artifacts/bch-audit-round-one/` 下的两个比对脚本已从工作树删除；其中的结论（词表 MATCH、
+    常数对齐）已收进本文。
+- **`.lake` 构建残留已清理**：原先有 `FQFP/BCH/LogOnePlus`、`FQFP/BCH/ScratchProbe`、
+  `FQFP/NormedSpace/LogOnePlus`、`FQFP/Spike/*` 等已删除模块的陈旧 olean（上一轮失败尝试的
+  痕迹）。现在 `FQFP/` 下每个 `.lean` 都有对应 olean、每个 olean 都有对应 `.lean`，双向核对为空。
 
----
-
-## 7. 仓库状态与待办
-
-- 阶段 1、阶段 2 的改动**已提交**（`a946626`、`c1b774e`、`33c578b`）。工作树当前有审核修复
-  （见 `artifacts/bch-audit-round-one/bch-code-review.md` 的「修复记录」）：`FQFP.lean`（+1 import）、
-  `FQFP/BCH/` 下 10 个文件、新增 `FQFP/BCH/WordExpansion.lean` 与仓库根的 `LICENSE`。
-- 遗留文件 `xxxxyyyytest.lean` 已删除（`xxxxyyyytest1.lean` 早已不在）。
+- **`Logarithm.lean` 的上游命运**：该文件的代数半部分与 `NormedSpace.log`
+  （[mathlib4#43670](https://github.com/leanprover-community/mathlib4/pull/43670)）重复，pin 一过
+  就应删除。已核实目标 checkout 是 `v4.34.0`（`5ed2965256`，2026-09-15），全树搜索 `logSeries`
+  **零命中**，`Mathlib/**/Logarithm*.lean` **不存在**——即该 PR 尚未进入目标 pin，
+  `FQFP/BCH/Logarithm.lean` 仍是必需的本地实现。下次 Mathlib bump 时做机械替换：删 vendored
+  代数层 + 改名 `FQFP.log → NormedSpace.log`。
+- **版本漂移**：源在 Lean 4.29.0-rc8，目标 v4.34.0。阶段 1/2 的手写移植顺利（漂移可控），但
+  生成代码大量使用 `match_scalars <;> ring`、`noncomm_ring`、`dsimp only` 这类对 Mathlib 内部
+  simp 集敏感的手法（源 `CLAUDE.md` 记了 7 条此类技巧）。**生成代码的移植成本很可能远高于它的
+  行数比例。**
 - 每次提交前的验收（顺序不可省）：
 
   ```

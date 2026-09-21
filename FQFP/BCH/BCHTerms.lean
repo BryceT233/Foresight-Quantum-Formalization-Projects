@@ -8,9 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import FQFP.BCH.WordExpansion
 
-import Mathlib.Algebra.Order.Ring.Unbundled.Basic
-import Mathlib.Tactic.Module
-
 /-!
 # The graded terms of the BCH series
 
@@ -503,27 +500,6 @@ theorem norm_bchQuinticGroup24_le {𝔸 : Type*} [NormedRing 𝔸] [NormOneClass
     ‖bchQuinticGroup24 a b‖ ≤ 2 * (‖a‖ + ‖b‖) ^ 5 := by
   simpa [bchQuinticGroup24] using norm_sum_wordEval_le bchQuinticGroup24Words a b
 
-/-- `‖(4 : ℚ)‖ = 4`. Stated for the numeral rather than as `‖(n : ℚ)‖ = n`, because `(4 : ℚ)`
-elaborates to `OfNat.ofNat 4` and so does not match a `Nat.cast` statement. -/
-lemma norm_four_rat : ‖(4 : ℚ)‖ = 4 := by
-  rw [← Rat.norm_cast_real]
-  norm_num
-
-/-- `‖(6 : ℚ)‖ = 6`. -/
-lemma norm_six_rat : ‖(6 : ℚ)‖ = 6 := by
-  rw [← Rat.norm_cast_real]
-  norm_num
-
-/-- `‖(24 : ℚ)‖ = 24`. -/
-lemma norm_twentyFour_rat : ‖(24 : ℚ)‖ = 24 := by
-  rw [← Rat.norm_cast_real]
-  norm_num
-
-/-- `‖(720 : ℚ)‖ = 720`, the denominator of the quintic coefficients. -/
-lemma norm_sevenTwenty_rat : ‖(720 : ℚ)‖ = 720 := by
-  rw [← Rat.norm_cast_real]
-  norm_num
-
 /-- Norm bound for `bchQuinticTerm`: `‖C₅(a,b)‖ ≤ s⁵` where `s = ‖a‖ + ‖b‖`.
 
 The sum of the absolute coefficients is `4·1 + 10·4 + 14·6 + 2·24 = 176`, and `176/720 < 1`, so the
@@ -546,19 +522,19 @@ theorem norm_bchQuinticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra �
   have h4n : ‖(4 : ℚ) • bchQuinticGroup4 a b‖ ≤ 40 * s ^ 5 := by
     calc ‖(4 : ℚ) • bchQuinticGroup4 a b‖
         ≤ ‖(4 : ℚ)‖ * ‖bchQuinticGroup4 a b‖ := norm_smul_le _ _
-      _ = 4 * ‖bchQuinticGroup4 a b‖ := by rw [norm_four_rat]
+      _ = 4 * ‖bchQuinticGroup4 a b‖ := by simp [← Rat.norm_cast_real]
       _ ≤ 4 * (10 * s ^ 5) := mul_le_mul_of_nonneg_left hg4 (by norm_num)
       _ = 40 * s ^ 5 := by ring
   have h6n : ‖(6 : ℚ) • bchQuinticGroup6 a b‖ ≤ 84 * s ^ 5 := by
     calc ‖(6 : ℚ) • bchQuinticGroup6 a b‖
         ≤ ‖(6 : ℚ)‖ * ‖bchQuinticGroup6 a b‖ := norm_smul_le _ _
-      _ = 6 * ‖bchQuinticGroup6 a b‖ := by rw [norm_six_rat]
+      _ = 6 * ‖bchQuinticGroup6 a b‖ := by simp [← Rat.norm_cast_real]
       _ ≤ 6 * (14 * s ^ 5) := mul_le_mul_of_nonneg_left hg6 (by norm_num)
       _ = 84 * s ^ 5 := by ring
   have h24n : ‖(24 : ℚ) • bchQuinticGroup24 a b‖ ≤ 48 * s ^ 5 := by
     calc ‖(24 : ℚ) • bchQuinticGroup24 a b‖
         ≤ ‖(24 : ℚ)‖ * ‖bchQuinticGroup24 a b‖ := norm_smul_le _ _
-      _ = 24 * ‖bchQuinticGroup24 a b‖ := by rw [norm_twentyFour_rat]
+      _ = 24 * ‖bchQuinticGroup24 a b‖ := by simp [← Rat.norm_cast_real]
       _ ≤ 24 * (2 * s ^ 5) := mul_le_mul_of_nonneg_left hg24 (by norm_num)
       _ = 48 * s ^ 5 := by ring
   have h_inner : ‖-bchQuinticGroup1 a b + (4 : ℚ) • bchQuinticGroup4 a b -
@@ -569,9 +545,7 @@ theorem norm_bchQuinticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra �
       ((6 : ℚ) • bchQuinticGroup6 a b)
     have step3 := norm_add_le (-bchQuinticGroup1 a b) ((4 : ℚ) • bchQuinticGroup4 a b)
     linarith only [step1, step2, step3, hng1, h4n, h6n, h24n]
-  have h720 : ‖((720 : ℚ)⁻¹)‖ = 1 / 720 := by
-    rw [norm_inv, norm_sevenTwenty_rat]
-    norm_num
+  have h720 : ‖((720 : ℚ)⁻¹)‖ = 1 / 720 := by simp [← Rat.norm_cast_real]
   unfold bchQuinticTerm
   calc ‖(720 : ℚ)⁻¹ • (-bchQuinticGroup1 a b + (4 : ℚ) • bchQuinticGroup4 a b -
         (6 : ℚ) • bchQuinticGroup6 a b + (24 : ℚ) • bchQuinticGroup24 a b)‖

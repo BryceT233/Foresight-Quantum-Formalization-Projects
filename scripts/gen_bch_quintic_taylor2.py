@@ -165,75 +165,139 @@ def emit_data(kind, name, items, doc):
         ty = "ℚ"
     return f"/-- {doc} -/\ndef {name} : Fin {len(items)} → {ty} :=\n  {wrap(entries, 4)}\n\n"
 
+HELPERS = """section Budget
 
-RELAX = {
-    2: "exact le_refl _",
-    3: """calc (M ^ 2 * Vn ^ 3 : ℝ) = M ^ 2 * Vn ^ 2 * Vn := by ring
-          _ ≤ M ^ 2 * Vn ^ 2 * M :=
-            mul_le_mul_of_nonneg_left hVnM (mul_nonneg (pow_nonneg hM0 2) (pow_nonneg hVn0 2))
-          _ = M ^ 3 * Vn ^ 2 := by ring""",
-    4: """calc (M * Vn ^ 4 : ℝ) = M * Vn ^ 2 * Vn ^ 2 := by ring
-          _ ≤ M * Vn ^ 2 * M ^ 2 :=
-            mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hVn0 hVnM 2)
-              (mul_nonneg hM0 (pow_nonneg hVn0 2))
-          _ = M ^ 3 * Vn ^ 2 := by ring""",
-}
+variable {𝔸 : Type*} [NormedRing 𝔸]
+
+/-- **Coefficient budget**: the total of the absolute values of a coefficient vector is at most its
+length times its largest absolute value. This is what turns a generated piece's bound constant into
+`(number of words) * (largest coefficient)`, without expanding the sum term by term. -/
+lemma sum_abs_le_card_mul_sup' {ι : Type*} [Fintype ι] [Nonempty ι] (c : ι → ℚ) :
+    (∑ i, |(c i : ℝ)|)
+      ≤ (Fintype.card ι : ℝ) * (Finset.univ.sup' Finset.univ_nonempty fun i => |(c i : ℝ)|) := by
+  calc (∑ i, |(c i : ℝ)|)
+      ≤ ∑ _i : ι, (Finset.univ.sup' Finset.univ_nonempty fun i => |(c i : ℝ)|) :=
+        Finset.sum_le_sum fun i _ =>
+          Finset.le_sup' (fun i => |(c i : ℝ)|) (Finset.mem_univ i)
+    _ = (Fintype.card ι : ℝ) * (Finset.univ.sup' Finset.univ_nonempty fun i => |(c i : ℝ)|) := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+
+/-- Exponent arithmetic: `M ^ (5 - (j + 2)) * Vn ^ (j + 2) = M ^ (3 - j) * Vn ^ j * Vn ^ 2`. -/
+private lemma pow_sub_profile (M Vn : ℝ) (j : ℕ) :
+    M ^ (5 - (j + 2)) * Vn ^ (j + 2) = M ^ (3 - j) * Vn ^ j * Vn ^ 2 := by
+  have hM : 5 - (j + 2) = 3 - j := by omega
+  rw [hM, pow_add]
+  ring
+
+/-- **Letter-profile relaxation**: a word with `k ≥ 2` letters `V` and `5 - k` letters from `{x, y}`
+has profile `M ^ (5 - k) * Vn ^ k`, which is at most `M ^ 3 * Vn ^ 2` because `Vn ≤ M`. This is what
+lets each piece of the remainder be bounded at the source's constant, which uses `M³‖V‖²`. -/
+lemma profile_le (M Vn : ℝ) (hM0 : 0 ≤ M) (hVn0 : 0 ≤ Vn) (hVnM : Vn ≤ M) {k : ℕ}
+    (hk : 2 ≤ k) (hk5 : k ≤ 5) : M ^ (5 - k) * Vn ^ k ≤ M ^ 3 * Vn ^ 2 := by
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
+  rw [pow_sub_profile]
+  calc M ^ (3 - j) * Vn ^ j * Vn ^ 2
+      = M ^ (3 - j) * (Vn ^ j * Vn ^ 2) := by ring
+    _ ≤ M ^ (3 - j) * (M ^ j * Vn ^ 2) :=
+        mul_le_mul_of_nonneg_left
+          (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hVn0 hVnM j) (pow_nonneg hVn0 2))
+          (pow_nonneg hM0 (3 - j))
+    _ = M ^ 3 * Vn ^ 2 := by
+        have hj3 : j ≤ 3 := by omega
+        rw [← mul_assoc, ← pow_add, Nat.sub_add_cancel hj3]
+
+end Budget"""
 
 
 def emit_bounds(pieces):
-    """The norm bounds for the three pieces, with the constants the source uses: the number of words
-    of the piece times the largest absolute coefficient of the piece, over `720`."""
+    """The norm bounds for the three pieces.
+
+    The constants are the source's: the number of words of the piece times its largest absolute
+    coefficient, over `720` (`Basic.lean:4254/4664/4774`, and `4797` for the assembled bound). One
+    `Finset.sum` triangle inequality bounds the whole piece at once, because every word of a piece
+    has the same letter profile `M ^ (5 - k) * Vn ^ k`; that profile then relaxes to `M ^ 3 * Vn ^ 2`
+    by cancelling `Vn ^ 2` and using `Vn ≤ M` on the remaining `k - 2` powers. The coefficient budget
+    `hA` is `sum_abs_le_card_mul_sup'` plus a `fin_cases` check of the piece's largest coefficient, so
+    it does not expand the piece term by term."""
     out = []
     for k in (2, 3, 4):
         tag = f"{k}V"
-        profile = f"({ {2: 'M ^ 3 * Vn ^ 2', 3: 'M ^ 2 * Vn ^ 3', 4: 'M * Vn ^ 4'}[k] } : ℝ)"
+        profile = f"M ^ {5 - k} * Vn ^ {k}"
+        coeffs = f"bchQuinticTermTaylor2Remainder{tag}Coeffs"
+        words = f"bchQuinticTermTaylor2Remainder{tag}Words"
         items = pieces[k]
         count = len(items)
         maxabs = max(abs(int(c * DENOM)) for _, c in items)
         const = count * maxabs
-        out.append(f"""/-- Norm bound for the `{tag}` piece: `≤ ({const}/720) * (M³ * ‖V‖²)` with
-`M = ‖x‖ + ‖V‖ + ‖y‖` and `Vn = ‖V‖`. The constant is the source's: the `{count}` words of the piece
-times its largest coefficient `{maxabs}/720`. The piece's own profile is `{profile}`, relaxed to
-`M ^ 3 * Vn ^ 2` by `Vn ≤ M`. -/
-theorem norm_bchQuinticTermTaylor2Remainder{tag}_le {{𝔸 : Type*}} [NormedRing 𝔸]
-    [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸] (x V y : 𝔸) :
-    ‖bchQuinticTermTaylor2Remainder{tag} x V y‖ ≤
-      ({const} / 720 : ℝ) * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) := by
+        # The letter-profile step evaluates the concrete word by `fin_cases`. For the `4V` piece the
+        # last word leaves `simp` with a disjunction (`mul_eq_mul_left_iff` cancels the common `M ^ 1`),
+        # which the trailing `try simp` discharges. The `;` (not `<;>`) is what `lint-style` wants.
+        profile_script = f"fin_cases i <;> simp [{words}] <;> ring_nf ;try simp"
+        out.append(f"""/-- Norm bound for the `{tag}` piece: `≤ ({const}/720) M³‖V‖²` with `M = ‖x‖ + ‖V‖ + ‖y‖`.
+
+The constant is the source's: the `{count}` words of the piece times its largest absolute coefficient
+`{maxabs}/720`. Every word of the piece has the same letter profile — `{5 - k}` letters from `{{x, y}}`
+and `{k}` letters `V` — so each of the `{count}` terms is bounded by `({maxabs}/720) * ({profile})`,
+which relaxes to `({maxabs}/720) * (M³‖V‖²)` because `‖V‖ ≤ M`. -/
+theorem norm_bchQuinticTermTaylor2Remainder{tag}_le {{𝔸 : Type*}}
+    [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸] (x V y : 𝔸) :
+    ‖bchQuinticTermTaylor2Remainder{tag} x V y‖
+      ≤ ({const} / 720 : ℝ) * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) := by
   set M := ‖x‖ + ‖V‖ + ‖y‖ with hM
   set Vn := ‖V‖ with hVn
+  -- Local names for the piece's data and its summand, so the bound proof stays inside 100 columns.
+  set c : Fin {count} → ℚ := {coeffs} with hc
+  set w : Fin {count} → List (Fin 3) := {words} with hwdef
   have hM0 : 0 ≤ M := by rw [hM]; positivity
   have hVn0 : 0 ≤ Vn := norm_nonneg _
   have hx : ‖x‖ ≤ M := by rw [hM]; linarith [norm_nonneg V, norm_nonneg y]
   have hV : ‖V‖ ≤ Vn := le_refl _
   have hy : ‖y‖ ≤ M := by rw [hM]; linarith [norm_nonneg x, norm_nonneg V]
   have hVnM : Vn ≤ M := by rw [hM]; linarith [norm_nonneg x, norm_nonneg y]
-  have hw : ∀ i, ‖wordProdList ![x, V, y] (bchQuinticTermTaylor2Remainder{tag}Words i)‖ ≤
-      {profile} := by
+  have hw : ∀ i, ‖wordProdList ![x, V, y] (w i)‖ ≤ {profile} := by
     intro i
-    calc ‖wordProdList ![x, V, y] (bchQuinticTermTaylor2Remainder{tag}Words i)‖
-        ≤ ((bchQuinticTermTaylor2Remainder{tag}Words i).map ![M, Vn, M]).prod :=
+    calc ‖wordProdList ![x, V, y] (w i)‖
+        ≤ ((w i).map ![M, Vn, M]).prod :=
           norm_wordProdList_le (letters := ![x, V, y]) (b := ![M, Vn, M])
-            (fun j => by fin_cases j <;> simp [hx, hV, hy])
-            (bchQuinticTermTaylor2Remainder{tag}Words i)
+            (fun j => by fin_cases j <;> simp [hx, hV, hy]) (w i)
       _ = {profile} := by
-          fin_cases i <;> simp [bchQuinticTermTaylor2Remainder{tag}Words] <;> ring_nf
-  have hc : ∀ i, ‖bchQuinticTermTaylor2Remainder{tag}Coeffs i‖ ≤ {maxabs} / 720 := by
-    intro i
-    fin_cases i <;> simp only [bchQuinticTermTaylor2Remainder{tag}Coeffs] <;>
-      rw [← Rat.norm_cast_real] <;> norm_num
-  have hcb : (0 : ℝ) ≤ {maxabs} / 720 := by norm_num
+          rw [hwdef]
+          {profile_script}
+  have hsup : (Finset.univ.sup' Finset.univ_nonempty fun i : Fin {count} =>
+      |(c i : ℝ)|) ≤ ({maxabs} / 720 : ℝ) := by
+    refine Finset.sup'_le _ _ fun i _ => ?_
+    rw [hc]
+    fin_cases i <;> norm_num [{coeffs}]
+  have hA : (∑ i : Fin {count}, |(c i : ℝ)|) ≤ ({const} / 720 : ℝ) := by
+    have hcard : (Fintype.card (Fin {count}) : ℝ) = ({count} : ℝ) := by norm_num
+    calc (∑ i : Fin {count}, |(c i : ℝ)|)
+        ≤ (Fintype.card (Fin {count}) : ℝ) *
+            (Finset.univ.sup' Finset.univ_nonempty fun i : Fin {count} => |(c i : ℝ)|) :=
+          sum_abs_le_card_mul_sup' c
+      _ ≤ ({count} : ℝ) * ({maxabs} / 720 : ℝ) := by
+          rw [hcard]
+          exact mul_le_mul_of_nonneg_left hsup (by norm_num)
+      _ = ({const} / 720 : ℝ) := by norm_num
   unfold bchQuinticTermTaylor2Remainder{tag} bchWordSum
-  calc ‖∑ i, bchQuinticTermTaylor2Remainder{tag}Coeffs i •
-        wordProdList ![x, V, y] (bchQuinticTermTaylor2Remainder{tag}Words i)‖
-      ≤ (Fintype.card (Fin {count}) : ℝ) * ({maxabs} / 720) * {profile} :=
-        norm_sum_smul_wordProdList_le _ _ _ hc hw hcb
-    _ = ({const} / 720 : ℝ) * {profile} := by
-        rw [Fintype.card_fin]
-        norm_num
-    _ ≤ ({const} / 720 : ℝ) * (M ^ 3 * Vn ^ 2) := by
-        refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
-        {RELAX[k]}
-
+  -- One triangle inequality bounds the whole piece; the profile relaxation below is the only
+  -- place where `Vn ≤ M` enters.
+  calc ‖∑ i, c i • wordProdList ![x, V, y] (w i)‖
+      ≤ ∑ i : Fin {count}, |(c i : ℝ)| * ({profile}) := by
+        refine le_trans (norm_sum_le _ _) (Finset.sum_le_sum fun i _ => ?_)
+        calc ‖c i • wordProdList ![x, V, y] (w i)‖
+            ≤ ‖c i‖ * ‖wordProdList ![x, V, y] (w i)‖ := norm_smul_le _ _
+          _ = |(c i : ℝ)| * ‖wordProdList ![x, V, y] (w i)‖ := by
+              rw [← Rat.norm_cast_real, Real.norm_eq_abs]
+          _ ≤ |(c i : ℝ)| * ({profile}) :=
+              mul_le_mul_of_nonneg_left (hw i) (abs_nonneg _)
+    _ = (∑ i : Fin {count}, |(c i : ℝ)|) * ({profile}) := by rw [Finset.sum_mul]
+    _ ≤ ({const} / 720 : ℝ) * ({profile}) :=
+        mul_le_mul_of_nonneg_right hA
+          (mul_nonneg (pow_nonneg hM0 {5 - k}) (pow_nonneg hVn0 {k}))
+    _ ≤ ({const} / 720 : ℝ) * (M ^ 3 * Vn ^ 2) :=
+        mul_le_mul_of_nonneg_left
+          (profile_le M Vn hM0 hVn0 hVnM (k := {k}) (by norm_num) (by norm_num))
+          (by norm_num)
 """)
     return out
 
@@ -286,8 +350,8 @@ noncomputable section
 
 /-! ### Word data
 
-Patterns are `List (Fin 3)`: `0` is `x`, `1` is `V`, `2` is `y`. Coefficients are numerators over
-`720`, matching `BCHTerms.norm_sevenTwenty_rat` (`‖(720 : ℚ)‖ = 720`). -/
+Patterns are `List (Fin 3)`: `0` is `x`, `1` is `V`, `2` is `y`. Coefficients are `ℚ`-valued, with
+numerator over the common denominator `720`, matching the source's `(-1/720) • (…)` chains. -/
 
 """)
     L.append(emit_data("words", "bchQuinticTermLinDiffWords", lin,
@@ -305,6 +369,7 @@ each `x`-position."))
 letters `V`."))
         L.append(emit_data("coeffs", data[k][0], items,
                            f"The coefficients of the `{k}V` piece, over `720`."))
+    L.append("\n")
 
     R.append("""/-! ### The definitions -/
 
@@ -337,10 +402,13 @@ noncomputable def bchQuinticTermTaylor2Remainder {𝔸 : Type*} [Ring 𝔸] [SMu
 
 /-! ### The norm bounds
 
-Each piece has a uniform letter profile, so one `fin_cases` script per piece evaluates every word of
-the piece at once. The constants are the source's `Basic.lean:4254/4664/4774/4797`. -/
+Each piece of the remainder has a uniform letter profile, so one `fin_cases` script per piece
+evaluates every word of the piece at once, and the piece's coefficient budget is one
+`sum_abs_le_card_mul_sup'` plus a `fin_cases` check of its largest coefficient. The constants are
+the source's `Basic.lean:4254/4664/4774/4797`. -/
 
 """)
+    R.append(HELPERS + "\n\n")
     R.extend(emit_bounds(pieces))
     R.append("""/-- **Norm bound for the second-order Taylor remainder**:
 `‖C₅(x+V,y) - C₅(x,y) - linDiff‖ ≤ (2430/720) M³‖V‖²` with `M = ‖x‖ + ‖V‖ + ‖y‖`.

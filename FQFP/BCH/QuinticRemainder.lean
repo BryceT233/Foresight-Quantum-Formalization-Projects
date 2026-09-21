@@ -176,19 +176,19 @@ theorem norm_bchQuinticTerm_diff_le (z x y : 𝔸) :
   have hs4 : ‖(4 : ℚ) • (bchQuinticGroup4 z y - bchQuinticGroup4 x y)‖ ≤ 100 * M ^ 4 * d := by
     calc ‖(4 : ℚ) • (bchQuinticGroup4 z y - bchQuinticGroup4 x y)‖
         ≤ ‖(4 : ℚ)‖ * ‖bchQuinticGroup4 z y - bchQuinticGroup4 x y‖ := norm_smul_le _ _
-      _ = 4 * ‖bchQuinticGroup4 z y - bchQuinticGroup4 x y‖ := by rw [norm_four_rat]
+      _ = 4 * ‖bchQuinticGroup4 z y - bchQuinticGroup4 x y‖ := by simp [← Rat.norm_cast_real]
       _ ≤ 4 * (25 * M ^ 4 * d) := mul_le_mul_of_nonneg_left hb4 (by norm_num)
       _ = 100 * M ^ 4 * d := by ring
   have hs6 : ‖(6 : ℚ) • (bchQuinticGroup6 z y - bchQuinticGroup6 x y)‖ ≤ 210 * M ^ 4 * d := by
     calc ‖(6 : ℚ) • (bchQuinticGroup6 z y - bchQuinticGroup6 x y)‖
         ≤ ‖(6 : ℚ)‖ * ‖bchQuinticGroup6 z y - bchQuinticGroup6 x y‖ := norm_smul_le _ _
-      _ = 6 * ‖bchQuinticGroup6 z y - bchQuinticGroup6 x y‖ := by rw [norm_six_rat]
+      _ = 6 * ‖bchQuinticGroup6 z y - bchQuinticGroup6 x y‖ := by simp [← Rat.norm_cast_real]
       _ ≤ 6 * (35 * M ^ 4 * d) := mul_le_mul_of_nonneg_left hb6 (by norm_num)
       _ = 210 * M ^ 4 * d := by ring
   have hs24 : ‖(24 : ℚ) • (bchQuinticGroup24 z y - bchQuinticGroup24 x y)‖ ≤ 120 * M ^ 4 * d := by
     calc ‖(24 : ℚ) • (bchQuinticGroup24 z y - bchQuinticGroup24 x y)‖
         ≤ ‖(24 : ℚ)‖ * ‖bchQuinticGroup24 z y - bchQuinticGroup24 x y‖ := norm_smul_le _ _
-      _ = 24 * ‖bchQuinticGroup24 z y - bchQuinticGroup24 x y‖ := by rw [norm_twentyFour_rat]
+      _ = 24 * ‖bchQuinticGroup24 z y - bchQuinticGroup24 x y‖ := by simp [← Rat.norm_cast_real]
       _ ≤ 24 * (5 * M ^ 4 * d) := mul_le_mul_of_nonneg_left hb24 (by norm_num)
       _ = 120 * M ^ 4 * d := by ring
   have htel : bchQuinticTerm z y - bchQuinticTerm x y =
@@ -215,9 +215,7 @@ theorem norm_bchQuinticTerm_diff_le (z x y : 𝔸) :
     have s3 := norm_add_le (-(bchQuinticGroup1 z y - bchQuinticGroup1 x y))
         ((4 : ℚ) • (bchQuinticGroup4 z y - bchQuinticGroup4 x y))
     linarith only [s1, s2, s3, hn1, hs4, hs6, hs24]
-  have h720 : ‖((720 : ℚ)⁻¹)‖ = 1 / 720 := by
-    rw [norm_inv, norm_sevenTwenty_rat]
-    norm_num
+  have h720 : ‖((720 : ℚ)⁻¹)‖ = 1 / 720 := by simp [← Rat.norm_cast_real]
   calc ‖(720 : ℚ)⁻¹ • X‖ ≤ ‖((720 : ℚ)⁻¹)‖ * ‖X‖ := norm_smul_le _ _
     _ = (1 / 720) * ‖X‖ := by rw [h720]
     _ ≤ (1 / 720) * (440 * M ^ 4 * d) := mul_le_mul_of_nonneg_left hinner (by norm_num)

@@ -39,8 +39,8 @@ noncomputable section
 
 /-! ### Word data
 
-Patterns are `List (Fin 3)`: `0` is `x`, `1` is `V`, `2` is `y`. Coefficients are numerators over
-`720`, matching `BCHTerms.norm_sevenTwenty_rat` (`‖(720 : ℚ)‖ = 720`). -/
+Patterns are `List (Fin 3)`: `0` is `x`, `1` is `V`, `2` is `y`. Coefficients are `ℚ`-valued, with
+numerator over the common denominator `720`, matching the source's `(-1/720) • (…)` chains. -/
 
 /-- The 75 word patterns of `bchQuinticTerm_lin_diff`: one `V` at each `x`-position. -/
 def bchQuinticTermLinDiffWords : Fin 75 → List (Fin 3) :=
@@ -61,10 +61,16 @@ def bchQuinticTermLinDiffWords : Fin 75 → List (Fin 3) :=
     [2, 2, 1, 2, 2], [2, 2, 2, 0, 1], [2, 2, 2, 1, 0], [2, 2, 2, 1, 2], [2, 2, 2, 2, 1]]
 
 /-- The coefficients of `bchQuinticTerm_lin_diff`, over `720`. -/
-def bchQuinticTermLinDiffCoeffs : Fin 75 → ℤ :=
-  ![-1, 4, -1, 4, 4, -6, -6, -6, -6, -1, 4, 4, -6, -6, -6, 4, 4, 4, -6, 24, 4, -6, 24, -6, -6,
-    -6, -6, 4, -1, 4, 4, -6, -6, -6, 4, 4, -6, 24, -6, -6, -6, 4, -1, -1, -1, 4, -6, -1, 4, -6,
-    -6, -6, -6, 24, -6, -1, 4, -6, -6, -6, 24, -6, 4, 4, 4, -6, -6, 4, -6, -6, -6, 4, 4, 4, -1]
+def bchQuinticTermLinDiffCoeffs : Fin 75 → ℚ :=
+  ![-1 / 720, 4 / 720, -1 / 720, 4 / 720, 4 / 720, -6 / 720, -6 / 720, -6 / 720, -6 / 720,
+    -1 / 720, 4 / 720, 4 / 720, -6 / 720, -6 / 720, -6 / 720, 4 / 720, 4 / 720, 4 / 720,
+    -6 / 720, 24 / 720, 4 / 720, -6 / 720, 24 / 720, -6 / 720, -6 / 720, -6 / 720, -6 / 720,
+    4 / 720, -1 / 720, 4 / 720, 4 / 720, -6 / 720, -6 / 720, -6 / 720, 4 / 720, 4 / 720,
+    -6 / 720, 24 / 720, -6 / 720, -6 / 720, -6 / 720, 4 / 720, -1 / 720, -1 / 720, -1 / 720,
+    4 / 720, -6 / 720, -1 / 720, 4 / 720, -6 / 720, -6 / 720, -6 / 720, -6 / 720, 24 / 720,
+    -6 / 720, -1 / 720, 4 / 720, -6 / 720, -6 / 720, -6 / 720, 24 / 720, -6 / 720, 4 / 720,
+    4 / 720, 4 / 720, -6 / 720, -6 / 720, 4 / 720, -6 / 720, -6 / 720, -6 / 720, 4 / 720,
+    4 / 720, 4 / 720, -1 / 720]
 
 /-- The 70 word patterns of the `2V` piece, exactly `2` letters `V`. -/
 def bchQuinticTermTaylor2Remainder2VWords : Fin 70 → List (Fin 3) :=
@@ -84,10 +90,15 @@ def bchQuinticTermTaylor2Remainder2VWords : Fin 70 → List (Fin 3) :=
     [2, 2, 1, 0, 1], [2, 2, 1, 1, 0], [2, 2, 1, 1, 2], [2, 2, 1, 2, 1], [2, 2, 2, 1, 1]]
 
 /-- The coefficients of the `2V` piece, over `720`. -/
-def bchQuinticTermTaylor2Remainder2VCoeffs : Fin 70 → ℤ :=
-  ![-1, 4, -6, -1, 4, -1, 4, 4, -6, -6, -6, -6, 4, 4, 4, -6, 24, -6, -1, 4, -1, 4, 4, -6, -6,
-    -6, -6, -1, 4, 4, -6, -6, -6, 4, 4, 4, -6, 24, 4, -6, 24, -6, -6, -6, -6, 4, -1, -1, -1, 4,
-    -6, -6, -1, -1, 4, -6, -1, 4, -6, -6, -6, -6, 24, -6, 4, 4, 4, -6, -6, 4]
+def bchQuinticTermTaylor2Remainder2VCoeffs : Fin 70 → ℚ :=
+  ![-1 / 720, 4 / 720, -6 / 720, -1 / 720, 4 / 720, -1 / 720, 4 / 720, 4 / 720, -6 / 720,
+    -6 / 720, -6 / 720, -6 / 720, 4 / 720, 4 / 720, 4 / 720, -6 / 720, 24 / 720, -6 / 720,
+    -1 / 720, 4 / 720, -1 / 720, 4 / 720, 4 / 720, -6 / 720, -6 / 720, -6 / 720, -6 / 720,
+    -1 / 720, 4 / 720, 4 / 720, -6 / 720, -6 / 720, -6 / 720, 4 / 720, 4 / 720, 4 / 720,
+    -6 / 720, 24 / 720, 4 / 720, -6 / 720, 24 / 720, -6 / 720, -6 / 720, -6 / 720, -6 / 720,
+    4 / 720, -1 / 720, -1 / 720, -1 / 720, 4 / 720, -6 / 720, -6 / 720, -1 / 720, -1 / 720,
+    4 / 720, -6 / 720, -1 / 720, 4 / 720, -6 / 720, -6 / 720, -6 / 720, -6 / 720, 24 / 720,
+    -6 / 720, 4 / 720, 4 / 720, 4 / 720, -6 / 720, -6 / 720, 4 / 720]
 
 /-- The 30 word patterns of the `3V` piece, exactly `3` letters `V`. -/
 def bchQuinticTermTaylor2Remainder3VWords : Fin 30 → List (Fin 3) :=
@@ -99,24 +110,27 @@ def bchQuinticTermTaylor2Remainder3VWords : Fin 30 → List (Fin 3) :=
     [2, 1, 1, 1, 0], [2, 1, 1, 1, 2], [2, 1, 1, 2, 1], [2, 1, 2, 1, 1], [2, 2, 1, 1, 1]]
 
 /-- The coefficients of the `3V` piece, over `720`. -/
-def bchQuinticTermTaylor2Remainder3VCoeffs : Fin 30 → ℤ :=
-  ![-1, 4, -6, 4, -1, 4, -6, -1, 4, -1, 4, 4, -6, -6, -6, -6, 4, 4, 4, -6, 24, -6, -1, -1, -1,
-    -1, 4, -6, -6, 4]
+def bchQuinticTermTaylor2Remainder3VCoeffs : Fin 30 → ℚ :=
+  ![-1 / 720, 4 / 720, -6 / 720, 4 / 720, -1 / 720, 4 / 720, -6 / 720, -1 / 720, 4 / 720,
+    -1 / 720, 4 / 720, 4 / 720, -6 / 720, -6 / 720, -6 / 720, -6 / 720, 4 / 720, 4 / 720,
+    4 / 720, -6 / 720, 24 / 720, -6 / 720, -1 / 720, -1 / 720, -1 / 720, -1 / 720, 4 / 720,
+    -6 / 720, -6 / 720, 4 / 720]
 
 /-- The 5 word patterns of the `4V` piece, exactly `4` letters `V`. -/
 def bchQuinticTermTaylor2Remainder4VWords : Fin 5 → List (Fin 3) :=
   ![[1, 1, 1, 1, 2], [1, 1, 1, 2, 1], [1, 1, 2, 1, 1], [1, 2, 1, 1, 1], [2, 1, 1, 1, 1]]
 
 /-- The coefficients of the `4V` piece, over `720`. -/
-def bchQuinticTermTaylor2Remainder4VCoeffs : Fin 5 → ℤ :=
-  ![-1, 4, -6, 4, -1]
+def bchQuinticTermTaylor2Remainder4VCoeffs : Fin 5 → ℚ :=
+  ![-1 / 720, 4 / 720, -6 / 720, 4 / 720, -1 / 720]
+
 
 /-! ### The definitions -/
 
-/-- The weighted sum of the words named by `words` with the numerators `coeffs`, over `720`. -/
+/-- The weighted sum of the words named by `words` with the coefficients `coeffs`. -/
 noncomputable def bchWordSum {𝔸 : Type*} [Ring 𝔸] [SMul ℚ 𝔸] {m : ℕ}
-    (coeffs : Fin m → ℤ) (words : Fin m → List (Fin 3)) (x V y : 𝔸) : 𝔸 :=
-  (720 : ℚ)⁻¹ • ∑ i, (coeffs i : ℚ) • wordProdList ![x, V, y] (words i)
+    (coeffs : Fin m → ℚ) (words : Fin m → List (Fin 3)) (x V y : 𝔸) : 𝔸 :=
+  ∑ i, coeffs i • wordProdList ![x, V, y] (words i)
 
 /-- **First-order directional difference** of `bchQuinticTerm` in its first argument: one `V` at
 each `x`-position of each degree-5 word. -/
@@ -144,6 +158,271 @@ noncomputable def bchQuinticTermTaylor2Remainder {𝔸 : Type*} [Ring 𝔸] [SMu
     (x V y : 𝔸) : 𝔸 :=
   bchQuinticTermTaylor2Remainder2V x V y + bchQuinticTermTaylor2Remainder3V x V y +
     bchQuinticTermTaylor2Remainder4V x V y
+
+/-! ### The norm bounds
+
+Each piece of the remainder has a uniform letter profile, so one `fin_cases` script per piece
+evaluates every word of the piece at once, and the piece's coefficient budget is one
+`sum_abs_le_card_mul_sup'` plus a `fin_cases` check of its largest coefficient. The constants are
+the source's `Basic.lean:4254/4664/4774/4797`. -/
+
+section Budget
+
+variable {𝔸 : Type*} [NormedRing 𝔸]
+
+/-- **Coefficient budget**: the total of the absolute values of a coefficient vector is at most its
+length times its largest absolute value. This is what turns a generated piece's bound constant into
+`(number of words) * (largest coefficient)`, without expanding the sum term by term. -/
+lemma sum_abs_le_card_mul_sup' {ι : Type*} [Fintype ι] [Nonempty ι] (c : ι → ℚ) :
+    (∑ i, |(c i : ℝ)|)
+      ≤ (Fintype.card ι : ℝ) * (Finset.univ.sup' Finset.univ_nonempty fun i => |(c i : ℝ)|) := by
+  calc (∑ i, |(c i : ℝ)|)
+      ≤ ∑ _i : ι, (Finset.univ.sup' Finset.univ_nonempty fun i => |(c i : ℝ)|) :=
+        Finset.sum_le_sum fun i _ =>
+          Finset.le_sup' (fun i => |(c i : ℝ)|) (Finset.mem_univ i)
+    _ = (Fintype.card ι : ℝ) * (Finset.univ.sup' Finset.univ_nonempty fun i => |(c i : ℝ)|) := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+
+/-- Exponent arithmetic: `M ^ (5 - (j + 2)) * Vn ^ (j + 2) = M ^ (3 - j) * Vn ^ j * Vn ^ 2`. -/
+private lemma pow_sub_profile (M Vn : ℝ) (j : ℕ) :
+    M ^ (5 - (j + 2)) * Vn ^ (j + 2) = M ^ (3 - j) * Vn ^ j * Vn ^ 2 := by
+  have hM : 5 - (j + 2) = 3 - j := by omega
+  rw [hM, pow_add]
+  ring
+
+/-- **Letter-profile relaxation**: a word with `k ≥ 2` letters `V` and `5 - k` letters from `{x, y}`
+has profile `M ^ (5 - k) * Vn ^ k`, which is at most `M ^ 3 * Vn ^ 2` because `Vn ≤ M`. This is what
+lets each piece of the remainder be bounded at the source's constant, which uses `M³‖V‖²`. -/
+lemma profile_le (M Vn : ℝ) (hM0 : 0 ≤ M) (hVn0 : 0 ≤ Vn) (hVnM : Vn ≤ M) {k : ℕ}
+    (hk : 2 ≤ k) (hk5 : k ≤ 5) : M ^ (5 - k) * Vn ^ k ≤ M ^ 3 * Vn ^ 2 := by
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
+  rw [pow_sub_profile]
+  calc M ^ (3 - j) * Vn ^ j * Vn ^ 2
+      = M ^ (3 - j) * (Vn ^ j * Vn ^ 2) := by ring
+    _ ≤ M ^ (3 - j) * (M ^ j * Vn ^ 2) :=
+        mul_le_mul_of_nonneg_left
+          (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hVn0 hVnM j) (pow_nonneg hVn0 2))
+          (pow_nonneg hM0 (3 - j))
+    _ = M ^ 3 * Vn ^ 2 := by
+        have hj3 : j ≤ 3 := by omega
+        rw [← mul_assoc, ← pow_add, Nat.sub_add_cancel hj3]
+
+end Budget
+
+/-- Norm bound for the `2V` piece: `≤ (1680/720) M³‖V‖²` with `M = ‖x‖ + ‖V‖ + ‖y‖`.
+
+The constant is the source's: the `70` words of the piece times its largest absolute coefficient
+`24/720`. Every word of the piece has the same letter profile — `3` letters from `{x, y}`
+and `2` letters `V` — so each of the `70` terms is bounded by `(24/720) * (M ^ 3 * Vn ^ 2)`,
+which relaxes to `(24/720) * (M³‖V‖²)` because `‖V‖ ≤ M`. -/
+theorem norm_bchQuinticTermTaylor2Remainder2V_le {𝔸 : Type*}
+    [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸] (x V y : 𝔸) :
+    ‖bchQuinticTermTaylor2Remainder2V x V y‖
+      ≤ (1680 / 720 : ℝ) * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) := by
+  set M := ‖x‖ + ‖V‖ + ‖y‖ with hM
+  set Vn := ‖V‖ with hVn
+  -- Local names for the piece's data and its summand, so the bound proof stays inside 100 columns.
+  set c : Fin 70 → ℚ := bchQuinticTermTaylor2Remainder2VCoeffs with hc
+  set w : Fin 70 → List (Fin 3) := bchQuinticTermTaylor2Remainder2VWords with hwdef
+  have hM0 : 0 ≤ M := by rw [hM]; positivity
+  have hVn0 : 0 ≤ Vn := norm_nonneg _
+  have hx : ‖x‖ ≤ M := by rw [hM]; linarith [norm_nonneg V, norm_nonneg y]
+  have hV : ‖V‖ ≤ Vn := le_refl _
+  have hy : ‖y‖ ≤ M := by rw [hM]; linarith [norm_nonneg x, norm_nonneg V]
+  have hVnM : Vn ≤ M := by rw [hM]; linarith [norm_nonneg x, norm_nonneg y]
+  have hw : ∀ i, ‖wordProdList ![x, V, y] (w i)‖ ≤ M ^ 3 * Vn ^ 2 := by
+    intro i
+    calc ‖wordProdList ![x, V, y] (w i)‖
+        ≤ ((w i).map ![M, Vn, M]).prod :=
+          norm_wordProdList_le (letters := ![x, V, y]) (b := ![M, Vn, M])
+            (fun j => by fin_cases j <;> simp [hx, hV, hy]) (w i)
+      _ = M ^ 3 * Vn ^ 2 := by
+          rw [hwdef]
+          fin_cases i <;> simp [bchQuinticTermTaylor2Remainder2VWords] <;> ring_nf ;try simp
+  have hsup : (Finset.univ.sup' Finset.univ_nonempty fun i : Fin 70 =>
+      |(c i : ℝ)|) ≤ (24 / 720 : ℝ) := by
+    refine Finset.sup'_le _ _ fun i _ => ?_
+    rw [hc]
+    fin_cases i <;> norm_num [bchQuinticTermTaylor2Remainder2VCoeffs]
+  have hA : (∑ i : Fin 70, |(c i : ℝ)|) ≤ (1680 / 720 : ℝ) := by
+    have hcard : (Fintype.card (Fin 70) : ℝ) = (70 : ℝ) := by norm_num
+    calc (∑ i : Fin 70, |(c i : ℝ)|)
+        ≤ (Fintype.card (Fin 70) : ℝ) *
+            (Finset.univ.sup' Finset.univ_nonempty fun i : Fin 70 => |(c i : ℝ)|) :=
+          sum_abs_le_card_mul_sup' c
+      _ ≤ (70 : ℝ) * (24 / 720 : ℝ) := by
+          rw [hcard]
+          exact mul_le_mul_of_nonneg_left hsup (by norm_num)
+      _ = (1680 / 720 : ℝ) := by norm_num
+  unfold bchQuinticTermTaylor2Remainder2V bchWordSum
+  -- One triangle inequality bounds the whole piece; the profile relaxation below is the only
+  -- place where `Vn ≤ M` enters.
+  calc ‖∑ i, c i • wordProdList ![x, V, y] (w i)‖
+      ≤ ∑ i : Fin 70, |(c i : ℝ)| * (M ^ 3 * Vn ^ 2) := by
+        refine le_trans (norm_sum_le _ _) (Finset.sum_le_sum fun i _ => ?_)
+        calc ‖c i • wordProdList ![x, V, y] (w i)‖
+            ≤ ‖c i‖ * ‖wordProdList ![x, V, y] (w i)‖ := norm_smul_le _ _
+          _ = |(c i : ℝ)| * ‖wordProdList ![x, V, y] (w i)‖ := by
+              rw [← Rat.norm_cast_real, Real.norm_eq_abs]
+          _ ≤ |(c i : ℝ)| * (M ^ 3 * Vn ^ 2) :=
+              mul_le_mul_of_nonneg_left (hw i) (abs_nonneg _)
+    _ = (∑ i : Fin 70, |(c i : ℝ)|) * (M ^ 3 * Vn ^ 2) := by rw [Finset.sum_mul]
+    _ ≤ (1680 / 720 : ℝ) * (M ^ 3 * Vn ^ 2) :=
+        mul_le_mul_of_nonneg_right hA
+          (mul_nonneg (pow_nonneg hM0 3) (pow_nonneg hVn0 2))
+    _ ≤ (1680 / 720 : ℝ) * (M ^ 3 * Vn ^ 2) :=
+        mul_le_mul_of_nonneg_left
+          (profile_le M Vn hM0 hVn0 hVnM (k := 2) (by norm_num) (by norm_num))
+          (by norm_num)
+/-- Norm bound for the `3V` piece: `≤ (720/720) M³‖V‖²` with `M = ‖x‖ + ‖V‖ + ‖y‖`.
+
+The constant is the source's: the `30` words of the piece times its largest absolute coefficient
+`24/720`. Every word of the piece has the same letter profile — `2` letters from `{x, y}`
+and `3` letters `V` — so each of the `30` terms is bounded by `(24/720) * (M ^ 2 * Vn ^ 3)`,
+which relaxes to `(24/720) * (M³‖V‖²)` because `‖V‖ ≤ M`. -/
+theorem norm_bchQuinticTermTaylor2Remainder3V_le {𝔸 : Type*}
+    [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸] (x V y : 𝔸) :
+    ‖bchQuinticTermTaylor2Remainder3V x V y‖
+      ≤ (720 / 720 : ℝ) * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) := by
+  set M := ‖x‖ + ‖V‖ + ‖y‖ with hM
+  set Vn := ‖V‖ with hVn
+  -- Local names for the piece's data and its summand, so the bound proof stays inside 100 columns.
+  set c : Fin 30 → ℚ := bchQuinticTermTaylor2Remainder3VCoeffs with hc
+  set w : Fin 30 → List (Fin 3) := bchQuinticTermTaylor2Remainder3VWords with hwdef
+  have hM0 : 0 ≤ M := by rw [hM]; positivity
+  have hVn0 : 0 ≤ Vn := norm_nonneg _
+  have hx : ‖x‖ ≤ M := by rw [hM]; linarith [norm_nonneg V, norm_nonneg y]
+  have hV : ‖V‖ ≤ Vn := le_refl _
+  have hy : ‖y‖ ≤ M := by rw [hM]; linarith [norm_nonneg x, norm_nonneg V]
+  have hVnM : Vn ≤ M := by rw [hM]; linarith [norm_nonneg x, norm_nonneg y]
+  have hw : ∀ i, ‖wordProdList ![x, V, y] (w i)‖ ≤ M ^ 2 * Vn ^ 3 := by
+    intro i
+    calc ‖wordProdList ![x, V, y] (w i)‖
+        ≤ ((w i).map ![M, Vn, M]).prod :=
+          norm_wordProdList_le (letters := ![x, V, y]) (b := ![M, Vn, M])
+            (fun j => by fin_cases j <;> simp [hx, hV, hy]) (w i)
+      _ = M ^ 2 * Vn ^ 3 := by
+          rw [hwdef]
+          fin_cases i <;> simp [bchQuinticTermTaylor2Remainder3VWords] <;> ring_nf ;try simp
+  have hsup : (Finset.univ.sup' Finset.univ_nonempty fun i : Fin 30 =>
+      |(c i : ℝ)|) ≤ (24 / 720 : ℝ) := by
+    refine Finset.sup'_le _ _ fun i _ => ?_
+    rw [hc]
+    fin_cases i <;> norm_num [bchQuinticTermTaylor2Remainder3VCoeffs]
+  have hA : (∑ i : Fin 30, |(c i : ℝ)|) ≤ (720 / 720 : ℝ) := by
+    have hcard : (Fintype.card (Fin 30) : ℝ) = (30 : ℝ) := by norm_num
+    calc (∑ i : Fin 30, |(c i : ℝ)|)
+        ≤ (Fintype.card (Fin 30) : ℝ) *
+            (Finset.univ.sup' Finset.univ_nonempty fun i : Fin 30 => |(c i : ℝ)|) :=
+          sum_abs_le_card_mul_sup' c
+      _ ≤ (30 : ℝ) * (24 / 720 : ℝ) := by
+          rw [hcard]
+          exact mul_le_mul_of_nonneg_left hsup (by norm_num)
+      _ = (720 / 720 : ℝ) := by norm_num
+  unfold bchQuinticTermTaylor2Remainder3V bchWordSum
+  -- One triangle inequality bounds the whole piece; the profile relaxation below is the only
+  -- place where `Vn ≤ M` enters.
+  calc ‖∑ i, c i • wordProdList ![x, V, y] (w i)‖
+      ≤ ∑ i : Fin 30, |(c i : ℝ)| * (M ^ 2 * Vn ^ 3) := by
+        refine le_trans (norm_sum_le _ _) (Finset.sum_le_sum fun i _ => ?_)
+        calc ‖c i • wordProdList ![x, V, y] (w i)‖
+            ≤ ‖c i‖ * ‖wordProdList ![x, V, y] (w i)‖ := norm_smul_le _ _
+          _ = |(c i : ℝ)| * ‖wordProdList ![x, V, y] (w i)‖ := by
+              rw [← Rat.norm_cast_real, Real.norm_eq_abs]
+          _ ≤ |(c i : ℝ)| * (M ^ 2 * Vn ^ 3) :=
+              mul_le_mul_of_nonneg_left (hw i) (abs_nonneg _)
+    _ = (∑ i : Fin 30, |(c i : ℝ)|) * (M ^ 2 * Vn ^ 3) := by rw [Finset.sum_mul]
+    _ ≤ (720 / 720 : ℝ) * (M ^ 2 * Vn ^ 3) :=
+        mul_le_mul_of_nonneg_right hA
+          (mul_nonneg (pow_nonneg hM0 2) (pow_nonneg hVn0 3))
+    _ ≤ (720 / 720 : ℝ) * (M ^ 3 * Vn ^ 2) :=
+        mul_le_mul_of_nonneg_left
+          (profile_le M Vn hM0 hVn0 hVnM (k := 3) (by norm_num) (by norm_num))
+          (by norm_num)
+/-- Norm bound for the `4V` piece: `≤ (30/720) M³‖V‖²` with `M = ‖x‖ + ‖V‖ + ‖y‖`.
+
+The constant is the source's: the `5` words of the piece times its largest absolute coefficient
+`6/720`. Every word of the piece has the same letter profile — `1` letters from `{x, y}`
+and `4` letters `V` — so each of the `5` terms is bounded by `(6/720) * (M ^ 1 * Vn ^ 4)`,
+which relaxes to `(6/720) * (M³‖V‖²)` because `‖V‖ ≤ M`. -/
+theorem norm_bchQuinticTermTaylor2Remainder4V_le {𝔸 : Type*}
+    [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸] (x V y : 𝔸) :
+    ‖bchQuinticTermTaylor2Remainder4V x V y‖
+      ≤ (30 / 720 : ℝ) * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) := by
+  set M := ‖x‖ + ‖V‖ + ‖y‖ with hM
+  set Vn := ‖V‖ with hVn
+  -- Local names for the piece's data and its summand, so the bound proof stays inside 100 columns.
+  set c : Fin 5 → ℚ := bchQuinticTermTaylor2Remainder4VCoeffs with hc
+  set w : Fin 5 → List (Fin 3) := bchQuinticTermTaylor2Remainder4VWords with hwdef
+  have hM0 : 0 ≤ M := by rw [hM]; positivity
+  have hVn0 : 0 ≤ Vn := norm_nonneg _
+  have hx : ‖x‖ ≤ M := by rw [hM]; linarith [norm_nonneg V, norm_nonneg y]
+  have hV : ‖V‖ ≤ Vn := le_refl _
+  have hy : ‖y‖ ≤ M := by rw [hM]; linarith [norm_nonneg x, norm_nonneg V]
+  have hVnM : Vn ≤ M := by rw [hM]; linarith [norm_nonneg x, norm_nonneg y]
+  have hw : ∀ i, ‖wordProdList ![x, V, y] (w i)‖ ≤ M ^ 1 * Vn ^ 4 := by
+    intro i
+    calc ‖wordProdList ![x, V, y] (w i)‖
+        ≤ ((w i).map ![M, Vn, M]).prod :=
+          norm_wordProdList_le (letters := ![x, V, y]) (b := ![M, Vn, M])
+            (fun j => by fin_cases j <;> simp [hx, hV, hy]) (w i)
+      _ = M ^ 1 * Vn ^ 4 := by
+          rw [hwdef]
+          fin_cases i <;> simp [bchQuinticTermTaylor2Remainder4VWords] <;> ring_nf ;try simp
+  have hsup : (Finset.univ.sup' Finset.univ_nonempty fun i : Fin 5 =>
+      |(c i : ℝ)|) ≤ (6 / 720 : ℝ) := by
+    refine Finset.sup'_le _ _ fun i _ => ?_
+    rw [hc]
+    fin_cases i <;> norm_num [bchQuinticTermTaylor2Remainder4VCoeffs]
+  have hA : (∑ i : Fin 5, |(c i : ℝ)|) ≤ (30 / 720 : ℝ) := by
+    have hcard : (Fintype.card (Fin 5) : ℝ) = (5 : ℝ) := by norm_num
+    calc (∑ i : Fin 5, |(c i : ℝ)|)
+        ≤ (Fintype.card (Fin 5) : ℝ) *
+            (Finset.univ.sup' Finset.univ_nonempty fun i : Fin 5 => |(c i : ℝ)|) :=
+          sum_abs_le_card_mul_sup' c
+      _ ≤ (5 : ℝ) * (6 / 720 : ℝ) := by
+          rw [hcard]
+          exact mul_le_mul_of_nonneg_left hsup (by norm_num)
+      _ = (30 / 720 : ℝ) := by norm_num
+  unfold bchQuinticTermTaylor2Remainder4V bchWordSum
+  -- One triangle inequality bounds the whole piece; the profile relaxation below is the only
+  -- place where `Vn ≤ M` enters.
+  calc ‖∑ i, c i • wordProdList ![x, V, y] (w i)‖
+      ≤ ∑ i : Fin 5, |(c i : ℝ)| * (M ^ 1 * Vn ^ 4) := by
+        refine le_trans (norm_sum_le _ _) (Finset.sum_le_sum fun i _ => ?_)
+        calc ‖c i • wordProdList ![x, V, y] (w i)‖
+            ≤ ‖c i‖ * ‖wordProdList ![x, V, y] (w i)‖ := norm_smul_le _ _
+          _ = |(c i : ℝ)| * ‖wordProdList ![x, V, y] (w i)‖ := by
+              rw [← Rat.norm_cast_real, Real.norm_eq_abs]
+          _ ≤ |(c i : ℝ)| * (M ^ 1 * Vn ^ 4) :=
+              mul_le_mul_of_nonneg_left (hw i) (abs_nonneg _)
+    _ = (∑ i : Fin 5, |(c i : ℝ)|) * (M ^ 1 * Vn ^ 4) := by rw [Finset.sum_mul]
+    _ ≤ (30 / 720 : ℝ) * (M ^ 1 * Vn ^ 4) :=
+        mul_le_mul_of_nonneg_right hA
+          (mul_nonneg (pow_nonneg hM0 1) (pow_nonneg hVn0 4))
+    _ ≤ (30 / 720 : ℝ) * (M ^ 3 * Vn ^ 2) :=
+        mul_le_mul_of_nonneg_left
+          (profile_le M Vn hM0 hVn0 hVnM (k := 4) (by norm_num) (by norm_num))
+          (by norm_num)
+/-- **Norm bound for the second-order Taylor remainder**:
+`‖C₅(x+V,y) - C₅(x,y) - linDiff‖ ≤ (2430/720) M³‖V‖²` with `M = ‖x‖ + ‖V‖ + ‖y‖`.
+
+`(1680 + 720 + 30)/720 = 2430/720` is the sum of the three pieces' constants. -/
+theorem norm_bchQuinticTermTaylor2Remainder_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+    [NormOneClass 𝔸] (x V y : 𝔸) :
+    ‖bchQuinticTermTaylor2Remainder x V y‖ ≤
+      (2430 / 720 : ℝ) * (‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2 := by
+  have h2 := norm_bchQuinticTermTaylor2Remainder2V_le x V y
+  have h3 := norm_bchQuinticTermTaylor2Remainder3V_le x V y
+  have h4 := norm_bchQuinticTermTaylor2Remainder4V_le x V y
+  have s1 := norm_add_le (bchQuinticTermTaylor2Remainder2V x V y +
+    bchQuinticTermTaylor2Remainder3V x V y) (bchQuinticTermTaylor2Remainder4V x V y)
+  have s2 := norm_add_le (bchQuinticTermTaylor2Remainder2V x V y)
+    (bchQuinticTermTaylor2Remainder3V x V y)
+  have hsum : (2430 / 720 : ℝ) = 1680 / 720 + 720 / 720 + 30 / 720 := by norm_num
+  unfold bchQuinticTermTaylor2Remainder
+  rw [hsum]
+  linarith only [s1, s2, h2, h3, h4]
 
 end
 
