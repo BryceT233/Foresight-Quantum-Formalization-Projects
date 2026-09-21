@@ -4,14 +4,14 @@
 `D:\project\CQM1\FQFP\BCH`（目标，Lean 4.34.0 / Mathlib v4.34.0），**重写架构与代码风格**，
 而不只是搬运。
 
-**当前状态：阶段 1（BCH 核心）、阶段 2（三次/四次/五次项）、阶段 3 的五次项全部完成，
-只差 `bchQuinticTermTaylor2Decomp`（见 §3.2）。** 验收全绿：`lake build FQFP`（零警告）、
+**当前状态：阶段 1（BCH 核心）、阶段 2（三次/四次/五次项）、阶段 3 的五次项
+（含 `bchQuinticTermTaylor2Decomp`，见 §3.2）全部完成。** 验收全绿：`lake build FQFP`（零警告）、
 `lake exe runLinter`、`lake exe lint-style`；零 `sorry`、零自定义公理、零 `maxHeartbeats` bump，
 `#print axioms` 只剩 `[propext, Classical.choice, Quot.sound]`。
 
 **下一步就看 §3.3 那张表**：`SmallSDischarge.lean`（8.4k 行）是全表唯一只依赖阶段 1、可以立刻
-开工的大块；`bchQuinticTermTaylor2Decomp` 则是 `QuinticMixed` / `SexticMixed` / `SymmetricSeptic*`
-整条链的前置。
+开工的大块；`bchQuinticTermTaylor2Decomp` 完成后，`QuinticMixed` / `SexticMixed` /
+`SymmetricSeptic*` 整条链（约 57k 行）的前置已解除。
 
 ---
 
@@ -25,7 +25,7 @@
 | `ExpNorm.lean` | 227 | 指数估计：实数与范数代数的 Taylor 余项界 |
 | `RealScalar.lean` | 82 | 完备 `ℚ`-代数上的唯一 `ℝ`-代数结构 |
 | `WordNorm.lean` | 178 | 词乘积范数（arity-free） |
-| `WordExpansion.lean` | 418 | 词展开：二元词模式界、telescoping `_diff` 界、任意字母表词积 |
+| `WordExpansion.lean` | 396 | 词展开：二元词模式界、telescoping `_diff` 界、任意字母表词积、顺序保持的子集展开 |
 | `NestedCommNorm.lean` | 88 | 嵌套交换子范数 |
 | `ChildsBasis.lean` | 163 | Childs 四重交换子基 |
 | `BCHElement.lean` | 283 | **结构层**：`bch` 是什么 |
@@ -33,7 +33,7 @@
 | `BCHSymmetric.lean` | 303 | **对称层**：Strang 乘积的误差 |
 | `BCHTerms.lean` | 555 | **级数项层**：`bch` 展开的三次/四次/五次项及其范数界 |
 | `QuinticRemainder.lean` | 224 | 五次项的一阶 Lipschitz 界 |
-| `QuinticTaylor2.lean` | 429 | 五次项 taylor2：定义 + 四条范数界（**缺** `bchQuinticTermTaylor2Decomp`） |
+| `QuinticTaylor2.lean` | 282+ | 五次项 taylor2：**四组 × 子集** 的片段定义、`Decomp`、四条范数界 |
 
 依赖链：`Logarithm/ExpNorm → BCHElement → BCHCommutator → BCHSymmetric`；
 `WordNorm → WordExpansion → BCHTerms → QuinticRemainder / QuinticTaylor2`。
@@ -109,10 +109,7 @@ monomial 分支都重复 `norm_smul_le → norm_Nprod_le → gcongr → ring`，
 `SymmetricSepticPieces` 用它。届时先定形状：**逐组显式展开**（忠实于源，但组 6 有心跳问题），
 还是**按词模式做 W-次数分解**（可能免 bump，需先看消费者要点什么）。
 
-### 3.2 五次项 taylor2：只差 `bchQuinticTermTaylor2Decomp`
-
-已完成 `bchQuinticTermLinDiff`、`bchQuinticTermTaylor2Remainder{2V,3V,4V,}` 的定义与四条范数界
-（`1680/720`、`720/720`、`30/720`，合计 `2430/720`，与源逐项对齐）。**仍缺**：
+### 3.2 五次项 taylor2：`bchQuinticTermTaylor2Decomp` 已完成
 
 ```lean
 bchQuinticTerm (x + V) y - bchQuinticTerm x y
@@ -121,30 +118,43 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 
 它是 `SymmetricSepticPhaseBC`（`septic_d7_P3_C5_lin_poly_eq_taylor2_remainder`）与
 `SymmetricSepticPieces` 的**硬依赖**。源写成 `unfold … ; simp only […] ; match_scalars <;> ring`
-并带 `maxHeartbeats 1024000000`；本项目禁止 bump，所以**先定形状再动手**。
+并带 `maxHeartbeats 1024000000`。
 
-**难点已经定位，方案已验通——见 `artifacts/quintic-taylor2-route.md`。** 一句话：
+**难点与方案见 `artifacts/quintic-taylor2-route.md`（必读）。** 一句话：
 `Finset.prod_add` 及其全部同族引理只对 `CommSemiring` 成立，右端**重排了字母**，在非交换环上
 是错的；BCH 的 `𝔸` 必须非交换，所以「按子集展开再重排系数」这条路数学上不成立（曾提交的
 `FQFP/BCH/QuinticExpansion.lean` 带 `[CommRing 𝔸]`，因此无法调用，已删）。正确形态是**按 snoc
-归纳、保持字母顺序**的展开，已在 `artifacts/examples/quintic-expansion-spike.lean` 中证明
-（`[Semiring 𝔸]`，无 `omega`/`sorry`，axioms 只剩三条）。
+归纳、保持字母顺序**的展开：`WordExpansion.wordProdList_add`，在
+`artifacts/examples/quintic-expansion-spike.lean` 中先验证过、随后搬进 `WordExpansion.lean`（`[Semiring 𝔸]`，无
+`omega`/`sorry`，axioms 只剩三条）。
 
-**为什么难**：`BCHTerms.lean` 的 `bchQuinticTerm` 是 `Fin 5 → Bool` 四个组 + `wordEval`，
-`QuinticTaylor2.lean` 是 `Fin 3` 模式 + `bchWordSum`。两者描述同一批单项式，但索引不同，
-`Decomp` 要对上这个索引。
+**最终形态（终版，别再改）**：`BCHTerms.lean` 的四组 `Fin 5 → Bool` 词表**原样保留**，
+`QuinticTaylor2.lean` 的片段定义为「四组 × 该词 `a`-位置的 `k`-子集」的嵌套和：
 
-**数据与表示（终版，别再改）**：系数 `Fin m → ℚ`（分母 720），模式 `Fin m → List (Fin 3)`
-（`0 = x`、`1 = V`、`2 = y`），定义是 `bchWordSum` 的一个 `∑`。词数 **75 / 70 / 30 / 5**，
-与源逐词逐系数一致。
+* `bchQuinticGroupSubsets words k x V y`：一组内所有词的 `powersetCard k` 之和；
+* `bchQuinticSubsetPiece k x V y`：`(720)⁻¹ • bchQuinticBracket (四组分别在 k 处的和)`，
+  `bchQuinticBracket v1 v4 v6 v24 = -v1 + 4•v4 - 6•v6 + 24•v24` 逐字镜像 `bchQuinticTerm` 内层；
+* `LinDiff = piece 1`，`Remainder{2V,3V,4V} = piece 2/3/4`，`Remainder = 2V+3V+4V`（`rfl`）。
 
-**界只用两条新引理，不要展开逐项**：
+不再有 `Fin 75/70/30/5` 的平坦字面量表，也不再有 `bchWordSum`：片段是**从
+`bchQuinticTerm` 经已证明的 `wordProdList_add` 推导出来的**，所以不存在转写错误，
+也不需要「逐项核对 180 个词」。
 
-* `sum_abs_le_card_mul_sup'`：`∑ i, |c i| ≤ card ι * (univ.sup' fun i => |c i|)`，把「一组系数的
-  绝对值和」归结为「组内最大系数 × 词数」——源常数的来源。**不要**用 `norm_num [<系数 def>]`
-  算 `∑ i : Fin 70`。
-* `profile_le`：`M ^ (5 - k) * Vn ^ k ≤ M ^ 3 * Vn ^ 2`（`k ∈ {2,3,4}`，用 `Vn ≤ M`）。
-* 每块一次 `norm_sum_le` + `Finset.sum_le_sum` + `Finset.sum_mul`，三条界再合成 `2430/720`。
+**只需两条引理**：
+
+* `sum_powerset_eq_sum_powersetCard`：`card ≤ 4` 时
+  `∑ t ∈ s.powerset, f t = ∑ k ∈ range 5, ∑ t ∈ s.powersetCard k, f t`；
+* `bracket_sum`：`bracket (∑A) (∑B) (∑C) (∑D) = ∑ k, bracket (A k) (B k) (C k) (D k)`。
+
+**四条范数界（`1680/720`、`720/720`、`30/720`，合计 `2430/720`）**：词形统一（`k` 个 `V`、
+`5-k` 个来自 `{x,y}`），所以 `norm_wordProdList_le` + 字母界 `![M, Vn, M]` 直接给
+`M^(5-k)·Vn^k`，再用 `Vn ≤ M` 松到 `M³·Vn²`——**没有 `fin_cases`**。词数 12 个数
+（k=2 时 12/24/30/4，k=3 时 8/11/10/1，k=4 时 2/2/1/0）由 `decide` 算出。
+
+**独立校验器**（`scripts/check_quintic_taylor2_pieces.py`）：不读片段定义，从 `BCHTerms.lean`
+解析四组词表、从 `git show HEAD:FQFP/BCH/QuinticTaylor2.lean` 解析旧表，自己枚举
+「每个词 × `a`-位置的每个非空 `k`-子集」重建四个片段并逐 `(词, 系数)` 比对。结果全绿
+（75/70/30/5，共 180 项）。用法见脚本 docstring。
 
 ### 3.3 剩余文件与开工前提
 
