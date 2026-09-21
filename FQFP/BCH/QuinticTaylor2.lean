@@ -185,7 +185,7 @@ lemma sum_abs_le_card_mul_sup' {ι : Type*} [Fintype ι] [Nonempty ι] (c : ι �
 /-- Exponent arithmetic: `M ^ (5 - (j + 2)) * Vn ^ (j + 2) = M ^ (3 - j) * Vn ^ j * Vn ^ 2`. -/
 private lemma pow_sub_profile (M Vn : ℝ) (j : ℕ) :
     M ^ (5 - (j + 2)) * Vn ^ (j + 2) = M ^ (3 - j) * Vn ^ j * Vn ^ 2 := by
-  have hM : 5 - (j + 2) = 3 - j := by omega
+  have hM : 5 - (j + 2) = 3 - j := by lia
   rw [hM, pow_add]
   ring
 
@@ -194,7 +194,7 @@ has profile `M ^ (5 - k) * Vn ^ k`, which is at most `M ^ 3 * Vn ^ 2` because `V
 lets each piece of the remainder be bounded at the source's constant, which uses `M³‖V‖²`. -/
 lemma profile_le (M Vn : ℝ) (hM0 : 0 ≤ M) (hVn0 : 0 ≤ Vn) (hVnM : Vn ≤ M) {k : ℕ}
     (hk : 2 ≤ k) (hk5 : k ≤ 5) : M ^ (5 - k) * Vn ^ k ≤ M ^ 3 * Vn ^ 2 := by
-  obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by lia⟩
   rw [pow_sub_profile]
   calc M ^ (3 - j) * Vn ^ j * Vn ^ 2
       = M ^ (3 - j) * (Vn ^ j * Vn ^ 2) := by ring
@@ -203,7 +203,7 @@ lemma profile_le (M Vn : ℝ) (hM0 : 0 ≤ M) (hVn0 : 0 ≤ Vn) (hVnM : Vn ≤ M
           (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hVn0 hVnM j) (pow_nonneg hVn0 2))
           (pow_nonneg hM0 (3 - j))
     _ = M ^ 3 * Vn ^ 2 := by
-        have hj3 : j ≤ 3 := by omega
+        have hj3 : j ≤ 3 := by lia
         rw [← mul_assoc, ← pow_add, Nat.sub_add_cancel hj3]
 
 end Budget
@@ -237,7 +237,7 @@ theorem norm_bchQuinticTermTaylor2Remainder2V_le {𝔸 : Type*}
             (fun j => by fin_cases j <;> simp [hx, hV, hy]) (w i)
       _ = M ^ 3 * Vn ^ 2 := by
           rw [hwdef]
-          fin_cases i <;> simp [bchQuinticTermTaylor2Remainder2VWords] <;> ring_nf ;try simp
+          fin_cases i <;> simp [bchQuinticTermTaylor2Remainder2VWords] <;> ring_nf
   have hsup : (Finset.univ.sup' Finset.univ_nonempty fun i : Fin 70 =>
       |(c i : ℝ)|) ≤ (24 / 720 : ℝ) := by
     refine Finset.sup'_le _ _ fun i _ => ?_
@@ -302,7 +302,7 @@ theorem norm_bchQuinticTermTaylor2Remainder3V_le {𝔸 : Type*}
             (fun j => by fin_cases j <;> simp [hx, hV, hy]) (w i)
       _ = M ^ 2 * Vn ^ 3 := by
           rw [hwdef]
-          fin_cases i <;> simp [bchQuinticTermTaylor2Remainder3VWords] <;> ring_nf ;try simp
+          fin_cases i <;> simp [bchQuinticTermTaylor2Remainder3VWords] <;> ring_nf
   have hsup : (Finset.univ.sup' Finset.univ_nonempty fun i : Fin 30 =>
       |(c i : ℝ)|) ≤ (24 / 720 : ℝ) := by
     refine Finset.sup'_le _ _ fun i _ => ?_
@@ -367,7 +367,7 @@ theorem norm_bchQuinticTermTaylor2Remainder4V_le {𝔸 : Type*}
             (fun j => by fin_cases j <;> simp [hx, hV, hy]) (w i)
       _ = M ^ 1 * Vn ^ 4 := by
           rw [hwdef]
-          fin_cases i <;> simp [bchQuinticTermTaylor2Remainder4VWords] <;> ring_nf ;try simp
+          fin_cases i <;> simp [bchQuinticTermTaylor2Remainder4VWords] <;> ring_nf; simp
   have hsup : (Finset.univ.sup' Finset.univ_nonempty fun i : Fin 5 =>
       |(c i : ℝ)|) ≤ (6 / 720 : ℝ) := by
     refine Finset.sup'_le _ _ fun i _ => ?_

@@ -93,6 +93,54 @@
 `Decomp` 于是 = 引理 2 + 引理 3 + 「同一模式的两条路径系数相同」，后者是 `Finset.sum`
 的重组（`Finset.sum_biUnion` / `Finset.sum_bij`），**不需要 `noncomm_ring`**。
 
+### 3.2bis 引理 1 的确切形状与卡点（已试过，务必先读）
+
+`Finset.prod_add`（`Algebra/BigOperators/Ring/Finset.lean:171`）的形状是
+
+```
+∏ i ∈ s, (f i + g i) = ∑ t ∈ s.powerset, (∏ i ∈ t, f i) * ∏ i ∈ s \ t, g i
+```
+
+**注意 `t = ∅` 那一项是 `∏ i, g i`，不是 `∏ i, f i`。** 所以想减掉的 `∏ i, f i` 是
+**`t = univ`** 那一项（`s \ t = ∅`），不是 `t = ∅`。这一条把早先「减掉空集项」的写法全部推翻了。
+
+正确的逐词引理形状（`s` 是 `x`-位置的集合，`δ` 只在 `s` 上非零，`f` 为 `0`/`x`）：
+
+```lean
+lemma univ_prod_add_sub {n : ℕ} (f δ : Fin n → 𝔸) (s : Finset (Fin n))
+    (hδ : ∀ i, i ∉ s → δ i = 0) (hf : ∀ i, i ∉ s → f i = 0) :
+    (∏ i : Fin n, (f i + δ i)) - (∏ i : Fin n, f i) =
+      ∑ t ∈ (s.powerset.filter fun t => t.Nonempty), (∏ i ∈ t, δ i)
+```
+
+已验通的两块：
+
+* 每个 summand 的化简（`by_cases s ⊆ t`）：
+  `(∏ i ∈ t, f i) * ∏ i ∈ tᶜ, δ i = if s ⊆ t then (∏ i ∈ t, δ i) else 0`。
+  理由：`s ⊆ t` 时 `tᶜ` 上 `δ` 恒为 `0`（补积为 `1`，用 `Finset.prod_eq_one`），且此时
+  `t ∩ s = s`，`∏ i ∈ t, f i * ∏ i ∈ t, δ i = ∏ i ∈ t, δ i` **不成立**——`t` 可能含 `s` 之外
+  的元素，而那些位置上 `f` 与 `δ` 都是 `0`，所以两边都是 `0`；正确的关系是
+  `(∏ i ∈ t, f i) * (∏ i ∈ t, δ i) = ∏ i ∈ t, δ i` 只在 `s ⊆ t` 时由「`t \ s` 上是零因子」得到。
+  **踩过的坑**：`t` 上既有 `f` 又有 `δ` 时不能直接约，必须走「`s ⊆ t` 之外全为零」。
+* 指标集：`{t | s ⊆ t} = sᶜ.powerset`（补集双射），再 `sᶜ.powerset ≃ s.powerset`（`t ↦ tᶜ`，
+  在 `Fin n` 上恒成立）。这一段是**纯粹的有限集簿记**，与数学无关。
+
+**卡点**：上面最后两段的 `Finset` 簿记（`sum_subset` 的零条件 + 补集双射）我试了几轮都没写顺，
+每次都在「`tᶜ` 的 membership 与 `Finset.mem_powerset`/`mem_compl` 的交互」上翻车。这不是数学问题，
+是 `Finset` 引用的选择问题。**下一步的高效做法**：先把
+```lean
+example {n} (s : Finset (Fin n)) :
+  (Finset.univ.filter fun t : Finset (Fin n) => s ⊆ t) = sᶜ.powerset := by sorry
+```
+和
+```lean
+example {n} (s : Finset (Fin n)) (F : Finset (Fin n) → 𝔸) :
+  (∑ t ∈ sᶜ.powerset, F t) = ∑ u ∈ s.powerset, F uᶜ := by sorry
+```
+这两条**独立**地打穿（`#check` 出 `Finset.sum_bij` / `Finset.sum_nbij` /
+`Finset.compl_mem_powerset` 的确切签名再动手），再回头拼 `univ_prod_add_sub`。
+不要在一条 tactic 里同时处理 membership 与求和重组——这是前几轮反复失败的直接原因。
+
 ### 3.3 波及范围
 
 * `BCHTerms.lean`：五次项的四个组改为由 30 词表加索引集合定义；`bchQuinticTerm` 改成对
