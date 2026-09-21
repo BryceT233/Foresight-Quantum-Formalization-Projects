@@ -160,7 +160,7 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 
 | 源 | 行数 | 目标 | 依赖 |
 |---|---|---|---|
-| `SmallSDischarge.lean` | 8.4k | 同名 | **阶段 1（可立刻开工）** |
+| `SmallSDischarge.lean` | 8.4k | 同名 | **阶段 1/2 + 三次项前置（见下）** |
 | `Basic:4830–8714` + `QuinticMixed.lean` | 5.5k | `QuinticMixed.lean` | taylor2 `Decomp` |
 | `Basic:8715–11459` + `SexticMixed.lean` | 8.3k | `SexticMixed.lean` | 阶段 1 |
 | `SepticTaylor.lean` | 23.0k | 同名 | 阶段 1 |
@@ -178,6 +178,32 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 （`SymmetricQuintic.lean` 是 1.3k 的纯聚合模块，其 42k 行内容源自己已拆进
 `SymmetricQuinticCore` / `PhaseBC` / `Pieces` / `Assembly`；`SuzukiSepticMatchWords.lean` 并入
 `SuzukiSepticMatch`。）
+
+### 3.3bis `SmallSDischarge.lean` 的真实依赖与难度（本轮实测，修正上表上一版的说法）
+
+上一版把它标成「只依赖阶段 1、可立刻开工」——**不对**。实测（`Select-String` 计数）：
+
+* 它用了 `bch_sextic_term`（20 处）、`bch_septic_term`（13 处）、`bch_octic_term`（4 处），
+  三者的定义分别在 `Basic.lean:8732 / 11478 / 14221`，即上表映射到 `SexticMixed.lean` 与
+  `BCHHigherOrder.lean` 的两段**尚未移植**的区域。所以开工前有一层约 300 行的前置：
+  三个 k 次项的词表 + 各自的范数界（`norm_bch_*_term_le`，分别在 Basic:8822 / 12437 / 15162）。
+  **好消息**：三个定义都很小（34 / 134 / 130 行；28 / 126 / 124 个单项式，分母 1440），
+  范数界就是 `norm_sum_wordEval_le` / `norm_sum_smul_wordProdList_le` 的一次应用——正是阶段 1/2
+  已有的形态。
+* **难点集中且形状已知**：29 处 `maxHeartbeats`，其中最狠的四处是
+  `pieceB_sextic_decomp` 1.0e9、`pieceB_septic_decomp` 2.0e9、`pieceB_octic_decomp` 8.2e9、
+  `norm_I2_residual_inner_le` 1.0e9——全是**非交换多项式恒等式**，与刚做完的
+  `bchQuinticTermTaylor2Decomp` 同型，正好是本轮新增的 `wordProdList_add` + 子集索引能处理的
+  东西。其余 25 处是 4e6–1.3e8 的伸缩/分解引理。
+* 另有 18 处 `omit`（本项目禁止）、17 处 `match_scalars`、48 处 `noncomm_ring`，以及全程
+  `RCLike 𝕂`（目标约定是陈述用 `ℚ`、`ℝ` 只在证明里局部引入，见 §4.2）。**8.4k 行不能按行数
+  线性外推。**
+
+建议的分片顺序（每片独立可验收）：
+**P0** 三次项前置 → **P1** 纯恒等式 `{quintic,sextic,septic,octic,nonic}_pure_identity`
+（源自己已有 `_cleared` 的整数放大版本，正好用来拆小 `noncomm_ring` 目标）→
+**P2** 伸缩与 `I1/I2` 残差分解 → **P3** `pieceB_*_decomp`（1e9–8e9 那四处）→
+**P4** `norm_bch_{sextic,septic,octic}_remainder_le`。
 
 **开工前提（两件硬约束）**：
 
