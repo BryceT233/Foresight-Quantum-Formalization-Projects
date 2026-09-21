@@ -86,4 +86,58 @@ theorem quintic_pure_identity [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 
     mul_smul_comm, smul_mul_assoc, mul_add, add_mul, mul_sub, sub_mul, ← mul_assoc]
   match_scalars <;> ring
 
+/-! ### Degree 5: the cancellation behind `bchQuinticTerm` -/
+
+/-- **The degree-5 pure identity**: the degree-5 part of `½W5 + ⅓y3₅ - ¼y4₅ + ⅕z⁵`, written in
+`z = a + b` and the degree-2/3/4 parts `T₂`, `T₃`, `T₄` of `y = exp a * exp b - 1`, minus
+`bchQuinticTerm a b`, is zero.
+
+Unlike the source's, the target's `bchQuinticGroup*` are `Finset.sum`s over word data, so the group
+sums have to be expanded into monomials between `unfold` and `match_scalars`: without that step
+`match_scalars` matches the group coefficients against the *unexpanded* sums and leaves false
+residual goals such as `-1 / 720 = 0`. With it, no heartbeat bump is needed. -/
+private theorem sextic_pure_identity [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) :
+    let z : 𝔸 := a + b
+    let T₂ : 𝔸 := a * b + (2 : ℚ)⁻¹ • a ^ 2 + (2 : ℚ)⁻¹ • b ^ 2
+    let T₃ : 𝔸 := (6 : ℚ)⁻¹ • a ^ 3 + (2 : ℚ)⁻¹ • (a ^ 2 * b) +
+        (2 : ℚ)⁻¹ • (a * b ^ 2) + (6 : ℚ)⁻¹ • b ^ 3
+    let T₄ : 𝔸 := (24 : ℚ)⁻¹ • a ^ 4 + (6 : ℚ)⁻¹ • (a ^ 3 * b) +
+        (4 : ℚ)⁻¹ • (a ^ 2 * b ^ 2) + (6 : ℚ)⁻¹ • (a * b ^ 3) +
+        (24 : ℚ)⁻¹ • b ^ 4
+    let W5 : 𝔸 := (60 : ℚ)⁻¹ • a ^ 5 + (60 : ℚ)⁻¹ • b ^ 5 +
+        (12 : ℚ)⁻¹ • (a * b ^ 4) + (12 : ℚ)⁻¹ • (a ^ 4 * b) +
+        (6 : ℚ)⁻¹ • (a ^ 2 * b ^ 3) + (6 : ℚ)⁻¹ • (a ^ 3 * b ^ 2) -
+        (z * T₄ + T₄ * z) - (T₂ * T₃ + T₃ * T₂)
+    let y3_5 : 𝔸 := z ^ 2 * T₃ + z * T₃ * z + T₃ * z ^ 2 +
+        z * T₂ ^ 2 + T₂ * z * T₂ + T₂ ^ 2 * z
+    let y4_5 : 𝔸 := z ^ 3 * T₂ + z ^ 2 * T₂ * z + z * T₂ * z ^ 2 + T₂ * z ^ 3
+    (2 : ℚ)⁻¹ • W5 + (3 : ℚ)⁻¹ • y3_5 - (4 : ℚ)⁻¹ • y4_5 + (5 : ℚ)⁻¹ • z ^ 5
+      - bchQuinticTerm a b = 0 := by
+  intro z T₂ T₃ T₄ W5 y3_5 y4_5
+  show _ = (0 : 𝔸)
+  simp only [show z = a + b from rfl,
+    show T₂ = a * b + (2 : ℚ)⁻¹ • a ^ 2 + (2 : ℚ)⁻¹ • b ^ 2 from rfl,
+    show T₃ = (6 : ℚ)⁻¹ • a ^ 3 + (2 : ℚ)⁻¹ • (a ^ 2 * b) +
+        (2 : ℚ)⁻¹ • (a * b ^ 2) + (6 : ℚ)⁻¹ • b ^ 3 from rfl,
+    show T₄ = (24 : ℚ)⁻¹ • a ^ 4 + (6 : ℚ)⁻¹ • (a ^ 3 * b) +
+        (4 : ℚ)⁻¹ • (a ^ 2 * b ^ 2) + (6 : ℚ)⁻¹ • (a * b ^ 3) +
+        (24 : ℚ)⁻¹ • b ^ 4 from rfl,
+    show W5 = (60 : ℚ)⁻¹ • a ^ 5 + (60 : ℚ)⁻¹ • b ^ 5 +
+        (12 : ℚ)⁻¹ • (a * b ^ 4) + (12 : ℚ)⁻¹ • (a ^ 4 * b) +
+        (6 : ℚ)⁻¹ • (a ^ 2 * b ^ 3) + (6 : ℚ)⁻¹ • (a ^ 3 * b ^ 2) -
+        (z * T₄ + T₄ * z) - (T₂ * T₃ + T₃ * T₂) from rfl,
+    show y3_5 = z ^ 2 * T₃ + z * T₃ * z + T₃ * z ^ 2 +
+        z * T₂ ^ 2 + T₂ * z * T₂ + T₂ ^ 2 * z from rfl,
+    show y4_5 = z ^ 3 * T₂ + z ^ 2 * T₂ * z + z * T₂ * z ^ 2 + T₂ * z ^ 3 from rfl]
+  unfold bchQuinticTerm bchQuinticGroup1 bchQuinticGroup4
+    bchQuinticGroup6 bchQuinticGroup24
+  simp only [smul_add, bchQuinticGroup1Words, List.ofFn_succ, wordEval, Fin.isValue,
+    Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_fin_one, Matrix.cons_val_succ,
+    List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one, mul_ite, ite_mul, Fin.sum_univ_succ,
+    Bool.false_eq_true, ↓reduceIte, Finset.univ_unique, Fin.default_eq_zero, Finset.sum_const,
+    Finset.card_singleton, one_smul, neg_add_rev, bchQuinticGroup4Words, bchQuinticGroup6Words,
+    bchQuinticGroup24Words]
+  noncomm_ring; module
+
+
 end FQFP.BCH

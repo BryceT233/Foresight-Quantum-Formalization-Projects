@@ -220,16 +220,26 @@ degree-5（`sextic_pure_identity`，源 bump 16M）的实验结论有三条：
    **静默错配**：它把「未展开的 `Finset.sum`」和组系数当成单项式去配，于是留下**假命题**残局
    `⊢ -1 / 720 = 0`、`⊢ 1 / 180 = 0`（正好是 `bchQuinticTerm` 的组系数）。**注意这不是超时**，
    全文件在默认预算下 14s 就跑完——所以这一片**根本不需要 bump**，源那 16M 花在别处。
-3. **修法已确认可行**：在 `unfold` 之后、`match_scalars` 之前插一步显式展开
+3. **修法（已落地，degree-5 通过）**：`unfold` 之后先把四个组展开成单项式，然后**不要用
+   `match_scalars <;> ring`，改用 `noncomm_ring; module`**——目标的 `𝔸` 是 `ℚ`-代数，展开后
+   剩下的是「非交换多项式 + `ℚ`-标量」两层，`noncomm_ring` 管前者、`module` 管后者。
+   `match_scalars` 在这里是错工具：它既不展开 `Finset.sum`，也不处理 `•`。
 
    ```lean
-   simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, List.ofFn_succ, List.ofFn_zero, wordEval,
-     bchQuinticGroup1Words, bchQuinticGroup4Words, bchQuinticGroup6Words, bchQuinticGroup24Words,
-     Matrix.cons_val_zero, Matrix.cons_val_succ, Fin.isValue, Fin.succ_mk, Fin.zero_eta]
+   unfold bchQuinticTerm bchQuinticGroup1 bchQuinticGroup4
+     bchQuinticGroup6 bchQuinticGroup24
+   simp only [smul_add, bchQuinticGroup1Words, List.ofFn_succ, wordEval, Fin.isValue,
+     Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_fin_one, Matrix.cons_val_succ,
+     List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one, mul_ite, ite_mul, Fin.sum_univ_succ,
+     Bool.false_eq_true, ↓reduceIte, Finset.univ_unique, Fin.default_eq_zero, Finset.sum_const,
+     Finset.card_singleton, one_smul, neg_add_rev, bchQuinticGroup4Words, bchQuinticGroup6Words,
+     bchQuinticGroup24Words]
+   noncomm_ring; module
    ```
 
-   加进去后目标确实变成单项式层（`(2⁻¹*60⁻¹) • (a*a*a*a*a) + …`）。剩下只是把这条展开的
-   simp 集收敛干净（当时还有 4 个 unusedSimpArgs）——纯粹是机械收尾。
+   全文件在默认预算下 15s 编完，**无 bump**。（`Matrix.cons_val'` / `Fin.default_eq_zero` /
+   `Finset.univ_unique` 这几条是必须的：`List.ofFn` 的 `get` 归结到 `Fin` 字面量后还要靠它们
+   才落到位。）
 
 **工具本轮新增**（都可复用）：
 
