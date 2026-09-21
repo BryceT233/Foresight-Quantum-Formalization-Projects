@@ -31,7 +31,7 @@
 | `BCHElement.lean` | 283 | **结构层**：`bch` 是什么 |
 | `BCHCommutator.lean` | 557 | **偏差层**：`bch` 与 `a+b` 差多少 |
 | `BCHSymmetric.lean` | 303 | **对称层**：Strang 乘积的误差 |
-| `BCHTerms.lean` | 555 | **级数项层**：`bch` 展开的三次/四次/五次项及其范数界 |
+| `BCHTerms.lean` | 981 | **级数项层**：`bch` 展开的三次/四/五/六/七/八次项及其范数界 |
 | `QuinticRemainder.lean` | 224 | 五次项的一阶 Lipschitz 界 |
 | `QuinticTaylor2.lean` | 282+ | 五次项 taylor2：**四组 × 子集** 的片段定义、`Decomp`、四条范数界 |
 
@@ -160,7 +160,7 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 
 | 源 | 行数 | 目标 | 依赖 |
 |---|---|---|---|
-| `SmallSDischarge.lean` | 8.4k | 同名 | **阶段 1/2 + 三次项前置（见下）** |
+| `SmallSDischarge.lean` | 8.4k | 同名 | **阶段 1/2 + 六/七/八次项前置（见下，已完成）** |
 | `Basic:4830–8714` + `QuinticMixed.lean` | 5.5k | `QuinticMixed.lean` | taylor2 `Decomp` |
 | `Basic:8715–11459` + `SexticMixed.lean` | 8.3k | `SexticMixed.lean` | 阶段 1 |
 | `SepticTaylor.lean` | 23.0k | 同名 | 阶段 1 |
@@ -200,7 +200,7 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
   线性外推。**
 
 建议的分片顺序（每片独立可验收）：
-**P0** 三次项前置 → **P1** 纯恒等式 `{quintic,sextic,septic,octic,nonic}_pure_identity`
+**P0** 六/七/八次项前置（**已完成**：`bchSexticTerm` / `bchSepticTerm` / `bchOcticTerm` + `norm_bch*Term_le`，28/126/124 项，分母 1440/30240/120960，见 `BCHTerms.lean`；生成+校验器 `scripts/gen_bch_higher_terms.py`）→ **P1** 纯恒等式 `{quintic,sextic,septic,octic,nonic}_pure_identity`
 （源自己已有 `_cleared` 的整数放大版本，正好用来拆小 `noncomm_ring` 目标）→
 **P2** 伸缩与 `I1/I2` 残差分解 → **P3** `pieceB_*_decomp`（1e9–8e9 那四处）→
 **P4** `norm_bch_{sextic,septic,octic}_remainder_le`。
@@ -293,8 +293,23 @@ theorem norm_log_one_add_sub_logPartialSum_le (x : 𝔸) (n : ℕ) (hx : ‖x‖
   靠默认集里的 `Matrix.cons_val_zero` / `Matrix.cons_val_succ`，所以 `simp only [<数据 def>]` 化简
   不动它（残局 `⊢ ↑(![-1, …] 0) = -1`），而 `simp [<数据 def>]` 一条过。
 * **`Rat.norm_cast_real` 只认 `ℚ`**（形状 `‖(↑q : ℝ)‖ = ‖q‖`）。`ℤ` 经 `Int.cast` 直接进 `ℝ` 套不上。
-* **`decide` 不能判 `ℝ` 命题**（`Real.decidableLE` 经 `Classical.choice`，展开后卡住）；
-  只对 `ℕ`/`ℤ`/`ℚ`/`Bool`/`List` 上的可计算目标可靠。
+* **`decide` 不能判 `ℝ` 命题**（`Real.decidableLE` 经 `Classical.choice`，展开后卡住）。
+  **而且它同样判不了 `ℚ`**（上一版这里写的「`ℚ` 可靠」是错的，P0 实测纠正）：
+  `Rat.instDecidableLe` 落在 `Rat.blt` 上，而 `Rat.blt` / `Rat.num` / `Rat.den` 都不做
+  kernel 归约，所以连 `example : (1:ℚ)/2 ≤ 3/4 := by decide` 都失败，形如
+  `∀ i : Fin 126, (c i).num.natAbs ≤ 216` 的 `ℕ` 命题也同样卡在 `(c i).num` 上。
+  **`decide` 只对不含 `ℚ`/`ℝ` 的可计算目标可靠**（`ℕ`/`ℤ`/`Bool`/`List`，以及
+  `Finset.card` 这类计数式）。含 `ℚ` 的数值事实一律交给 `norm_num`。
+* **`norm_num` 不能求 `∑ i : Fin m, f i` 的和**（`f` 是向量字面量时它把 `f` 展成字面量、
+  却留下未化简的 `∑`）。要显式展开：`simp only [<表 def>, Fin.sum_univ_succ,
+  Fin.sum_univ_zero, ← Rat.norm_cast_real, Real.norm_eq_abs]` 再 `norm_num`；`←
+  Rat.norm_cast_real` 这一条不能省，否则残局是 `‖1440‖⁻¹ + … ≤ 1`。
+  **但 126/124 项的展开会超过 `simp` 默认的 `maxRecDepth`**（报错是
+  `maximum recursion depth has been reached`，不是心跳超时）。`BCHTerms.lean` 的
+  `norm_bchSepticTerm_le` / `norm_bchOcticTerm_le` 因此带一条
+  `set_option maxRecDepth 8000 in`——这是**有限的 tactic 递归深度**，不是搜索/心跳预算，
+  且已在原处写明理由。若要彻底去掉它，就得把系数表按「系数值分组」（像五次项的四个组那样）
+  而不是「平坦表 + 系数向量」；代价是约 30 个额外的组定义。
 * **`List.getElem` 的界证明会进目标**：`getElem w ⟨i, by decide⟩` 化简后露出
   `decide (2 < w.length)`，与已展开的 `true` 对不上。索引用 `nameWords[i.val]'(…)` 形式绕开。
 * **`have` 而不是 `haveI`**：`linter.style.haveILetI` 要求 Prop 目标下用 `have`。
