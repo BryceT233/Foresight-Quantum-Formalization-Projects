@@ -121,23 +121,23 @@
 **本轮的净结论（避免下轮重蹈）**：
 
 * `prod_add` 的 summand 是 `(∏ i ∈ t, f i) * ∏ i ∈ (univ \ t), g i`；要减掉的 `∏ i, f i` 是
-  **`t = univ`** 那一项。**不要**再去「减空集项」。
-* Taylor 替换下两个函数的取值是 `f i = if i ∈ s then x else y`、`g i = if i ∈ s then V else 0`
-  （`s` = 词里 `x` 的位置集合）。**`f` 在整条词上都不为零**——这一点我前后搞错了五轮，
-  是最大的时间浪费来源。
-* 于是 summand 的化简**必须显式处理 `∏ i ∈ (univ \ t), g i`**：`t ⊆ s` 时该因子为 `1`
-  （因为 `univ \ t ⊆ sᶜ`），否则不为 `1`。不要去指望它是 `0`。
-* **操作层面**：`Finset` 的 membership 引理（`mem_sdiff.mp`、`mem_compl.mp`、`not_subset.mp`、
-  `compl_subset_compl`）我每轮都在方向上翻车。下轮**每一步先 `#check` 出签名、再 `exact` 写
-  proof term，不要用 `simp only` 之后再 `intro`/`constructor` 的混合写法**，也不要在同一条 tactic
-  里同时处理 membership 与求和重组。
-
-**建议的下轮起点**（每条都在独立小文件里验通再进下一条）：
-
-1. `f i = if i ∈ s then x else y`、`g i = if i ∈ s then V else 0`，用 `Finset.prod_congr`
-   把 `∏ i, (f i + g i)` 与 `wordProdList ![x+V,V,y] w` 对齐；
-2. 套 `prod_add`，逐项 `by_cases ht : t ⊆ s` 化简；
-3. 再做「按 `#V` 分类 = linDiff + 2V + 3V + 4V」的求和重组。
+  **`t = s`**（在 `s` 上的展开里）那一项。**不要**再去「减空集项」，也不要减 `t = univ`。
+* **`Finset.prod_ite` 是这条路的正确入口**，它直接把
+  `∏ i, if i ∈ s then x+V else y` 拆成 `(∏ i ∈ s, x+V) * ∏ i ∈ univ \ s, y`，
+  **完全绕开了之前反复出错的 `prod_sdiff` 方向问题**。
+* 真正需要减去的恒等式**只在 `s` 上**：
+  `∏ i ∈ s, (x+V) - ∏ i ∈ s, x = ∑_{∅≠t⊆s} (∏ i ∈ t, (x+V)) * (∏ i ∈ s\t, x)`。
+  `sᶜ` 上的因子 `∏ i ∈ sᶜ, y` 两边都有，先提出来即可。**不要在 `univ` 上做这个减法。**
+* 已验证并落地的三条（`FQFP/BCH/QuinticExpansion.lean`，`lake build` 零警告）：
+  `taylorProdSplit`、`prodAdd_const`、`prodAdd_const_at_s`。
+* **卡点**：把 `s.powerset.erase s`（或 `t ≠ s` 的 filter）与
+  `s.powerset.filter (t.Nonempty ∧ t ≠ s)` 对上的那一步 membership 簿记。`Finset.sum_erase_add`
+  要求 `a ∈ s`，`Finset.sum_eq_single` 的"例外情形"是**第三个**参数且顺序是
+  `(fun b _ hb => f b = 0) (fun ha => f a = 0)`——这两点本轮都踩过。
+* **下轮做法**：把 `erase_powerset` 那条**纯集合等式**
+  `s.powerset.erase s = s.powerset.filter (fun t => t.Nonempty ∧ t ≠ s)`
+  单独写成一个小引理并用 `ext` 打穿（`mem_erase`/`mem_filter`/`mem_powerset` 三者交互，
+  建议用 `simp only [...]` 后 `constructor` 分方向手写，不要 `tauto`），再拼总式。
 
 ### 3.3 波及范围
 
