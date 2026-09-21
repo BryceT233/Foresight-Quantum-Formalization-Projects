@@ -121,10 +121,18 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 
 它是 `SymmetricSepticPhaseBC`（`septic_d7_P3_C5_lin_poly_eq_taylor2_remainder`）与
 `SymmetricSepticPieces` 的**硬依赖**。源写成 `unfold … ; simp only […] ; match_scalars <;> ring`
-并带 `maxHeartbeats 1024000000`；本项目禁止 bump，所以**先定形状再动手**。难点是有**两套五次项表示**：
-`BCHTerms.lean` 的 `bchQuinticTerm` 是 `Fin 5 → Bool` 四个组 + `wordEval`，
-`QuinticTaylor2.lean` 是 `Fin 3` 模式 + `bchWordSum`。可选：统一表示（改 `BCHTerms` 的五次项，
-成本落在 `QuinticRemainder.lean` 的 224 行上）或加桥接引理（成本可能同样高，见 §3.3 前提 1）。
+并带 `maxHeartbeats 1024000000`；本项目禁止 bump，所以**先定形状再动手**。
+
+**难点已经定位，方案已验通——见 `artifacts/quintic-taylor2-route.md`。** 一句话：
+`Finset.prod_add` 及其全部同族引理只对 `CommSemiring` 成立，右端**重排了字母**，在非交换环上
+是错的；BCH 的 `𝔸` 必须非交换，所以「按子集展开再重排系数」这条路数学上不成立（曾提交的
+`FQFP/BCH/QuinticExpansion.lean` 带 `[CommRing 𝔸]`，因此无法调用，已删）。正确形态是**按 snoc
+归纳、保持字母顺序**的展开，已在 `artifacts/examples/quintic-expansion-spike.lean` 中证明
+（`[Semiring 𝔸]`，无 `omega`/`sorry`，axioms 只剩三条）。
+
+**为什么难**：`BCHTerms.lean` 的 `bchQuinticTerm` 是 `Fin 5 → Bool` 四个组 + `wordEval`，
+`QuinticTaylor2.lean` 是 `Fin 3` 模式 + `bchWordSum`。两者描述同一批单项式，但索引不同，
+`Decomp` 要对上这个索引。
 
 **数据与表示（终版，别再改）**：系数 `Fin m → ℚ`（分母 720），模式 `Fin m → List (Fin 3)`
 （`0 = x`、`1 = V`、`2 = y`），定义是 `bchWordSum` 的一个 `∑`。词数 **75 / 70 / 30 / 5**，
@@ -245,8 +253,7 @@ theorem norm_log_one_add_sub_logPartialSum_le (x : 𝔸) (n : ℕ) (hx : ‖x‖
   （已收敛的分支会报 `No goals to be solved`）。
 * **`longLine` 由 `lake build` 把关**，不是 `lint-style`（`weak.linter.mathlibStandardSet`，
   上限 100 列）。长名字的定理里用 `set c` / `set w` 起局部别名就是为了这个。
-* **`simp only` 会关掉 simp 的默认集，遇到字面量要当心**（复现见
-  `artifacts/examples/vec-cons-simplification.lean`）：向量字面量 `![-1, 4, -6, 4, -1]` 上的 `get`
+* **`simp only` 会关掉 simp 的默认集，遇到字面量要当心**：向量字面量 `![-1, 4, -6, 4, -1]` 上的 `get`
   靠默认集里的 `Matrix.cons_val_zero` / `Matrix.cons_val_succ`，所以 `simp only [<数据 def>]` 化简
   不动它（残局 `⊢ ↑(![-1, …] 0) = -1`），而 `simp [<数据 def>]` 一条过。
 * **`Rat.norm_cast_real` 只认 `ℚ`**（形状 `‖(↑q : ℝ)‖ = ‖q‖`）。`ℤ` 经 `Int.cast` 直接进 `ℝ` 套不上。

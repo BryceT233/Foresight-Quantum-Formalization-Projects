@@ -8,7 +8,6 @@ public import FQFP.BCH.ChildsBasis
 public import FQFP.BCH.ExpNorm
 public import FQFP.BCH.Logarithm
 public import FQFP.BCH.NestedCommNorm
-public import FQFP.BCH.QuinticExpansion
 public import FQFP.BCH.QuinticRemainder
 public import FQFP.BCH.QuinticTaylor2
 public import FQFP.BCH.RealScalar
