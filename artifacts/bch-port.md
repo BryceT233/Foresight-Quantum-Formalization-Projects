@@ -253,6 +253,48 @@ degree-5（`sextic_pure_identity`，源 bump 16M）的实验结论有三条：
 一行）。改 Lean 文本用 `edit` 工具，或 PowerShell 里用单引号字符串 + `MatchEvaluator`。
 
 
+### 3.3quater degree-6 的实测天花板：单块 `noncomm_ring` 路线走到头了（含 profiler 读数）
+
+degree-6 恒等式（`septic_pure_identity`，用 `bchSexticTerm`，源 bump 64M）本轮试了三条路，
+**全部落在默认预算（200k heartbeats）之外**，而 profiler 说明这不是「再调一下」的量级问题：
+
+| 尝试 | 结果 |
+| --- | --- |
+| 词表展开内联进恒等式（源的老路） | `whnf` 超时 |
+| 先在小目标证 `bchSexticTerm_expand`，恒等式里 `rw` 后 `noncomm_ring; module` | 声明头 37.0M，证明里 `noncomm_ring` 超时 |
+| 再加源那套分配律（`pow_succ, mul_add, …`）后 `noncomm_ring` | 分配律 `simp only` 118.6M、`noncomm_ring` 37.3M |
+
+`set_option trace.profiler true / .useHeartbeats true / .threshold 2000` 的读数：
+
+* `Elab.definition.header` **37,024,140** —— **光把这条 `let` 链语句写出来**（还没证）就是 185 倍预算。
+  这解释了为什么两个超时错误里总有一个指向声明起始行（`… :174:0`）。
+* `Elab.definition.value` **162,950,851**：`simp only [show z = a + b from rfl, …]` 6.95M、
+  分配律 `simp only [bchSexticTerm_expand, pow_succ, mul_add, …]` 118.6M、`noncomm_ring` 37.3M。
+* 对照：degree-5 的 `sextic_pure_identity`（同样 `let` 链、同样 `noncomm_ring; module`）**整条声明 < 200k**。
+  也就是「多一个次数」不是 2 倍而是 **~10³ 倍**：`let` 套 `let` 的类型在 `isDefEq`/`whnf` 下会超线性爆炸。
+
+**结论：需要两条结构改造，不是调参/换收尾 tactic。**
+
+1. **语句本身要换形**：把 `let z / T₂…T₅ / W6 / y3_6 / y4_6 / y5_6` 换成文件内 `private def`。
+   数学内容一字不差（只是把「类型里的 `let` 链」换成不透明名字），但不换的话**任何**证法都过不去
+   ——37M 花在语句上，与证明无关。
+2. **证明要走词索引求和簿记**，不能单块 `noncomm_ring`：与已完成的 `bchQuinticTermTaylor2Decomp`
+   同型——每个 Taylor 分片（`z^2 * T₄`、`T₂*T₃*z`、…）各自证一条「= 词表加权和」的小引理
+   （小目标里 `noncomm_ring` 很便宜），最后按 `Finset.sum` 逐词配系数。**这笔投入不是只为了 6/7/8**：
+   P3 的 `pieceB_*_decomp`（1e9–8e9）要的就是这套机器。
+
+**本轮已落地、可复用的资产**：`FQFP/BCH/SmallSDischarge.lean` 的 `bchSexticTerm_expand`
+（`private`）：把 `bchSexticTerm` 展成 28 项单项式链，在**自己的小目标**里证完（默认预算、
+全文件 15s、零告警，收尾只要 `noncomm_ring`）。它把「词表展开」这项成本从恒等式里摘掉了——
+degree-6 剩下的超支与词表无关，纯粹是 `let` 语句 + 单块归一化。
+
+**踩点（本轮新增，重要）**：`gen_bch_higher_terms.py --expand` 里的 `"ab"[x]` 把 `true` 映成了 `"b"`，
+而目标约定（`wordEval`：`if v i then a else b`）是 `true → a`——生成链于是成了整个 a↔b 镜像，
+`noncomm_ring` 给出**假残局** `⊢ -1 / 720 = 0` / `⊢ -1 / 1440 = 1 / 1440`。
+**这类假残局要当数据错误读**（它精确指出失配的那个词），不是「工具不行」；已修成
+`"a" if x else "b"`。校验器 `scripts/diff_sextic_chain.py` 做链↔词表逐词差分（正/反两种字母约定都报），
+`--expand` 的输出现在报 `forward: 0 differing words`。
+
 **开工前提（两件硬约束）**：
 
 1. **生成代码的兼容性**：源 `scripts/` 下约 90 个 Python（生成器 + 独立 CAS 校验器成对）。
