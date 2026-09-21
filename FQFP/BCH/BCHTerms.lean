@@ -920,11 +920,13 @@ theorem norm_bchSexticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra �
       ≤ (‖a‖ + ‖b‖) ^ 6 := fun i => norm_wordEval_le (bchSexticTermWords i) a b
   unfold bchSexticTerm
   calc ‖∑ i, bchSexticTermCoeffs i • (List.ofFn (wordEval (bchSexticTermWords i) a b)).prod‖
-      ≤ ∑ i, ‖bchSexticTermCoeffs i • (List.ofFn (wordEval (bchSexticTermWords i) a b)).prod‖ := norm_sum_le _ _
+      ≤ ∑ i, ‖bchSexticTermCoeffs i • (List.ofFn (wordEval (bchSexticTermWords i) a b)).prod‖ :=
+      norm_sum_le _ _
     _ ≤ ∑ i, ‖bchSexticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 6 := by
         refine Finset.sum_le_sum fun i _ => ?_
         calc ‖bchSexticTermCoeffs i • (List.ofFn (wordEval (bchSexticTermWords i) a b)).prod‖
-            ≤ ‖bchSexticTermCoeffs i‖ * ‖(List.ofFn (wordEval (bchSexticTermWords i) a b)).prod‖ := norm_smul_le _ _
+            ≤ ‖bchSexticTermCoeffs i‖ * ‖(List.ofFn (wordEval (bchSexticTermWords i) a b)).prod‖ :=
+            norm_smul_le _ _
           _ ≤ ‖bchSexticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 6 :=
               mul_le_mul_of_nonneg_left (hw i) (norm_nonneg _)
     _ = (∑ i, ‖bchSexticTermCoeffs i‖) * (‖a‖ + ‖b‖) ^ 6 := by rw [Finset.sum_mul]
@@ -953,11 +955,13 @@ theorem norm_bchSepticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra �
       ≤ (‖a‖ + ‖b‖) ^ 7 := fun i => norm_wordEval_le (bchSepticTermWords i) a b
   unfold bchSepticTerm
   calc ‖∑ i, bchSepticTermCoeffs i • (List.ofFn (wordEval (bchSepticTermWords i) a b)).prod‖
-      ≤ ∑ i, ‖bchSepticTermCoeffs i • (List.ofFn (wordEval (bchSepticTermWords i) a b)).prod‖ := norm_sum_le _ _
+      ≤ ∑ i, ‖bchSepticTermCoeffs i • (List.ofFn (wordEval (bchSepticTermWords i) a b)).prod‖ :=
+      norm_sum_le _ _
     _ ≤ ∑ i, ‖bchSepticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 7 := by
         refine Finset.sum_le_sum fun i _ => ?_
         calc ‖bchSepticTermCoeffs i • (List.ofFn (wordEval (bchSepticTermWords i) a b)).prod‖
-            ≤ ‖bchSepticTermCoeffs i‖ * ‖(List.ofFn (wordEval (bchSepticTermWords i) a b)).prod‖ := norm_smul_le _ _
+            ≤ ‖bchSepticTermCoeffs i‖ * ‖(List.ofFn (wordEval (bchSepticTermWords i) a b)).prod‖ :=
+            norm_smul_le _ _
           _ ≤ ‖bchSepticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 7 :=
               mul_le_mul_of_nonneg_left (hw i) (norm_nonneg _)
     _ = (∑ i, ‖bchSepticTermCoeffs i‖) * (‖a‖ + ‖b‖) ^ 7 := by rw [Finset.sum_mul]
@@ -986,11 +990,13 @@ theorem norm_bchOcticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ
       ≤ (‖a‖ + ‖b‖) ^ 8 := fun i => norm_wordEval_le (bchOcticTermWords i) a b
   unfold bchOcticTerm
   calc ‖∑ i, bchOcticTermCoeffs i • (List.ofFn (wordEval (bchOcticTermWords i) a b)).prod‖
-      ≤ ∑ i, ‖bchOcticTermCoeffs i • (List.ofFn (wordEval (bchOcticTermWords i) a b)).prod‖ := norm_sum_le _ _
+      ≤ ∑ i, ‖bchOcticTermCoeffs i • (List.ofFn (wordEval (bchOcticTermWords i) a b)).prod‖ :=
+      norm_sum_le _ _
     _ ≤ ∑ i, ‖bchOcticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 8 := by
         refine Finset.sum_le_sum fun i _ => ?_
         calc ‖bchOcticTermCoeffs i • (List.ofFn (wordEval (bchOcticTermWords i) a b)).prod‖
-            ≤ ‖bchOcticTermCoeffs i‖ * ‖(List.ofFn (wordEval (bchOcticTermWords i) a b)).prod‖ := norm_smul_le _ _
+            ≤ ‖bchOcticTermCoeffs i‖ * ‖(List.ofFn (wordEval (bchOcticTermWords i) a b)).prod‖ :=
+            norm_smul_le _ _
           _ ≤ ‖bchOcticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 8 :=
               mul_le_mul_of_nonneg_left (hw i) (norm_nonneg _)
     _ = (∑ i, ‖bchOcticTermCoeffs i‖) * (‖a‖ + ‖b‖) ^ 8 := by rw [Finset.sum_mul]
