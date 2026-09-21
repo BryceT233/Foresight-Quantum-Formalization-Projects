@@ -93,7 +93,7 @@
 `Decomp` 于是 = 引理 2 + 引理 3 + 「同一模式的两条路径系数相同」，后者是 `Finset.sum`
 的重组（`Finset.sum_biUnion` / `Finset.sum_bij`），**不需要 `noncomm_ring`**。
 
-### 3.2bis 引理 1 的确切形状与卡点（已试过，务必先读）
+### 3.2bis 引理 1 的确切形状与卡点（已试过多轮，务必先读）
 
 `Finset.prod_add`（`Algebra/BigOperators/Ring/Finset.lean:171`）的形状是
 
@@ -101,45 +101,43 @@
 ∏ i ∈ s, (f i + g i) = ∑ t ∈ s.powerset, (∏ i ∈ t, f i) * ∏ i ∈ s \ t, g i
 ```
 
-**注意 `t = ∅` 那一项是 `∏ i, g i`，不是 `∏ i, f i`。** 所以想减掉的 `∏ i, f i` 是
-**`t = univ`** 那一项（`s \ t = ∅`），不是 `t = ∅`。这一条把早先「减掉空集项」的写法全部推翻了。
+**第一坑：`t = ∅` 那一项是 `∏ i, g i`，不是 `∏ i, f i`。** 要减掉的 `∏ i, f i` 是
+**`t = univ`** 那一项（`s \ t = ∅`）。早先「减掉空集项」的写法全部作废。
 
-正确的逐词引理形状（`s` 是 `x`-位置的集合，`δ` 只在 `s` 上非零，`f` 为 `0`/`x`）：
+**第二坑（最关键，来回错了五轮）：两个因子的支撑集方向。** 把它放到 Taylor 替换上，
+位置分两类，而**增量并不支撑在 `sᶜ` 上**：
 
-```lean
-lemma univ_prod_add_sub {n : ℕ} (f δ : Fin n → 𝔸) (s : Finset (Fin n))
-    (hδ : ∀ i, i ∉ s → δ i = 0) (hf : ∀ i, i ∉ s → f i = 0) :
-    (∏ i : Fin n, (f i + δ i)) - (∏ i : Fin n, f i) =
-      ∑ t ∈ (s.powerset.filter fun t => t.Nonempty), (∏ i ∈ t, δ i)
-```
+* `i ∈ s`（词里是 `x`）：`letters i = x + V`，即 `f i = x`，`g i = V`；
+* `i ∉ s`（词里是 `y`）：`letters i = y`，即 `f i = y`，`g i = 0`。
 
-已验通的两块：
+所以 **`f` 在整条词上都不为零**，`g` 支撑在 `s` 上。有了这个，`prod_add` 的 summand
+`(∏ i ∈ t, f i) * ∏ i ∈ univ \ t, g i` 是：
 
-* 每个 summand 的化简（`by_cases s ⊆ t`）：
-  `(∏ i ∈ t, f i) * ∏ i ∈ tᶜ, δ i = if s ⊆ t then (∏ i ∈ t, δ i) else 0`。
-  理由：`s ⊆ t` 时 `tᶜ` 上 `δ` 恒为 `0`（补积为 `1`，用 `Finset.prod_eq_one`），且此时
-  `t ∩ s = s`，`∏ i ∈ t, f i * ∏ i ∈ t, δ i = ∏ i ∈ t, δ i` **不成立**——`t` 可能含 `s` 之外
-  的元素，而那些位置上 `f` 与 `δ` 都是 `0`，所以两边都是 `0`；正确的关系是
-  `(∏ i ∈ t, f i) * (∏ i ∈ t, δ i) = ∏ i ∈ t, δ i` 只在 `s ⊆ t` 时由「`t \ s` 上是零因子」得到。
-  **踩过的坑**：`t` 上既有 `f` 又有 `δ` 时不能直接约，必须走「`s ⊆ t` 之外全为零」。
-* 指标集：`{t | s ⊆ t} = sᶜ.powerset`（补集双射），再 `sᶜ.powerset ≃ s.powerset`（`t ↦ tᶜ`，
-  在 `Fin n` 上恒成立）。这一段是**纯粹的有限集簿记**，与数学无关。
+* `t ⊆ s` 时：`univ \ t ⊇ sᶜ`，而 `sᶜ` 上 `g = 0`……**但 `univ \ t` 还含 `s \ t`，那里 `g = V`**，
+  所以这个因子**一般不是 `1`**；
+* 真正干净的说法是：**该 summand 当且仅当 `t ⊄ s` 时为 `0`**（此时 `t` 里有 `i ∉ s`，而那里
+  `f i = y`？——不，`f i = y ≠ 0`）。**这就是我反复搞错的地方。**
 
-**卡点**：上面最后两段的 `Finset` 簿记（`sum_subset` 的零条件 + 补集双射）我试了几轮都没写顺，
-每次都在「`tᶜ` 的 membership 与 `Finset.mem_powerset`/`mem_compl` 的交互」上翻车。这不是数学问题，
-是 `Finset` 引用的选择问题。**下一步的高效做法**：先把
-```lean
-example {n} (s : Finset (Fin n)) :
-  (Finset.univ.filter fun t : Finset (Fin n) => s ⊆ t) = sᶜ.powerset := by sorry
-```
-和
-```lean
-example {n} (s : Finset (Fin n)) (F : Finset (Fin n) → 𝔸) :
-  (∑ t ∈ sᶜ.powerset, F t) = ∑ u ∈ s.powerset, F uᶜ := by sorry
-```
-这两条**独立**地打穿（`#check` 出 `Finset.sum_bij` / `Finset.sum_nbij` /
-`Finset.compl_mem_powerset` 的确切签名再动手），再回头拼 `univ_prod_add_sub`。
-不要在一条 tactic 里同时处理 membership 与求和重组——这是前几轮反复失败的直接原因。
+**本轮的净结论（避免下轮重蹈）**：
+
+* `prod_add` 的 summand 是 `(∏ i ∈ t, f i) * ∏ i ∈ (univ \ t), g i`；要减掉的 `∏ i, f i` 是
+  **`t = univ`** 那一项。**不要**再去「减空集项」。
+* Taylor 替换下两个函数的取值是 `f i = if i ∈ s then x else y`、`g i = if i ∈ s then V else 0`
+  （`s` = 词里 `x` 的位置集合）。**`f` 在整条词上都不为零**——这一点我前后搞错了五轮，
+  是最大的时间浪费来源。
+* 于是 summand 的化简**必须显式处理 `∏ i ∈ (univ \ t), g i`**：`t ⊆ s` 时该因子为 `1`
+  （因为 `univ \ t ⊆ sᶜ`），否则不为 `1`。不要去指望它是 `0`。
+* **操作层面**：`Finset` 的 membership 引理（`mem_sdiff.mp`、`mem_compl.mp`、`not_subset.mp`、
+  `compl_subset_compl`）我每轮都在方向上翻车。下轮**每一步先 `#check` 出签名、再 `exact` 写
+  proof term，不要用 `simp only` 之后再 `intro`/`constructor` 的混合写法**，也不要在同一条 tactic
+  里同时处理 membership 与求和重组。
+
+**建议的下轮起点**（每条都在独立小文件里验通再进下一条）：
+
+1. `f i = if i ∈ s then x else y`、`g i = if i ∈ s then V else 0`，用 `Finset.prod_congr`
+   把 `∏ i, (f i + g i)` 与 `wordProdList ![x+V,V,y] w` 对齐；
+2. 套 `prod_add`，逐项 `by_cases ht : t ⊆ s` 化简；
+3. 再做「按 `#V` 分类 = linDiff + 2V + 3V + 4V」的求和重组。
 
 ### 3.3 波及范围
 
