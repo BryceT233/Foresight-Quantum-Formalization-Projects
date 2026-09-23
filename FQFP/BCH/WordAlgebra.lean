@@ -287,6 +287,26 @@ lemma evalTab_smulTab (c : ℚ) (t : List (List (Fin 2) × ℚ)) :
       congr 1
       exact (show c • mono p.1 p.2 = mono p.1 (c * p.2) from by rw [mono, mono, smul_smul]).symm
 
+/-- **The coefficient of a list of monomials, as data**: the rows whose word is `w`, with their
+coefficients. This is the list-level companion of `coeff_mono_sum`, and it is what turns a
+coefficient comparison of two tables into `List` and `ℚ` arithmetic.
+
+Stated with `w` a `List` so that `iteration` can decide the row conditions by `decide`; the
+`FreeMonoid` form follows by `FreeMonoid.toList`. -/
+lemma coeff_mono_list (t : List (List (Fin 2) × ℚ)) (w : List (Fin 2)) :
+    (evalTab t).coeff (FreeMonoid.ofList w)
+      = (t.map fun p => if p.1 = w then p.2 else 0).sum := by
+  induction t with
+  | nil => rw [evalTab_nil, List.map_nil, List.sum_nil]; rfl
+  | cons p t ih =>
+      rw [evalTab_cons, MonoidAlgebra.coeff_add, Finsupp.add_apply, ih,
+        List.map_cons, List.sum_cons, coeff_mono]
+      by_cases h : p.1 = w
+      · rw [ite_eq_left h, ite_eq_left h.symm]
+      · rw [ite_eq_right h, ite_eq_right]
+        intro hc
+        exact h hc.symm
+
 end
 
 end FQFP.BCH.WordAlgebra
