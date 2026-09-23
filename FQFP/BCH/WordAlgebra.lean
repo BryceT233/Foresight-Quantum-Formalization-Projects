@@ -37,8 +37,10 @@ compare coefficients there.
   coefficients).
 * `evalTab`, `mulTab`, `smulTab`, `evalTab_mulTab`, `evalTab_smulTab` — a *table* (a list of
   `(word, coefficient)` rows) is the data of a term, and evaluation turns the table operations into
-  the ring operations (`evalTab_append` handles sums). A degree-`k` identity between such tables is
-  therefore a statement about `List` and `ℚ` only.
+  the ring operations (`evalTab_append` handles sums).
+* `reprTab`, `evalTab_eq_reprTab`, `evalTab_eq_of_reprTab_eq` — **the criterion**: a table is its
+  coefficient function, so two tables with the same coefficients evaluate equally, and a degree-`k`
+  identity can be settled on `List` and `ℚ` data alone.
 
 ## Implementation notes
 
@@ -306,6 +308,35 @@ lemma coeff_mono_list (t : List (List (Fin 2) × ℚ)) (w : List (Fin 2)) :
       · rw [ite_eq_right h, ite_eq_right]
         intro hc
         exact h hc.symm
+
+/-! ### From a table to its coefficient function
+
+`evalTab_eq_reprTab` turns a table into one `Finsupp.single` per row, so two tables can be compared
+through their coefficient functions instead of through the ring.
+`evalTab_eq_of_reprTab_eq` is then the criterion: **equal coefficient functions give equal
+evaluations**, which is what lets a degree-`k` identity be settled on data. -/
+
+/-- The `Finsupp` a table represents: one `single` per row. -/
+def reprTab : List (List (Fin 2) × ℚ) → FreeMonoid (Fin 2) →₀ ℚ
+  | [] => 0
+  | p :: t => Finsupp.single (FreeMonoid.ofList p.1) p.2 + reprTab t
+
+/-- **The bridge**: evaluating a table gives the `Finsupp` the table represents. -/
+theorem evalTab_eq_reprTab (t : List (List (Fin 2) × ℚ)) :
+    evalTab t = MonoidAlgebra.ofCoeff (reprTab t) := by
+  induction t with
+  | nil => rw [evalTab_nil, reprTab, MonoidAlgebra.ofCoeff_zero]
+  | cons p t ih =>
+      rw [evalTab_cons, ih, reprTab, MonoidAlgebra.ofCoeff_add]
+      congr 1
+      rw [mono, MonoidAlgebra.of_apply, MonoidAlgebra.smul_single', mul_one]
+      exact (show MonoidAlgebra.single (FreeMonoid.ofList p.1) p.2
+          = MonoidAlgebra.ofCoeff (Finsupp.single (FreeMonoid.ofList p.1) p.2) from rfl)
+
+/-- **The criterion**: tables with the same coefficient function evaluate equally. -/
+theorem evalTab_eq_of_reprTab_eq {s t : List (List (Fin 2) × ℚ)} (h : reprTab s = reprTab t) :
+    evalTab s = evalTab t := by
+  rw [evalTab_eq_reprTab, evalTab_eq_reprTab, h]
 
 end
 
