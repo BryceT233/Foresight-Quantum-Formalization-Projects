@@ -13,7 +13,6 @@ public import FQFP.BCH.QuinticRemainder
 public import FQFP.BCH.QuinticTaylor2
 public import FQFP.BCH.RealScalar
 public import FQFP.BCH.SmallSDischarge
-public import FQFP.BCH.SexticTable
 public import FQFP.BCH.WordAlgebra
 public import FQFP.BCH.WordNorm
 public import FQFP.BCH.WordExpansion

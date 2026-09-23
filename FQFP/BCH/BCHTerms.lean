@@ -447,6 +447,63 @@ noncomputable def bchQuinticTerm {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (
     -bchQuinticGroup1 a b + (4 : ℚ) • bchQuinticGroup4 a b -
       (6 : ℚ) • bchQuinticGroup6 a b + (24 : ℚ) • bchQuinticGroup24 a b)
 
+/-- **The degree-5 table**: the same 30 monomials as `bchQuinticTerm`, in the same group order,
+with the coefficients cleared by `K ^ 5` (`K = 210`, so `K ^ 5 = 408410100000`): `-K⁵/720` for the
+coefficient-1 group, `K⁵/180` for the coefficient-4 group, `-K⁵/120` for the coefficient-6 group
+and `K⁵/30` for the coefficient-24 group.
+
+This is the home of the term's *data*, next to the term itself, exactly as `bchSexticTermTable` is
+for `bchSexticTerm`: the four groups above stay, because they are what the norm and remainder bounds
+index (`bchQuinticGroup*Words` is a `Fin m → Fin 5 → Fin 2` array there), whereas the table is what
+the cancellation identity computes with. -/
+def bchQuinticTermTable : KTab :=
+  [([0, 0, 0, 0, 1], -567236250),
+    ([0, 1, 1, 1, 1], -567236250),
+    ([1, 0, 0, 0, 0], -567236250),
+    ([1, 1, 1, 1, 0], -567236250),
+    ([0, 0, 0, 1, 0], 2268945000),
+    ([0, 0, 0, 1, 1], 2268945000),
+    ([0, 0, 1, 1, 1], 2268945000),
+    ([0, 1, 0, 0, 0], 2268945000),
+    ([0, 1, 1, 1, 0], 2268945000),
+    ([1, 0, 0, 0, 1], 2268945000),
+    ([1, 0, 1, 1, 1], 2268945000),
+    ([1, 1, 0, 0, 0], 2268945000),
+    ([1, 1, 1, 0, 0], 2268945000),
+    ([1, 1, 1, 0, 1], 2268945000),
+    ([0, 0, 1, 0, 0], -3403417500),
+    ([0, 0, 1, 0, 1], -3403417500),
+    ([0, 0, 1, 1, 0], -3403417500),
+    ([0, 1, 0, 0, 1], -3403417500),
+    ([0, 1, 0, 1, 1], -3403417500),
+    ([0, 1, 1, 0, 0], -3403417500),
+    ([0, 1, 1, 0, 1], -3403417500),
+    ([1, 0, 0, 1, 0], -3403417500),
+    ([1, 0, 0, 1, 1], -3403417500),
+    ([1, 0, 1, 0, 0], -3403417500),
+    ([1, 0, 1, 1, 0], -3403417500),
+    ([1, 1, 0, 0, 1], -3403417500),
+    ([1, 1, 0, 1, 0], -3403417500),
+    ([1, 1, 0, 1, 1], -3403417500),
+    ([0, 1, 0, 1, 0], 13613670000),
+    ([1, 0, 1, 0, 1], 13613670000)]
+
+/-- **`bchQuinticTerm` as a table**: `evalKTab a b bchQuinticTermTable = bchQuinticTerm a b`.
+The two sides are the same 30 monomials, so the group sums are expanded into monomials between the
+`simp only` and the module normalization. -/
+lemma evalKTab_bchQuinticTermTable {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    evalKTab a b bchQuinticTermTable = bchQuinticTerm a b := by
+  simp only [bchQuinticTermTable, bchQuinticTerm, bchQuinticGroup1, wordEval, evalKTab, K,
+    Nat.succ_eq_add_one, Nat.reduceAdd, bchQuinticGroup1Words, Fin.isValue, List.ofFn_succ,
+    Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_fin_one, Matrix.cons_val_succ,
+    List.ofFn_zero, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, List.prod_cons,
+    List.prod_nil, List.length_cons, List.length_nil, add_zero, mul_one, Fin.sum_univ_succ,
+    Matrix.cons_val_one, Finset.univ_unique, Fin.default_eq_zero, Finset.sum_const,
+    Finset.card_singleton, one_smul, neg_add_rev, bchQuinticGroup4, bchQuinticGroup4Words,
+    bchQuinticGroup6, bchQuinticGroup6Words, bchQuinticGroup24, bchQuinticGroup24Words]
+  norm_num
+  module
+
 /-! #### Homogeneity of the degree-5 term -/
 
 theorem bchQuinticGroup1_smul {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸)
@@ -571,47 +628,54 @@ end
 `bch a b = log (exp a * exp b)`, the next three after `bchQuinticTerm`.
 
 The degree-6 term is stated over its **table**: a `List` of `(word, coefficient)` rows, which is the
-single object that the word and coefficient arrays of the source present as two projections. The
-other two still use arrays; they move to the same form when their degree is worked on.
+single object that the word and coefficient arrays of the source present as two projections. Its
+coefficients are the paper's rationals cleared by `K ^ 6`, the integer presentation set up in
+`WordAlgebra.lean`; the other two still use rational arrays, and move to the same form when their
+degree is worked on.
 
 Denominators and the constants behind the `s ^ k` bounds: `28 · 24/1440 = 7/15`,
 `126 · 216/30240 = 9/10` and `124 · 432/120960 = 31/70`, all `≤ 1`. -/
 
 /-- **The degree-6 table**: the 28 monomials of the source's `bch_sextic_term`, in the source's
-order (`0` is the letter `a`), over the common denominator `1440`.
+order (`0` is the letter `a`).
+
+The paper's coefficients are the rationals `±1/1440`, `±1/360`, `±1/240`, `±1/60`; the table stores
+them cleared by `K ^ 6` (`K = 210`, so `K ^ 6 = 85766121000000`), which is the integer
+presentation the cancellation identities are computed in — see `WordAlgebra.lean`. The rational
+data is recovered by `ratTab`, which is what the norm bound below consumes.
 
 This replaces a `Fin 28 → Fin 6 → Fin 2` word array paired with a `Fin 28 → ℚ` coefficient
 array: the two are one object — an element of the free word algebra — and pairing them by index
 is what a table says directly. -/
-def bchSexticTermTable : Tab :=
-  [([0, 0, 0, 0, 1, 1], (-1 / 1440)),
-    ([0, 0, 0, 1, 0, 1], (1 / 360)),
-    ([0, 0, 0, 1, 1, 1], (1 / 360)),
-    ([0, 0, 1, 0, 0, 1], (-1 / 240)),
-    ([0, 0, 1, 0, 1, 1], (-1 / 240)),
-    ([0, 0, 1, 1, 0, 1], (-1 / 240)),
-    ([0, 0, 1, 1, 1, 1], (-1 / 1440)),
-    ([0, 1, 0, 0, 0, 1], (1 / 360)),
-    ([0, 1, 0, 0, 1, 1], (-1 / 240)),
-    ([0, 1, 0, 1, 0, 1], (1 / 60)),
-    ([0, 1, 0, 1, 1, 1], (1 / 360)),
-    ([0, 1, 1, 0, 0, 1], (-1 / 240)),
-    ([0, 1, 1, 0, 1, 1], (-1 / 240)),
-    ([0, 1, 1, 1, 0, 1], (1 / 360)),
-    ([1, 0, 0, 0, 1, 0], (-1 / 360)),
-    ([1, 0, 0, 1, 0, 0], (1 / 240)),
-    ([1, 0, 0, 1, 1, 0], (1 / 240)),
-    ([1, 0, 1, 0, 0, 0], (-1 / 360)),
-    ([1, 0, 1, 0, 1, 0], (-1 / 60)),
-    ([1, 0, 1, 1, 0, 0], (1 / 240)),
-    ([1, 0, 1, 1, 1, 0], (-1 / 360)),
-    ([1, 1, 0, 0, 0, 0], (1 / 1440)),
-    ([1, 1, 0, 0, 1, 0], (1 / 240)),
-    ([1, 1, 0, 1, 0, 0], (1 / 240)),
-    ([1, 1, 0, 1, 1, 0], (1 / 240)),
-    ([1, 1, 1, 0, 0, 0], (-1 / 360)),
-    ([1, 1, 1, 0, 1, 0], (-1 / 360)),
-    ([1, 1, 1, 1, 0, 0], (1 / 1440))]
+def bchSexticTermTable : KTab :=
+  [([0, 0, 0, 0, 1, 1], -59559806250),
+    ([0, 0, 0, 1, 0, 1], 238239225000),
+    ([0, 0, 0, 1, 1, 1], 238239225000),
+    ([0, 0, 1, 0, 0, 1], -357358837500),
+    ([0, 0, 1, 0, 1, 1], -357358837500),
+    ([0, 0, 1, 1, 0, 1], -357358837500),
+    ([0, 0, 1, 1, 1, 1], -59559806250),
+    ([0, 1, 0, 0, 0, 1], 238239225000),
+    ([0, 1, 0, 0, 1, 1], -357358837500),
+    ([0, 1, 0, 1, 0, 1], 1429435350000),
+    ([0, 1, 0, 1, 1, 1], 238239225000),
+    ([0, 1, 1, 0, 0, 1], -357358837500),
+    ([0, 1, 1, 0, 1, 1], -357358837500),
+    ([0, 1, 1, 1, 0, 1], 238239225000),
+    ([1, 0, 0, 0, 1, 0], -238239225000),
+    ([1, 0, 0, 1, 0, 0], 357358837500),
+    ([1, 0, 0, 1, 1, 0], 357358837500),
+    ([1, 0, 1, 0, 0, 0], -238239225000),
+    ([1, 0, 1, 0, 1, 0], -1429435350000),
+    ([1, 0, 1, 1, 0, 0], 357358837500),
+    ([1, 0, 1, 1, 1, 0], -238239225000),
+    ([1, 1, 0, 0, 0, 0], 59559806250),
+    ([1, 1, 0, 0, 1, 0], 357358837500),
+    ([1, 1, 0, 1, 0, 0], 357358837500),
+    ([1, 1, 0, 1, 1, 0], 357358837500),
+    ([1, 1, 1, 0, 0, 0], -238239225000),
+    ([1, 1, 1, 0, 1, 0], -238239225000),
+    ([1, 1, 1, 1, 0, 0], 59559806250)]
 
 /-- The word patterns of `bchSepticTerm`: the 126 7-letter monomials of the source's
 `bch_septic_term`, in the source's order (`0` is the letter `a`). -/
@@ -794,27 +858,27 @@ def bchOcticTermCoeffs : Fin 124 → ℚ :=
 
 /-- **Degree-6 term** `C₆(a,b)`: the degree-6 part of `bch a b`, evaluated from its table.
 
-The table is the term: `wordAlgebraLift a b` multiplies out each row's word and weights it by the
-row's coefficient, so the definition *is* the word data. -/
+The table is the term: `evalKTab a b` multiplies out each row's word and weights it by the row's
+coefficient over `K ^ 6`, so the definition *is* the word data. -/
 noncomputable def bchSexticTerm {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
-  wordAlgebraLift a b (evalTab bchSexticTermTable)
+  evalKTab a b bchSexticTermTable
 
 /-- **Norm bound for `bchSexticTerm`**: `‖C₆(a,b)‖ ≤ (‖a‖ + ‖b‖)⁶`.
 
 The coefficient budget is `28 · (24/1440) = 7/15 ≤ 1`, and every word has six letters. -/
 theorem norm_bchSexticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸]
     (a b : 𝔸) : ‖bchSexticTerm a b‖ ≤ (‖a‖ + ‖b‖) ^ 6 := by
-  have hbudget : (bchSexticTermTable.map fun p => ‖p.2‖).sum ≤ 1 := by
-    simp only [bchSexticTermTable, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
-      ← Rat.norm_cast_real, Real.norm_eq_abs]
+  have hbudget : ((ratTab bchSexticTermTable).map fun p => ‖p.2‖).sum ≤ 1 := by
+    simp only [bchSexticTermTable, ratTab, WordAlgebra.K, List.map_cons, List.map_nil,
+      List.sum_cons, List.sum_nil, ← Rat.norm_cast_real, Real.norm_eq_abs]
     norm_num
-  have hn : ∀ p ∈ bchSexticTermTable, p.1.length = 6 := by
-    have hall : bchSexticTermTable.all (fun p => p.1.length == 6) = true := by decide
+  have hn : ∀ p ∈ ratTab bchSexticTermTable, p.1.length = 6 := by
+    have hall : (ratTab bchSexticTermTable).all (fun p => p.1.length == 6) = true := by decide
     intro p hp
     simpa using (List.all_eq_true.mp hall) p hp
-  rw [bchSexticTerm, wordAlgebraLift_evalTab]
-  calc ‖(bchSexticTermTable.map fun p => p.2 • (p.1.map ![a, b]).prod).sum‖
-      ≤ (bchSexticTermTable.map fun p => ‖p.2‖).sum * (‖a‖ + ‖b‖) ^ 6 :=
+  rw [bchSexticTerm, evalKTab_ratTab]
+  calc ‖((ratTab bchSexticTermTable).map fun p => p.2 • (p.1.map ![a, b]).prod).sum‖
+      ≤ ((ratTab bchSexticTermTable).map fun p => ‖p.2‖).sum * (‖a‖ + ‖b‖) ^ 6 :=
         norm_sum_smul_binTab_le _ hn a b
     _ ≤ 1 * (‖a‖ + ‖b‖) ^ 6 := mul_le_mul_of_nonneg_right hbudget (by positivity)
     _ = (‖a‖ + ‖b‖) ^ 6 := by ring

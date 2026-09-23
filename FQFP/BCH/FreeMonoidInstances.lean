@@ -12,10 +12,18 @@ public import Mathlib.Algebra.FreeMonoid.Basic
 /-!
 # The two missing `FreeMonoid` instances
 
-`ℚ[FreeMonoid α]` — the free associative algebra on `α`, presented as a monoid algebra — is the
-vehicle for comparing BCH terms coefficient-wise. Two instances that this needs are absent from
-Mathlib, and they are *both about the `FreeMonoid`/`List` presentation* rather than about BCH, so
-they live here, at their natural level of generality in `α`.
+`R[FreeMonoid α]` — the free associative algebra on `α`, presented as a monoid algebra — needs two
+instances that are absent from Mathlib, and they are *both about the `FreeMonoid`/`List`
+presentation* rather than about BCH, so they live here, at their natural level of generality in `α`.
+
+## Status
+
+The BCH port used to compare its terms coefficient-wise inside `ℚ[FreeMonoid (Fin 2)]`, and this
+file existed for that. It no longer does: the tables of `WordAlgebra.lean` are integer-valued and
+are evaluated directly in the target algebra, so nothing in the development imports this module.
+The two instances are kept because they are a self-contained `FreeMonoid` gap rather than a BCH
+workaround — a candidate for Mathlib rather than for deletion — and they are still built and linted
+as part of `FQFP`.
 
 ## Main results
 
