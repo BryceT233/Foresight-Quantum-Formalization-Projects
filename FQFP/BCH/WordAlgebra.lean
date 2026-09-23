@@ -32,7 +32,12 @@ compare coefficients there.
   identity in `𝔸` follows from the corresponding coefficient identity.
 * `wordEval_gen` — `wordEval` (from `WordExpansion.lean`) through the two generators is the
   monomial of the letter list: the bridge from a word pattern to a free-algebra basis vector.
-* `coeff_mono`, `coeff_smul_mono`, `coeff_mono_mul`, `mono_pow` — reading coefficients.
+* `coeff_mono`, `coeff_smul_mono`, `coeff_mono_mul`, `coeff_mono_sum` — reading coefficients.
+* `prod_mono_aux` — a product of monomials is one monomial (concatenate the words, multiply the
+  coefficients).
+* `evalTab`, `mulTab`, `evalTab_mulTab` — a *table* (a list of `(word, coefficient)` rows) is the
+  data of a term, and evaluation turns the table product into the ring product. A degree-`k`
+  identity between such tables is therefore a statement about `List` and `ℚ` only.
 
 ## Implementation notes
 
@@ -189,6 +194,82 @@ lemma mono_pow (k : Fin 2) (n : ℕ) : (mono [k] 1) ^ n = mono (List.replicate n
       rw [pow_zero, List.replicate_zero, mono, MonoidAlgebra.of_apply, FreeMonoid.ofList_nil,
         MonoidAlgebra.one_def, one_smul]
   | succ n ih => rw [pow_succ, ih, List.replicate_succ', mono_mul, mul_one]
+
+/-- The empty word's monomial is the identity. -/
+lemma mono_nil : mono ([] : List (Fin 2)) (1 : ℚ) = 1 := by
+  rw [mono, MonoidAlgebra.of_apply, FreeMonoid.ofList_nil, MonoidAlgebra.one_def, one_smul]
+
+/-! ### Tables
+
+A *table* is a list of `(word, coefficient)` rows — the data of a degree-`k` term. `prod_mono_aux`
+says that the product of the monomials of a table is the monomial of the concatenated words with
+the product of the coefficients, which is what makes coefficient comparison purely a computation on
+data. -/
+
+/-- **A product of monomials is one monomial**: the words concatenate, the coefficients multiply.
+The accumulator-free form of `mono_mul` iterated. -/
+lemma prod_mono_aux (t : List (List (Fin 2) × ℚ)) :
+    ((t.map fun p => mono p.1 p.2).prod)
+      = mono (t.map Prod.fst).flatten (t.map Prod.snd).prod := by
+  induction t with
+  | nil => simp [mono, MonoidAlgebra.one_def]
+  | cons p t ih =>
+      rw [List.map_cons, List.prod_cons, ih, List.map_cons, List.flatten_cons, List.map_cons,
+        List.prod_cons, mono_mul]
+
+/-- **The coefficient of a sum of monomials, as data**: the coefficients of the rows whose word
+is `w`. This is what turns a coefficient comparison into `List`/`ℚ` arithmetic. -/
+lemma coeff_mono_sum {ι : Type*} (s : Finset ι) (L : ι → List (Fin 2)) (C : ι → ℚ)
+    (w : List (Fin 2)) :
+    ((∑ i ∈ s, mono (L i) (C i) : MonoidAlgebra ℚ (FreeMonoid (Fin 2)))).coeff
+        (FreeMonoid.ofList w)
+      = ∑ i ∈ s, if w = L i then C i else 0 := by
+  rw [MonoidAlgebra.coeff_sum (R := ℚ) (M := FreeMonoid (Fin 2)), Finsupp.finsetSum_apply]
+  exact Finset.sum_congr rfl fun i _ => coeff_mono (L i) w (C i)
+
+/-- A table's evaluation: the sum of its rows' monomials. -/
+def evalTab (t : List (List (Fin 2) × ℚ)) : MonoidAlgebra ℚ (FreeMonoid (Fin 2)) :=
+  (t.map fun p => mono p.1 p.2).sum
+
+/-- **Row-wise product of two tables**: cartesian product, word concatenation, coefficient product.
+This is the data-level multiplication that mirrors the ring multiplication. -/
+def mulTab (s t : List (List (Fin 2) × ℚ)) : List (List (Fin 2) × ℚ) :=
+  s.flatMap fun p => t.map fun r => (p.1 ++ r.1, p.2 * r.2)
+
+lemma evalTab_nil : evalTab ([] : List (List (Fin 2) × ℚ)) = 0 := rfl
+
+lemma evalTab_cons (p : List (Fin 2) × ℚ) (t : List (List (Fin 2) × ℚ)) :
+    evalTab (p :: t) = mono p.1 p.2 + evalTab t := by
+  rw [evalTab, List.map_cons, List.sum_cons]
+  rfl
+
+lemma evalTab_append (s t : List (List (Fin 2) × ℚ)) :
+    evalTab (s ++ t) = evalTab s + evalTab t := by
+  induction s with
+  | nil => rw [List.nil_append, evalTab_nil, zero_add]
+  | cons p s ih => rw [List.cons_append, evalTab_cons, ih, evalTab_cons, add_assoc]
+
+lemma evalTab_mul_single (p : List (Fin 2) × ℚ) (t : List (List (Fin 2) × ℚ)) :
+    evalTab (t.map fun r => (p.1 ++ r.1, p.2 * r.2)) = mono p.1 p.2 * evalTab t := by
+  induction t with
+  | nil => rw [List.map_nil, evalTab_nil, mul_zero]
+  | cons r t ih =>
+      rw [List.map_cons, evalTab_cons, ih, evalTab_cons, mul_add, mono_mul]
+
+/-- **The evaluation of a table product is the product of the evaluations.** This is what lets a
+ring expression built from degree-`k` pieces be computed entirely on tables. -/
+lemma evalTab_mulTab (s t : List (List (Fin 2) × ℚ)) :
+    evalTab (mulTab s t) = evalTab s * evalTab t := by
+  induction s with
+  | nil =>
+      change evalTab ([] : List (List (Fin 2) × ℚ)) = evalTab ([] : List (List (Fin 2) × ℚ)) * _
+      rw [evalTab_nil, zero_mul]
+  | cons p s ih =>
+      change evalTab (List.flatMap (fun p => List.map (fun r => (p.1 ++ r.1, p.2 * r.2)) t)
+          (p :: s)) = _
+      rw [List.flatMap_cons, evalTab_append, evalTab_mul_single, evalTab_cons, add_mul]
+      rw [show evalTab (List.flatMap (fun p => List.map (fun r => (p.1 ++ r.1, p.2 * r.2)) t) s)
+          = evalTab s * evalTab t from ih]
 
 end
 
