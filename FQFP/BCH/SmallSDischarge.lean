@@ -29,8 +29,11 @@ is why they are stated with rational coefficients only: the target's scalar inte
 
 ## Status
 
-The degree-4 and degree-5 pairs are ported and proved. The degree-6 statement is in place; its
-proof is the next slice.
+The degree-4 and degree-5 pairs are ported and proved. The degree-6 pair is proved in
+`SexticTable.lean`, which is where the `T` tables and the coefficient comparison live; the identity
+cannot be stated here because its proof needs those tables, and `SexticTable.lean` already imports
+this file for the `bchZ` / `bchT k` pieces below. The `bchZ`, `bchT k`, `bchW6`, `bchY36`, `bchY46`
+and `bchY56` pieces it uses stay here.
 
 **Assisted by Deepseek Harness**
 -/
@@ -191,22 +194,12 @@ def bchY56 {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸
     bchZ a b ^ 2 * bchT2 a b * bchZ a b ^ 2 + bchZ a b * bchT2 a b * bchZ a b ^ 3 +
     bchT2 a b * bchZ a b ^ 4
 
-/-- **The degree-6 pure identity**: the degree-6 part of `½W6 + ⅓y3₆ - ¼y4₆ + ⅕y5₆ - ⅙z⁶`,
-written in `z = a + b` and the degree-2/3/4/5 parts `T₂`…`T₅` of `y = exp a * exp b - 1`,
-minus `bchSexticTerm a b`, is zero.
+/-! **The degree-6 pure identity** is stated and proved in `SexticTable.lean` as
+`septic_pure_identity`: the degree-6 part of `½W6 + ⅓y3₆ - ¼y4₆ + ⅕y5₆ - ⅙z⁶`, written in
+`z = a + b` and the degree-2/3/4/5 parts `T₂`…`T₅` of `y = exp a * exp b - 1`, minus
+`bchSexticTerm a b`, is zero.
 
-This is the degree-6 companion of `sextic_pure_identity` and the cancellation behind
-`pieceB_septic_decomp`. It is `private` because its statement mentions the `private` auxiliary
-definitions above. -/
-theorem septic_pure_identity [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) :
-    (2 : ℚ)⁻¹ • bchW6 a b + (3 : ℚ)⁻¹ • bchY36 a b - (4 : ℚ)⁻¹ • bchY46 a b +
-      (5 : ℚ)⁻¹ • bchY56 a b - (6 : ℚ)⁻¹ • bchZ a b ^ 6 - bchSexticTerm a b = 0 := by
-  simp only [bchW6, bchZ, bchT5, bchT2, bchT4, bchT3, smul_sub, smul_add, bchY36, bchY46, bchY56,
-    bchSexticTerm, bchSexticTermCoeffs, one_div, wordEval, Nat.succ_eq_add_one, Nat.reduceAdd,
-    bchSexticTermWords, Fin.isValue, List.ofFn_succ, Matrix.cons_val', Matrix.cons_val_zero,
-    Matrix.cons_val_fin_one, Matrix.cons_val_succ, List.ofFn_zero, List.map_cons, List.map_nil,
-    List.prod_cons, List.prod_nil, mul_one, Fin.sum_univ_succ, Matrix.cons_val_one,
-    Finset.univ_unique, Fin.default_eq_zero, Finset.sum_const, Finset.card_singleton, one_smul]
-  sorry
+It lives there rather than here because its proof evaluates each piece through the `T` tables of
+`SexticTable.lean`, and that file imports this one for the pieces above. -/
 
 end FQFP.BCH

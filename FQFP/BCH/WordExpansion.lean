@@ -97,6 +97,17 @@ lemma norm_binWord_le {n : ℕ} (v : Fin n → Fin 2) (a b : 𝔸) :
   rw [prod_map_const (List.ofFn v) (‖a‖ + ‖b‖), List.length_ofFn] at h
   simpa [wordEval, List.map_ofFn] using h
 
+/-- **The uniform word bound, `List` form**: a word on `{a, b}` written as a `List` has norm at most
+`(‖a‖ + ‖b‖) ^ l.length`. A table stores its words as data rather than as an `Fin n → Fin 2`
+pattern, so this is the form a table's rows need. -/
+lemma norm_prod_map_pair_le (l : List (Fin 2)) (a b : 𝔸) :
+    ‖(l.map ![a, b]).prod‖ ≤ (‖a‖ + ‖b‖) ^ l.length := by
+  have h := norm_prod_map_le (![a, b] : Fin 2 → 𝔸) (b := fun _ : Fin 2 => ‖a‖ + ‖b‖) (fun k => by
+    fin_cases k
+    · simp [le_add_of_nonneg_right (norm_nonneg b)]
+    · simp [le_add_of_nonneg_left (norm_nonneg a)]) l
+  rwa [prod_map_const l (‖a‖ + ‖b‖)] at h
+
 end Bounds
 
 /-- **The group lemma**: an `ι`-indexed `ℚ`-weighted expansion in words over an alphabet `κ` is
@@ -132,6 +143,44 @@ lemma norm_sum_smul_wordEval_le {ι κ : Type*} [Fintype ι] {𝔸 : Type*} [Nor
     ‖∑ i, c i • wordEval letters (v i)‖ ≤ (Fintype.card ι : ℝ) * cb * B :=
   norm_sum_smul_prod_map_le c letters (fun i => List.ofFn (v i)) hc
     (fun i => by simpa [wordEval] using hw i) hcb
+
+/-- **The group lemma, table form**: a table of `(word, coefficient)` rows is bounded by its total
+coefficient budget times the word bound.
+
+This is `norm_sum_smul_prod_map_le` without the `Fintype` index. A term whose monomials are stored
+as data is a `List` of rows rather than a function on a finite type, and the budget it needs is the
+sum of `‖coefficient‖` over the rows — not `card ι * cb`. -/
+lemma norm_sum_smul_prod_map_le_list {κ 𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+    (t : List (List κ × ℚ)) (letters : κ → 𝔸) {B : ℝ}
+    (hw : ∀ p ∈ t, ‖(p.1.map letters).prod‖ ≤ B) :
+    ‖(t.map fun p => p.2 • (p.1.map letters).prod).sum‖
+      ≤ (t.map fun p => ‖p.2‖).sum * B := by
+  induction t with
+  | nil => simp
+  | cons p t ih =>
+      have hpt : ∀ q ∈ t, ‖(q.1.map letters).prod‖ ≤ B :=
+        fun q hq => hw q (List.mem_cons_of_mem p hq)
+      rw [List.map_cons, List.sum_cons, List.map_cons, List.sum_cons]
+      calc ‖p.2 • (p.1.map letters).prod + (t.map fun p => p.2 • (p.1.map letters).prod).sum‖
+          ≤ ‖p.2 • (p.1.map letters).prod‖
+              + ‖(t.map fun p => p.2 • (p.1.map letters).prod).sum‖ := norm_add_le _ _
+        _ ≤ ‖p.2‖ * B + (t.map fun p => ‖p.2‖).sum * B :=
+            add_le_add (le_trans (norm_smul_le _ _)
+              (mul_le_mul_of_nonneg_left (hw p List.mem_cons_self) (norm_nonneg _)))
+              (ih hpt)
+        _ = (‖p.2‖ + (t.map fun p => ‖p.2‖).sum) * B := by ring
+
+/-- **The table bound for a binary alphabet**: a table whose words are all of length `n` over
+`{a, b}` is bounded by its coefficient budget times `(‖a‖ + ‖b‖) ^ n`. -/
+lemma norm_sum_smul_binTab_le {n : ℕ} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+    [NormOneClass 𝔸] (t : List (List (Fin 2) × ℚ)) (hn : ∀ p ∈ t, p.1.length = n) (a b : 𝔸) :
+    ‖(t.map fun p => p.2 • (p.1.map ![a, b]).prod).sum‖
+      ≤ (t.map fun p => ‖p.2‖).sum * (‖a‖ + ‖b‖) ^ n :=
+  norm_sum_smul_prod_map_le_list t ![a, b]
+    (fun p hp => by
+      calc ‖(p.1.map ![a, b]).prod‖ ≤ (‖a‖ + ‖b‖) ^ p.1.length :=
+            norm_prod_map_pair_le p.1 a b
+        _ = (‖a‖ + ‖b‖) ^ n := by rw [hn p hp])
 
 /-! ### The unweighted group bound -/
 

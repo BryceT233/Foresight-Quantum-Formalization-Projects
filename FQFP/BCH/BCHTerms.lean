@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import FQFP.BCH.WordExpansion
+public import FQFP.BCH.WordAlgebra
 
 /-!
 # The graded terms of the BCH series
@@ -42,6 +43,8 @@ definitions are renamed to Mathlib's `lowerCamelCase`; the theorem names are the
 @[expose] public section
 
 namespace FQFP.BCH
+
+open WordAlgebra
 
 noncomputable section
 
@@ -565,45 +568,50 @@ end
 /-! ### The degree-6, -7 and -8 terms
 
 `bchSexticTerm` / `bchSepticTerm` / `bchOcticTerm` are the degree-6/7/8 parts of
-`bch a b = log (exp a * exp b)`, the next three after `bchQuinticTerm`. The source writes each as an
-explicit `+`-chain of monomials (28 / 126 / 124 terms, over 1440 / 30240 / 120960); here the words
-are data and the term is a single `∑`, so each norm bound is one application of
-`WordExpansion.norm_sum_smul_wordEval_le` instead of one estimate per monomial.
+`bch a b = log (exp a * exp b)`, the next three after `bchQuinticTerm`.
 
-The three tables are generated from the source and re-checked against it by
-`scripts/gen_bch_higher_terms.py` (`--check`), so the word order and the coefficients cannot drift
-from `Lean-BCH/BCH/Basic.lean`. Each table's signed coefficients sum to `0`, as they must: the
-degree-`k` part of a BCH series is a Lie element, so the coefficients over the words sum to `0`
-(the generator reports this and the checker re-derives it).
+The degree-6 term is stated over its **table**: a `List` of `(word, coefficient)` rows, which is the
+single object that the word and coefficient arrays of the source present as two projections. The
+other two still use arrays; they move to the same form when their degree is worked on.
 
 Denominators and the constants behind the `s ^ k` bounds: `28 · 24/1440 = 7/15`,
 `126 · 216/30240 = 9/10` and `124 · 432/120960 = 31/70`, all `≤ 1`. -/
 
-/-- The word patterns of `bchSexticTerm`: the 28 6-letter monomials of the source's
-`bch_sextic_term`, in the source's order (`0` is the letter `a`). -/
-def bchSexticTermWords : Fin 28 → Fin 6 → Fin 2 :=
-  ![![0, 0, 0, 0, 1, 1], ![0, 0, 0, 1, 0, 1],
-    ![0, 0, 0, 1, 1, 1], ![0, 0, 1, 0, 0, 1],
-    ![0, 0, 1, 0, 1, 1], ![0, 0, 1, 1, 0, 1],
-    ![0, 0, 1, 1, 1, 1], ![0, 1, 0, 0, 0, 1],
-    ![0, 1, 0, 0, 1, 1], ![0, 1, 0, 1, 0, 1],
-    ![0, 1, 0, 1, 1, 1], ![0, 1, 1, 0, 0, 1],
-    ![0, 1, 1, 0, 1, 1], ![0, 1, 1, 1, 0, 1],
-    ![1, 0, 0, 0, 1, 0], ![1, 0, 0, 1, 0, 0],
-    ![1, 0, 0, 1, 1, 0], ![1, 0, 1, 0, 0, 0],
-    ![1, 0, 1, 0, 1, 0], ![1, 0, 1, 1, 0, 0],
-    ![1, 0, 1, 1, 1, 0], ![1, 1, 0, 0, 0, 0],
-    ![1, 1, 0, 0, 1, 0], ![1, 1, 0, 1, 0, 0],
-    ![1, 1, 0, 1, 1, 0], ![1, 1, 1, 0, 0, 0],
-    ![1, 1, 1, 0, 1, 0], ![1, 1, 1, 1, 0, 0]]
+/-- **The degree-6 table**: the 28 monomials of the source's `bch_sextic_term`, in the source's
+order (`0` is the letter `a`), over the common denominator `1440`.
 
-/-- The coefficients of `bchSexticTerm`, in the source's order, over the common
-denominator 1440. -/
-def bchSexticTermCoeffs : Fin 28 → ℚ :=
-  ![-1 / 1440, 4 / 1440, 4 / 1440, -6 / 1440, -6 / 1440, -6 / 1440, -1 / 1440, 4 / 1440,
-    -6 / 1440, 24 / 1440, 4 / 1440, -6 / 1440, -6 / 1440, 4 / 1440, -4 / 1440, 6 / 1440,
-    6 / 1440, -4 / 1440, -24 / 1440, 6 / 1440, -4 / 1440, 1 / 1440, 6 / 1440, 6 / 1440,
-    6 / 1440, -4 / 1440, -4 / 1440, 1 / 1440]
+This replaces a `Fin 28 → Fin 6 → Fin 2` word array paired with a `Fin 28 → ℚ` coefficient
+array: the two are one object — an element of the free word algebra — and pairing them by index
+is what a table says directly. -/
+def bchSexticTermTable : Tab :=
+  [([0, 0, 0, 0, 1, 1], (-1 / 1440)),
+    ([0, 0, 0, 1, 0, 1], (1 / 360)),
+    ([0, 0, 0, 1, 1, 1], (1 / 360)),
+    ([0, 0, 1, 0, 0, 1], (-1 / 240)),
+    ([0, 0, 1, 0, 1, 1], (-1 / 240)),
+    ([0, 0, 1, 1, 0, 1], (-1 / 240)),
+    ([0, 0, 1, 1, 1, 1], (-1 / 1440)),
+    ([0, 1, 0, 0, 0, 1], (1 / 360)),
+    ([0, 1, 0, 0, 1, 1], (-1 / 240)),
+    ([0, 1, 0, 1, 0, 1], (1 / 60)),
+    ([0, 1, 0, 1, 1, 1], (1 / 360)),
+    ([0, 1, 1, 0, 0, 1], (-1 / 240)),
+    ([0, 1, 1, 0, 1, 1], (-1 / 240)),
+    ([0, 1, 1, 1, 0, 1], (1 / 360)),
+    ([1, 0, 0, 0, 1, 0], (-1 / 360)),
+    ([1, 0, 0, 1, 0, 0], (1 / 240)),
+    ([1, 0, 0, 1, 1, 0], (1 / 240)),
+    ([1, 0, 1, 0, 0, 0], (-1 / 360)),
+    ([1, 0, 1, 0, 1, 0], (-1 / 60)),
+    ([1, 0, 1, 1, 0, 0], (1 / 240)),
+    ([1, 0, 1, 1, 1, 0], (-1 / 360)),
+    ([1, 1, 0, 0, 0, 0], (1 / 1440)),
+    ([1, 1, 0, 0, 1, 0], (1 / 240)),
+    ([1, 1, 0, 1, 0, 0], (1 / 240)),
+    ([1, 1, 0, 1, 1, 0], (1 / 240)),
+    ([1, 1, 1, 0, 0, 0], (-1 / 360)),
+    ([1, 1, 1, 0, 1, 0], (-1 / 360)),
+    ([1, 1, 1, 1, 0, 0], (1 / 1440))]
 
 /-- The word patterns of `bchSepticTerm`: the 126 7-letter monomials of the source's
 `bch_septic_term`, in the source's order (`0` is the letter `a`). -/
@@ -784,33 +792,30 @@ def bchOcticTermCoeffs : Fin 124 → ℚ :=
     40 / 120960, 96 / 120960, 12 / 120960, 40 / 120960, -23 / 120960, -30 / 120960,
     -30 / 120960, -30 / 120960, 12 / 120960, 12 / 120960, -2 / 120960]
 
-/-- **Degree-6 term** `C₆(a,b)`: the degree-6 part of `bch a b`, as a `∑` over its 28 words. -/
+/-- **Degree-6 term** `C₆(a,b)`: the degree-6 part of `bch a b`, evaluated from its table.
+
+The table is the term: `wordAlgebraLift a b` multiplies out each row's word and weights it by the
+row's coefficient, so the definition *is* the word data. -/
 noncomputable def bchSexticTerm {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
-  ∑ i, bchSexticTermCoeffs i • wordEval ![a, b] (bchSexticTermWords i)
+  wordAlgebraLift a b (evalTab bchSexticTermTable)
 
 /-- **Norm bound for `bchSexticTerm`**: `‖C₆(a,b)‖ ≤ (‖a‖ + ‖b‖)⁶`.
 
-The group constant is `28 · (24/1440) = 7/15`. -/
+The coefficient budget is `28 · (24/1440) = 7/15 ≤ 1`, and every word has six letters. -/
 theorem norm_bchSexticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸]
     (a b : 𝔸) : ‖bchSexticTerm a b‖ ≤ (‖a‖ + ‖b‖) ^ 6 := by
-  have hbudget : ∑ i : Fin 28, ‖bchSexticTermCoeffs i‖ ≤ 1 := by
-    simp only [bchSexticTermCoeffs, Fin.sum_univ_succ, Fin.sum_univ_zero, ← Rat.norm_cast_real,
-      Real.norm_eq_abs]
+  have hbudget : (bchSexticTermTable.map fun p => ‖p.2‖).sum ≤ 1 := by
+    simp only [bchSexticTermTable, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
+      ← Rat.norm_cast_real, Real.norm_eq_abs]
     norm_num
-  have hw : ∀ i : Fin 28, ‖wordEval ![a, b] (bchSexticTermWords i)‖
-      ≤ (‖a‖ + ‖b‖) ^ 6 := fun i => norm_binWord_le (bchSexticTermWords i) a b
-  unfold bchSexticTerm
-  calc ‖∑ i, bchSexticTermCoeffs i • wordEval ![a, b] (bchSexticTermWords i)‖
-      ≤ ∑ i, ‖bchSexticTermCoeffs i • wordEval ![a, b] (bchSexticTermWords i)‖ :=
-      norm_sum_le _ _
-    _ ≤ ∑ i, ‖bchSexticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 6 := by
-        refine Finset.sum_le_sum fun i _ => ?_
-        calc ‖bchSexticTermCoeffs i • wordEval ![a, b] (bchSexticTermWords i)‖
-            ≤ ‖bchSexticTermCoeffs i‖ * ‖wordEval ![a, b] (bchSexticTermWords i)‖ :=
-            norm_smul_le _ _
-          _ ≤ ‖bchSexticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 6 :=
-              mul_le_mul_of_nonneg_left (hw i) (norm_nonneg _)
-    _ = (∑ i, ‖bchSexticTermCoeffs i‖) * (‖a‖ + ‖b‖) ^ 6 := by rw [Finset.sum_mul]
+  have hn : ∀ p ∈ bchSexticTermTable, p.1.length = 6 := by
+    have hall : bchSexticTermTable.all (fun p => p.1.length == 6) = true := by decide
+    intro p hp
+    simpa using (List.all_eq_true.mp hall) p hp
+  rw [bchSexticTerm, wordAlgebraLift_evalTab]
+  calc ‖(bchSexticTermTable.map fun p => p.2 • (p.1.map ![a, b]).prod).sum‖
+      ≤ (bchSexticTermTable.map fun p => ‖p.2‖).sum * (‖a‖ + ‖b‖) ^ 6 :=
+        norm_sum_smul_binTab_le _ hn a b
     _ ≤ 1 * (‖a‖ + ‖b‖) ^ 6 := mul_le_mul_of_nonneg_right hbudget (by positivity)
     _ = (‖a‖ + ‖b‖) ^ 6 := by ring
 

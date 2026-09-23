@@ -249,26 +249,508 @@ lemma evalTab_y56Tab : evalTab y56Tab = bchY56 (mono [0] 1) (mono [1] 1) := by
 /-- The degree-6 `z⁶` table, mirroring `bchZ · bchZ ^ 5`. -/
 def z6Tab : Tab := powTab (T 1) 6
 
-/-- `bchSexticTerm` as a table, over `bchSexticTermWords` and `bchSexticTermCoeffs`. -/
-def sexticTab : Tab :=
-  List.ofFn fun i : Fin 28 => (List.ofFn (bchSexticTermWords i), bchSexticTermCoeffs i)
+/-- The `z⁶` table's evaluation at the two generators: `z = a + b` raised to the sixth. -/
+lemma evalTab_z6Tab : evalTab z6Tab = bchZ (mono [0] 1) (mono [1] 1) ^ 6 := by
+  rw [z6Tab, evalTab_powTab, T_one, bchZ]
 
-/-- **`bchSexticTerm` as a table**: `evalTab sexticTab = bchSexticTerm (mono [0] 1) (mono [1] 1)`.
+/-- **`bchSexticTerm`'s table**: `bchSexticTerm` is *defined* by evaluating `bchSexticTermTable`, so
+this is the table itself, not a copy of it. -/
+def sexticTab : Tab := bchSexticTermTable
 
-This one needs `bchSexticTerm` to be stated for a plain `ℚ`-algebra rather than for a `NormedRing`:
-the free word algebra is not normed, so a normed hypothesis would make the statement below
-ill-formed. The `sexticTab` row list stays in its `Fin 28`-indexed form here, which is what makes
-this bridge a rewrite rather than a 28-way case split. -/
-lemma evalTab_sexticTab : evalTab sexticTab = bchSexticTerm (mono [0] 1) (mono [1] 1) := by
-  unfold bchSexticTerm
-  simp only [sexticTab, evalTab, List.map_ofFn, List.sum_ofFn, Function.comp_apply,
-    mono_pair_eq_freeGen, wordEval_gen, smul_mono_eq, mul_one]
+/-- **The evaluation of the sextic table is `bchSexticTerm` itself**: with `sexticTab` being
+`bchSexticTermTable` this is `rfl`-level, which is the point of defining the term from its table. -/
+theorem wordAlgebraLift_sexticTab {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    wordAlgebraLift a b (evalTab sexticTab) = bchSexticTerm a b :=
+  rfl
 
-/-- **The degree-6 Dynkin side as a table**: the left-hand side of `septic_pure_identity`. -/
-def dynkin6Tab : Tab :=
+/-- **The degree-6 Dynkin side as a table**: the left-hand side of `septic_pure_identity`.
+
+Marked `irreducible` on purpose: it is a ~1000-row term, and the coefficient comparison below
+compares goals whose type mentions it, so letting `whnf` and `isDefEq` unfold it would put the whole
+table into every type comparison. The proofs unfold it explicitly where they need to. -/
+@[irreducible] def dynkin6Tab : Tab :=
   smulTab ((2 : ℚ)⁻¹) w6Tab ++ smulTab ((3 : ℚ)⁻¹) y36Tab ++
     smulTab (-(4 : ℚ)⁻¹) y46Tab ++ smulTab ((5 : ℚ)⁻¹) y56Tab ++
     smulTab (-(6 : ℚ)⁻¹) z6Tab ++ smulTab (-1) sexticTab
+
+/-! ### Carrying the table identity into `𝔸`
+
+`wordAlgebraLift_sexticTab` above is `rfl`, because `bchSexticTerm` *is* its table evaluated. The
+bridges below do the same for the other five pieces, by evaluating the free-algebra statement
+`evalTab_*` and then pushing `wordAlgebraLift` through the ring expression with `map_*`. Together
+with `wordAlgebraLift_dynkin6Tab` they carry the table identity `evalTab dynkin6Tab = 0` into the
+statement of `septic_pure_identity`. -/
+
+/-- The evaluation of the `W6` table is `bchW6`. -/
+theorem wordAlgebraLift_evalTab_w6Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    wordAlgebraLift a b (evalTab w6Tab) = bchW6 a b := by
+  rw [evalTab_w6Tab]
+  simp only [bchW6, bchZ, bchT2, bchT3, bchT4, bchT5]
+  simp
+
+/-- The evaluation of the `(y³)_d6` table is `bchY36`. -/
+theorem wordAlgebraLift_evalTab_y36Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    wordAlgebraLift a b (evalTab y36Tab) = bchY36 a b := by
+  rw [evalTab_y36Tab]
+  simp only [bchY36, bchZ, bchT2, bchT3, bchT4]
+  simp
+
+/-- The evaluation of the `(y⁴)_d6` table is `bchY46`. -/
+theorem wordAlgebraLift_evalTab_y46Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    wordAlgebraLift a b (evalTab y46Tab) = bchY46 a b := by
+  rw [evalTab_y46Tab]
+  simp only [bchY46, bchZ, bchT2, bchT3]
+  simp
+
+/-- The evaluation of the `(y⁵)_d6` table is `bchY56`. -/
+theorem wordAlgebraLift_evalTab_y56Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    wordAlgebraLift a b (evalTab y56Tab) = bchY56 a b := by
+  rw [evalTab_y56Tab]
+  simp only [bchY56, bchZ, bchT2]
+  simp
+
+/-- The evaluation of the `z⁶` table is `bchZ` raised to the sixth. -/
+theorem wordAlgebraLift_evalTab_z6Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    wordAlgebraLift a b (evalTab z6Tab) = bchZ a b ^ 6 := by
+  rw [evalTab_z6Tab]
+  simp only [bchZ]
+  simp
+
+/-- **The degree-6 left-hand side, evaluated in an arbitrary `ℚ`-algebra.** -/
+theorem wordAlgebraLift_dynkin6Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    wordAlgebraLift a b (evalTab dynkin6Tab)
+      = (2 : ℚ)⁻¹ • bchW6 a b + (3 : ℚ)⁻¹ • bchY36 a b - (4 : ℚ)⁻¹ • bchY46 a b +
+        (5 : ℚ)⁻¹ • bchY56 a b - (6 : ℚ)⁻¹ • bchZ a b ^ 6 - bchSexticTerm a b := by
+  unfold dynkin6Tab
+  simp only [evalTab_append, evalTab_smulTab, map_add, map_smul]
+  rw [wordAlgebraLift_evalTab_w6Tab, wordAlgebraLift_evalTab_y36Tab,
+    wordAlgebraLift_evalTab_y46Tab, wordAlgebraLift_evalTab_y56Tab,
+    wordAlgebraLift_evalTab_z6Tab, wordAlgebraLift_sexticTab]
+  simp only [sub_eq_add_neg, neg_smul, one_smul]
+
+/-! ### The coefficient comparison
+
+The identity is now a statement about one table, and a table is its coefficient function. So the
+comparison is: every coefficient of `dynkin6Tab` vanishes. `reprTab_eq_zero_of_length` splits that
+into the two facts below — the rows are all six letters long, and a six-letter word is one of the
+`2 ^ 6` `fin_cases` cases — so the unfolding is done once per word and nowhere else.
+
+The unfolding genuinely has ~1000 nested `List.cons` cells, which is what the `maxRecDepth` below is
+for. It is a *tactic recursion depth* limit on walking that term, not a search budget, and no
+heartbeat budget is raised. -/
+
+set_option maxRecDepth 100000
+
+/-- A list of length six is six letters. -/
+private lemma length_eq_six {α : Type*} {l : List α} (h : l.length = 6) :
+    ∃ a b c d e f, l = [a, b, c, d, e, f] := by
+  rcases l with _ | ⟨a, _ | ⟨b, _ | ⟨c, _ | ⟨d, _ | ⟨e, _ | ⟨f, t⟩⟩⟩⟩⟩⟩
+  · simp at h
+  · simp at h
+  · simp at h
+  · simp at h
+  · simp at h
+  · simp at h
+  · rcases t with _ | ⟨g, t⟩
+    · exact ⟨a, b, c, d, e, f, rfl⟩
+    · simp at h
+
+/-- **Every row of the degree-6 table is a six-letter word.** Each piece is read off by `List.all`,
+which costs one pass over that piece's rows and no coefficient arithmetic; `dynkin6Tab` is then the
+combination of the six, so the whole table is never unfolded here. -/
+lemma dynkin6Tab_rows_length : ∀ p ∈ dynkin6Tab, p.1.length = 6 := by
+  have hw6 : ∀ p ∈ w6Tab, p.1.length = 6 := by
+    have hall : w6Tab.all (fun p => p.1.length == 6) = true := by decide
+    exact fun p hp => by simpa using (List.all_eq_true.mp hall) p hp
+  have hy36 : ∀ p ∈ y36Tab, p.1.length = 6 := by
+    have hall : y36Tab.all (fun p => p.1.length == 6) = true := by decide
+    exact fun p hp => by simpa using (List.all_eq_true.mp hall) p hp
+  have hy46 : ∀ p ∈ y46Tab, p.1.length = 6 := by
+    have hall : y46Tab.all (fun p => p.1.length == 6) = true := by decide
+    exact fun p hp => by simpa using (List.all_eq_true.mp hall) p hp
+  have hy56 : ∀ p ∈ y56Tab, p.1.length = 6 := by
+    have hall : y56Tab.all (fun p => p.1.length == 6) = true := by decide
+    exact fun p hp => by simpa using (List.all_eq_true.mp hall) p hp
+  have hz6 : ∀ p ∈ z6Tab, p.1.length = 6 := by
+    have hall : z6Tab.all (fun p => p.1.length == 6) = true := by decide
+    exact fun p hp => by simpa using (List.all_eq_true.mp hall) p hp
+  have hsex : ∀ p ∈ sexticTab, p.1.length = 6 := by
+    have hall : sexticTab.all (fun p => p.1.length == 6) = true := by decide
+    exact fun p hp => by simpa using (List.all_eq_true.mp hall) p hp
+  unfold dynkin6Tab
+  exact append_words_length
+    (append_words_length
+      (append_words_length
+        (append_words_length
+          (append_words_length (smulTab_words_length hw6) (smulTab_words_length hy36))
+          (smulTab_words_length hy46))
+        (smulTab_words_length hy56))
+      (smulTab_words_length hz6))
+    (smulTab_words_length hsex)
+
+/-- The unfolding every degree-6 coefficient goal goes through: the six piece tables are expanded
+and `norm_num` cancels the `ℚ` coefficients. It is a `macro` because the same three steps are needed
+once per word, and the words are 64 *separate* declarations on purpose — see the theorem below. -/
+macro "sexticCoeff" : tactic =>
+  `(tactic|
+    (rw [reprTab_apply_eq]
+     simp only [dynkin6Tab, w6Tab, y36Tab, y46Tab, y56Tab, z6Tab, sexticTab, bchSexticTermTable,
+      smulTab, mulTab, powTab, unitTab, T, List.flatMap_cons, List.flatMap_nil, List.map_cons,
+      List.map_nil, List.cons_append, List.nil_append, List.append_nil]
+     norm_num))
+
+/-! The 64 coefficients, one declaration each: `sexticCoeff` is the whole proof. They are `private`
+because they are one computation split 64 ways, not an API. -/
+private lemma reprTab_dynkin6Tab_word_0 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 0, 0, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_1 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 0, 0, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_2 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 0, 0, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_3 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 0, 0, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_4 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 0, 1, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_5 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 0, 1, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_6 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 0, 1, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_7 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 0, 1, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_8 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 1, 0, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_9 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 1, 0, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_10 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 1, 0, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_11 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 1, 0, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_12 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 1, 1, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_13 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 1, 1, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_14 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 1, 1, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_15 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 0, 1, 1, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_16 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 0, 0, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_17 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 0, 0, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_18 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 0, 0, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_19 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 0, 0, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_20 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 0, 1, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_21 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 0, 1, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_22 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 0, 1, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_23 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 0, 1, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_24 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 1, 0, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_25 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 1, 0, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_26 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 1, 0, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_27 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 1, 0, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_28 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 1, 1, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_29 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 1, 1, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_30 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 1, 1, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_31 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [0, 1, 1, 1, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_32 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 0, 0, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_33 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 0, 0, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_34 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 0, 0, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_35 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 0, 0, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_36 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 0, 1, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_37 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 0, 1, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_38 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 0, 1, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_39 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 0, 1, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_40 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 1, 0, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_41 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 1, 0, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_42 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 1, 0, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_43 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 1, 0, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_44 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 1, 1, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_45 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 1, 1, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_46 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 1, 1, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_47 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 0, 1, 1, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_48 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 0, 0, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_49 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 0, 0, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_50 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 0, 0, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_51 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 0, 0, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_52 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 0, 1, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_53 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 0, 1, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_54 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 0, 1, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_55 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 0, 1, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_56 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 1, 0, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_57 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 1, 0, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_58 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 1, 0, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_59 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 1, 0, 1, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_60 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 1, 1, 0, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_61 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 1, 1, 0, 1]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_62 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 1, 1, 1, 0]) = 0 := by
+  sexticCoeff
+
+private lemma reprTab_dynkin6Tab_word_63 :
+    reprTab dynkin6Tab (FreeMonoid.ofList [1, 1, 1, 1, 1, 1]) = 0 := by
+  sexticCoeff
+
+/-- **Every six-letter word's coefficient in `dynkin6Tab` vanishes.** The 64 cases are the 64
+declarations above; `first` picks the one whose word matches, so this term is 64 references rather
+than 64 unfoldings of the table. -/
+theorem reprTab_dynkin6Tab_words (a b c d e f : Fin 2) :
+    reprTab dynkin6Tab (FreeMonoid.ofList [a, b, c, d, e, f]) = 0 := by
+  fin_cases a <;> fin_cases b <;> fin_cases c <;> fin_cases d <;> fin_cases e <;> fin_cases f
+  · exact reprTab_dynkin6Tab_word_0
+  · exact reprTab_dynkin6Tab_word_1
+  · exact reprTab_dynkin6Tab_word_2
+  · exact reprTab_dynkin6Tab_word_3
+  · exact reprTab_dynkin6Tab_word_4
+  · exact reprTab_dynkin6Tab_word_5
+  · exact reprTab_dynkin6Tab_word_6
+  · exact reprTab_dynkin6Tab_word_7
+  · exact reprTab_dynkin6Tab_word_8
+  · exact reprTab_dynkin6Tab_word_9
+  · exact reprTab_dynkin6Tab_word_10
+  · exact reprTab_dynkin6Tab_word_11
+  · exact reprTab_dynkin6Tab_word_12
+  · exact reprTab_dynkin6Tab_word_13
+  · exact reprTab_dynkin6Tab_word_14
+  · exact reprTab_dynkin6Tab_word_15
+  · exact reprTab_dynkin6Tab_word_16
+  · exact reprTab_dynkin6Tab_word_17
+  · exact reprTab_dynkin6Tab_word_18
+  · exact reprTab_dynkin6Tab_word_19
+  · exact reprTab_dynkin6Tab_word_20
+  · exact reprTab_dynkin6Tab_word_21
+  · exact reprTab_dynkin6Tab_word_22
+  · exact reprTab_dynkin6Tab_word_23
+  · exact reprTab_dynkin6Tab_word_24
+  · exact reprTab_dynkin6Tab_word_25
+  · exact reprTab_dynkin6Tab_word_26
+  · exact reprTab_dynkin6Tab_word_27
+  · exact reprTab_dynkin6Tab_word_28
+  · exact reprTab_dynkin6Tab_word_29
+  · exact reprTab_dynkin6Tab_word_30
+  · exact reprTab_dynkin6Tab_word_31
+  · exact reprTab_dynkin6Tab_word_32
+  · exact reprTab_dynkin6Tab_word_33
+  · exact reprTab_dynkin6Tab_word_34
+  · exact reprTab_dynkin6Tab_word_35
+  · exact reprTab_dynkin6Tab_word_36
+  · exact reprTab_dynkin6Tab_word_37
+  · exact reprTab_dynkin6Tab_word_38
+  · exact reprTab_dynkin6Tab_word_39
+  · exact reprTab_dynkin6Tab_word_40
+  · exact reprTab_dynkin6Tab_word_41
+  · exact reprTab_dynkin6Tab_word_42
+  · exact reprTab_dynkin6Tab_word_43
+  · exact reprTab_dynkin6Tab_word_44
+  · exact reprTab_dynkin6Tab_word_45
+  · exact reprTab_dynkin6Tab_word_46
+  · exact reprTab_dynkin6Tab_word_47
+  · exact reprTab_dynkin6Tab_word_48
+  · exact reprTab_dynkin6Tab_word_49
+  · exact reprTab_dynkin6Tab_word_50
+  · exact reprTab_dynkin6Tab_word_51
+  · exact reprTab_dynkin6Tab_word_52
+  · exact reprTab_dynkin6Tab_word_53
+  · exact reprTab_dynkin6Tab_word_54
+  · exact reprTab_dynkin6Tab_word_55
+  · exact reprTab_dynkin6Tab_word_56
+  · exact reprTab_dynkin6Tab_word_57
+  · exact reprTab_dynkin6Tab_word_58
+  · exact reprTab_dynkin6Tab_word_59
+  · exact reprTab_dynkin6Tab_word_60
+  · exact reprTab_dynkin6Tab_word_61
+  · exact reprTab_dynkin6Tab_word_62
+  · exact reprTab_dynkin6Tab_word_63
+
+/-- **The degree-6 coefficient comparison**: the Dynkin side is zero in the free word algebra. -/
+theorem reprTab_dynkin6Tab_eq_zero : reprTab dynkin6Tab = 0 := by
+  refine reprTab_eq_zero_of_length dynkin6Tab_rows_length fun l hl => ?_
+  obtain ⟨a, b, c, d, e, f, rfl⟩ := length_eq_six hl
+  exact reprTab_dynkin6Tab_words a b c d e f
+
+/-- **The degree-6 cancellation, in the free word algebra**: the left-hand side is zero. -/
+theorem evalTab_dynkin6Tab : evalTab dynkin6Tab = 0 := by
+  rw [evalTab_eq_reprTab, ← MonoidAlgebra.ofCoeff_zero, MonoidAlgebra.ofCoeff_inj]
+  exact reprTab_dynkin6Tab_eq_zero
+
+/-- **The degree-6 pure identity**: the degree-6 part of `½W6 + ⅓y3₆ - ¼y4₆ + ⅕y5₆ - ⅙z⁶`, written
+in `z = a + b` and the degree-2/3/4/5 parts `T₂`…`T₅` of `y = exp a * exp b - 1`, minus
+`bchSexticTerm a b`, is zero.
+
+This is the degree-6 cancellation behind `pieceB_septic_decomp`, and the companion of
+`SmallSDischarge.sextic_pure_identity` (degree 5). It is proved here rather than in
+`SmallSDischarge.lean` because its proof evaluates each piece through the `T` tables above, and that
+file is one of this one's imports. -/
+theorem septic_pure_identity {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) :
+    (2 : ℚ)⁻¹ • bchW6 a b + (3 : ℚ)⁻¹ • bchY36 a b - (4 : ℚ)⁻¹ • bchY46 a b +
+      (5 : ℚ)⁻¹ • bchY56 a b - (6 : ℚ)⁻¹ • bchZ a b ^ 6 - bchSexticTerm a b = 0 := by
+  rw [← wordAlgebraLift_dynkin6Tab, evalTab_dynkin6Tab, map_zero]
 
 end
 

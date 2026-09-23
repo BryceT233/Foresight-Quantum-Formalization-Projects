@@ -304,6 +304,27 @@ lemma evalTab_powTab (t : Tab) (n : ℕ) : evalTab (powTab t n) = evalTab t ^ n 
   | zero => rw [powTab_zero, evalTab_unitTab, pow_zero]
   | succ n ih => rw [powTab_succ, evalTab_mulTab, ih, pow_succ]
 
+/-! ### The words of a table
+
+Two structural facts about the *words* of a table, as opposed to its coefficients: they are
+preserved by scaling, and concatenated by a sum. A table built out of graded pieces therefore has
+words of one length throughout, which is what lets a coefficient comparison be checked on the words
+of that length alone. -/
+
+/-- **Scaling every coefficient does not change the words of a table.** -/
+lemma smulTab_words_length {c : ℚ} {s : Tab} {n : ℕ} (h : ∀ p ∈ s, p.1.length = n) :
+    ∀ p ∈ smulTab c s, p.1.length = n := by
+  intro p hp
+  obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hp
+  exact h q hq
+
+/-- **A sum of two tables of `n`-letter words is a table of `n`-letter words.** -/
+lemma append_words_length {s t : Tab} {n : ℕ} (hs : ∀ p ∈ s, p.1.length = n)
+    (ht : ∀ p ∈ t, p.1.length = n) : ∀ p ∈ s ++ t, p.1.length = n := by
+  intro p hp
+  rcases List.mem_append.mp hp with h | h
+  exacts [hs p h, ht p h]
+
 /-- **The coefficient of a list of monomials, as data**: the rows whose word is `w`, with their
 coefficients. This is the list-level companion of `coeff_mono_sum`, and it is what turns a
 coefficient comparison of two tables into `List` and `ℚ` arithmetic.
@@ -483,6 +504,32 @@ lemma reprTab_collapse (t : Tab) : reprTab (collapse t) = reprTab t := by
 /-- **A table and its collapsed form evaluate equally.** -/
 lemma evalTab_collapse (t : Tab) : evalTab (collapse t) = evalTab t := by
   rw [evalTab_eq_reprTab, evalTab_eq_reprTab, reprTab_collapse]
+
+/-- A `List` of zeros sums to zero. Stated on its own so that the induction in
+`reprTab_eq_zero_of_length` does not have to generalise that lemma's hypotheses. -/
+private lemma sum_map_zero (t : Tab) : (t.map fun _ => (0 : ℚ)).sum = 0 := by
+  induction t with
+  | nil => rfl
+  | cons p t ih => rw [List.map_cons, List.sum_cons, ih, add_zero]
+
+/-- **A table of `n`-letter words is zero once its coefficients vanish on every `n`-letter word.**
+The two hypotheses split the free word algebra between them: `hn` says every row is an `n`-letter
+word, so a word of any other length is met by no row at all, and `h0` covers the words that are. -/
+lemma reprTab_eq_zero_of_length {t : Tab} {n : ℕ} (hn : ∀ p ∈ t, p.1.length = n)
+    (h0 : ∀ l : List (Fin 2), l.length = n → reprTab t (FreeMonoid.ofList l) = 0) :
+    reprTab t = 0 := by
+  apply Finsupp.ext
+  intro m
+  rw [← FreeMonoid.ofList_toList m]
+  by_cases hm : m.toList.length = n
+  · exact h0 m.toList hm
+  · rw [reprTab_apply_eq, Finsupp.zero_apply]
+    rw [show (t.map fun p => if p.1 = m.toList then p.2 else (0 : ℚ))
+        = t.map fun _ => (0 : ℚ) from by
+      apply List.map_congr_left
+      intro p hp
+      exact ite_eq_right fun hc => hm (by rw [← hc]; exact hn p hp)]
+    exact sum_map_zero t
 
 end
 
