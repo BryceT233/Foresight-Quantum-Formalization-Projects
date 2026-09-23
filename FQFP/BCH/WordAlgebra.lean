@@ -338,6 +338,29 @@ theorem evalTab_eq_of_reprTab_eq {s t : List (List (Fin 2) × ℚ)} (h : reprTab
     evalTab s = evalTab t := by
   rw [evalTab_eq_reprTab, evalTab_eq_reprTab, h]
 
+/-- **The coefficient of a table's representation, pointwise**: the rows whose word is `l`, with
+their coefficients. With this, `reprTab` comparisons are sums over `List` and `ℚ` only, so a table
+identity can be checked word by word without any `Decidable`-instance rewriting. -/
+lemma reprTab_apply_eq (t : List (List (Fin 2) × ℚ)) (l : List (Fin 2)) :
+    reprTab t (FreeMonoid.ofList l) = (t.map fun p => if p.1 = l then p.2 else (0 : ℚ)).sum := by
+  induction t with
+  | nil => rw [reprTab, List.map_nil, List.sum_nil]; rfl
+  | cons p t ih =>
+      rw [reprTab, Finsupp.add_apply, ih, List.map_cons, List.sum_cons]
+      by_cases h : p.1 = l
+      · rw [show (if p.1 = l then p.2 else (0 : ℚ)) = p.2 from ite_eq_left h]
+        rw [show (Finsupp.single (FreeMonoid.ofList p.1) p.2 : FreeMonoid (Fin 2) →₀ ℚ)
+              (FreeMonoid.ofList l) = p.2 from by
+            rw [show FreeMonoid.ofList l = FreeMonoid.ofList p.1 from h.symm]
+            exact Finsupp.single_eq_same]
+      · rw [show (if p.1 = l then p.2 else (0 : ℚ)) = (0 : ℚ) from ite_eq_right h]
+        rw [show (Finsupp.single (FreeMonoid.ofList p.1) p.2 : FreeMonoid (Fin 2) →₀ ℚ)
+              (FreeMonoid.ofList l) = (0 : ℚ) from by
+            exact Finsupp.single_eq_of_ne (M := ℚ) (a := FreeMonoid.ofList p.1)
+              (a' := FreeMonoid.ofList l) (by
+                intro hc
+                exact h (FreeMonoid.ofList.injective hc.symm))]
+
 end
 
 end FQFP.BCH.WordAlgebra
