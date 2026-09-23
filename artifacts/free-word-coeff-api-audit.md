@@ -6,9 +6,57 @@
 
 ---
 
-## 阶段 A 施工记录（第一轮）
+## 阶段 A 施工记录（第二轮：表层打通，六次恒等式已验证为数据恒等式）
 
-**已落地**：`FQFP/BCH/WordAlgebra.lean`（约 195 行，已注册进 `FQFP.lean`），
+**重大结论：六次纯恒等式确实是「表的恒等式」，不是「环的恒等式」。**
+独立校验器 `scripts/check_sextic_free_identity.py` 从 `z` 与 `T_k = aⁿb^(k−n)/(n!(k−n)!)`
+出发，按**正合成**枚举 `y^p` 的六次齐次部分，重建整条
+`½W6 + ⅓y3₆ − ¼y4₆ + ⅕y5₆ − ⅙z⁶`，与 `BCHTerms.lean` 的
+`bchSexticTermWords/Coeffs` 逐词比对：**28 个词全部一致**。
+
+这就把 §6 阶段 A 的路彻底改了：**不需要**逐词 64 次 `norm_num`，也**不需要**在 Lean 里
+展开多项式乘积。证明形态是
+「两条表逐行相同 ⟹ 两侧求值相同」，而「逐行相同」在两侧用同一套字面量时就是 `rfl`。
+
+（调试过程中修掉一个真实错误：`y_d6 = Σ_{i+j=6, i,j≥1} z^i T_j` 里 i=0 那一项就是
+`T₆`，我第一版漏了，导致纯词 `aaaaaa` 的系数算出 `31/360` 而不是 `1/720`。
+校验器里保留了这条断言 `T₆(aaaaaa) = 1/720` 作为自检。）
+
+**已落地**（`FQFP/BCH/WordAlgebra.lean`，验收全绿）：
+
+| 声明 | 内容 |
+|---|---|
+| `prod_mono_aux` | 单项式之积是单项式：词拼接、系数相乘 |
+| `coeff_mono_sum` | 单项式之和的系数 = 各行系数按词筛选求和（纯数据，无环运算） |
+| `evalTab t` | 表的求值：`(t.map (mono ·.1 ·.2)).sum` |
+| `mulTab s t` | 表的行式乘法：笛卡尔积 + 词拼接 + 系数相乘 |
+| `evalTab_mulTab` | **表积的求值 = 求值之积**（让多项式恒等式落到 `List`/`ℚ` 的那一条） |
+| `evalTab_nil/cons/append`、`evalTab_mul_single` | 上一条的组装件 |
+
+**新增实测结论**：
+
+* `decide` 对 `ℚ` 不归约（`Rat.blt` / `Rat.num` 不做 kernel 归约），
+  所以「两条表相等」不能用 `decide`；只能让两侧用**同一套字面量**从而 `rfl`。
+  这条与 `bch-port.md` §5.3 原有记录一致。
+* `List.flatMap` 的求值没有现成的 `List.sum_flatMap`，`evalTab_mulTab` 靠对 `s` 的结构归纳
+  （`List.flatMap_cons` + `evalTab_append` + `evalTab_mul_single`）走通。
+
+**剩余的工程件**（已定位，不含数学障碍）：
+
+1. 用生成器输出规范表（行序 = 校验器的计算序，系数用与 `bchSexticTermCoeffs`
+   相同的字面量）。
+2. 在 Lean 里写出**自由侧的 Dynkin 表**：`mulTab` 组合 `Z`、`T2`…`T5`，
+   与生成器输出同序，于是「表相等」是 `rfl`。
+3. 用 `evalTab_mulTab` 把自由侧的**环表达式**（`bchW6 (mono …) …` 那一串）
+   转成表，即得恒等式；再用 §3.2 的正向传输回到 `𝔸`，替换 `SmallSDischarge.lean` 的 `sorry`。
+4. 7/8 次项（`octic_pure_identity` / `nonic_pure_identity`）同一套流程：只要校验器扩到
+   度 7/8 仍全绿，Lean 侧的形态完全不变。
+
+---
+
+## 阶段 A 施工记录（第一轮：合并与 API）
+
+**已落地**：`FQFP/BCH/WordAlgebra.lean`（已注册进 `FQFP.lean`），
 全部声明在 `namespace FQFP.BCH.WordAlgebra` 下。它由原来的 `WordAlgebraLift.lean`
 （`wordAlgebraLift` / `wordAlgebraLift_injective`）与 `FreeWordCoeff.lean`（系数读取）
 **合并**而成，两个旧文件已删除；`BinWordAlg` 这个 `abbrev` 无人使用，也已删除。
