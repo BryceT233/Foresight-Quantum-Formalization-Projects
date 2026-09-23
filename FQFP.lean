@@ -6,6 +6,8 @@ public import FQFP.BCH.BCHSymmetric
 public import FQFP.BCH.BCHTerms
 public import FQFP.BCH.ChildsBasis
 public import FQFP.BCH.ExpNorm
+public import FQFP.BCH.FreeMonoidInstances
+public import FQFP.BCH.FreeWordCoeff
 public import FQFP.BCH.Logarithm
 public import FQFP.BCH.NestedCommNorm
 public import FQFP.BCH.QuinticRemainder
