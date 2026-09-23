@@ -108,6 +108,39 @@
 
 ---
 
+## 0quater 施工记录（第 2 步完成：degree-6 恒等式证完，零 `sorry`）
+
+`bchSexticTerm` 已按路线 (a) 改成表定义（`bchSexticTermTable` + `wordAlgebraLift`），
+`septic_pure_identity` 在 `SexticTable.lean` 证完。全树零 `sorry`、零 `maxHeartbeats`，
+axioms 只剩三条。
+
+**两个卡点，都是实测逼出来的，都值得记下来**：
+
+1. **64 个系数必须各写一条声明，不能合在一个 `fin_cases` 里。** 单条目标约 4 秒、在默认预算内
+   （§2.2 的探针已证），但合在一个命题里时**证明项**变成 64 份 ~1000 行展开，kernel 检查
+   （`whnf`）超 200k 心跳。拆成 64 条 `private lemma` 后每条项很小，派发定理只是 64 个引用。
+   重复的三步走收在一个 `sexticCoeff` 宏里，所以 64 条各占一行。
+2. **`@[irreducible] dynkin6Tab` 是必需的。** 派发定理要用 `fin_cases`/`exact` 比较含
+   `dynkin6Tab` 的**类型**；若 `whnf`/`isDefEq` 能展开它，每次类型比较都会把整张 ~1000 行的表
+   拉进来（实测 `isDefEq` 超 200k 心跳）。标成 `irreducible` 后类型比较是语法级的，
+   而需要展开的地方（`sexticCoeff` 宏、`unfold dynkin6Tab`）照常展开。
+
+**系数比对的组织**（可原样复制到七/八次项）：
+
+| 声明 | 内容 |
+|---|---|
+| `dynkin6Tab_rows_length` | 每块用 `List.all` 一次读出行长（`decide`，只碰词不碰系数），再用 `append_words_length`/`smulTab_words_length` 合成整表——**从不展开整表** |
+| `reprTab_eq_zero_of_length`（`WordAlgebra`） | 一般判据：行都是 `n` 字母词的表，只要在每个 `n` 字母词上系数为 0 就是 0 |
+| `length_eq_six` | 长度为 6 的 `List` 就是六个字母 |
+| `reprTab_dynkin6Tab_word_0…63` | 64 条系数目标，各一条 `private lemma`，body 是 `sexticCoeff` |
+| `reprTab_dynkin6Tab_words` | 派发：`fin_cases` 六个字母后 64 个 `exact` |
+| `reprTab_dynkin6Tab_eq_zero` / `evalTab_dynkin6Tab` / `septic_pure_identity` | 三行套用 |
+
+`maxRecDepth 100000` 只出现在 `SexticTable.lean` 的比对段，理由写在原处：那是遍历 ~1000 层
+`List.cons` 的 tactic 递归深度，不是搜索/心跳预算。
+
+---
+
 ## 1. 目标与现状
 
 `FQFP/BCH/` 现在 17 个文件，`WordAlgebra.lean`（366 行）与 `SexticTable.lean`（162 行）是上一阶段
