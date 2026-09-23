@@ -171,7 +171,7 @@ private lemma norm_twelfth_smul_le {u : 𝔸} {B : ℝ} (hu : ‖u‖ ≤ B) :
 
 This is the leading cubic correction to the BCH element,
 `bch a b = a + b + ½[a,b] + bchCubicTerm a b + O(s⁴)`. -/
-noncomputable def bchCubicTerm (a b : 𝔸) : 𝔸 :=
+noncomputable def bchCubicTerm {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
   (12 : ℚ)⁻¹ • (a * (a * b - b * a) - (a * b - b * a) * a) +
   (12 : ℚ)⁻¹ • (b * (b * a - a * b) - (b * a - a * b) * b)
 
@@ -319,7 +319,7 @@ theorem bchCubicTerm_LQ_decomp (x W y : 𝔸) :
 In the free Lie algebra `[b,[a,[a,b]]] + [a,[b,[b,a]]] = 0`, so this single triple bracket also
 equals `(1/24)[a,[b,[b,a]]]`; the sign convention is the one that makes the expansion of
 `bch a b` come out right. -/
-noncomputable def bchQuarticTerm (a b : 𝔸) : 𝔸 :=
+noncomputable def bchQuarticTerm {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
   -((24 : ℚ)⁻¹ • (b * (a * (a * b - b * a) - (a * b - b * a) * a) -
     (a * (a * b - b * a) - (a * b - b * a) * a) * b))
 
@@ -415,22 +415,22 @@ def bchQuinticGroup24Words : Fin 2 → Fin 5 → Fin 2 :=
 
 /-- **Coefficient-1 group** of `bchQuinticTerm`: the four 5-letter words whose coefficient has
 absolute value 1. -/
-noncomputable def bchQuinticGroup1 {𝔸 : Type*} [NormedRing 𝔸] (a b : 𝔸) : 𝔸 :=
+noncomputable def bchQuinticGroup1 {𝔸 : Type*} [Semiring 𝔸] (a b : 𝔸) : 𝔸 :=
   ∑ i, wordEval ![a, b] (bchQuinticGroup1Words i)
 
 /-- **Coefficient-4 group** of `bchQuinticTerm`: the ten 5-letter words whose coefficient has
 absolute value 4. -/
-noncomputable def bchQuinticGroup4 {𝔸 : Type*} [NormedRing 𝔸] (a b : 𝔸) : 𝔸 :=
+noncomputable def bchQuinticGroup4 {𝔸 : Type*} [Semiring 𝔸] (a b : 𝔸) : 𝔸 :=
   ∑ i, wordEval ![a, b] (bchQuinticGroup4Words i)
 
 /-- **Coefficient-6 group** of `bchQuinticTerm`: the fourteen 5-letter words whose coefficient has
 absolute value 6. -/
-noncomputable def bchQuinticGroup6 {𝔸 : Type*} [NormedRing 𝔸] (a b : 𝔸) : 𝔸 :=
+noncomputable def bchQuinticGroup6 {𝔸 : Type*} [Semiring 𝔸] (a b : 𝔸) : 𝔸 :=
   ∑ i, wordEval ![a, b] (bchQuinticGroup6Words i)
 
 /-- **Coefficient-24 group** of `bchQuinticTerm`: the two palindromic 5-letter words whose
 coefficient has absolute value 24. -/
-noncomputable def bchQuinticGroup24 {𝔸 : Type*} [NormedRing 𝔸] (a b : 𝔸) : 𝔸 :=
+noncomputable def bchQuinticGroup24 {𝔸 : Type*} [Semiring 𝔸] (a b : 𝔸) : 𝔸 :=
   ∑ i, wordEval ![a, b] (bchQuinticGroup24Words i)
 
 /-- The degree-5 BCH term: the degree-5 part of `bch a b = log (exp a * exp b)`.
@@ -439,7 +439,7 @@ It involves 30 of the 32 five-letter words on `{a, b}`: the pure words `aaaaa` a
 absent, since `bch a 0 = a` and `bch 0 b = b` have no quintic correction. The common denominator is
 `720`. The words are collected into four groups by the absolute value of their coefficient (`1`,
 `4`, `6`, `24`), which keeps the homogeneity and norm bookkeeping uniform. -/
-noncomputable def bchQuinticTerm (a b : 𝔸) : 𝔸 :=
+noncomputable def bchQuinticTerm {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
   (720 : ℚ)⁻¹ • (
     -bchQuinticGroup1 a b + (4 : ℚ) • bchQuinticGroup4 a b -
       (6 : ℚ) • bchQuinticGroup6 a b + (24 : ℚ) • bchQuinticGroup24 a b)
@@ -785,7 +785,7 @@ def bchOcticTermCoeffs : Fin 124 → ℚ :=
     -30 / 120960, -30 / 120960, 12 / 120960, 12 / 120960, -2 / 120960]
 
 /-- **Degree-6 term** `C₆(a,b)`: the degree-6 part of `bch a b`, as a `∑` over its 28 words. -/
-noncomputable def bchSexticTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
+noncomputable def bchSexticTerm {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
   ∑ i, bchSexticTermCoeffs i • wordEval ![a, b] (bchSexticTermWords i)
 
 /-- **Norm bound for `bchSexticTerm`**: `‖C₆(a,b)‖ ≤ (‖a‖ + ‖b‖)⁶`.
@@ -815,7 +815,7 @@ theorem norm_bchSexticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra �
     _ = (‖a‖ + ‖b‖) ^ 6 := by ring
 
 /-- **Degree-7 term** `C₇(a,b)`: the degree-7 part of `bch a b`, as a `∑` over its 126 words. -/
-noncomputable def bchSepticTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
+noncomputable def bchSepticTerm {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
   ∑ i, bchSepticTermCoeffs i • wordEval ![a, b] (bchSepticTermWords i)
 
 /-- **Norm bound for `bchSepticTerm`**: `‖C₇(a,b)‖ ≤ (‖a‖ + ‖b‖)⁷`.
@@ -843,7 +843,7 @@ theorem norm_bchSepticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra �
     _ = (‖a‖ + ‖b‖) ^ 7 := by ring
 
 /-- **Degree-8 term** `C₈(a,b)`: the degree-8 part of `bch a b`, as a `∑` over its 124 words. -/
-noncomputable def bchOcticTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
+noncomputable def bchOcticTerm {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
   ∑ i, bchOcticTermCoeffs i • wordEval ![a, b] (bchOcticTermWords i)
 
 /-- **Norm bound for `bchOcticTerm`**: `‖C₈(a,b)‖ ≤ (‖a‖ + ‖b‖)⁸`.
