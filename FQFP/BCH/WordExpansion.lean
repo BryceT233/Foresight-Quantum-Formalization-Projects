@@ -17,17 +17,24 @@ sum consumes, so that each generated monomial bound is one application rather th
 
 ## Main results
 
-* `wordEval v a b` — the word with letter `i` equal to `a` if `v i`, else `b`.
-* `norm_wordEval_le` — `‖∏ i, wordEval v a b i‖ ≤ (‖a‖ + ‖b‖) ^ n`.
-* `norm_sum_smul_wordEval_le` — **the group lemma**: a `ℚ`-weighted sum of `m` such words is bounded
-  by `m * cb * (‖a‖ + ‖b‖) ^ n`.
+* `wordEval letters v` — the product of the letters of the word `v`, read through `letters`.
+* `norm_prod_map_le` — a word whose letters are bounded by `b` has norm at most `∏ b`.
+* `norm_sum_smul_prod_map_le` — **the group lemma**: a `ℚ`-weighted sum of `m` such words is
+  bounded by `m * cb * B`.
 
 ## Implementation notes
 
-The word pattern is data (`Fin n → Bool`), so a generated bound is
-`norm_sum_smul_wordEval_le c v a b hc hcb` and needs no case analysis on the letters. Contrast the
-hand-unrolled `norm_bchQuinticGroup*_le` in `BCHTerms.lean`, which write out one `norm_word5_le`
-call per word plus a `norm_add_le` step per summand.
+A word pattern is data, and the alphabet is a *type*: words are `Fin n → κ` (or `List κ`), and a
+`Fin 2`-valued pattern means a word on the two letters `a`, `b`. There is no `Bool`-valued pattern
+and no `if`-ladder: the letter at a position is the pattern entry itself, read through
+`letters : κ → 𝔸`. This is what lets one API serve both the binary expansion (`κ := Fin 2`) and the
+ternary one produced by `wordSubstA` (`κ := Fin 3`).
+
+The word product has no bespoke definition either — `wordEval` is an `abbrev` for
+`((List.ofFn v).map letters).prod`, so `List.prod_cons`, `List.prod_nil`, `List.prod_append` and
+`List.norm_prod_le` are the library behind it. Contrast the hand-unrolled
+`norm_bchQuinticGroup*_le` in `BCHTerms.lean`, which write out one `norm_word5_le` call per word
+plus a `norm_add_le` step per summand.
 -/
 
 @[expose] public section
@@ -36,53 +43,95 @@ open Finset
 
 namespace FQFP.BCH
 
-/-! ### Binary words -/
+/-! ### Words over an arbitrary alphabet
 
-/-- The binary word `v` evaluated in a ring: its `i`-th letter is `a` if `v i` is true, and `b`
-otherwise. -/
-def wordEval {𝔸 : Type*} {n : ℕ} (v : Fin n → Bool) (a b : 𝔸) : Fin n → 𝔸 :=
-  fun i => if v i then a else b
+`wordEval` is the single evaluation: read every letter of the word through `letters` and multiply.
+It is an `abbrev`, so it stays transparent — a goal never *contains* `wordEval`, only the
+`List.map`/`List.prod` it stands for, and a literal pattern therefore reduces with the ordinary
+`List` simp lemmas. -/
+
+/-- Evaluate a word: read every letter through `letters` and take the product.
+
+The `[Monoid 𝔸]` binder belongs here rather than at the use site: unlike a `def`, an `abbrev`'s
+body is elaborated eagerly and has no signature to draw the instance from. -/
+abbrev wordEval {n : ℕ} {κ 𝔸 : Type*} [Monoid 𝔸] (letters : κ → 𝔸) (v : Fin n → κ) : 𝔸 :=
+  ((List.ofFn v).map letters).prod
 
 section Bounds
 
-variable {𝔸 : Type*} [NormedRing 𝔸]
+variable {κ 𝔸 : Type*} [NormedRing 𝔸] [NormOneClass 𝔸]
 
-/-- Every letter of a binary word has norm at most `‖a‖ + ‖b‖`. -/
-lemma norm_wordEval_apply_le {n : ℕ} (v : Fin n → Bool) (a b : 𝔸) (i : Fin n) :
-    ‖wordEval v a b i‖ ≤ ‖a‖ + ‖b‖ := by
-  rw [wordEval]
-  split
-  · exact le_add_of_nonneg_right (norm_nonneg b)
-  · exact le_add_of_nonneg_left (norm_nonneg a)
+/-- Letter-wise norm bound: if the letter `k` has norm at most `b k`, then the product of the
+letters occurring in the pattern `w` has norm at most the product of their bounds.
 
-/-- The uniform word bound: the norm of a word on `{a, b}` is at most `(‖a‖ + ‖b‖) ^ n`. -/
-lemma norm_wordEval_le [NormOneClass 𝔸] {n : ℕ} (v : Fin n → Bool) (a b : 𝔸) :
-    ‖(List.ofFn (wordEval v a b)).prod‖ ≤ (‖a‖ + ‖b‖) ^ n :=
-  norm_word_le _ fun i => norm_wordEval_apply_le v a b i
+This is not `List.norm_prod_le`, which bounds `‖(List.ofFn w).prod‖` by `∏ i, ‖w i‖` and so says
+nothing when only a *family* of letter bounds is available; here the bounds are pushed through
+`List.map` first. -/
+lemma norm_prod_map_le (letters : κ → 𝔸) {b : κ → ℝ} (hb : ∀ k, ‖letters k‖ ≤ b k)
+    (w : List κ) : ‖(w.map letters).prod‖ ≤ (w.map b).prod := by
+  induction w with
+  | nil => simp
+  | cons k t ih =>
+      rw [List.map_cons, List.prod_cons, List.map_cons, List.prod_cons]
+      calc ‖letters k * (List.map letters t).prod‖
+          ≤ ‖letters k‖ * ‖(List.map letters t).prod‖ := norm_mul_le _ _
+        _ ≤ b k * (List.map b t).prod :=
+            mul_le_mul (hb k) ih (norm_nonneg _) (le_trans (norm_nonneg _) (hb k))
+
+/-- A product of a constant is that constant raised to the length. -/
+private lemma prod_map_const {κ : Type*} {𝔸 : Type*} [Monoid 𝔸] (w : List κ) (x : 𝔸) :
+    (w.map fun _ => x).prod = x ^ w.length := by
+  induction w with
+  | nil => simp
+  | cons k t ih => rw [List.length_cons, List.map_cons, List.prod_cons, ih, pow_succ']
+
+/-- **The uniform word bound** for a binary word: the norm of a word on `{a, b}` is at most
+`(‖a‖ + ‖b‖) ^ n`. This is `norm_prod_map_le` at the constant family `b := fun _ => ‖a‖ + ‖b‖`. -/
+lemma norm_binWord_le {n : ℕ} (v : Fin n → Fin 2) (a b : 𝔸) :
+    ‖wordEval ![a, b] v‖ ≤ (‖a‖ + ‖b‖) ^ n := by
+  have h := norm_prod_map_le (![a, b] : Fin 2 → 𝔸)
+    (b := fun _ : Fin 2 => ‖a‖ + ‖b‖) (fun k => by
+      fin_cases k
+      · simp [le_add_of_nonneg_right (norm_nonneg b)]
+      · simp [le_add_of_nonneg_left (norm_nonneg a)]) (List.ofFn v)
+  rw [prod_map_const (List.ofFn v) (‖a‖ + ‖b‖), List.length_ofFn] at h
+  simpa [wordEval, List.map_ofFn] using h
 
 end Bounds
 
-/-- **The group lemma**: an `ι`-indexed `ℚ`-weighted expansion in `n`-letter words on `{a, b}` is
-bounded by `card ι * cb * (‖a‖ + ‖b‖) ^ n` as soon as every coefficient has norm at most `cb`.
+/-- **The group lemma**: an `ι`-indexed `ℚ`-weighted expansion in words over an alphabet `κ` is
+bounded by `card ι * cb * B` as soon as every coefficient has norm at most `cb`, every word has
+norm at most `B`, and `cb` is nonnegative.
 
 A group of the quintic term is the case `ι = Fin m` with the words as data, so its bound becomes one
 application of this lemma instead of `m` per-word estimates and `m - 1` triangle steps. -/
-lemma norm_sum_smul_wordEval_le {ι : Type*} [Fintype ι] {𝔸 : Type*} [NormedRing 𝔸]
-    [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸] {n : ℕ} (c : ι → ℚ) (v : ι → Fin n → Bool)
-    (a b : 𝔸) {cb : ℝ} (hc : ∀ i, ‖c i‖ ≤ cb) (hcb : 0 ≤ cb) :
-    ‖∑ i, c i • (List.ofFn (wordEval (v i) a b)).prod‖
-      ≤ (Fintype.card ι : ℝ) * cb * (‖a‖ + ‖b‖) ^ n := by
-  calc ‖∑ i, c i • (List.ofFn (wordEval (v i) a b)).prod‖
-      ≤ ∑ i, ‖c i • (List.ofFn (wordEval (v i) a b)).prod‖ := norm_sum_le _ _
-    _ ≤ ∑ _i : ι, cb * (‖a‖ + ‖b‖) ^ n := by
-        refine sum_le_sum fun i _ => ?_
-        calc ‖c i • (List.ofFn (wordEval (v i) a b)).prod‖
-            ≤ ‖c i‖ * ‖(List.ofFn (wordEval (v i) a b)).prod‖ := norm_smul_le _ _
-          _ ≤ cb * (‖a‖ + ‖b‖) ^ n :=
-              mul_le_mul (hc i) (norm_wordEval_le (v i) a b) (norm_nonneg _) hcb
-    _ = (Fintype.card ι : ℝ) * (cb * (‖a‖ + ‖b‖) ^ n) := by
-        rw [sum_const, card_univ, nsmul_eq_mul]
-    _ = (Fintype.card ι : ℝ) * cb * (‖a‖ + ‖b‖) ^ n := by ring
+lemma norm_sum_smul_prod_map_le {ι κ : Type*} [Fintype ι] {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] (c : ι → ℚ) (letters : κ → 𝔸) (w : ι → List κ)
+    {B cb : ℝ} (hc : ∀ i, ‖c i‖ ≤ cb) (hw : ∀ i, ‖((w i).map letters).prod‖ ≤ B)
+    (hcb : 0 ≤ cb) :
+    ‖∑ i, c i • ((w i).map letters).prod‖ ≤ (Fintype.card ι : ℝ) * cb * B := by
+  calc ‖∑ i, c i • ((w i).map letters).prod‖
+      ≤ ∑ i, ‖c i • ((w i).map letters).prod‖ := norm_sum_le _ _
+    _ ≤ ∑ _i : ι, cb * B := Finset.sum_le_sum fun i _ => by
+        calc ‖c i • ((w i).map letters).prod‖
+            ≤ ‖c i‖ * ‖((w i).map letters).prod‖ := norm_smul_le _ _
+          _ ≤ cb * B := mul_le_mul (hc i) (hw i) (norm_nonneg _) hcb
+    _ = (Fintype.card ι : ℝ) * (cb * B) := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+    _ = (Fintype.card ι : ℝ) * cb * B := by ring
+
+/-- **The alphabet-free group bound**: an `ι`-indexed `ℚ`-weighted sum of words over an alphabet `κ`
+is bounded by `card ι * cb * B` as soon as every coefficient has norm at most `cb`, every word has
+norm at most `B`, and `cb` is nonnegative.
+
+This is `norm_sum_smul_prod_map_le` spelled with the `wordEval` abbreviation. -/
+lemma norm_sum_smul_wordEval_le {ι κ : Type*} [Fintype ι] {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] {n : ℕ} (c : ι → ℚ) (letters : κ → 𝔸) (v : ι → Fin n → κ)
+    {B cb : ℝ} (hc : ∀ i, ‖c i‖ ≤ cb) (hw : ∀ i, ‖wordEval letters (v i)‖ ≤ B)
+    (hcb : 0 ≤ cb) :
+    ‖∑ i, c i • wordEval letters (v i)‖ ≤ (Fintype.card ι : ℝ) * cb * B :=
+  norm_sum_smul_prod_map_le c letters (fun i => List.ofFn (v i)) hc
+    (fun i => by simpa [wordEval] using hw i) hcb
 
 /-! ### The unweighted group bound -/
 
@@ -91,15 +140,16 @@ section GroupBound
 variable {𝔸 : Type*} [NormedRing 𝔸] [NormOneClass 𝔸]
 
 /-- **The group bound**: an `ι`-indexed expansion in `n`-letter words on `{a, b}` is bounded by
-`card ι * (‖a‖ + ‖b‖) ^ n`. This is `norm_sum_smul_wordEval_le` at coefficient `1`, and it is what
-a group of equally weighted words (such as the four `bchQuinticGroup*` of `BCHTerms.lean`) needs. -/
-theorem norm_sum_wordEval_le {ι : Type*} [Fintype ι] {n : ℕ} (v : ι → Fin n → Bool) (a b : 𝔸) :
-    ‖∑ i, (List.ofFn (wordEval (v i) a b)).prod‖ ≤
-      (Fintype.card ι : ℝ) * (‖a‖ + ‖b‖) ^ n := by
-  calc ‖∑ i, (List.ofFn (wordEval (v i) a b)).prod‖
-      ≤ ∑ i, ‖(List.ofFn (wordEval (v i) a b)).prod‖ := norm_sum_le _ _
+`card ι * (‖a‖ + ‖b‖) ^ n`. This is `norm_sum_smul_prod_map_le` at coefficient `1` and bound
+`(‖a‖ + ‖b‖) ^ n`, and it is what a group of equally weighted words (such as the four
+`bchQuinticGroup*` of `BCHTerms.lean`) needs. -/
+theorem norm_sum_wordEval_le {ι : Type*} [Fintype ι] {n : ℕ} (v : ι → Fin n → Fin 2)
+    (a b : 𝔸) :
+    ‖∑ i, wordEval ![a, b] (v i)‖ ≤ (Fintype.card ι : ℝ) * (‖a‖ + ‖b‖) ^ n := by
+  calc ‖∑ i, wordEval ![a, b] (v i)‖
+      ≤ ∑ i, ‖wordEval ![a, b] (v i)‖ := norm_sum_le _ _
     _ ≤ ∑ _i : ι, (‖a‖ + ‖b‖) ^ n :=
-        Finset.sum_le_sum fun i _ => norm_wordEval_le (v i) a b
+        Finset.sum_le_sum fun i _ => norm_binWord_le (v i) a b
     _ = (Fintype.card ι : ℝ) * (‖a‖ + ‖b‖) ^ n := by simp
 
 end GroupBound
@@ -109,22 +159,27 @@ end GroupBound
 section Homogeneity
 
 variable {𝕂 : Type*} [NormedField 𝕂]
-variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra 𝕂 𝔸]
+variable {κ 𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra 𝕂 𝔸]
 
-/-- Scaling both letters scales every letter of the word. -/
-theorem wordEval_smul {n : ℕ} (v : Fin n → Bool) (a b : 𝔸) (c : 𝕂) :
-    wordEval v (c • a) (c • b) = fun i => c • wordEval v a b i := by
-  funext i
-  by_cases h : v i <;> simp [wordEval, h]
+/-- Scaling every letter scales every letter of the word. -/
+theorem prod_map_smul (letters : κ → 𝔸) (w : List κ) (c : 𝕂) :
+    (w.map fun k => c • letters k).prod = c ^ w.length • (w.map letters).prod := by
+  cases w with
+  | nil => simp
+  | cons k t =>
+      simp only [List.length_cons, List.map_cons, List.prod_cons]
+      rw [prod_map_smul letters t c, pow_succ', smul_mul_assoc, mul_smul_comm, smul_smul]
 
-/-- Homogeneity of a word expansion: scaling `a` and `b` by `c` scales the `ι`-indexed sum of
+/-- Homogeneity of a word expansion: scaling every letter by `c` scales the `ι`-indexed sum of
 `n`-letter word products by `c ^ n`. -/
-theorem sum_wordEval_smul {ι : Type*} [Fintype ι] {n : ℕ} (v : ι → Fin n → Bool) (a b : 𝔸)
-    (c : 𝕂) :
-    (∑ i, (List.ofFn (wordEval (v i) (c • a) (c • b))).prod)
-      = c ^ n • ∑ i, (List.ofFn (wordEval (v i) a b)).prod := by
+theorem sum_prod_map_smul {ι : Type*} [Fintype ι] {n : ℕ} (letters : κ → 𝔸)
+    (v : ι → Fin n → κ) (c : 𝕂) :
+    (∑ i, wordEval (fun k => c • letters k) (v i)) = c ^ n • ∑ i, wordEval letters (v i) := by
   rw [Finset.smul_sum]
-  exact Finset.sum_congr rfl fun i _ => by rw [wordEval_smul]; exact smul_prod c _
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [show wordEval (fun k => c • letters k) (v i)
+        = ((List.ofFn (v i)).map fun k => c • letters k).prod from rfl,
+    prod_map_smul letters (List.ofFn (v i)) c, List.length_ofFn]
 
 end Homogeneity
 
@@ -199,114 +254,63 @@ theorem norm_prod_sub_prod_le {n : ℕ} (u v : Fin (n + 1) → 𝔸) {M : ℝ} (
     ‖(List.ofFn u).prod - (List.ofFn v).prod‖ ≤ M ^ n * ∑ i, d i :=
   norm_prod_sub_prod_le_aux n u v d hu hv hd hdn hM
 
-/-- **Difference of two word products.** If the word pattern `v` is evaluated at `z` and at `x` in
-the `a`-positions and at `y` everywhere else, then the products differ by at most the number of
-`a`-positions times `M ^ n * ‖z - x‖`. -/
-theorem norm_wordEval_sub_le {n : ℕ} (v : Fin (n + 1) → Bool) (z x y : 𝔸) {M : ℝ}
+/-- **Difference of two binary word products.** If the pattern `v` is read at `z` and at `x` in the
+`a`-positions (`v i = 0`) and at `y` everywhere else, then the products differ by at most the number
+of `a`-positions times `M ^ n * ‖z - x‖`.
+
+Stated with `wordEval` spelled out: `wordEval letters v` *is*
+`((List.ofFn v).map letters).prod`, and keeping the `List` form here means the two readings can be
+rewritten independently. -/
+theorem norm_binWord_sub_le {n : ℕ} (v : Fin (n + 1) → Fin 2) (z x y : 𝔸) {M : ℝ}
     (hz : ‖z‖ ≤ M) (hx : ‖x‖ ≤ M) (hy : ‖y‖ ≤ M) (hM : 0 ≤ M) :
-    ‖(List.ofFn (wordEval v z y)).prod - (List.ofFn (wordEval v x y)).prod‖
-      ≤ ((Finset.univ.filter fun i => v i).card : ℝ) * M ^ n * ‖z - x‖ := by
-  have hcard : (∑ i, (if v i then ‖z - x‖ else 0 : ℝ))
-      = ((Finset.univ.filter fun i => v i).card : ℝ) * ‖z - x‖ := by
+    ‖(List.ofFn fun i => (![z, y] : Fin 2 → 𝔸) (v i)).prod
+        - (List.ofFn fun i => (![x, y] : Fin 2 → 𝔸) (v i)).prod‖
+      ≤ ((Finset.univ.filter fun i => v i = 0).card : ℝ) * M ^ n * ‖z - x‖ := by
+  have hcard : (∑ i, (if v i = 0 then ‖z - x‖ else 0 : ℝ))
+      = ((Finset.univ.filter fun i => v i = 0).card : ℝ) * ‖z - x‖ := by
     rw [← Finset.sum_filter, Finset.sum_const, nsmul_eq_mul]
-  calc ‖(List.ofFn (wordEval v z y)).prod - (List.ofFn (wordEval v x y)).prod‖
-      ≤ M ^ n * ∑ i, (if v i then ‖z - x‖ else 0 : ℝ) :=
-        norm_prod_sub_prod_le (wordEval v z y) (wordEval v x y)
-          (fun i => if v i then ‖z - x‖ else 0)
-          (fun i => by by_cases h : v i <;> simp [wordEval, h, hz, hy])
-          (fun i => by by_cases h : v i <;> simp [wordEval, h, hx, hy])
-          (fun i => by by_cases h : v i <;> simp [wordEval, h, sub_self])
-          (fun i => by by_cases h : v i <;> simp [h]) hM
-    _ = ((Finset.univ.filter fun i => v i).card : ℝ) * M ^ n * ‖z - x‖ := by
-        rw [hcard]; ring
+  have h01 : ∀ i : Fin (n + 1), v i = 0 ∨ v i = 1 := by
+    intro i
+    generalize hv : v i = w
+    fin_cases w <;> simp
+  have hmain : ‖(List.ofFn fun i => (![z, y] : Fin 2 → 𝔸) (v i)).prod
+        - (List.ofFn fun i => (![x, y] : Fin 2 → 𝔸) (v i)).prod‖
+      ≤ M ^ n * ∑ i, (if v i = 0 then ‖z - x‖ else 0 : ℝ) := by
+    refine norm_prod_sub_prod_le _ _
+      (fun i => if v i = 0 then ‖z - x‖ else 0) ?_ ?_ ?_ ?_ hM
+    · intro i
+      rcases h01 i with h | h <;> simp [h, hz, hy]
+    · intro i
+      rcases h01 i with h | h <;> simp [h, hx, hy]
+    · intro i
+      rcases h01 i with h | h <;> simp [h]
+    · intro i
+      rcases h01 i with h | h <;> simp [h]
+  have hlast : M ^ n * ∑ i, (if v i = 0 then ‖z - x‖ else 0 : ℝ)
+      = ((Finset.univ.filter fun i => v i = 0).card : ℝ) * M ^ n * ‖z - x‖ := by
+    rw [hcard]
+    ring
+  exact hmain.trans (le_of_eq hlast)
 
 /-- **Difference of two word expansions**, summed over an index type: the constant is the total
 number of `a`-positions, which is what makes the sharp constants of the `Lean-BCH` quintic group
 bounds (`10`, `25`, `35`, `5`) come out. -/
-theorem norm_sum_wordEval_diff_le {ι : Type*} [Fintype ι] {n : ℕ} (v : ι → Fin (n + 1) → Bool)
+theorem norm_sum_binWord_diff_le {ι : Type*} [Fintype ι] {n : ℕ} (v : ι → Fin (n + 1) → Fin 2)
     (z x y : 𝔸) {M : ℝ} (hz : ‖z‖ ≤ M) (hx : ‖x‖ ≤ M) (hy : ‖y‖ ≤ M) (hM : 0 ≤ M) :
-    ‖(∑ i, (List.ofFn (wordEval (v i) z y)).prod)
-        - ∑ i, (List.ofFn (wordEval (v i) x y)).prod‖
-      ≤ (∑ i, ((Finset.univ.filter fun j => v i j).card : ℝ)) * M ^ n * ‖z - x‖ := by
+    ‖(∑ i, (List.ofFn fun j => (![z, y] : Fin 2 → 𝔸) (v i j)).prod)
+        - ∑ i, (List.ofFn fun j => (![x, y] : Fin 2 → 𝔸) (v i j)).prod‖
+      ≤ (∑ i, ((Finset.univ.filter fun j => v i j = 0).card : ℝ)) * M ^ n * ‖z - x‖ := by
   rw [← Finset.sum_sub_distrib]
-  calc ‖∑ i, ((List.ofFn (wordEval (v i) z y)).prod
-          - (List.ofFn (wordEval (v i) x y)).prod)‖
-      ≤ ∑ i, ‖(List.ofFn (wordEval (v i) z y)).prod
-          - (List.ofFn (wordEval (v i) x y)).prod‖ := norm_sum_le _ _
-    _ ≤ ∑ i, (((Finset.univ.filter fun j => v i j).card : ℝ) * M ^ n * ‖z - x‖) :=
-        Finset.sum_le_sum fun i _ => norm_wordEval_sub_le (v i) z x y hz hx hy hM
-    _ = (∑ i, ((Finset.univ.filter fun j => v i j).card : ℝ)) * M ^ n * ‖z - x‖ := by
+  calc ‖∑ i, ((List.ofFn fun j => (![z, y] : Fin 2 → 𝔸) (v i j)).prod
+          - (List.ofFn fun j => (![x, y] : Fin 2 → 𝔸) (v i j)).prod)‖
+      ≤ ∑ i, ‖(List.ofFn fun j => (![z, y] : Fin 2 → 𝔸) (v i j)).prod
+          - (List.ofFn fun j => (![x, y] : Fin 2 → 𝔸) (v i j)).prod‖ := norm_sum_le _ _
+    _ ≤ ∑ i, (((Finset.univ.filter fun j => v i j = 0).card : ℝ) * M ^ n * ‖z - x‖) :=
+        Finset.sum_le_sum fun i _ => norm_binWord_sub_le (v i) z x y hz hx hy hM
+    _ = (∑ i, ((Finset.univ.filter fun j => v i j = 0).card : ℝ)) * M ^ n * ‖z - x‖ := by
         rw [Finset.sum_mul, Finset.sum_mul]
 
 end Telescoping
-
-/-! ### Words over an arbitrary alphabet
-
-The Taylor remainders of `BCHTerms.lean` are sums of monomials on **three** letters (`x`, `V`, `y`),
-so the binary `wordEval` above does not reach them. `wordProdList` generalizes to an arbitrary
-alphabet `κ`, and represents the pattern as a `List κ` rather than a `Fin n → κ`.
-
-The pattern representation is not cosmetic. A generated monomial sum is emitted with its words as
-data and is *also* compared, downstream, against explicitly written polynomials; bridging the two
-needs the concrete patterns to evaluate. `wordProdList`'s defining equations are `rfl`, so a literal
-pattern evaluates definitionally. `wordEval`'s `if (v i) then a else b` does not: the `Bool`-coerced
-condition reaches the goal as `if true = true then a else b`, which neither
-`simp only [↓reduceIte]` nor `simp only [cond_true]` reduces in that context, and `abel` /
-`noncomm_ring` then see it as an atom distinct from `a`. -/
-
-section WordProdList
-
-/-- The product of the letters selected by a word pattern over an alphabet `κ`: the empty pattern is
-`1`, and a pattern is read left to right. -/
-def wordProdList {κ 𝔸 : Type*} [Monoid 𝔸] (letters : κ → 𝔸) : List κ → 𝔸
-  | [] => 1
-  | k :: t => letters k * wordProdList letters t
-
-@[simp]
-lemma wordProdList_nil {κ 𝔸 : Type*} [Monoid 𝔸] (letters : κ → 𝔸) :
-    wordProdList letters [] = 1 := rfl
-
-@[simp]
-lemma wordProdList_cons {κ 𝔸 : Type*} [Monoid 𝔸] (letters : κ → 𝔸) (k : κ) (t : List κ) :
-    wordProdList letters (k :: t) = letters k * wordProdList letters t := rfl
-
-variable {κ 𝔸 : Type*} [NormedRing 𝔸] [NormOneClass 𝔸]
-
-/-- Letter-wise norm bound for `wordProdList`: if the letter `k` has norm at most `b k`, then the
-product has norm at most the product of the bounds of the letters occurring in the pattern. -/
-lemma norm_wordProdList_le (letters : κ → 𝔸) {b : κ → ℝ} (hb : ∀ k, ‖letters k‖ ≤ b k)
-    (w : List κ) : ‖wordProdList letters w‖ ≤ (w.map b).prod := by
-  induction w with
-  | nil => simp
-  | cons k t ih =>
-      rw [wordProdList_cons, List.map_cons, List.prod_cons]
-      calc ‖letters k * wordProdList letters t‖
-          ≤ ‖letters k‖ * ‖wordProdList letters t‖ := norm_mul_le _ _
-        _ ≤ b k * (List.map b t).prod :=
-            mul_le_mul (hb k) ih (norm_nonneg _) (le_trans (norm_nonneg _) (hb k))
-
-end WordProdList
-
-/-- **The alphabet-free group bound**: an `ι`-indexed `ℚ`-weighted sum of words over an alphabet `κ`
-is bounded by `card ι * cb * B` as soon as every coefficient has norm at most `cb`, every word has
-norm at most `B`, and `cb` is nonnegative.
-
-This is `norm_sum_smul_wordEval_le` with the alphabet freed, and it is what a generated Taylor
-remainder bounds itself with, one application per group. -/
-lemma norm_sum_smul_wordProdList_le {ι κ : Type*} [Fintype ι] {𝔸 : Type*} [NormedRing 𝔸]
-    [NormedAlgebra ℚ 𝔸] (c : ι → ℚ) (letters : κ → 𝔸) (w : ι → List κ)
-    {B cb : ℝ} (hc : ∀ i, ‖c i‖ ≤ cb) (hw : ∀ i, ‖wordProdList letters (w i)‖ ≤ B)
-    (hcb : 0 ≤ cb) :
-    ‖∑ i, c i • wordProdList letters (w i)‖ ≤ (Fintype.card ι : ℝ) * cb * B := by
-  calc ‖∑ i, c i • wordProdList letters (w i)‖
-      ≤ ∑ i, ‖c i • wordProdList letters (w i)‖ := norm_sum_le _ _
-    _ ≤ ∑ _i : ι, cb * B := Finset.sum_le_sum fun i _ => by
-        calc ‖c i • wordProdList letters (w i)‖
-            ≤ ‖c i‖ * ‖wordProdList letters (w i)‖ := norm_smul_le _ _
-          _ ≤ cb * B := mul_le_mul (hc i) (hw i) (norm_nonneg _) hcb
-    _ = (Fintype.card ι : ℝ) * (cb * B) := by
-        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-    _ = (Fintype.card ι : ℝ) * cb * B := by ring
 
 /-! ### Distributing a sum over a binary word
 
@@ -315,7 +319,7 @@ side collects all the `f`-factors at the front. For a noncommutative multiplicat
 is simply false. BCH's `𝔸` is a general `NormedRing`, so the expansion of a word product has to
 keep the letters in place.
 
-`wordProdList_add` does that. It is proved by induction on the word from the *left*
+`prod_map_add` does that. It is proved by induction on the word from the *left*
 (`List.reverseRecOn`): appending one letter leaves the position indices of the prefix unchanged, so
 the subsets of positions carry over verbatim. Every product step is `List.prod_append`, which needs
 no commutativity; the `Finset` steps only ever concern sums, which are commutative anyway. -/
@@ -323,34 +327,6 @@ no commutativity; the `Finset` steps only ever concern sums, which are commutati
 section Distributing
 
 variable {𝔸 : Type*} [Semiring 𝔸]
-
-/-- Reading a word is mapping its letters and taking the product. -/
-lemma wordProdList_eq_prod_map {κ : Type*} (letters : κ → 𝔸) (w : List κ) :
-    wordProdList letters w = (w.map letters).prod := by
-  induction w with
-  | nil => rfl
-  | cons k t ih => rw [wordProdList_cons, List.map_cons, List.prod_cons, ih]
-
-/-- `wordProdList` over a concatenation is the product of the `wordProdList`s. -/
-lemma wordProdList_append {κ : Type*} (letters : κ → 𝔸) (l₁ l₂ : List κ) :
-    wordProdList letters (l₁ ++ l₂) = wordProdList letters l₁ * wordProdList letters l₂ := by
-  rw [wordProdList_eq_prod_map, wordProdList_eq_prod_map, wordProdList_eq_prod_map,
-    List.map_append, List.prod_append]
-
-/-- The `List (Fin 2)` reading of a `Bool`-valued word pattern: `true` is the letter `a` (index
-`0`) and `false` the letter `b` (index `1`). -/
-def wordEvalPattern {n : ℕ} (v : Fin n → Bool) : List (Fin 2) :=
-  List.ofFn fun j => if v j then 0 else 1
-
-/-- `wordEval` read through `wordProdList`: the two readings of a word pattern — `Bool` with
-`true` for `a`, and `Fin 2` with `0` for `a` — give the same product. -/
-lemma wordProdList_wordEvalPattern {n : ℕ} (v : Fin n → Bool) (a b : 𝔸) :
-    wordProdList ![a, b] (wordEvalPattern v) = (List.ofFn (wordEval v a b)).prod := by
-  rw [wordProdList_eq_prod_map, wordEvalPattern, List.map_ofFn]
-  refine congrArg List.prod ?_
-  rw [List.ofFn_inj]
-  funext j
-  by_cases h : v j <;> simp [wordEval, h]
 
 /-- The positions of the letter `a` (index `0`) in a binary word pattern, as absolute indices. -/
 def wordAPositions (w : List (Fin 2)) : Finset ℕ :=
@@ -428,12 +404,11 @@ Replacing the letter `a` by the sum `a + c` distributes into the sum, over the s
 `a`-positions, of the products in which exactly the positions in `s` carry `c` instead of `a`. The
 factors stay in their original positions, so — unlike `Finset.prod_add` — no commutativity is used
 and the identity holds in any semiring. -/
-theorem wordProdList_add (w : List (Fin 2)) (a c b : 𝔸) :
-    wordProdList ![a + c, b] w
-      = ∑ s ∈ (wordAPositions w).powerset, wordProdList ![a, c, b] (wordSubstA w s) := by
-  rw [wordProdList_eq_prod_map]
+theorem prod_map_add (w : List (Fin 2)) (a c b : 𝔸) :
+    (w.map ![a + c, b]).prod
+      = ∑ s ∈ (wordAPositions w).powerset, ((wordSubstA w s).map ![a, c, b]).prod := by
   induction w using List.reverseRecOn with
-  | nil => simp [wordAPositions, wordSubstA, wordProdList_eq_prod_map]
+  | nil => simp [wordAPositions, wordSubstA]
   | append_singleton l k ih =>
       have hsub : ∀ s ∈ (wordAPositions l).powerset, s ⊆ wordAPositions l := fun s hs =>
         Finset.mem_powerset.mp hs
@@ -447,17 +422,17 @@ theorem wordProdList_add (w : List (Fin 2)) (a c b : 𝔸) :
         congr 1
         · refine Finset.sum_congr rfl fun s hs => ?_
           have hxer : s.erase l.length = s := Finset.erase_eq_of_notMem (hlast s hs)
-          rw [wordSubstA_concat_zero, hxer, wordProdList_eq_prod_map, wordProdList_eq_prod_map]
+          rw [wordSubstA_concat_zero, hxer]
           simp [hlast s hs]
         · refine Finset.sum_congr rfl fun s hs => ?_
           have hiner : (insert l.length s).erase l.length = s :=
             Finset.erase_insert (hlast s hs)
-          rw [wordSubstA_concat_zero, hiner, wordProdList_eq_prod_map, wordProdList_eq_prod_map]
+          rw [wordSubstA_concat_zero, hiner]
           simp
       · rw [prod_map_concat_one, ih, wordAPositions_concat_one, Finset.sum_mul]
         refine Finset.sum_congr rfl fun s hs => ?_
         have hxer : s.erase l.length = s := Finset.erase_eq_of_notMem (hlast s hs)
-        rw [wordSubstA_concat_one, hxer, wordProdList_eq_prod_map, wordProdList_eq_prod_map]
+        rw [wordSubstA_concat_one, hxer]
         simp [hlast s hs]
 
 /-- A `List`-map is a range-indexed map of `getElem?`: the two ways of reading a word letter by
@@ -475,11 +450,10 @@ private lemma map_eq_range_map_getElem? {α β : Type*} [Inhabited α] (w : List
 
 /-- The empty substitution is the original word over the two-letter alphabet: substituting `V` for
 no `a`-position leaves the letters where they were. This is what lets the `s = ∅` term of
-`wordProdList_add` be cancelled against the unsubstituted word. -/
-lemma wordProdList_substA_empty (w : List (Fin 2)) (x V y : 𝔸) :
-    wordProdList ![x, y] w = wordProdList ![x, V, y] (wordSubstA w ∅) := by
-  rw [wordProdList_eq_prod_map, wordProdList_eq_prod_map, map_eq_range_map_getElem? w ![x, y],
-    wordSubstA, List.map_map]
+`prod_map_add` be cancelled against the unsubstituted word. -/
+lemma prod_map_substA_empty (w : List (Fin 2)) (x V y : 𝔸) :
+    (w.map ![x, y]).prod = ((wordSubstA w ∅).map ![x, V, y]).prod := by
+  rw [map_eq_range_map_getElem? w ![x, y], wordSubstA, List.map_map]
   refine congrArg List.prod (List.map_congr_left fun j hj => ?_)
   have hjn : j < w.length := List.mem_range.mp hj
   simp only [Function.comp_apply]

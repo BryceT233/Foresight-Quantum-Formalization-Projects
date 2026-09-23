@@ -549,15 +549,15 @@ def pauliY : End Qubit := matrixToEnd !![0, -I; I, 0]
 def pauliZ : End Qubit := matrixToEnd !![1, 0; 0, -1]
 
 /-- The Pauli-X gate is unitary. -/
-noncomputable instance isUnitary_pauliX : IsUnitary pauliX := by
+instance isUnitary_pauliX : IsUnitary pauliX := by
   simp [pauliX, isUnitary_matrixToEnd_iff_fin_two]
 
 /-- The Pauli-Y gate is unitary. -/
-noncomputable instance isUnitary_pauliY : IsUnitary pauliY := by
+instance isUnitary_pauliY : IsUnitary pauliY := by
   simp [pauliY, isUnitary_matrixToEnd_iff_fin_two]
 
 /-- The Pauli-Z gate is unitary. -/
-noncomputable instance isUnitary_pauliZ : IsUnitary pauliZ := by
+instance isUnitary_pauliZ : IsUnitary pauliZ := by
   simp [pauliZ, isUnitary_matrixToEnd_iff_fin_two]
 
 /-- Phase shift gate as an endomorphism of `Qubit`. -/

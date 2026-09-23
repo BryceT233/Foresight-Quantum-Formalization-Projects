@@ -20,7 +20,7 @@ public import FQFP.BCH.WordExpansion
 
 `bchQuinticTerm a b` is `(1/720)` times a combination of **four groups** of binary words, and every
 one of those words has at most four letters `a`. Replacing `a` by `a + V` therefore expands, by
-`WordExpansion.wordProdList_add`, into the sum over the *subsets* of the word's `a`-positions; each
+`WordExpansion.prod_map_add`, into the sum over the *subsets* of the word's `a`-positions; each
 subset records which of the `x`-letters became `V`. Grouping those subsets by their cardinality `k`
 gives one piece per `k`:
 
@@ -67,10 +67,10 @@ def bchQuinticBracket [Ring 𝔸] [Algebra ℚ 𝔸] (v1 v4 v6 v24 : 𝔸) : �
 `s` of size `k` of its `a`-positions, of the word obtained by substituting `V` at the positions in
 `s`. Reading the result over `![x, V, y]` gives the words of the Taylor expansion that carry
 exactly `k` letters `V`. -/
-def bchQuinticGroupSubsets [Semiring 𝔸] {m : ℕ} (words : Fin m → Fin 5 → Bool) (k : ℕ)
+def bchQuinticGroupSubsets [Semiring 𝔸] {m : ℕ} (words : Fin m → Fin 5 → Fin 2) (k : ℕ)
     (x V y : 𝔸) : 𝔸 :=
-  ∑ i : Fin m, ∑ s ∈ (wordAPositions (wordEvalPattern (words i))).powersetCard k,
-    wordProdList ![x, V, y] (wordSubstA (wordEvalPattern (words i)) s)
+  ∑ i : Fin m, ∑ s ∈ (wordAPositions (List.ofFn (words i))).powersetCard k,
+    ((wordSubstA (List.ofFn (words i)) s).map ![x, V, y]).prod
 
 /-- **The `k`-th piece of the degree-5 Taylor expansion**: the four groups of `bchQuinticTerm` at
 their coefficients, with every word replaced by its `k`-subset piece. -/
@@ -124,22 +124,22 @@ private lemma sum_powerset_eq_sum_powersetCard {α β : Type*} [AddCommMonoid β
 
 /-- Every word of `bchQuinticTerm`'s coefficient-1 group has at most four letters `a`. -/
 private lemma card_group1 (i : Fin 4) :
-    (wordAPositions (wordEvalPattern (bchQuinticGroup1Words i))).card ≤ 4 := by
+    (wordAPositions (List.ofFn (bchQuinticGroup1Words i))).card ≤ 4 := by
   fin_cases i <;> decide
 
 /-- Every word of `bchQuinticTerm`'s coefficient-4 group has at most four letters `a`. -/
 private lemma card_group4 (i : Fin 10) :
-    (wordAPositions (wordEvalPattern (bchQuinticGroup4Words i))).card ≤ 4 := by
+    (wordAPositions (List.ofFn (bchQuinticGroup4Words i))).card ≤ 4 := by
   fin_cases i <;> decide
 
 /-- Every word of `bchQuinticTerm`'s coefficient-6 group has at most four letters `a`. -/
 private lemma card_group6 (i : Fin 14) :
-    (wordAPositions (wordEvalPattern (bchQuinticGroup6Words i))).card ≤ 4 := by
+    (wordAPositions (List.ofFn (bchQuinticGroup6Words i))).card ≤ 4 := by
   fin_cases i <;> decide
 
 /-- Every word of `bchQuinticTerm`'s coefficient-24 group has at most four letters `a`. -/
 private lemma card_group24 (i : Fin 2) :
-    (wordAPositions (wordEvalPattern (bchQuinticGroup24Words i))).card ≤ 4 := by
+    (wordAPositions (List.ofFn (bchQuinticGroup24Words i))).card ≤ 4 := by
   fin_cases i <;> decide
 
 /-! ### The algebraic bookkeeping -/
@@ -170,27 +170,19 @@ private lemma sum_pieces_eq [Ring 𝔸] [Algebra ℚ 𝔸] (x V y : 𝔸) :
 
 /-! ### The group expansion -/
 
-/-- A `wordEval` sum is the corresponding `wordProdList` sum: `wordEval` reads a `Bool` pattern
-with `true` for `a`, `wordProdList` reads the same pattern as a `List (Fin 2)` with `0` for `a`. -/
-private lemma sum_ofFn_wordEval_eq [NormedRing 𝔸] {m : ℕ} (words : Fin m → Fin 5 → Bool)
-    (a b : 𝔸) :
-    (∑ i : Fin m, (List.ofFn (wordEval (words i) a b)).prod)
-      = ∑ i : Fin m, wordProdList ![a, b] (wordEvalPattern (words i)) :=
-  Finset.sum_congr rfl fun i _ => (wordProdList_wordEvalPattern (words i) a b).symm
-
 /-- **One group, fully expanded**: replacing `a` by `a + V` in a group of words distributes into
 the sum, over the size `k` of the substituted position set, of the group's `k`-subset pieces. -/
-private lemma group_add_eq_sum_subsets [Semiring 𝔸] {m : ℕ} (words : Fin m → Fin 5 → Bool)
-    (hcard : ∀ i : Fin m, (wordAPositions (wordEvalPattern (words i))).card ≤ 4) (x V y : 𝔸) :
-    (∑ i : Fin m, wordProdList ![x + V, y] (wordEvalPattern (words i)))
+private lemma group_add_eq_sum_subsets [Semiring 𝔸] {m : ℕ} (words : Fin m → Fin 5 → Fin 2)
+    (hcard : ∀ i : Fin m, (wordAPositions (List.ofFn (words i))).card ≤ 4) (x V y : 𝔸) :
+    (∑ i : Fin m, ((List.ofFn (words i)).map ![x + V, y]).prod)
       = ∑ k ∈ Finset.range 5, bchQuinticGroupSubsets words k x V y := by
-  calc ∑ i : Fin m, wordProdList ![x + V, y] (wordEvalPattern (words i))
-      = ∑ i : Fin m, ∑ s ∈ (wordAPositions (wordEvalPattern (words i))).powerset,
-          wordProdList ![x, V, y] (wordSubstA (wordEvalPattern (words i)) s) :=
-        Finset.sum_congr rfl fun i _ => wordProdList_add (wordEvalPattern (words i)) x V y
+  calc ∑ i : Fin m, ((List.ofFn (words i)).map ![x + V, y]).prod
+      = ∑ i : Fin m, ∑ s ∈ (wordAPositions (List.ofFn (words i))).powerset,
+          ((wordSubstA (List.ofFn (words i)) s).map ![x, V, y]).prod :=
+        Finset.sum_congr rfl fun i _ => prod_map_add (List.ofFn (words i)) x V y
     _ = ∑ i : Fin m, ∑ k ∈ Finset.range 5,
-          ∑ s ∈ (wordAPositions (wordEvalPattern (words i))).powersetCard k,
-            wordProdList ![x, V, y] (wordSubstA (wordEvalPattern (words i)) s) :=
+          ∑ s ∈ (wordAPositions (List.ofFn (words i))).powersetCard k,
+            ((wordSubstA (List.ofFn (words i)) s).map ![x, V, y]).prod :=
         Finset.sum_congr rfl fun i _ => sum_powerset_eq_sum_powersetCard (hcard i) _
     _ = ∑ k ∈ Finset.range 5, bchQuinticGroupSubsets words k x V y := by
         rw [Finset.sum_comm]
@@ -200,24 +192,24 @@ private lemma group_add_eq_sum_subsets [Semiring 𝔸] {m : ℕ} (words : Fin m 
 theorem bchQuinticTerm_add_eq_sum_pieces [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (x V y : 𝔸) :
     bchQuinticTerm (x + V) y = ∑ k ∈ Finset.range 5, bchQuinticSubsetPiece k x V y := by
   have h1 : bchQuinticGroup1 (x + V) y
-      = ∑ i : Fin 4, wordProdList ![x + V, y] (wordEvalPattern (bchQuinticGroup1Words i)) := by
+      = ∑ i : Fin 4, ((List.ofFn (bchQuinticGroup1Words i)).map ![x + V, y]).prod := by
     unfold bchQuinticGroup1
-    exact sum_ofFn_wordEval_eq bchQuinticGroup1Words (x + V) y
+    simp only [wordEval, List.map_ofFn]
   have h4 : bchQuinticGroup4 (x + V) y
       = ∑ i : Fin 10,
-          wordProdList ![x + V, y] (wordEvalPattern (bchQuinticGroup4Words i)) := by
+          ((List.ofFn (bchQuinticGroup4Words i)).map ![x + V, y]).prod := by
     unfold bchQuinticGroup4
-    exact sum_ofFn_wordEval_eq bchQuinticGroup4Words (x + V) y
+    simp only [wordEval, List.map_ofFn]
   have h6 : bchQuinticGroup6 (x + V) y
       = ∑ i : Fin 14,
-          wordProdList ![x + V, y] (wordEvalPattern (bchQuinticGroup6Words i)) := by
+          ((List.ofFn (bchQuinticGroup6Words i)).map ![x + V, y]).prod := by
     unfold bchQuinticGroup6
-    exact sum_ofFn_wordEval_eq bchQuinticGroup6Words (x + V) y
+    simp only [wordEval, List.map_ofFn]
   have h24 : bchQuinticGroup24 (x + V) y
       = ∑ i : Fin 2,
-          wordProdList ![x + V, y] (wordEvalPattern (bchQuinticGroup24Words i)) := by
+          ((List.ofFn (bchQuinticGroup24Words i)).map ![x + V, y]).prod := by
     unfold bchQuinticGroup24
-    exact sum_ofFn_wordEval_eq bchQuinticGroup24Words (x + V) y
+    simp only [wordEval, List.map_ofFn]
   rw [bchQuinticTerm_eq_bracket, sum_pieces_eq, h1, h4, h6, h24,
     group_add_eq_sum_subsets _ card_group1, group_add_eq_sum_subsets _ card_group4,
     group_add_eq_sum_subsets _ card_group6, group_add_eq_sum_subsets _ card_group24,
@@ -229,32 +221,20 @@ theorem bchQuinticSubsetPiece_zero [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (x
     bchQuinticSubsetPiece 0 x V y = bchQuinticTerm x y := by
   have h1 : bchQuinticGroupSubsets bchQuinticGroup1Words 0 x V y = bchQuinticGroup1 x y := by
     unfold bchQuinticGroupSubsets bchQuinticGroup1
-    refine (Finset.sum_congr rfl fun i _ => ?_).trans
-      (sum_ofFn_wordEval_eq bchQuinticGroup1Words x y).symm
-    rw [Finset.powersetCard_zero, Finset.sum_singleton,
-      ← wordProdList_substA_empty (wordEvalPattern (bchQuinticGroup1Words i)) x V y,
-      wordProdList_wordEvalPattern]
+    simp only [wordEval, List.map_ofFn, Finset.powersetCard_zero, Finset.sum_singleton]
+    rfl
   have h4 : bchQuinticGroupSubsets bchQuinticGroup4Words 0 x V y = bchQuinticGroup4 x y := by
     unfold bchQuinticGroupSubsets bchQuinticGroup4
-    refine (Finset.sum_congr rfl fun i _ => ?_).trans
-      (sum_ofFn_wordEval_eq bchQuinticGroup4Words x y).symm
-    rw [Finset.powersetCard_zero, Finset.sum_singleton,
-      ← wordProdList_substA_empty (wordEvalPattern (bchQuinticGroup4Words i)) x V y,
-      wordProdList_wordEvalPattern]
+    simp only [wordEval, List.map_ofFn, Finset.powersetCard_zero, Finset.sum_singleton]
+    rfl
   have h6 : bchQuinticGroupSubsets bchQuinticGroup6Words 0 x V y = bchQuinticGroup6 x y := by
     unfold bchQuinticGroupSubsets bchQuinticGroup6
-    refine (Finset.sum_congr rfl fun i _ => ?_).trans
-      (sum_ofFn_wordEval_eq bchQuinticGroup6Words x y).symm
-    rw [Finset.powersetCard_zero, Finset.sum_singleton,
-      ← wordProdList_substA_empty (wordEvalPattern (bchQuinticGroup6Words i)) x V y,
-      wordProdList_wordEvalPattern]
+    simp only [wordEval, List.map_ofFn, Finset.powersetCard_zero, Finset.sum_singleton]
+    rfl
   have h24 : bchQuinticGroupSubsets bchQuinticGroup24Words 0 x V y = bchQuinticGroup24 x y := by
     unfold bchQuinticGroupSubsets bchQuinticGroup24
-    refine (Finset.sum_congr rfl fun i _ => ?_).trans
-      (sum_ofFn_wordEval_eq bchQuinticGroup24Words x y).symm
-    rw [Finset.powersetCard_zero, Finset.sum_singleton,
-      ← wordProdList_substA_empty (wordEvalPattern (bchQuinticGroup24Words i)) x V y,
-      wordProdList_wordEvalPattern]
+    simp only [wordEval, List.map_ofFn, Finset.powersetCard_zero, Finset.sum_singleton]
+    rfl
   rw [bchQuinticSubsetPiece, bchQuinticTerm_eq_bracket, h1, h4, h6, h24]
 
 /-! ### The matching identity -/
@@ -282,7 +262,7 @@ theorem bchQuinticTermTaylor2Decomp [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (
 Each piece is bounded in three steps, none of which needs a case analysis on the words:
 
 1. every substituted word of the `k`-th piece carries exactly `k` letters `V` and `5 - k` letters
-   from `{x, y}`, so `WordExpansion.norm_wordProdList_le` bounds it by `M ^ (5 - k) * Vn ^ k`;
+   from `{x, y}`, so `WordExpansion.norm_prod_map_le` bounds it by `M ^ (5 - k) * Vn ^ k`;
 2. the number of such words in a group is `∑ i, (#a-positions).choose k`, evaluated by `decide`;
 3. `M ^ (5 - k) * Vn ^ k ≤ M ^ 3 * Vn ^ 2` because `Vn ≤ M`.
 
@@ -369,14 +349,14 @@ private lemma wordAPositions_subset_range (w : List (Fin 2)) :
 private lemma norm_wordSubstA_le {𝔸 : Type*} [NormedRing 𝔸] [NormOneClass 𝔸] (w : List (Fin 2))
     (s : Finset ℕ) (hsub : s ⊆ wordAPositions w) (x V y : 𝔸) {M Vn : ℝ} (hx : ‖x‖ ≤ M)
     (hV : ‖V‖ ≤ Vn) (hy : ‖y‖ ≤ M) :
-    ‖wordProdList ![x, V, y] (wordSubstA w s)‖ ≤ M ^ (w.length - s.card) * Vn ^ s.card := by
+    ‖((wordSubstA w s).map ![x, V, y]).prod‖ ≤ M ^ (w.length - s.card) * Vn ^ s.card := by
   have hletter : ∀ k : Fin 3, ‖![x, V, y] k‖ ≤ ![M, Vn, M] k := by
     intro k
     fin_cases k
     · simpa using hx
     · simpa using hV
     · simpa using hy
-  refine le_trans (norm_wordProdList_le ![x, V, y] hletter (wordSubstA w s)) ?_
+  refine le_trans (norm_prod_map_le ![x, V, y] hletter (wordSubstA w s)) ?_
   rw [wordSubstA, List.map_map]
   have hmap : (List.range w.length).map ((![M, Vn, M] : Fin 3 → ℝ) ∘
         fun j => if j ∈ s then 1 else if w[j]? = some 0 then 0 else 2)
@@ -391,25 +371,25 @@ private lemma norm_wordSubstA_le {𝔸 : Type*} [NormedRing 𝔸] [NormOneClass 
 /-- **The group bound**: a group's `k`-subset piece is bounded by its number of terms times
 `M ^ (5 - k) * Vn ^ k`. -/
 private lemma norm_bchQuinticGroupSubsets_le {𝔸 : Type*} [NormedRing 𝔸] [NormOneClass 𝔸] {m : ℕ}
-    (words : Fin m → Fin 5 → Bool) (k : ℕ) (x V y : 𝔸) {M Vn : ℝ} (hx : ‖x‖ ≤ M)
+    (words : Fin m → Fin 5 → Fin 2) (k : ℕ) (x V y : 𝔸) {M Vn : ℝ} (hx : ‖x‖ ≤ M)
     (hV : ‖V‖ ≤ Vn) (hy : ‖y‖ ≤ M) :
     ‖bchQuinticGroupSubsets words k x V y‖
-      ≤ (∑ i : Fin m, (((wordAPositions (wordEvalPattern (words i))).card).choose k : ℝ))
+      ≤ (∑ i : Fin m, (((wordAPositions (List.ofFn (words i))).card).choose k : ℝ))
           * (M ^ (5 - k) * Vn ^ k) := by
-  have hlen : ∀ i : Fin m, (wordEvalPattern (words i)).length = 5 := fun i => by
-    simp [wordEvalPattern]
+  have hlen : ∀ i : Fin m, (List.ofFn (words i)).length = 5 := fun i => by
+    simp
   calc ‖bchQuinticGroupSubsets words k x V y‖
-      ≤ ∑ i : Fin m, ∑ _s ∈ (wordAPositions (wordEvalPattern (words i))).powersetCard k,
+      ≤ ∑ i : Fin m, ∑ _s ∈ (wordAPositions (List.ofFn (words i))).powersetCard k,
           M ^ (5 - k) * Vn ^ k := by
         refine le_trans (norm_sum_le _ _) (Finset.sum_le_sum fun i _ => ?_)
         refine le_trans (norm_sum_le _ _) (Finset.sum_le_sum fun s hs => ?_)
-        have hs' : s ⊆ wordAPositions (wordEvalPattern (words i)) :=
+        have hs' : s ⊆ wordAPositions (List.ofFn (words i)) :=
           (Finset.mem_powersetCard.mp hs).1
         have hsk : s.card = k := (Finset.mem_powersetCard.mp hs).2
-        have := norm_wordSubstA_le (wordEvalPattern (words i)) s hs' x V y hx hV hy
+        have := norm_wordSubstA_le (List.ofFn (words i)) s hs' x V y hx hV hy
         rw [hlen i, hsk] at this
         exact this
-    _ = (∑ i : Fin m, (((wordAPositions (wordEvalPattern (words i))).card).choose k : ℝ))
+    _ = (∑ i : Fin m, (((wordAPositions (List.ofFn (words i))).card).choose k : ℝ))
           * (M ^ (5 - k) * Vn ^ k) := by
         rw [Finset.sum_mul]
         refine Finset.sum_congr rfl fun i _ => ?_
@@ -462,13 +442,13 @@ private lemma norm_bchQuinticSubsetPiece_le {𝔸 : Type*}
     [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸] {k : ℕ} (hk : 2 ≤ k) (hk5 : k ≤ 5)
     {n1 n4 n6 n24 : ℕ}
     (hc1 : (∑ i : Fin 4,
-      ((wordAPositions (wordEvalPattern (bchQuinticGroup1Words i))).card).choose k) = n1)
+      ((wordAPositions (List.ofFn (bchQuinticGroup1Words i))).card).choose k) = n1)
     (hc4 : (∑ i : Fin 10,
-      ((wordAPositions (wordEvalPattern (bchQuinticGroup4Words i))).card).choose k) = n4)
+      ((wordAPositions (List.ofFn (bchQuinticGroup4Words i))).card).choose k) = n4)
     (hc6 : (∑ i : Fin 14,
-      ((wordAPositions (wordEvalPattern (bchQuinticGroup6Words i))).card).choose k) = n6)
+      ((wordAPositions (List.ofFn (bchQuinticGroup6Words i))).card).choose k) = n6)
     (hc24 : (∑ i : Fin 2,
-      ((wordAPositions (wordEvalPattern (bchQuinticGroup24Words i))).card).choose k) = n24)
+      ((wordAPositions (List.ofFn (bchQuinticGroup24Words i))).card).choose k) = n24)
     {C : ℝ} (hC : ((n1 : ℝ) + 4 * n4 + 6 * n6 + 24 * n24) / 720 ≤ C) (x V y : 𝔸) :
     ‖bchQuinticSubsetPiece k x V y‖ ≤ C * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) := by
   set M := ‖x‖ + ‖V‖ + ‖y‖ with hM
@@ -483,13 +463,13 @@ private lemma norm_bchQuinticSubsetPiece_le {𝔸 : Type*}
   have h4 := norm_bchQuinticGroupSubsets_le bchQuinticGroup4Words k x V y hx hV hy
   have h6 := norm_bchQuinticGroupSubsets_le bchQuinticGroup6Words k x V y hx hV hy
   have h24 := norm_bchQuinticGroupSubsets_le bchQuinticGroup24Words k x V y hx hV hy
-  rw [show (∑ i : Fin 4, (((wordAPositions (wordEvalPattern (bchQuinticGroup1Words i))).card
+  rw [show (∑ i : Fin 4, (((wordAPositions (List.ofFn (bchQuinticGroup1Words i))).card
       ).choose k : ℝ)) = n1 by rw [← Nat.cast_sum, hc1]] at h1
-  rw [show (∑ i : Fin 10, (((wordAPositions (wordEvalPattern (bchQuinticGroup4Words i))).card
+  rw [show (∑ i : Fin 10, (((wordAPositions (List.ofFn (bchQuinticGroup4Words i))).card
       ).choose k : ℝ)) = n4 by rw [← Nat.cast_sum, hc4]] at h4
-  rw [show (∑ i : Fin 14, (((wordAPositions (wordEvalPattern (bchQuinticGroup6Words i))).card
+  rw [show (∑ i : Fin 14, (((wordAPositions (List.ofFn (bchQuinticGroup6Words i))).card
       ).choose k : ℝ)) = n6 by rw [← Nat.cast_sum, hc6]] at h6
-  rw [show (∑ i : Fin 2, (((wordAPositions (wordEvalPattern (bchQuinticGroup24Words i))).card
+  rw [show (∑ i : Fin 2, (((wordAPositions (List.ofFn (bchQuinticGroup24Words i))).card
       ).choose k : ℝ)) = n24 by rw [← Nat.cast_sum, hc24]] at h24
   have hbr := norm_bchQuinticBracket_le (bchQuinticGroupSubsets bchQuinticGroup1Words k x V y)
     (bchQuinticGroupSubsets bchQuinticGroup4Words k x V y)

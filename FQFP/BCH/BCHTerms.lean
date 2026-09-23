@@ -380,58 +380,58 @@ theorem bchQuarticTerm_LQ_decomp (x W y : 𝔸) :
 
 /-! ### The degree-5 term
 
-The four groups are sums over an explicit list of **word patterns** (`true` is the letter `a`),
+The four groups are sums over an explicit list of **word patterns** (`0` is the letter `a`),
 in the form consumed by `WordExpansion.norm_sum_wordEval_le`: the word data is a
-`Fin m → Fin 5 → Bool`, so the norm bound of a group is one application of the group lemma rather
+`Fin m → Fin 5 → Fin 2`, so the norm bound of a group is one application of the group lemma rather
 than one estimate per word. -/
 
 /-- The four word patterns of `bchQuinticGroup1`: the "almost pure" words `AAAAB`, `ABBBB`, `BAAAA`,
 `BBBBA`. -/
-def bchQuinticGroup1Words : Fin 4 → Fin 5 → Bool :=
-  ![![true, true, true, true, false], ![true, false, false, false, false],
-    ![false, true, true, true, true], ![false, false, false, false, true]]
+def bchQuinticGroup1Words : Fin 4 → Fin 5 → Fin 2 :=
+  ![![0, 0, 0, 0, 1], ![0, 1, 1, 1, 1],
+    ![1, 0, 0, 0, 0], ![1, 1, 1, 1, 0]]
 
 /-- The ten word patterns of `bchQuinticGroup4`. -/
-def bchQuinticGroup4Words : Fin 10 → Fin 5 → Bool :=
-  ![![true, true, true, false, true], ![true, true, true, false, false],
-    ![true, true, false, false, false], ![true, false, true, true, true],
-    ![true, false, false, false, true], ![false, true, true, true, false],
-    ![false, true, false, false, false], ![false, false, true, true, true],
-    ![false, false, false, true, true], ![false, false, false, true, false]]
+def bchQuinticGroup4Words : Fin 10 → Fin 5 → Fin 2 :=
+  ![![0, 0, 0, 1, 0], ![0, 0, 0, 1, 1],
+    ![0, 0, 1, 1, 1], ![0, 1, 0, 0, 0],
+    ![0, 1, 1, 1, 0], ![1, 0, 0, 0, 1],
+    ![1, 0, 1, 1, 1], ![1, 1, 0, 0, 0],
+    ![1, 1, 1, 0, 0], ![1, 1, 1, 0, 1]]
 
 /-- The fourteen word patterns of `bchQuinticGroup6`. -/
-def bchQuinticGroup6Words : Fin 14 → Fin 5 → Bool :=
-  ![![true, true, false, true, true], ![true, true, false, true, false],
-    ![true, true, false, false, true], ![true, false, true, true, false],
-    ![true, false, true, false, false], ![true, false, false, true, true],
-    ![true, false, false, true, false], ![false, true, true, false, true],
-    ![false, true, true, false, false], ![false, true, false, true, true],
-    ![false, true, false, false, true], ![false, false, true, true, false],
-    ![false, false, true, false, true], ![false, false, true, false, false]]
+def bchQuinticGroup6Words : Fin 14 → Fin 5 → Fin 2 :=
+  ![![0, 0, 1, 0, 0], ![0, 0, 1, 0, 1],
+    ![0, 0, 1, 1, 0], ![0, 1, 0, 0, 1],
+    ![0, 1, 0, 1, 1], ![0, 1, 1, 0, 0],
+    ![0, 1, 1, 0, 1], ![1, 0, 0, 1, 0],
+    ![1, 0, 0, 1, 1], ![1, 0, 1, 0, 0],
+    ![1, 0, 1, 1, 0], ![1, 1, 0, 0, 1],
+    ![1, 1, 0, 1, 0], ![1, 1, 0, 1, 1]]
 
 /-- The two palindromic word patterns of `bchQuinticGroup24`. -/
-def bchQuinticGroup24Words : Fin 2 → Fin 5 → Bool :=
-  ![![true, false, true, false, true], ![false, true, false, true, false]]
+def bchQuinticGroup24Words : Fin 2 → Fin 5 → Fin 2 :=
+  ![![0, 1, 0, 1, 0], ![1, 0, 1, 0, 1]]
 
 /-- **Coefficient-1 group** of `bchQuinticTerm`: the four 5-letter words whose coefficient has
 absolute value 1. -/
 noncomputable def bchQuinticGroup1 {𝔸 : Type*} [NormedRing 𝔸] (a b : 𝔸) : 𝔸 :=
-  ∑ i, (List.ofFn (wordEval (bchQuinticGroup1Words i) a b)).prod
+  ∑ i, wordEval ![a, b] (bchQuinticGroup1Words i)
 
 /-- **Coefficient-4 group** of `bchQuinticTerm`: the ten 5-letter words whose coefficient has
 absolute value 4. -/
 noncomputable def bchQuinticGroup4 {𝔸 : Type*} [NormedRing 𝔸] (a b : 𝔸) : 𝔸 :=
-  ∑ i, (List.ofFn (wordEval (bchQuinticGroup4Words i) a b)).prod
+  ∑ i, wordEval ![a, b] (bchQuinticGroup4Words i)
 
 /-- **Coefficient-6 group** of `bchQuinticTerm`: the fourteen 5-letter words whose coefficient has
 absolute value 6. -/
 noncomputable def bchQuinticGroup6 {𝔸 : Type*} [NormedRing 𝔸] (a b : 𝔸) : 𝔸 :=
-  ∑ i, (List.ofFn (wordEval (bchQuinticGroup6Words i) a b)).prod
+  ∑ i, wordEval ![a, b] (bchQuinticGroup6Words i)
 
 /-- **Coefficient-24 group** of `bchQuinticTerm`: the two palindromic 5-letter words whose
 coefficient has absolute value 24. -/
 noncomputable def bchQuinticGroup24 {𝔸 : Type*} [NormedRing 𝔸] (a b : 𝔸) : 𝔸 :=
-  ∑ i, (List.ofFn (wordEval (bchQuinticGroup24Words i) a b)).prod
+  ∑ i, wordEval ![a, b] (bchQuinticGroup24Words i)
 
 /-- The degree-5 BCH term: the degree-5 part of `bch a b = log (exp a * exp b)`.
 
@@ -449,22 +449,22 @@ noncomputable def bchQuinticTerm (a b : 𝔸) : 𝔸 :=
 theorem bchQuinticGroup1_smul {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸)
     (c : ℚ) : bchQuinticGroup1 (c • a) (c • b) = c ^ 5 • bchQuinticGroup1 a b := by
   unfold bchQuinticGroup1
-  exact sum_wordEval_smul bchQuinticGroup1Words a b c
+  exact sum_prod_map_smul (![a, b] : Fin 2 → 𝔸) bchQuinticGroup1Words c
 
 theorem bchQuinticGroup4_smul {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸)
     (c : ℚ) : bchQuinticGroup4 (c • a) (c • b) = c ^ 5 • bchQuinticGroup4 a b := by
   unfold bchQuinticGroup4
-  exact sum_wordEval_smul bchQuinticGroup4Words a b c
+  exact sum_prod_map_smul (![a, b] : Fin 2 → 𝔸) bchQuinticGroup4Words c
 
 theorem bchQuinticGroup6_smul {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸)
     (c : ℚ) : bchQuinticGroup6 (c • a) (c • b) = c ^ 5 • bchQuinticGroup6 a b := by
   unfold bchQuinticGroup6
-  exact sum_wordEval_smul bchQuinticGroup6Words a b c
+  exact sum_prod_map_smul (![a, b] : Fin 2 → 𝔸) bchQuinticGroup6Words c
 
 theorem bchQuinticGroup24_smul {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸)
     (c : ℚ) : bchQuinticGroup24 (c • a) (c • b) = c ^ 5 • bchQuinticGroup24 a b := by
   unfold bchQuinticGroup24
-  exact sum_wordEval_smul bchQuinticGroup24Words a b c
+  exact sum_prod_map_smul (![a, b] : Fin 2 → 𝔸) bchQuinticGroup24Words c
 
 /-- **Homogeneity of `bchQuinticTerm`**: `C₅(c·a, c·b) = c⁵·C₅(a,b)`. -/
 theorem bchQuinticTerm_smul (a b : 𝔸) (c : ℚ) :
@@ -580,22 +580,22 @@ Denominators and the constants behind the `s ^ k` bounds: `28 · 24/1440 = 7/15`
 `126 · 216/30240 = 9/10` and `124 · 432/120960 = 31/70`, all `≤ 1`. -/
 
 /-- The word patterns of `bchSexticTerm`: the 28 6-letter monomials of the source's
-`bch_sextic_term`, in the source's order (`true` is the letter `a`). -/
-def bchSexticTermWords : Fin 28 → Fin 6 → Bool :=
-  ![![true, true, true, true, false, false], ![true, true, true, false, true, false],
-    ![true, true, true, false, false, false], ![true, true, false, true, true, false],
-    ![true, true, false, true, false, false], ![true, true, false, false, true, false],
-    ![true, true, false, false, false, false], ![true, false, true, true, true, false],
-    ![true, false, true, true, false, false], ![true, false, true, false, true, false],
-    ![true, false, true, false, false, false], ![true, false, false, true, true, false],
-    ![true, false, false, true, false, false], ![true, false, false, false, true, false],
-    ![false, true, true, true, false, true], ![false, true, true, false, true, true],
-    ![false, true, true, false, false, true], ![false, true, false, true, true, true],
-    ![false, true, false, true, false, true], ![false, true, false, false, true, true],
-    ![false, true, false, false, false, true], ![false, false, true, true, true, true],
-    ![false, false, true, true, false, true], ![false, false, true, false, true, true],
-    ![false, false, true, false, false, true], ![false, false, false, true, true, true],
-    ![false, false, false, true, false, true], ![false, false, false, false, true, true]]
+`bch_sextic_term`, in the source's order (`0` is the letter `a`). -/
+def bchSexticTermWords : Fin 28 → Fin 6 → Fin 2 :=
+  ![![0, 0, 0, 0, 1, 1], ![0, 0, 0, 1, 0, 1],
+    ![0, 0, 0, 1, 1, 1], ![0, 0, 1, 0, 0, 1],
+    ![0, 0, 1, 0, 1, 1], ![0, 0, 1, 1, 0, 1],
+    ![0, 0, 1, 1, 1, 1], ![0, 1, 0, 0, 0, 1],
+    ![0, 1, 0, 0, 1, 1], ![0, 1, 0, 1, 0, 1],
+    ![0, 1, 0, 1, 1, 1], ![0, 1, 1, 0, 0, 1],
+    ![0, 1, 1, 0, 1, 1], ![0, 1, 1, 1, 0, 1],
+    ![1, 0, 0, 0, 1, 0], ![1, 0, 0, 1, 0, 0],
+    ![1, 0, 0, 1, 1, 0], ![1, 0, 1, 0, 0, 0],
+    ![1, 0, 1, 0, 1, 0], ![1, 0, 1, 1, 0, 0],
+    ![1, 0, 1, 1, 1, 0], ![1, 1, 0, 0, 0, 0],
+    ![1, 1, 0, 0, 1, 0], ![1, 1, 0, 1, 0, 0],
+    ![1, 1, 0, 1, 1, 0], ![1, 1, 1, 0, 0, 0],
+    ![1, 1, 1, 0, 1, 0], ![1, 1, 1, 1, 0, 0]]
 
 /-- The coefficients of `bchSexticTerm`, in the source's order, over the common
 denominator 1440. -/
@@ -606,128 +606,71 @@ def bchSexticTermCoeffs : Fin 28 → ℚ :=
     6 / 1440, -4 / 1440, -4 / 1440, 1 / 1440]
 
 /-- The word patterns of `bchSepticTerm`: the 126 7-letter monomials of the source's
-`bch_septic_term`, in the source's order (`true` is the letter `a`). -/
-def bchSepticTermWords : Fin 126 → Fin 7 → Bool :=
-  ![![true, true, true, true, true, true, false], ![true, true, true, true, true, false, true],
-    ![true, true, true, true, true, false, false], ![true, true, true, true, false, true, true],
-    ![true, true, true, true, false, true, false],
-    ![true, true, true, true, false, false, true],
-    ![true, true, true, true, false, false, false],
-    ![true, true, true, false, true, true, true], ![true, true, true, false, true, true, false],
-    ![true, true, true, false, true, false, true],
-    ![true, true, true, false, true, false, false],
-    ![true, true, true, false, false, true, true],
-    ![true, true, true, false, false, true, false],
-    ![true, true, true, false, false, false, true],
-    ![true, true, true, false, false, false, false],
-    ![true, true, false, true, true, true, true], ![true, true, false, true, true, true, false],
-    ![true, true, false, true, true, false, true],
-    ![true, true, false, true, true, false, false],
-    ![true, true, false, true, false, true, true],
-    ![true, true, false, true, false, true, false],
-    ![true, true, false, true, false, false, true],
-    ![true, true, false, true, false, false, false],
-    ![true, true, false, false, true, true, true],
-    ![true, true, false, false, true, true, false],
-    ![true, true, false, false, true, false, true],
-    ![true, true, false, false, true, false, false],
-    ![true, true, false, false, false, true, true],
-    ![true, true, false, false, false, true, false],
-    ![true, true, false, false, false, false, true],
-    ![true, true, false, false, false, false, false],
-    ![true, false, true, true, true, true, true], ![true, false, true, true, true, true, false],
-    ![true, false, true, true, true, false, true],
-    ![true, false, true, true, true, false, false],
-    ![true, false, true, true, false, true, true],
-    ![true, false, true, true, false, true, false],
-    ![true, false, true, true, false, false, true],
-    ![true, false, true, true, false, false, false],
-    ![true, false, true, false, true, true, true],
-    ![true, false, true, false, true, true, false],
-    ![true, false, true, false, true, false, true],
-    ![true, false, true, false, true, false, false],
-    ![true, false, true, false, false, true, true],
-    ![true, false, true, false, false, true, false],
-    ![true, false, true, false, false, false, true],
-    ![true, false, true, false, false, false, false],
-    ![true, false, false, true, true, true, true],
-    ![true, false, false, true, true, true, false],
-    ![true, false, false, true, true, false, true],
-    ![true, false, false, true, true, false, false],
-    ![true, false, false, true, false, true, true],
-    ![true, false, false, true, false, true, false],
-    ![true, false, false, true, false, false, true],
-    ![true, false, false, true, false, false, false],
-    ![true, false, false, false, true, true, true],
-    ![true, false, false, false, true, true, false],
-    ![true, false, false, false, true, false, true],
-    ![true, false, false, false, true, false, false],
-    ![true, false, false, false, false, true, true],
-    ![true, false, false, false, false, true, false],
-    ![true, false, false, false, false, false, true],
-    ![true, false, false, false, false, false, false],
-    ![false, true, true, true, true, true, true], ![false, true, true, true, true, true, false],
-    ![false, true, true, true, true, false, true],
-    ![false, true, true, true, true, false, false],
-    ![false, true, true, true, false, true, true],
-    ![false, true, true, true, false, true, false],
-    ![false, true, true, true, false, false, true],
-    ![false, true, true, true, false, false, false],
-    ![false, true, true, false, true, true, true],
-    ![false, true, true, false, true, true, false],
-    ![false, true, true, false, true, false, true],
-    ![false, true, true, false, true, false, false],
-    ![false, true, true, false, false, true, true],
-    ![false, true, true, false, false, true, false],
-    ![false, true, true, false, false, false, true],
-    ![false, true, true, false, false, false, false],
-    ![false, true, false, true, true, true, true],
-    ![false, true, false, true, true, true, false],
-    ![false, true, false, true, true, false, true],
-    ![false, true, false, true, true, false, false],
-    ![false, true, false, true, false, true, true],
-    ![false, true, false, true, false, true, false],
-    ![false, true, false, true, false, false, true],
-    ![false, true, false, true, false, false, false],
-    ![false, true, false, false, true, true, true],
-    ![false, true, false, false, true, true, false],
-    ![false, true, false, false, true, false, true],
-    ![false, true, false, false, true, false, false],
-    ![false, true, false, false, false, true, true],
-    ![false, true, false, false, false, true, false],
-    ![false, true, false, false, false, false, true],
-    ![false, true, false, false, false, false, false],
-    ![false, false, true, true, true, true, true],
-    ![false, false, true, true, true, true, false],
-    ![false, false, true, true, true, false, true],
-    ![false, false, true, true, true, false, false],
-    ![false, false, true, true, false, true, true],
-    ![false, false, true, true, false, true, false],
-    ![false, false, true, true, false, false, true],
-    ![false, false, true, true, false, false, false],
-    ![false, false, true, false, true, true, true],
-    ![false, false, true, false, true, true, false],
-    ![false, false, true, false, true, false, true],
-    ![false, false, true, false, true, false, false],
-    ![false, false, true, false, false, true, true],
-    ![false, false, true, false, false, true, false],
-    ![false, false, true, false, false, false, true],
-    ![false, false, true, false, false, false, false],
-    ![false, false, false, true, true, true, true],
-    ![false, false, false, true, true, true, false],
-    ![false, false, false, true, true, false, true],
-    ![false, false, false, true, true, false, false],
-    ![false, false, false, true, false, true, true],
-    ![false, false, false, true, false, true, false],
-    ![false, false, false, true, false, false, true],
-    ![false, false, false, true, false, false, false],
-    ![false, false, false, false, true, true, true],
-    ![false, false, false, false, true, true, false],
-    ![false, false, false, false, true, false, true],
-    ![false, false, false, false, true, false, false],
-    ![false, false, false, false, false, true, true],
-    ![false, false, false, false, false, true, false],
-    ![false, false, false, false, false, false, true]]
+`bch_septic_term`, in the source's order (`0` is the letter `a`). -/
+def bchSepticTermWords : Fin 126 → Fin 7 → Fin 2 :=
+  ![![0, 0, 0, 0, 0, 0, 1], ![0, 0, 0, 0, 0, 1, 0],
+    ![0, 0, 0, 0, 0, 1, 1], ![0, 0, 0, 0, 1, 0, 0],
+    ![0, 0, 0, 0, 1, 0, 1], ![0, 0, 0, 0, 1, 1, 0],
+    ![0, 0, 0, 0, 1, 1, 1], ![0, 0, 0, 1, 0, 0, 0],
+    ![0, 0, 0, 1, 0, 0, 1], ![0, 0, 0, 1, 0, 1, 0],
+    ![0, 0, 0, 1, 0, 1, 1], ![0, 0, 0, 1, 1, 0, 0],
+    ![0, 0, 0, 1, 1, 0, 1], ![0, 0, 0, 1, 1, 1, 0],
+    ![0, 0, 0, 1, 1, 1, 1], ![0, 0, 1, 0, 0, 0, 0],
+    ![0, 0, 1, 0, 0, 0, 1], ![0, 0, 1, 0, 0, 1, 0],
+    ![0, 0, 1, 0, 0, 1, 1], ![0, 0, 1, 0, 1, 0, 0],
+    ![0, 0, 1, 0, 1, 0, 1], ![0, 0, 1, 0, 1, 1, 0],
+    ![0, 0, 1, 0, 1, 1, 1], ![0, 0, 1, 1, 0, 0, 0],
+    ![0, 0, 1, 1, 0, 0, 1], ![0, 0, 1, 1, 0, 1, 0],
+    ![0, 0, 1, 1, 0, 1, 1], ![0, 0, 1, 1, 1, 0, 0],
+    ![0, 0, 1, 1, 1, 0, 1], ![0, 0, 1, 1, 1, 1, 0],
+    ![0, 0, 1, 1, 1, 1, 1], ![0, 1, 0, 0, 0, 0, 0],
+    ![0, 1, 0, 0, 0, 0, 1], ![0, 1, 0, 0, 0, 1, 0],
+    ![0, 1, 0, 0, 0, 1, 1], ![0, 1, 0, 0, 1, 0, 0],
+    ![0, 1, 0, 0, 1, 0, 1], ![0, 1, 0, 0, 1, 1, 0],
+    ![0, 1, 0, 0, 1, 1, 1], ![0, 1, 0, 1, 0, 0, 0],
+    ![0, 1, 0, 1, 0, 0, 1], ![0, 1, 0, 1, 0, 1, 0],
+    ![0, 1, 0, 1, 0, 1, 1], ![0, 1, 0, 1, 1, 0, 0],
+    ![0, 1, 0, 1, 1, 0, 1], ![0, 1, 0, 1, 1, 1, 0],
+    ![0, 1, 0, 1, 1, 1, 1], ![0, 1, 1, 0, 0, 0, 0],
+    ![0, 1, 1, 0, 0, 0, 1], ![0, 1, 1, 0, 0, 1, 0],
+    ![0, 1, 1, 0, 0, 1, 1], ![0, 1, 1, 0, 1, 0, 0],
+    ![0, 1, 1, 0, 1, 0, 1], ![0, 1, 1, 0, 1, 1, 0],
+    ![0, 1, 1, 0, 1, 1, 1], ![0, 1, 1, 1, 0, 0, 0],
+    ![0, 1, 1, 1, 0, 0, 1], ![0, 1, 1, 1, 0, 1, 0],
+    ![0, 1, 1, 1, 0, 1, 1], ![0, 1, 1, 1, 1, 0, 0],
+    ![0, 1, 1, 1, 1, 0, 1], ![0, 1, 1, 1, 1, 1, 0],
+    ![0, 1, 1, 1, 1, 1, 1], ![1, 0, 0, 0, 0, 0, 0],
+    ![1, 0, 0, 0, 0, 0, 1], ![1, 0, 0, 0, 0, 1, 0],
+    ![1, 0, 0, 0, 0, 1, 1], ![1, 0, 0, 0, 1, 0, 0],
+    ![1, 0, 0, 0, 1, 0, 1], ![1, 0, 0, 0, 1, 1, 0],
+    ![1, 0, 0, 0, 1, 1, 1], ![1, 0, 0, 1, 0, 0, 0],
+    ![1, 0, 0, 1, 0, 0, 1], ![1, 0, 0, 1, 0, 1, 0],
+    ![1, 0, 0, 1, 0, 1, 1], ![1, 0, 0, 1, 1, 0, 0],
+    ![1, 0, 0, 1, 1, 0, 1], ![1, 0, 0, 1, 1, 1, 0],
+    ![1, 0, 0, 1, 1, 1, 1], ![1, 0, 1, 0, 0, 0, 0],
+    ![1, 0, 1, 0, 0, 0, 1], ![1, 0, 1, 0, 0, 1, 0],
+    ![1, 0, 1, 0, 0, 1, 1], ![1, 0, 1, 0, 1, 0, 0],
+    ![1, 0, 1, 0, 1, 0, 1], ![1, 0, 1, 0, 1, 1, 0],
+    ![1, 0, 1, 0, 1, 1, 1], ![1, 0, 1, 1, 0, 0, 0],
+    ![1, 0, 1, 1, 0, 0, 1], ![1, 0, 1, 1, 0, 1, 0],
+    ![1, 0, 1, 1, 0, 1, 1], ![1, 0, 1, 1, 1, 0, 0],
+    ![1, 0, 1, 1, 1, 0, 1], ![1, 0, 1, 1, 1, 1, 0],
+    ![1, 0, 1, 1, 1, 1, 1], ![1, 1, 0, 0, 0, 0, 0],
+    ![1, 1, 0, 0, 0, 0, 1], ![1, 1, 0, 0, 0, 1, 0],
+    ![1, 1, 0, 0, 0, 1, 1], ![1, 1, 0, 0, 1, 0, 0],
+    ![1, 1, 0, 0, 1, 0, 1], ![1, 1, 0, 0, 1, 1, 0],
+    ![1, 1, 0, 0, 1, 1, 1], ![1, 1, 0, 1, 0, 0, 0],
+    ![1, 1, 0, 1, 0, 0, 1], ![1, 1, 0, 1, 0, 1, 0],
+    ![1, 1, 0, 1, 0, 1, 1], ![1, 1, 0, 1, 1, 0, 0],
+    ![1, 1, 0, 1, 1, 0, 1], ![1, 1, 0, 1, 1, 1, 0],
+    ![1, 1, 0, 1, 1, 1, 1], ![1, 1, 1, 0, 0, 0, 0],
+    ![1, 1, 1, 0, 0, 0, 1], ![1, 1, 1, 0, 0, 1, 0],
+    ![1, 1, 1, 0, 0, 1, 1], ![1, 1, 1, 0, 1, 0, 0],
+    ![1, 1, 1, 0, 1, 0, 1], ![1, 1, 1, 0, 1, 1, 0],
+    ![1, 1, 1, 0, 1, 1, 1], ![1, 1, 1, 1, 0, 0, 0],
+    ![1, 1, 1, 1, 0, 0, 1], ![1, 1, 1, 1, 0, 1, 0],
+    ![1, 1, 1, 1, 0, 1, 1], ![1, 1, 1, 1, 1, 0, 0],
+    ![1, 1, 1, 1, 1, 0, 1], ![1, 1, 1, 1, 1, 1, 0]]
 
 /-- The coefficients of `bchSepticTerm`, in the source's order, over the common
 denominator 30240. -/
@@ -752,132 +695,70 @@ def bchSepticTermCoeffs : Fin 126 → ℚ :=
     8 / 30240, 15 / 30240, 15 / 30240, 15 / 30240, -6 / 30240, -6 / 30240, 1 / 30240]
 
 /-- The word patterns of `bchOcticTerm`: the 124 8-letter monomials of the source's
-`bch_octic_term`, in the source's order (`true` is the letter `a`). -/
-def bchOcticTermWords : Fin 124 → Fin 8 → Bool :=
-  ![![true, true, true, true, true, true, false, false],
-    ![true, true, true, true, true, false, true, false],
-    ![true, true, true, true, true, false, false, false],
-    ![true, true, true, true, false, true, true, false],
-    ![true, true, true, true, false, true, false, false],
-    ![true, true, true, true, false, false, true, false],
-    ![true, true, true, true, false, false, false, false],
-    ![true, true, true, false, true, true, true, false],
-    ![true, true, true, false, true, true, false, false],
-    ![true, true, true, false, true, false, true, false],
-    ![true, true, true, false, true, false, false, false],
-    ![true, true, true, false, false, true, true, false],
-    ![true, true, true, false, false, true, false, false],
-    ![true, true, true, false, false, false, true, false],
-    ![true, true, true, false, false, false, false, false],
-    ![true, true, false, true, true, true, true, false],
-    ![true, true, false, true, true, true, false, false],
-    ![true, true, false, true, true, false, true, false],
-    ![true, true, false, true, true, false, false, false],
-    ![true, true, false, true, false, true, true, false],
-    ![true, true, false, true, false, true, false, false],
-    ![true, true, false, true, false, false, true, false],
-    ![true, true, false, true, false, false, false, false],
-    ![true, true, false, false, true, true, true, false],
-    ![true, true, false, false, true, true, false, false],
-    ![true, true, false, false, true, false, true, false],
-    ![true, true, false, false, true, false, false, false],
-    ![true, true, false, false, false, true, true, false],
-    ![true, true, false, false, false, true, false, false],
-    ![true, true, false, false, false, false, true, false],
-    ![true, true, false, false, false, false, false, false],
-    ![true, false, true, true, true, true, true, false],
-    ![true, false, true, true, true, true, false, false],
-    ![true, false, true, true, true, false, true, false],
-    ![true, false, true, true, true, false, false, false],
-    ![true, false, true, true, false, true, true, false],
-    ![true, false, true, true, false, true, false, false],
-    ![true, false, true, true, false, false, true, false],
-    ![true, false, true, true, false, false, false, false],
-    ![true, false, true, false, true, true, true, false],
-    ![true, false, true, false, true, true, false, false],
-    ![true, false, true, false, true, false, true, false],
-    ![true, false, true, false, true, false, false, false],
-    ![true, false, true, false, false, true, true, false],
-    ![true, false, true, false, false, true, false, false],
-    ![true, false, true, false, false, false, true, false],
-    ![true, false, true, false, false, false, false, false],
-    ![true, false, false, true, true, true, true, false],
-    ![true, false, false, true, true, true, false, false],
-    ![true, false, false, true, true, false, true, false],
-    ![true, false, false, true, true, false, false, false],
-    ![true, false, false, true, false, true, true, false],
-    ![true, false, false, true, false, true, false, false],
-    ![true, false, false, true, false, false, true, false],
-    ![true, false, false, true, false, false, false, false],
-    ![true, false, false, false, true, true, true, false],
-    ![true, false, false, false, true, true, false, false],
-    ![true, false, false, false, true, false, true, false],
-    ![true, false, false, false, true, false, false, false],
-    ![true, false, false, false, false, true, true, false],
-    ![true, false, false, false, false, true, false, false],
-    ![true, false, false, false, false, false, true, false],
-    ![false, true, true, true, true, true, false, true],
-    ![false, true, true, true, true, false, true, true],
-    ![false, true, true, true, true, false, false, true],
-    ![false, true, true, true, false, true, true, true],
-    ![false, true, true, true, false, true, false, true],
-    ![false, true, true, true, false, false, true, true],
-    ![false, true, true, true, false, false, false, true],
-    ![false, true, true, false, true, true, true, true],
-    ![false, true, true, false, true, true, false, true],
-    ![false, true, true, false, true, false, true, true],
-    ![false, true, true, false, true, false, false, true],
-    ![false, true, true, false, false, true, true, true],
-    ![false, true, true, false, false, true, false, true],
-    ![false, true, true, false, false, false, true, true],
-    ![false, true, true, false, false, false, false, true],
-    ![false, true, false, true, true, true, true, true],
-    ![false, true, false, true, true, true, false, true],
-    ![false, true, false, true, true, false, true, true],
-    ![false, true, false, true, true, false, false, true],
-    ![false, true, false, true, false, true, true, true],
-    ![false, true, false, true, false, true, false, true],
-    ![false, true, false, true, false, false, true, true],
-    ![false, true, false, true, false, false, false, true],
-    ![false, true, false, false, true, true, true, true],
-    ![false, true, false, false, true, true, false, true],
-    ![false, true, false, false, true, false, true, true],
-    ![false, true, false, false, true, false, false, true],
-    ![false, true, false, false, false, true, true, true],
-    ![false, true, false, false, false, true, false, true],
-    ![false, true, false, false, false, false, true, true],
-    ![false, true, false, false, false, false, false, true],
-    ![false, false, true, true, true, true, true, true],
-    ![false, false, true, true, true, true, false, true],
-    ![false, false, true, true, true, false, true, true],
-    ![false, false, true, true, true, false, false, true],
-    ![false, false, true, true, false, true, true, true],
-    ![false, false, true, true, false, true, false, true],
-    ![false, false, true, true, false, false, true, true],
-    ![false, false, true, true, false, false, false, true],
-    ![false, false, true, false, true, true, true, true],
-    ![false, false, true, false, true, true, false, true],
-    ![false, false, true, false, true, false, true, true],
-    ![false, false, true, false, true, false, false, true],
-    ![false, false, true, false, false, true, true, true],
-    ![false, false, true, false, false, true, false, true],
-    ![false, false, true, false, false, false, true, true],
-    ![false, false, true, false, false, false, false, true],
-    ![false, false, false, true, true, true, true, true],
-    ![false, false, false, true, true, true, false, true],
-    ![false, false, false, true, true, false, true, true],
-    ![false, false, false, true, true, false, false, true],
-    ![false, false, false, true, false, true, true, true],
-    ![false, false, false, true, false, true, false, true],
-    ![false, false, false, true, false, false, true, true],
-    ![false, false, false, true, false, false, false, true],
-    ![false, false, false, false, true, true, true, true],
-    ![false, false, false, false, true, true, false, true],
-    ![false, false, false, false, true, false, true, true],
-    ![false, false, false, false, true, false, false, true],
-    ![false, false, false, false, false, true, true, true],
-    ![false, false, false, false, false, true, false, true],
-    ![false, false, false, false, false, false, true, true]]
+`bch_octic_term`, in the source's order (`0` is the letter `a`). -/
+def bchOcticTermWords : Fin 124 → Fin 8 → Fin 2 :=
+  ![![0, 0, 0, 0, 0, 0, 1, 1], ![0, 0, 0, 0, 0, 1, 0, 1],
+    ![0, 0, 0, 0, 0, 1, 1, 1], ![0, 0, 0, 0, 1, 0, 0, 1],
+    ![0, 0, 0, 0, 1, 0, 1, 1], ![0, 0, 0, 0, 1, 1, 0, 1],
+    ![0, 0, 0, 0, 1, 1, 1, 1], ![0, 0, 0, 1, 0, 0, 0, 1],
+    ![0, 0, 0, 1, 0, 0, 1, 1], ![0, 0, 0, 1, 0, 1, 0, 1],
+    ![0, 0, 0, 1, 0, 1, 1, 1], ![0, 0, 0, 1, 1, 0, 0, 1],
+    ![0, 0, 0, 1, 1, 0, 1, 1], ![0, 0, 0, 1, 1, 1, 0, 1],
+    ![0, 0, 0, 1, 1, 1, 1, 1], ![0, 0, 1, 0, 0, 0, 0, 1],
+    ![0, 0, 1, 0, 0, 0, 1, 1], ![0, 0, 1, 0, 0, 1, 0, 1],
+    ![0, 0, 1, 0, 0, 1, 1, 1], ![0, 0, 1, 0, 1, 0, 0, 1],
+    ![0, 0, 1, 0, 1, 0, 1, 1], ![0, 0, 1, 0, 1, 1, 0, 1],
+    ![0, 0, 1, 0, 1, 1, 1, 1], ![0, 0, 1, 1, 0, 0, 0, 1],
+    ![0, 0, 1, 1, 0, 0, 1, 1], ![0, 0, 1, 1, 0, 1, 0, 1],
+    ![0, 0, 1, 1, 0, 1, 1, 1], ![0, 0, 1, 1, 1, 0, 0, 1],
+    ![0, 0, 1, 1, 1, 0, 1, 1], ![0, 0, 1, 1, 1, 1, 0, 1],
+    ![0, 0, 1, 1, 1, 1, 1, 1], ![0, 1, 0, 0, 0, 0, 0, 1],
+    ![0, 1, 0, 0, 0, 0, 1, 1], ![0, 1, 0, 0, 0, 1, 0, 1],
+    ![0, 1, 0, 0, 0, 1, 1, 1], ![0, 1, 0, 0, 1, 0, 0, 1],
+    ![0, 1, 0, 0, 1, 0, 1, 1], ![0, 1, 0, 0, 1, 1, 0, 1],
+    ![0, 1, 0, 0, 1, 1, 1, 1], ![0, 1, 0, 1, 0, 0, 0, 1],
+    ![0, 1, 0, 1, 0, 0, 1, 1], ![0, 1, 0, 1, 0, 1, 0, 1],
+    ![0, 1, 0, 1, 0, 1, 1, 1], ![0, 1, 0, 1, 1, 0, 0, 1],
+    ![0, 1, 0, 1, 1, 0, 1, 1], ![0, 1, 0, 1, 1, 1, 0, 1],
+    ![0, 1, 0, 1, 1, 1, 1, 1], ![0, 1, 1, 0, 0, 0, 0, 1],
+    ![0, 1, 1, 0, 0, 0, 1, 1], ![0, 1, 1, 0, 0, 1, 0, 1],
+    ![0, 1, 1, 0, 0, 1, 1, 1], ![0, 1, 1, 0, 1, 0, 0, 1],
+    ![0, 1, 1, 0, 1, 0, 1, 1], ![0, 1, 1, 0, 1, 1, 0, 1],
+    ![0, 1, 1, 0, 1, 1, 1, 1], ![0, 1, 1, 1, 0, 0, 0, 1],
+    ![0, 1, 1, 1, 0, 0, 1, 1], ![0, 1, 1, 1, 0, 1, 0, 1],
+    ![0, 1, 1, 1, 0, 1, 1, 1], ![0, 1, 1, 1, 1, 0, 0, 1],
+    ![0, 1, 1, 1, 1, 0, 1, 1], ![0, 1, 1, 1, 1, 1, 0, 1],
+    ![1, 0, 0, 0, 0, 0, 1, 0], ![1, 0, 0, 0, 0, 1, 0, 0],
+    ![1, 0, 0, 0, 0, 1, 1, 0], ![1, 0, 0, 0, 1, 0, 0, 0],
+    ![1, 0, 0, 0, 1, 0, 1, 0], ![1, 0, 0, 0, 1, 1, 0, 0],
+    ![1, 0, 0, 0, 1, 1, 1, 0], ![1, 0, 0, 1, 0, 0, 0, 0],
+    ![1, 0, 0, 1, 0, 0, 1, 0], ![1, 0, 0, 1, 0, 1, 0, 0],
+    ![1, 0, 0, 1, 0, 1, 1, 0], ![1, 0, 0, 1, 1, 0, 0, 0],
+    ![1, 0, 0, 1, 1, 0, 1, 0], ![1, 0, 0, 1, 1, 1, 0, 0],
+    ![1, 0, 0, 1, 1, 1, 1, 0], ![1, 0, 1, 0, 0, 0, 0, 0],
+    ![1, 0, 1, 0, 0, 0, 1, 0], ![1, 0, 1, 0, 0, 1, 0, 0],
+    ![1, 0, 1, 0, 0, 1, 1, 0], ![1, 0, 1, 0, 1, 0, 0, 0],
+    ![1, 0, 1, 0, 1, 0, 1, 0], ![1, 0, 1, 0, 1, 1, 0, 0],
+    ![1, 0, 1, 0, 1, 1, 1, 0], ![1, 0, 1, 1, 0, 0, 0, 0],
+    ![1, 0, 1, 1, 0, 0, 1, 0], ![1, 0, 1, 1, 0, 1, 0, 0],
+    ![1, 0, 1, 1, 0, 1, 1, 0], ![1, 0, 1, 1, 1, 0, 0, 0],
+    ![1, 0, 1, 1, 1, 0, 1, 0], ![1, 0, 1, 1, 1, 1, 0, 0],
+    ![1, 0, 1, 1, 1, 1, 1, 0], ![1, 1, 0, 0, 0, 0, 0, 0],
+    ![1, 1, 0, 0, 0, 0, 1, 0], ![1, 1, 0, 0, 0, 1, 0, 0],
+    ![1, 1, 0, 0, 0, 1, 1, 0], ![1, 1, 0, 0, 1, 0, 0, 0],
+    ![1, 1, 0, 0, 1, 0, 1, 0], ![1, 1, 0, 0, 1, 1, 0, 0],
+    ![1, 1, 0, 0, 1, 1, 1, 0], ![1, 1, 0, 1, 0, 0, 0, 0],
+    ![1, 1, 0, 1, 0, 0, 1, 0], ![1, 1, 0, 1, 0, 1, 0, 0],
+    ![1, 1, 0, 1, 0, 1, 1, 0], ![1, 1, 0, 1, 1, 0, 0, 0],
+    ![1, 1, 0, 1, 1, 0, 1, 0], ![1, 1, 0, 1, 1, 1, 0, 0],
+    ![1, 1, 0, 1, 1, 1, 1, 0], ![1, 1, 1, 0, 0, 0, 0, 0],
+    ![1, 1, 1, 0, 0, 0, 1, 0], ![1, 1, 1, 0, 0, 1, 0, 0],
+    ![1, 1, 1, 0, 0, 1, 1, 0], ![1, 1, 1, 0, 1, 0, 0, 0],
+    ![1, 1, 1, 0, 1, 0, 1, 0], ![1, 1, 1, 0, 1, 1, 0, 0],
+    ![1, 1, 1, 0, 1, 1, 1, 0], ![1, 1, 1, 1, 0, 0, 0, 0],
+    ![1, 1, 1, 1, 0, 0, 1, 0], ![1, 1, 1, 1, 0, 1, 0, 0],
+    ![1, 1, 1, 1, 0, 1, 1, 0], ![1, 1, 1, 1, 1, 0, 0, 0],
+    ![1, 1, 1, 1, 1, 0, 1, 0], ![1, 1, 1, 1, 1, 1, 0, 0]]
 
 /-- The coefficients of `bchOcticTerm`, in the source's order, over the common
 denominator 120960. -/
@@ -905,7 +786,7 @@ def bchOcticTermCoeffs : Fin 124 → ℚ :=
 
 /-- **Degree-6 term** `C₆(a,b)`: the degree-6 part of `bch a b`, as a `∑` over its 28 words. -/
 noncomputable def bchSexticTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
-  ∑ i, bchSexticTermCoeffs i • (List.ofFn (wordEval (bchSexticTermWords i) a b)).prod
+  ∑ i, bchSexticTermCoeffs i • wordEval ![a, b] (bchSexticTermWords i)
 
 /-- **Norm bound for `bchSexticTerm`**: `‖C₆(a,b)‖ ≤ (‖a‖ + ‖b‖)⁶`.
 
@@ -916,16 +797,16 @@ theorem norm_bchSexticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra �
     simp only [bchSexticTermCoeffs, Fin.sum_univ_succ, Fin.sum_univ_zero, ← Rat.norm_cast_real,
       Real.norm_eq_abs]
     norm_num
-  have hw : ∀ i : Fin 28, ‖(List.ofFn (wordEval (bchSexticTermWords i) a b)).prod‖
-      ≤ (‖a‖ + ‖b‖) ^ 6 := fun i => norm_wordEval_le (bchSexticTermWords i) a b
+  have hw : ∀ i : Fin 28, ‖wordEval ![a, b] (bchSexticTermWords i)‖
+      ≤ (‖a‖ + ‖b‖) ^ 6 := fun i => norm_binWord_le (bchSexticTermWords i) a b
   unfold bchSexticTerm
-  calc ‖∑ i, bchSexticTermCoeffs i • (List.ofFn (wordEval (bchSexticTermWords i) a b)).prod‖
-      ≤ ∑ i, ‖bchSexticTermCoeffs i • (List.ofFn (wordEval (bchSexticTermWords i) a b)).prod‖ :=
+  calc ‖∑ i, bchSexticTermCoeffs i • wordEval ![a, b] (bchSexticTermWords i)‖
+      ≤ ∑ i, ‖bchSexticTermCoeffs i • wordEval ![a, b] (bchSexticTermWords i)‖ :=
       norm_sum_le _ _
     _ ≤ ∑ i, ‖bchSexticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 6 := by
         refine Finset.sum_le_sum fun i _ => ?_
-        calc ‖bchSexticTermCoeffs i • (List.ofFn (wordEval (bchSexticTermWords i) a b)).prod‖
-            ≤ ‖bchSexticTermCoeffs i‖ * ‖(List.ofFn (wordEval (bchSexticTermWords i) a b)).prod‖ :=
+        calc ‖bchSexticTermCoeffs i • wordEval ![a, b] (bchSexticTermWords i)‖
+            ≤ ‖bchSexticTermCoeffs i‖ * ‖wordEval ![a, b] (bchSexticTermWords i)‖ :=
             norm_smul_le _ _
           _ ≤ ‖bchSexticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 6 :=
               mul_le_mul_of_nonneg_left (hw i) (norm_nonneg _)
@@ -935,32 +816,25 @@ theorem norm_bchSexticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra �
 
 /-- **Degree-7 term** `C₇(a,b)`: the degree-7 part of `bch a b`, as a `∑` over its 126 words. -/
 noncomputable def bchSepticTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
-  ∑ i, bchSepticTermCoeffs i • (List.ofFn (wordEval (bchSepticTermWords i) a b)).prod
+  ∑ i, bchSepticTermCoeffs i • wordEval ![a, b] (bchSepticTermWords i)
 
--- The budget sum below has 126 (resp. 124) terms. `simp` reaches it through `Fin.sum_univ_succ`,
--- so the *nesting depth of the goal* exceeds the default `maxRecDepth`; this raises the tactic
--- recursion limit only. It is not a heartbeat/search budget: the expansion is mechanical and the
--- arithmetic is `norm_num`'s.
-set_option maxRecDepth 8000 in
 /-- **Norm bound for `bchSepticTerm`**: `‖C₇(a,b)‖ ≤ (‖a‖ + ‖b‖)⁷`.
 
 The group constant is `126 · (216/30240) = 9/10`. -/
 theorem norm_bchSepticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸]
     (a b : 𝔸) : ‖bchSepticTerm a b‖ ≤ (‖a‖ + ‖b‖) ^ 7 := by
   have hbudget : ∑ i : Fin 126, ‖bchSepticTermCoeffs i‖ ≤ 1 := by
-    simp only [bchSepticTermCoeffs, Fin.sum_univ_succ, Fin.sum_univ_zero, ← Rat.norm_cast_real,
-      Real.norm_eq_abs]
-    norm_num
-  have hw : ∀ i : Fin 126, ‖(List.ofFn (wordEval (bchSepticTermWords i) a b)).prod‖
-      ≤ (‖a‖ + ‖b‖) ^ 7 := fun i => norm_wordEval_le (bchSepticTermWords i) a b
+    norm_num [bchSepticTermCoeffs, Fin.sum_univ_succ, ← Rat.norm_cast_real]
+  have hw : ∀ i : Fin 126, ‖wordEval ![a, b] (bchSepticTermWords i)‖
+      ≤ (‖a‖ + ‖b‖) ^ 7 := fun i => norm_binWord_le (bchSepticTermWords i) a b
   unfold bchSepticTerm
-  calc ‖∑ i, bchSepticTermCoeffs i • (List.ofFn (wordEval (bchSepticTermWords i) a b)).prod‖
-      ≤ ∑ i, ‖bchSepticTermCoeffs i • (List.ofFn (wordEval (bchSepticTermWords i) a b)).prod‖ :=
+  calc ‖∑ i, bchSepticTermCoeffs i • wordEval ![a, b] (bchSepticTermWords i)‖
+      ≤ ∑ i, ‖bchSepticTermCoeffs i • wordEval ![a, b] (bchSepticTermWords i)‖ :=
       norm_sum_le _ _
     _ ≤ ∑ i, ‖bchSepticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 7 := by
         refine Finset.sum_le_sum fun i _ => ?_
-        calc ‖bchSepticTermCoeffs i • (List.ofFn (wordEval (bchSepticTermWords i) a b)).prod‖
-            ≤ ‖bchSepticTermCoeffs i‖ * ‖(List.ofFn (wordEval (bchSepticTermWords i) a b)).prod‖ :=
+        calc ‖bchSepticTermCoeffs i • wordEval ![a, b] (bchSepticTermWords i)‖
+            ≤ ‖bchSepticTermCoeffs i‖ * ‖wordEval ![a, b] (bchSepticTermWords i)‖ :=
             norm_smul_le _ _
           _ ≤ ‖bchSepticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 7 :=
               mul_le_mul_of_nonneg_left (hw i) (norm_nonneg _)
@@ -970,32 +844,25 @@ theorem norm_bchSepticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra �
 
 /-- **Degree-8 term** `C₈(a,b)`: the degree-8 part of `bch a b`, as a `∑` over its 124 words. -/
 noncomputable def bchOcticTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
-  ∑ i, bchOcticTermCoeffs i • (List.ofFn (wordEval (bchOcticTermWords i) a b)).prod
+  ∑ i, bchOcticTermCoeffs i • wordEval ![a, b] (bchOcticTermWords i)
 
--- The budget sum below has 126 (resp. 124) terms. `simp` reaches it through `Fin.sum_univ_succ`,
--- so the *nesting depth of the goal* exceeds the default `maxRecDepth`; this raises the tactic
--- recursion limit only. It is not a heartbeat/search budget: the expansion is mechanical and the
--- arithmetic is `norm_num`'s.
-set_option maxRecDepth 8000 in
 /-- **Norm bound for `bchOcticTerm`**: `‖C₈(a,b)‖ ≤ (‖a‖ + ‖b‖)⁸`.
 
 The group constant is `124 · (432/120960) = 31/70`. -/
 theorem norm_bchOcticTerm_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸]
     (a b : 𝔸) : ‖bchOcticTerm a b‖ ≤ (‖a‖ + ‖b‖) ^ 8 := by
   have hbudget : ∑ i : Fin 124, ‖bchOcticTermCoeffs i‖ ≤ 1 := by
-    simp only [bchOcticTermCoeffs, Fin.sum_univ_succ, Fin.sum_univ_zero, ← Rat.norm_cast_real,
-      Real.norm_eq_abs]
-    norm_num
-  have hw : ∀ i : Fin 124, ‖(List.ofFn (wordEval (bchOcticTermWords i) a b)).prod‖
-      ≤ (‖a‖ + ‖b‖) ^ 8 := fun i => norm_wordEval_le (bchOcticTermWords i) a b
+    norm_num [bchOcticTermCoeffs, Fin.sum_univ_succ, ← Rat.norm_cast_real]
+  have hw : ∀ i : Fin 124, ‖wordEval ![a, b] (bchOcticTermWords i)‖
+      ≤ (‖a‖ + ‖b‖) ^ 8 := fun i => norm_binWord_le (bchOcticTermWords i) a b
   unfold bchOcticTerm
-  calc ‖∑ i, bchOcticTermCoeffs i • (List.ofFn (wordEval (bchOcticTermWords i) a b)).prod‖
-      ≤ ∑ i, ‖bchOcticTermCoeffs i • (List.ofFn (wordEval (bchOcticTermWords i) a b)).prod‖ :=
+  calc ‖∑ i, bchOcticTermCoeffs i • wordEval ![a, b] (bchOcticTermWords i)‖
+      ≤ ∑ i, ‖bchOcticTermCoeffs i • wordEval ![a, b] (bchOcticTermWords i)‖ :=
       norm_sum_le _ _
     _ ≤ ∑ i, ‖bchOcticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 8 := by
         refine Finset.sum_le_sum fun i _ => ?_
-        calc ‖bchOcticTermCoeffs i • (List.ofFn (wordEval (bchOcticTermWords i) a b)).prod‖
-            ≤ ‖bchOcticTermCoeffs i‖ * ‖(List.ofFn (wordEval (bchOcticTermWords i) a b)).prod‖ :=
+        calc ‖bchOcticTermCoeffs i • wordEval ![a, b] (bchOcticTermWords i)‖
+            ≤ ‖bchOcticTermCoeffs i‖ * ‖wordEval ![a, b] (bchOcticTermWords i)‖ :=
             norm_smul_le _ _
           _ ≤ ‖bchOcticTermCoeffs i‖ * (‖a‖ + ‖b‖) ^ 8 :=
               mul_le_mul_of_nonneg_left (hw i) (norm_nonneg _)

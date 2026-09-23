@@ -24,12 +24,6 @@ Trotter Error* fixes `∏_{γ=1}^{Γ} A_γ = A_Γ ⋯ A_1`, and Mathlib's `List.
 right fold. `ProductFormulaData.eval` uses exactly that convention. The main results below are
 therefore stated over `List.prod`.
 
-`Lean-BCH` instead writes its monomials associated to the **left**,
-`(⋯ * w (n-2)) * w (n-1)`. Since the norm layer is commutative, the association carries no
-mathematical content. `wordProd` is kept as the left-associated form together with
-`wordProd_eq_prod`, so BCH-derived material can be stated without change; it is a derived notion,
-not a second theory.
-
 ## Main results
 
 * `List.norm_prod_le` (Mathlib) is the general form, an arity-free replacement for the whole
@@ -37,7 +31,6 @@ not a second theory.
 * `norm_word_le`: the same against a common scale `s`, as `≤ s ^ n`.
 * `smul_prod`: homogeneity, `∏ i, (c • w i) = c ^ n • ∏ i, w i`.
 * `norm_smul_word_le`: the scaled bound `‖c • ∏ i, w i‖ ≤ cb * s ^ n`.
-* `norm_wordProd_le`, `norm_smul_wordProd_le`, `smul_wordProd`: the left-associated restatements.
 
 ## Implementation notes
 
@@ -114,66 +107,5 @@ lemma norm_smul_word_le [NormOneClass 𝔸] {n : ℕ} (c : 𝕂) (w : Fin n → 
     _ ≤ cb * s ^ n := mul_le_mul_of_nonneg_left (norm_word_le w hw) hcb
 
 end Scaling
-
-/-! ### The left-associated form
-
-`Lean-BCH` writes monomials associated to the left. The results above are about `List.prod`,
-which is a right fold, so the left-associated versions are recorded here as derived notions.
-A call site holding a left-associated product rewrites with `wordProd_eq_prod`. -/
-
-section WordProd
-
-variable {𝔸 : Type*} [Monoid 𝔸]
-
-/-- The left-associated product `w 0 * w 1 * ⋯ * w (n - 1)`. This is the form in which
-`Lean-BCH` writes its monomials; it agrees with `List.prod` only up to associativity. -/
-def wordProd : {n : ℕ} → (Fin n → 𝔸) → 𝔸
-  | 0, _ => 1
-  | _ + 1, w => wordProd (fun i : Fin _ => w i.castSucc) * w (Fin.last _)
-
-@[simp]
-lemma wordProd_zero (w : Fin 0 → 𝔸) : wordProd w = 1 := rfl
-
-@[simp]
-lemma wordProd_succ {n : ℕ} (w : Fin (n + 1) → 𝔸) :
-    wordProd w = wordProd (fun i : Fin n => w i.castSucc) * w (Fin.last n) := rfl
-
-/-- The left-associated product equals the right-associated one. This is the bridge that lets
-`Lean-BCH`-style statements be served by the `List.prod` results above, and it is the `simp`
-normal form for `wordProd`. -/
-@[simp]
-lemma wordProd_eq_prod {n : ℕ} (w : Fin n → 𝔸) :
-    wordProd w = (List.ofFn w).prod := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-      rw [wordProd_succ, ih, List.ofFn_succ', List.concat_eq_append, List.prod_append,
-        List.prod_singleton]
-
-end WordProd
-
-section WordProdNorm
-
-variable {𝕂 : Type*} [NormedField 𝕂]
-variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra 𝕂 𝔸]
-
-/-- Left-associated restatement of `norm_prod_le_ofFn`. -/
-lemma norm_wordProd_le [NormOneClass 𝔸] {n : ℕ} (w : Fin n → 𝔸) :
-    ‖wordProd w‖ ≤ ∏ i, ‖w i‖ := by
-  rw [wordProd_eq_prod]; exact norm_prod_le_ofFn w
-
-/-- Left-associated restatement of `norm_smul_word_le`. -/
-lemma norm_smul_wordProd_le [NormOneClass 𝔸] {n : ℕ} (c : 𝕂) (w : Fin n → 𝔸) {s cb : ℝ}
-    (hc : ‖c‖ ≤ cb) (hw : ∀ i, ‖w i‖ ≤ s) (hcb : 0 ≤ cb) :
-    ‖c • wordProd w‖ ≤ cb * s ^ n := by
-  rw [wordProd_eq_prod]; exact norm_smul_word_le c w hc hw hcb
-
-/-- Left-associated restatement of `smul_prod`. -/
-lemma smul_wordProd {n : ℕ} (c : 𝕂) (w : Fin n → 𝔸) :
-    wordProd (fun i => c • w i) = c ^ n • wordProd w := by
-  rw [wordProd_eq_prod, wordProd_eq_prod]
-  exact smul_prod c w
-
-end WordProdNorm
 
 end FQFP.BCH

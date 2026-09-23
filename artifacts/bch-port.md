@@ -74,10 +74,16 @@
   及其 `_smul` / `norm_*_le`。跨层复用的范数辅助：`norm_mul_sub_mul_le`、
   `norm_double_commutator_le`、`norm_mul_w_mul_le`、`norm_w_mul_mul_le`、`norm_mul_mul_w_le`、
   `norm_word5_le`。
-- `WordExpansion.lean`：二元侧 `wordEval`、`norm_wordEval_le`、`norm_sum{_smul}_wordEval_le`、
-  `wordEval_smul`、`sum_wordEval_smul`、`norm_prod_sub_prod_le`、`norm_wordEval_sub_le`、
-  `norm_sum_wordEval_diff_le`；任意字母表侧 `wordProdList`、`norm_wordProdList_le`、
-  `norm_sum_smul_wordProdList_le`、`smul_wordProdList`。
+- `WordExpansion.lean`：**一个求值一个字母表**——`abbrev wordEval letters v`（`κ → 𝔸` 读 `Fin n → κ`
+  的词），二元情形就是 `κ := Fin 2`，没有 `Bool`、没有 `wordEvalPattern`。
+  范数侧：`norm_prod_map_le`（逐字母界提升）、`norm_binWord_le`（二元统一界）、
+  `norm_sum_smul_prod_map_le` / `norm_sum_smul_wordEval_le` / `norm_sum_wordEval_le`、
+  `prod_map_smul` / `sum_prod_map_smul`、`norm_prod_sub_prod_le`、`norm_binWord_sub_le`、
+  `norm_sum_binWord_diff_le`；子集侧：`wordAPositions`、`wordSubstA`、`prod_map_add`、
+  `prod_map_substA_empty`。
+  **词积没有专门的 def**：`wordEval` 是 `((List.ofFn v).map letters).prod` 的 `abbrev`（`List` 现成
+  API，对 `simp` 透明），词表是 `Fin k → Fin 2`。决策与实测见
+  `artifacts/word-representation-decision.md` 与 `artifacts/fin2-migration-result.md`。
 - `QuinticRemainder.lean`：`norm_bchQuinticGroup{1,4,6,24}_diff_le`（常数 10/25/35/5）、
   `norm_bchQuinticTerm_diff_le`（常数 1）。
 
@@ -124,11 +130,11 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 `Finset.prod_add` 及其全部同族引理只对 `CommSemiring` 成立，右端**重排了字母**，在非交换环上
 是错的；BCH 的 `𝔸` 必须非交换，所以「按子集展开再重排系数」这条路数学上不成立（曾提交的
 `FQFP/BCH/QuinticExpansion.lean` 带 `[CommRing 𝔸]`，因此无法调用，已删）。正确形态是**按 snoc
-归纳、保持字母顺序**的展开：`WordExpansion.wordProdList_add`，在
+归纳、保持字母顺序**的展开：`WordExpansion.prod_map_add`，在
 `artifacts/examples/quintic-expansion-spike.lean` 中先验证过、随后搬进 `WordExpansion.lean`（`[Semiring 𝔸]`，无
 `omega`/`sorry`，axioms 只剩三条）。
 
-**最终形态（终版，别再改）**：`BCHTerms.lean` 的四组 `Fin 5 → Bool` 词表**原样保留**，
+**最终形态（终版，别再改）**：`BCHTerms.lean` 的四组 `Fin 5 → Fin 2` 词表**原样保留**，
 `QuinticTaylor2.lean` 的片段定义为「四组 × 该词 `a`-位置的 `k`-子集」的嵌套和：
 
 * `bchQuinticGroupSubsets words k x V y`：一组内所有词的 `powersetCard k` 之和；
@@ -137,7 +143,7 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 * `LinDiff = piece 1`，`Remainder{2V,3V,4V} = piece 2/3/4`，`Remainder = 2V+3V+4V`（`rfl`）。
 
 不再有 `Fin 75/70/30/5` 的平坦字面量表，也不再有 `bchWordSum`：片段是**从
-`bchQuinticTerm` 经已证明的 `wordProdList_add` 推导出来的**，所以不存在转写错误，
+`bchQuinticTerm` 经已证明的 `prod_map_add` 推导出来的**，所以不存在转写错误，
 也不需要「逐项核对 180 个词」。
 
 **只需两条引理**：
@@ -147,7 +153,7 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 * `bracket_sum`：`bracket (∑A) (∑B) (∑C) (∑D) = ∑ k, bracket (A k) (B k) (C k) (D k)`。
 
 **四条范数界（`1680/720`、`720/720`、`30/720`，合计 `2430/720`）**：词形统一（`k` 个 `V`、
-`5-k` 个来自 `{x,y}`），所以 `norm_wordProdList_le` + 字母界 `![M, Vn, M]` 直接给
+`5-k` 个来自 `{x,y}`），所以 `norm_prod_map_le` + 字母界 `![M, Vn, M]` 直接给
 `M^(5-k)·Vn^k`，再用 `Vn ≤ M` 松到 `M³·Vn²`——**没有 `fin_cases`**。词数 12 个数
 （k=2 时 12/24/30/4，k=3 时 8/11/10/1，k=4 时 2/2/1/0）由 `decide` 算出。
 
@@ -179,80 +185,6 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 `SymmetricQuinticCore` / `PhaseBC` / `Pieces` / `Assembly`；`SuzukiSepticMatchWords.lean` 并入
 `SuzukiSepticMatch`。）
 
-### 3.3bis `SmallSDischarge.lean` 的真实依赖与难度（本轮实测，修正上表上一版的说法）
-
-上一版把它标成「只依赖阶段 1、可立刻开工」——**不对**。实测（`Select-String` 计数）：
-
-* 它用了 `bch_sextic_term`（20 处）、`bch_septic_term`（13 处）、`bch_octic_term`（4 处），
-  三者的定义分别在 `Basic.lean:8732 / 11478 / 14221`，即上表映射到 `SexticMixed.lean` 与
-  `BCHHigherOrder.lean` 的两段**尚未移植**的区域。所以开工前有一层约 300 行的前置：
-  三个 k 次项的词表 + 各自的范数界（`norm_bch_*_term_le`，分别在 Basic:8822 / 12437 / 15162）。
-  **好消息**：三个定义都很小（34 / 134 / 130 行；28 / 126 / 124 个单项式，分母 1440），
-  范数界就是 `norm_sum_wordEval_le` / `norm_sum_smul_wordProdList_le` 的一次应用——正是阶段 1/2
-  已有的形态。
-* **难点集中且形状已知**：29 处 `maxHeartbeats`，其中最狠的四处是
-  `pieceB_sextic_decomp` 1.0e9、`pieceB_septic_decomp` 2.0e9、`pieceB_octic_decomp` 8.2e9、
-  `norm_I2_residual_inner_le` 1.0e9——全是**非交换多项式恒等式**，与刚做完的
-  `bchQuinticTermTaylor2Decomp` 同型，正好是本轮新增的 `wordProdList_add` + 子集索引能处理的
-  东西。其余 25 处是 4e6–1.3e8 的伸缩/分解引理。
-* 另有 18 处 `omit`（本项目禁止）、17 处 `match_scalars`、48 处 `noncomm_ring`，以及全程
-  `RCLike 𝕂`（目标约定是陈述用 `ℚ`、`ℝ` 只在证明里局部引入，见 §4.2）。**8.4k 行不能按行数
-  线性外推。**
-
-建议的分片顺序（每片独立可验收）：
-**P0** 六/七/八次项前置（**已完成**：`bchSexticTerm` / `bchSepticTerm` / `bchOcticTerm` + `norm_bch*Term_le`，28/126/124 项，分母 1440/30240/120960，见 `BCHTerms.lean`；生成+校验器 `scripts/gen_bch_higher_terms.py`）→ **P1** 纯恒等式 `{quintic,sextic,septic,octic,nonic}_pure_identity`
-（源自己已有 `_cleared` 的整数放大版本，正好用来拆小 `noncomm_ring` 目标）→
-**P2** 伸缩与 `I1/I2` 残差分解 → **P3** `pieceB_*_decomp`（1e9–8e9 那四处）→
-**P4** `norm_bch_{sextic,septic,octic}_remainder_le`。
-
-### 3.3ter P1 进展与一条硬踩点（degree-5 恒等式）
-
-P1 已起步（commit `7ba2f2f`）：`FQFP/BCH/SmallSDischarge.lean` 收了 degree-4 那一对
-（源里唯一不带 `maxHeartbeats` 的），`(N:𝕂)⁻¹ → (N:ℚ)⁻¹` 后**证明脚本原样可用、无 bump**。
-
-degree-5（`sextic_pure_identity`，源 bump 16M）的实验结论有三条：
-
-1. **恒等式本身是对的。** `scripts/check_pure_identity.py` 把两边独立展开成自由代数上的
-   `{词: ℚ}` 映射再作差：degree 5 两边各 **30 个词、差集为空**。（这个校验器同时是
-   P0 三张表的旁证：它走的是目标 `BCHTerms.lean` 的四组词表。）
-2. **源的证明脚本不能原样搬过来。** 目标的 `bchQuinticGroup{1,4,6,24}` 是
-   `∑ i, (List.ofFn (wordEval …)).prod`（词数据），`unfold` 之后 `match_scalars` 会
-   **静默错配**：它把「未展开的 `Finset.sum`」和组系数当成单项式去配，于是留下**假命题**残局
-   `⊢ -1 / 720 = 0`、`⊢ 1 / 180 = 0`（正好是 `bchQuinticTerm` 的组系数）。**注意这不是超时**，
-   全文件在默认预算下 14s 就跑完——所以这一片**根本不需要 bump**，源那 16M 花在别处。
-3. **修法（已落地，degree-5 通过）**：`unfold` 之后先把四个组展开成单项式，然后**不要用
-   `match_scalars <;> ring`，改用 `noncomm_ring; module`**——目标的 `𝔸` 是 `ℚ`-代数，展开后
-   剩下的是「非交换多项式 + `ℚ`-标量」两层，`noncomm_ring` 管前者、`module` 管后者。
-   `match_scalars` 在这里是错工具：它既不展开 `Finset.sum`，也不处理 `•`。
-
-   ```lean
-   unfold bchQuinticTerm bchQuinticGroup1 bchQuinticGroup4
-     bchQuinticGroup6 bchQuinticGroup24
-   simp only [smul_add, bchQuinticGroup1Words, List.ofFn_succ, wordEval, Fin.isValue,
-     Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_fin_one, Matrix.cons_val_succ,
-     List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one, mul_ite, ite_mul, Fin.sum_univ_succ,
-     Bool.false_eq_true, ↓reduceIte, Finset.univ_unique, Fin.default_eq_zero, Finset.sum_const,
-     Finset.card_singleton, one_smul, neg_add_rev, bchQuinticGroup4Words, bchQuinticGroup6Words,
-     bchQuinticGroup24Words]
-   noncomm_ring; module
-   ```
-
-   全文件在默认预算下 15s 编完，**无 bump**。（`Matrix.cons_val'` / `Fin.default_eq_zero` /
-   `Finset.univ_unique` 这几条是必须的：`List.ofFn` 的 `get` 归结到 `Fin` 字面量后还要靠它们
-   才落到位。）
-
-**工具本轮新增**（都可复用）：
-
-* `scripts/port_small_s_discharge.py`：源→目标语句变换器（去 `𝕂`、`(N:𝕂)⁻¹→(N:ℚ)⁻¹`、
-  `bch_*_term → bch*Term`、`bch_*_group_N → bch*GroupN`、去 `omit` 与
-  `set_option maxHeartbeats`）；`--list` 报五条恒等式及 bump 状态，`--emit <名>` 出目标文本。
-* `scripts/check_pure_identity.py`：把恒等式两边展开成 `{词: ℚ}` 独立核对（degree 5 已通）。
-
-**踩点**：**别用 PowerShell 的 here-string 去改 Lean 文件**——反引号会被当转义吃掉（本轮把
-`` `bchQuinticGroup*` `` 变成了带退格控制字符的 `chQuinticGroup*`，还把两行 `simp only` 拼成了
-一行）。改 Lean 文本用 `edit` 工具，或 PowerShell 里用单引号字符串 + `MatchEvaluator`。
-
-
 ### 3.3quater degree-6 的实测天花板：单块 `noncomm_ring` 路线走到头了（含 profiler 读数）
 
 degree-6 恒等式（`septic_pure_identity`，用 `bchSexticTerm`，源 bump 64M）本轮试了三条路，
@@ -264,71 +196,6 @@ degree-6 恒等式（`septic_pure_identity`，用 `bchSexticTerm`，源 bump 64M
 | 先在小目标证 `bchSexticTerm_expand`，恒等式里 `rw` 后 `noncomm_ring; module` | 声明头 37.0M，证明里 `noncomm_ring` 超时 |
 | 再加源那套分配律（`pow_succ, mul_add, …`）后 `noncomm_ring` | 分配律 `simp only` 118.6M、`noncomm_ring` 37.3M |
 
-`set_option trace.profiler true / .useHeartbeats true / .threshold 2000` 的读数：
-
-* `Elab.definition.header` **37,024,140** —— **光把这条 `let` 链语句写出来**（还没证）就是 185 倍预算。
-  这解释了为什么两个超时错误里总有一个指向声明起始行（`… :174:0`）。
-* `Elab.definition.value` **162,950,851**：`simp only [show z = a + b from rfl, …]` 6.95M、
-  分配律 `simp only [bchSexticTerm_expand, pow_succ, mul_add, …]` 118.6M、`noncomm_ring` 37.3M。
-* 对照：degree-5 的 `sextic_pure_identity`（同样 `let` 链、同样 `noncomm_ring; module`）**整条声明 < 200k**。
-  也就是「多一个次数」不是 2 倍而是 **~10³ 倍**：`let` 套 `let` 的类型在 `isDefEq`/`whnf` 下会超线性爆炸。
-
-**结论：需要两条结构改造，不是调参/换收尾 tactic。**
-
-1. **语句本身要换形**：把 `let z / T₂…T₅ / W6 / y3_6 / y4_6 / y5_6` 换成文件内 `private def`。
-   数学内容一字不差（只是把「类型里的 `let` 链」换成不透明名字），但不换的话**任何**证法都过不去
-   ——37M 花在语句上，与证明无关。
-2. **证明要走词索引求和簿记**，不能单块 `noncomm_ring`：与已完成的 `bchQuinticTermTaylor2Decomp`
-   同型——每个 Taylor 分片（`z^2 * T₄`、`T₂*T₃*z`、…）各自证一条「= 词表加权和」的小引理
-   （小目标里 `noncomm_ring` 很便宜），最后按 `Finset.sum` 逐词配系数。**这笔投入不是只为了 6/7/8**：
-   P3 的 `pieceB_*_decomp`（1e9–8e9）要的就是这套机器。
-
-**本轮已落地、可复用的资产**：`FQFP/BCH/SmallSDischarge.lean` 的 `bchSexticTerm_expand`
-（`private`）：把 `bchSexticTerm` 展成 28 项单项式链，在**自己的小目标**里证完（默认预算、
-全文件 15s、零告警，收尾只要 `noncomm_ring`）。它把「词表展开」这项成本从恒等式里摘掉了——
-degree-6 剩下的超支与词表无关，纯粹是 `let` 语句 + 单块归一化。
-
-**踩点（本轮新增，重要）**：`gen_bch_higher_terms.py --expand` 里的 `"ab"[x]` 把 `true` 映成了 `"b"`，
-而目标约定（`wordEval`：`if v i then a else b`）是 `true → a`——生成链于是成了整个 a↔b 镜像，
-`noncomm_ring` 给出**假残局** `⊢ -1 / 720 = 0` / `⊢ -1 / 1440 = 1 / 1440`。
-**这类假残局要当数据错误读**（它精确指出失配的那个词），不是「工具不行」；已修成
-`"a" if x else "b"`。校验器 `scripts/diff_sextic_chain.py` 做链↔词表逐词差分（正/反两种字母约定都报），
-`--expand` 的输出现在报 `forward: 0 differing words`。
-
-**本轮续测（结构改造第一步已落地，2026-02 续）**
-
-1. **语句换形有效，且是必须的**：把 `let` 链换成 `private def`（九条：`bchZ`、`bchT2`…`bchT5`、
-   `bchW6`、`bchY3Deg6`/`bchY4Deg6`/`bchY5Deg6`，数学内容一字不差）后，
-   `Elab.definition.header` 从 **37.0M → 344k**（107×）。但证明侧仍死：`simp only [<九条 def>]`
-   232k，接着单块 `noncomm_ring` **172M**（其中它内部的分配律 `simp only [add_mul, mul_add, …]`
-   占 44M）。**单块归一化路线到此为止。**
-2. **平面链（flat）实测**（`scripts/gen_sextic_flat_chain.py` → `artifacts/examples/sextic-flat-probe.lean`）：
-   * 该生成器把恒等式两边在「两个生成元 a、b 的自由 ℚ-代数」里独立展开：`taylor − sextic = 0`
-     （两边各 28 个词），**独立确认 degree-6 恒等式为真**。
-   * **已收集**的平面链（28 = 28 项）：`noncomm_ring` 2.36M heartbeats，**编过、无 bump、无报错** ✓。
-   * **未收集**的平面链（六段拼起来 ~220 项）：`noncomm_ring` 先 `maxRecDepth` 爆（给 8000 后仍
-     `unsolved goals`）→ 它**静默放弃**（注意：是 `unsolved goals`，不是超时——又一种要当数据读的
-     失败模式）。
-   * 结论：最终目标必须**按词索引收集**（每片 ≤64 项），不能是几百项的裸和。
-3. **装配路线（下一步）**：
-   1. `bchWord6 : Fin 64 → Fin 6 → Bool`（64 个六字母词）+ 每片一张 `Fin 64 → ℚ` 系数表（Python
-      算；`gen_sextic_flat_chain.py` 里的符号展开器现成）；
-   2. 六条小引理 `bchW6 a b = ∑ i, cW i • wordProdList ![a, b] (wordEvalPattern (bchWord6 i))`
-      （W6 / Y3 / Y4 / Y5 / Z⁶ / bchSexticTerm 各一条），每条在自己的小目标里证；
-   3. 恒等式用 `Finset.sum` 簿记合成同一个索引上的和，最后 `fin_cases i <;> norm_num [<六张表>]`
-      逐词配系数——**不再用 `noncomm_ring`**。
-
-**开工前提（两件硬约束）**：
-
-1. **生成代码的兼容性**：源 `scripts/` 下约 90 个 Python（生成器 + 独立 CAS 校验器成对）。
-   生成代码大量用 `match_scalars <;> ring`、`noncomm_ring`、`dsimp only` 这类对 Mathlib 内部
-   simp 集敏感的手法（源 `CLAUDE.md` 记了 7 条）。**生成件的移植成本很可能远高于它的行数比例**，
-   评估工期时不要按行数线性外推。
-2. **构建内存**：源已因单模块峰值 RSS 把 42k 行的 `SymmetricQuintic` 拆成 4 个模块，并用
-   `build_safe.sh` 顺序构建（Lake 5 没有 `-j` 节流）。目标仓库必须**预先**规划同样的拆分，
-   不要等到 OOM。
-
----
 
 ## 4. 设计约定（改代码前必读）
 
