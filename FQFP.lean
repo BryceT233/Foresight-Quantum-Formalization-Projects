@@ -7,13 +7,13 @@ public import FQFP.BCH.BCHTerms
 public import FQFP.BCH.ChildsBasis
 public import FQFP.BCH.ExpNorm
 public import FQFP.BCH.FreeMonoidInstances
-public import FQFP.BCH.FreeWordCoeff
 public import FQFP.BCH.Logarithm
 public import FQFP.BCH.NestedCommNorm
 public import FQFP.BCH.QuinticRemainder
 public import FQFP.BCH.QuinticTaylor2
 public import FQFP.BCH.RealScalar
 public import FQFP.BCH.SmallSDischarge
+public import FQFP.BCH.WordAlgebra
 public import FQFP.BCH.WordNorm
 public import FQFP.BCH.WordExpansion
 public import FQFP.CQM.Category.DaggerCategory
