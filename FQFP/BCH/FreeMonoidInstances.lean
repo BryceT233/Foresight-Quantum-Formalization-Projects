@@ -63,7 +63,7 @@ instance instHasMulAntidiagonal [DecidableEq α] : Finset.HasMulAntidiagonal (Fr
         simpa using congrArg toList h
       have hlen : p.1.toList.length ≤ n.toList.length := by
         rw [← hcat]; simp
-      refine ⟨p.1.toList.length, by omega, ?_⟩
+      refine ⟨p.1.toList.length, by lia, ?_⟩
       have htake : n.toList.take p.1.toList.length = p.1.toList := by
         rw [← hcat, List.take_left]
       have hdrop : n.toList.drop p.1.toList.length = p.2.toList := by

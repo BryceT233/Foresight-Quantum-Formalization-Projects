@@ -5,7 +5,6 @@ Authors: Foresight Quantum
 -/
 module
 
-public import Mathlib.Algebra.FreeAlgebra
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import FQFP.BCH.FreeMonoidInstances
@@ -28,19 +27,20 @@ compare coefficients there.
 
 * `wordAlgebraLift a b` — the evaluation `ℚ[FreeMonoid (Fin 2)] →ₐ[ℚ] 𝔸` sending the two generators
   to `a`, `b`. This is the map that turns a coefficient list into an element of `𝔸`.
-* `wordAlgebraLift_injective` — the evaluation at the two *free* generators is injective, so an
-  identity in `𝔸` follows from the corresponding coefficient identity.
+* `wordAlgebraLift_mono`, `wordAlgebraLift_evalTab` — the evaluation read off a monomial and off a
+  table. These are what carry a statement *about tables* into `𝔸`.
 * `wordEval_gen` — `wordEval` (from `WordExpansion.lean`) through the two generators is the
   monomial of the letter list: the bridge from a word pattern to a free-algebra basis vector.
 * `coeff_mono`, `coeff_smul_mono`, `coeff_mono_mul`, `coeff_mono_sum` — reading coefficients.
 * `prod_mono_aux` — a product of monomials is one monomial (concatenate the words, multiply the
   coefficients).
-* `evalTab`, `mulTab`, `smulTab`, `evalTab_mulTab`, `evalTab_smulTab` — a *table* (a list of
-  `(word, coefficient)` rows) is the data of a term, and evaluation turns the table operations into
-  the ring operations (`evalTab_append` handles sums).
-* `reprTab`, `evalTab_eq_reprTab`, `evalTab_eq_of_reprTab_eq` — **the criterion**: a table is its
-  coefficient function, so two tables with the same coefficients evaluate equally, and a degree-`k`
-  identity can be settled on `List` and `ℚ` data alone.
+* `Tab` — a *table*: a list of `(word, coefficient)` rows, i.e. the data of a term.
+* `evalTab`, `mulTab`, `smulTab`, `evalTab_mulTab`, `evalTab_smulTab` — evaluation turns the table
+  operations into the ring operations (`evalTab_append` handles sums).
+* `reprTab`, `evalTab_eq_reprTab`, `evalTab_eq_of_reprTab_eq`, `reprTab_apply_eq`, `reprTab_append`,
+  `reprTab_smulTab` — **the criterion**: a table is its coefficient function, so two tables with the
+  same coefficients evaluate equally, and a degree-`k` identity can be settled on `List` and `ℚ`
+  data alone.
 
 ## Implementation notes
 
@@ -61,6 +61,19 @@ reduces by `smul_single'` instead of by a `Finsupp` convolution.
 The `FreeMonoid.of` product is right-associated, while the canonical form used here is
 `FreeMonoid.ofList l`; `ofList_mul` and `FreeMonoid.ofList_cons` are the two lemmas that move
 between them.
+
+Two facts shape what can be *decided* here, as opposed to merely stated:
+
+* **`ℚ` has no kernel reduction.** `(2 : ℚ) * 3 = 6` is not `rfl`, `(q : ℚ).num` does not reduce,
+  and `DecidableEq ℚ` does not reduce either, so `rfl` and `decide` can settle *words*
+  (`List (Fin 2)` equality does reduce) but never *coefficients*. Coefficient arithmetic is
+  `norm_num`'s job, and one `norm_num` over a few hundred `ℚ` terms already runs past the default
+  heartbeat budget. That is why a term is compared table by table and word by word instead of in a
+  single goal.
+* **Injectivity into the free algebra is not needed here.** The transfer used downstream goes from
+  the free word algebra *to* `𝔸`, and a ring homomorphism carries identities forward on its own; an
+  injective evaluation is only needed for the reverse direction, which nothing in this development
+  uses. `wordAlgebraLift_mono` at `l = [k]`, `q = 1` identifies the two generators.
 -/
 
 @[expose] public section
@@ -79,36 +92,6 @@ so it is a ring homomorphism: a coefficient list is evaluated by multiplying out
 noncomputable abbrev wordAlgebraLift {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
     MonoidAlgebra ℚ (FreeMonoid (Fin 2)) →ₐ[ℚ] 𝔸 :=
   MonoidAlgebra.lift ℚ 𝔸 (FreeMonoid (Fin 2)) (FreeMonoid.lift ![a, b])
-
-/-- The monoid hom `FreeMonoid (Fin 2) →* FreeAlgebra ℚ (Fin 2)` reading the two letters as the two
-free generators. -/
-private def freeGenerators : FreeMonoid (Fin 2) →* FreeAlgebra ℚ (Fin 2) :=
-  FreeMonoid.lift (FreeAlgebra.ι ℚ)
-
-/-- **`wordAlgebraLift` at the two free generators is the inverse of
-`FreeAlgebra.equivMonoidAlgebraFreeMonoid`.** Both are `MonoidAlgebra.lift` along the same monoid
-homomorphism; the only content is the identification of the two monoid homomorphisms. -/
-private theorem wordAlgebraLift_free_eq_symm :
-    (wordAlgebraLift (FreeAlgebra.ι ℚ (0 : Fin 2)) (FreeAlgebra.ι ℚ 1) :
-        MonoidAlgebra ℚ (FreeMonoid (Fin 2)) →ₐ[ℚ] FreeAlgebra ℚ (Fin 2)) =
-      ((FreeAlgebra.equivMonoidAlgebraFreeMonoid (R := ℚ) (X := Fin 2)).symm :
-        MonoidAlgebra ℚ (FreeMonoid (Fin 2)) →ₐ[ℚ] FreeAlgebra ℚ (Fin 2)) := by
-  have h : FreeMonoid.lift ![(FreeAlgebra.ι ℚ (0 : Fin 2)), FreeAlgebra.ι ℚ 1] =
-      freeGenerators := by
-    ext i
-    fin_cases i <;> rfl
-  rw [wordAlgebraLift, h, freeGenerators]
-  rfl
-
-/-- **The evaluation at the two free generators is injective.** An identity between two `𝔸`-valued
-word expansions is therefore equivalent to the identity of their coefficient functions in the free
-word algebra; the free algebra is only an auxiliary object in the proof. -/
-theorem wordAlgebraLift_injective :
-    Function.Injective
-      (wordAlgebraLift (FreeAlgebra.ι ℚ (0 : Fin 2)) (FreeAlgebra.ι ℚ 1) :
-        MonoidAlgebra ℚ (FreeMonoid (Fin 2)) → FreeAlgebra ℚ (Fin 2)) := by
-  rw [wordAlgebraLift_free_eq_symm]
-  exact (FreeAlgebra.equivMonoidAlgebraFreeMonoid (R := ℚ) (X := Fin 2)).symm.injective
 
 /-! ### The monomial presentation
 
@@ -209,9 +192,13 @@ says that the product of the monomials of a table is the monomial of the concate
 the product of the coefficients, which is what makes coefficient comparison purely a computation on
 data. -/
 
+/-- A *table*: rows of `(word, coefficient)`. This is the data of a term of the free word algebra,
+and the type on which coefficient comparison is a computation on `List` and `ℚ` alone. -/
+abbrev Tab : Type := List (List (Fin 2) × ℚ)
+
 /-- **A product of monomials is one monomial**: the words concatenate, the coefficients multiply.
 The accumulator-free form of `mono_mul` iterated. -/
-lemma prod_mono_aux (t : List (List (Fin 2) × ℚ)) :
+lemma prod_mono_aux (t : Tab) :
     ((t.map fun p => mono p.1 p.2).prod)
       = mono (t.map Prod.fst).flatten (t.map Prod.snd).prod := by
   induction t with
@@ -231,28 +218,28 @@ lemma coeff_mono_sum {ι : Type*} (s : Finset ι) (L : ι → List (Fin 2)) (C :
   exact Finset.sum_congr rfl fun i _ => coeff_mono (L i) w (C i)
 
 /-- A table's evaluation: the sum of its rows' monomials. -/
-def evalTab (t : List (List (Fin 2) × ℚ)) : MonoidAlgebra ℚ (FreeMonoid (Fin 2)) :=
+def evalTab (t : Tab) : MonoidAlgebra ℚ (FreeMonoid (Fin 2)) :=
   (t.map fun p => mono p.1 p.2).sum
 
 /-- **Row-wise product of two tables**: cartesian product, word concatenation, coefficient product.
 This is the data-level multiplication that mirrors the ring multiplication. -/
-def mulTab (s t : List (List (Fin 2) × ℚ)) : List (List (Fin 2) × ℚ) :=
+def mulTab (s t : Tab) : Tab :=
   s.flatMap fun p => t.map fun r => (p.1 ++ r.1, p.2 * r.2)
 
-lemma evalTab_nil : evalTab ([] : List (List (Fin 2) × ℚ)) = 0 := rfl
+lemma evalTab_nil : evalTab ([] : Tab) = 0 := rfl
 
-lemma evalTab_cons (p : List (Fin 2) × ℚ) (t : List (List (Fin 2) × ℚ)) :
+lemma evalTab_cons (p : List (Fin 2) × ℚ) (t : Tab) :
     evalTab (p :: t) = mono p.1 p.2 + evalTab t := by
   rw [evalTab, List.map_cons, List.sum_cons]
   rfl
 
-lemma evalTab_append (s t : List (List (Fin 2) × ℚ)) :
+lemma evalTab_append (s t : Tab) :
     evalTab (s ++ t) = evalTab s + evalTab t := by
   induction s with
   | nil => rw [List.nil_append, evalTab_nil, zero_add]
   | cons p s ih => rw [List.cons_append, evalTab_cons, ih, evalTab_cons, add_assoc]
 
-lemma evalTab_mul_single (p : List (Fin 2) × ℚ) (t : List (List (Fin 2) × ℚ)) :
+lemma evalTab_mul_single (p : List (Fin 2) × ℚ) (t : Tab) :
     evalTab (t.map fun r => (p.1 ++ r.1, p.2 * r.2)) = mono p.1 p.2 * evalTab t := by
   induction t with
   | nil => rw [List.map_nil, evalTab_nil, mul_zero]
@@ -261,11 +248,11 @@ lemma evalTab_mul_single (p : List (Fin 2) × ℚ) (t : List (List (Fin 2) × �
 
 /-- **The evaluation of a table product is the product of the evaluations.** This is what lets a
 ring expression built from degree-`k` pieces be computed entirely on tables. -/
-lemma evalTab_mulTab (s t : List (List (Fin 2) × ℚ)) :
+lemma evalTab_mulTab (s t : Tab) :
     evalTab (mulTab s t) = evalTab s * evalTab t := by
   induction s with
   | nil =>
-      change evalTab ([] : List (List (Fin 2) × ℚ)) = evalTab ([] : List (List (Fin 2) × ℚ)) * _
+      change evalTab ([] : Tab) = evalTab ([] : Tab) * _
       rw [evalTab_nil, zero_mul]
   | cons p s ih =>
       change evalTab (List.flatMap (fun p => List.map (fun r => (p.1 ++ r.1, p.2 * r.2)) t)
@@ -275,11 +262,11 @@ lemma evalTab_mulTab (s t : List (List (Fin 2) × ℚ)) :
           = evalTab s * evalTab t from ih]
 
 /-- Scale every coefficient of a table. -/
-def smulTab (c : ℚ) (t : List (List (Fin 2) × ℚ)) : List (List (Fin 2) × ℚ) :=
+def smulTab (c : ℚ) (t : Tab) : Tab :=
   t.map fun p => (p.1, c * p.2)
 
 /-- **The evaluation of a scaled table is the scalar multiple of the evaluation.** -/
-lemma evalTab_smulTab (c : ℚ) (t : List (List (Fin 2) × ℚ)) :
+lemma evalTab_smulTab (c : ℚ) (t : Tab) :
     evalTab (smulTab c t) = c • evalTab t := by
   induction t with
   | nil => rw [smulTab, List.map_nil, evalTab_nil, smul_zero]
@@ -295,7 +282,7 @@ coefficient comparison of two tables into `List` and `ℚ` arithmetic.
 
 Stated with `w` a `List` so that `iteration` can decide the row conditions by `decide`; the
 `FreeMonoid` form follows by `FreeMonoid.toList`. -/
-lemma coeff_mono_list (t : List (List (Fin 2) × ℚ)) (w : List (Fin 2)) :
+lemma coeff_mono_list (t : Tab) (w : List (Fin 2)) :
     (evalTab t).coeff (FreeMonoid.ofList w)
       = (t.map fun p => if p.1 = w then p.2 else 0).sum := by
   induction t with
@@ -317,12 +304,12 @@ through their coefficient functions instead of through the ring.
 evaluations**, which is what lets a degree-`k` identity be settled on data. -/
 
 /-- The `Finsupp` a table represents: one `single` per row. -/
-def reprTab : List (List (Fin 2) × ℚ) → FreeMonoid (Fin 2) →₀ ℚ
+def reprTab : Tab → FreeMonoid (Fin 2) →₀ ℚ
   | [] => 0
   | p :: t => Finsupp.single (FreeMonoid.ofList p.1) p.2 + reprTab t
 
 /-- **The bridge**: evaluating a table gives the `Finsupp` the table represents. -/
-theorem evalTab_eq_reprTab (t : List (List (Fin 2) × ℚ)) :
+theorem evalTab_eq_reprTab (t : Tab) :
     evalTab t = MonoidAlgebra.ofCoeff (reprTab t) := by
   induction t with
   | nil => rw [evalTab_nil, reprTab, MonoidAlgebra.ofCoeff_zero]
@@ -334,14 +321,32 @@ theorem evalTab_eq_reprTab (t : List (List (Fin 2) × ℚ)) :
           = MonoidAlgebra.ofCoeff (Finsupp.single (FreeMonoid.ofList p.1) p.2) from rfl)
 
 /-- **The criterion**: tables with the same coefficient function evaluate equally. -/
-theorem evalTab_eq_of_reprTab_eq {s t : List (List (Fin 2) × ℚ)} (h : reprTab s = reprTab t) :
+theorem evalTab_eq_of_reprTab_eq {s t : Tab} (h : reprTab s = reprTab t) :
     evalTab s = evalTab t := by
   rw [evalTab_eq_reprTab, evalTab_eq_reprTab, h]
+
+/-- **A table's representation is additive in the rows**: the coefficient function of a
+concatenation is the sum of the coefficient functions. This is what lets a term be assembled piece
+by piece without ever unfolding the pieces. -/
+lemma reprTab_append (s t : Tab) : reprTab (s ++ t) = reprTab s + reprTab t := by
+  induction s with
+  | nil => rw [List.nil_append, reprTab, zero_add]
+  | cons p s ih => rw [List.cons_append, reprTab, reprTab, ih, add_assoc]
+
+/-- **A table's representation is the coefficient function of its evaluation.** Every coefficient
+statement about `evalTab` is therefore a statement about `reprTab`, and conversely. -/
+lemma reprTab_eq_coeff (t : Tab) : reprTab t = (evalTab t).coeff := by
+  rw [evalTab_eq_reprTab, MonoidAlgebra.coeff_ofCoeff]
+
+/-- **A table's representation is homogeneous**: scaling every coefficient scales the coefficient
+function. -/
+lemma reprTab_smulTab (c : ℚ) (t : Tab) : reprTab (smulTab c t) = c • reprTab t := by
+  rw [reprTab_eq_coeff, reprTab_eq_coeff, evalTab_smulTab, MonoidAlgebra.coeff_smul]
 
 /-- **The coefficient of a table's representation, pointwise**: the rows whose word is `l`, with
 their coefficients. With this, `reprTab` comparisons are sums over `List` and `ℚ` only, so a table
 identity can be checked word by word without any `Decidable`-instance rewriting. -/
-lemma reprTab_apply_eq (t : List (List (Fin 2) × ℚ)) (l : List (Fin 2)) :
+lemma reprTab_apply_eq (t : Tab) (l : List (Fin 2)) :
     reprTab t (FreeMonoid.ofList l) = (t.map fun p => if p.1 = l then p.2 else (0 : ℚ)).sum := by
   induction t with
   | nil => rw [reprTab, List.map_nil, List.sum_nil]; rfl
@@ -360,6 +365,33 @@ lemma reprTab_apply_eq (t : List (List (Fin 2) × ℚ)) (l : List (Fin 2)) :
               (a' := FreeMonoid.ofList l) (by
                 intro hc
                 exact h (FreeMonoid.ofList.injective hc.symm))]
+
+/-! ### Evaluating a table in an algebra
+
+The two lemmas below read `wordAlgebraLift a b` off a monomial and off a table, so a statement
+*about tables* becomes a statement about `𝔸`. Only the forward direction is needed: the evaluation
+is a ring homomorphism, so an identity of tables carries over by `map_zero` and friends, and no
+injectivity is involved. -/
+
+/-- **The evaluation of a monomial**: `a` and `b` replace the two letters, and the coefficient comes
+out as the scalar. At `l = [0]`, `q = 1` (and likewise `l = [1]`) this is
+`wordAlgebraLift a b (mono [0] 1) = a`, which is how the two generators are identified. -/
+theorem wordAlgebraLift_mono {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸)
+    (l : List (Fin 2)) (q : ℚ) :
+    wordAlgebraLift a b (mono l q) = q • (l.map ![a, b]).prod := by
+  have h : wordAlgebraLift a b (MonoidAlgebra.of ℚ (FreeMonoid (Fin 2)) (FreeMonoid.ofList l))
+      = (l.map ![a, b]).prod := by
+    rw [wordAlgebraLift, MonoidAlgebra.lift_of, FreeMonoid.lift_ofList]
+  rw [mono, map_smul, h]
+
+/-- **The evaluation of a table**: the rows are evaluated one by one and summed. This is the
+statement that defines a degree-`k` term written as `wordAlgebraLift a b (evalTab t)`. -/
+theorem wordAlgebraLift_evalTab {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) (t : Tab) :
+    wordAlgebraLift a b (evalTab t) = (t.map fun p => p.2 • (p.1.map ![a, b]).prod).sum := by
+  induction t with
+  | nil => rw [evalTab_nil, map_zero, List.map_nil, List.sum_nil]
+  | cons p t ih =>
+      rw [evalTab_cons, map_add, ih, List.map_cons, List.sum_cons, wordAlgebraLift_mono]
 
 end
 

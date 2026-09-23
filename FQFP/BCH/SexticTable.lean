@@ -59,9 +59,6 @@ noncomputable section
 open FQFP.BCH
 open FQFP.BCH.WordAlgebra
 
-/-- A table: a list of `(word, coefficient)` rows. -/
-abbrev Tab := List (List (Fin 2) × ℚ)
-
 /-- **The degree-`k` part of `y = exp a * exp b - 1`**: the words `aⁿb^(k−n)` with coefficient
 `1/(n!(k−n)!)`. -/
 def T : (k : ℕ) → Tab
@@ -73,6 +70,10 @@ def T : (k : ℕ) → Tab
           ([0, 1, 1, 1], 1 / 6), ([1, 1, 1, 1], 1 / 24)]
   | 5 => [([0, 0, 0, 0, 0], 1 / 120), ([0, 0, 0, 0, 1], 1 / 24), ([0, 0, 0, 1, 1], 1 / 12),
           ([0, 0, 1, 1, 1], 1 / 12), ([0, 1, 1, 1, 1], 1 / 24), ([1, 1, 1, 1, 1], 1 / 120)]
+  | 6 => [([0, 0, 0, 0, 0, 0], 1 / 720), ([0, 0, 0, 0, 0, 1], 1 / 120),
+          ([0, 0, 0, 0, 1, 1], 1 / 48), ([0, 0, 0, 1, 1, 1], 1 / 36),
+          ([0, 0, 1, 1, 1, 1], 1 / 48), ([0, 1, 1, 1, 1, 1], 1 / 120),
+          ([1, 1, 1, 1, 1, 1], 1 / 720)]
   | _ => []
 
 /-- A square of a one-letter monomial, in list form. -/
