@@ -54,7 +54,38 @@
 
 ---
 
-## 阶段 A 施工记录（第三轮：基表落地的配方已定）
+---
+
+## 阶段 A 施工记录（第四轮：候选 3 全线打通，只剩收尾代价）
+
+**候选 3（「表 = 系数函数」）已验证成立，全部落在 `FQFP/BCH/WordAlgebra.lean`：**
+
+| 声明 | 内容 |
+|---|---|
+| `reprTab` | 表 → `FreeMonoid (Fin 2) →₀ ℚ`，每行一个 `single` |
+| `evalTab_eq_reprTab` | `evalTab t = ofCoeff (reprTab t)`（桥） |
+| `evalTab_eq_of_reprTab_eq` | **判据**：`reprTab s = reprTab t → evalTab s = evalTab t` |
+| `reprTab_apply_eq` | `reprTab t (ofList l) = (t.map fun p => if p.1 = l then p.2 else 0).sum` |
+
+**为什么这条绕开了上一轮的障碍**：上一轮卡在
+`List.filter (fun p => @decide (p.1 = w) …)`——`List.filter` 把 `Decidable` 实例作为参数存进项里，
+对它的改写会被 `rw` 的 motive 检查挡掉（`motive is not type correct`）。
+`reprTab` 走 `Finsupp.single` + `Finsupp.add_apply`，**完全不经过 `decide`**，障碍自然消失。
+
+**剩下的唯一一步**：把 `reprTab DT = reprTab T6tab` 逐词判定。用 `reprTab_apply_eq` 后，
+每个词的目标就是两个具体 `ℚ` 求和相等，`norm_num` 应当能收。
+
+**实测代价**：单个词（`[0,0,0,0,0,0]`）约 **18 秒**，且 `norm_num` 把目标化归成了 `False`
+而不是关掉——说明它在中途算出了一个「不成立」的中间式，需要进一步定位（可能是
+`List.sum` 上 `if` 条件的求值方式，而不是数据有误：Python 校验器已逐词确认 28 个词全等）。
+64 个词按这个代价不可接受，所以收尾这一步还需要一次针对性排查。
+
+**下一步的候选**：
+1. 定位 `norm_num` 为何化出 `False`（很可能与 `List.map`/`List.sum` 上 `if` 的求值有关）；
+2. 或者把 `DT` 先在数据层合并同类项（Python 侧的 `collapse`），使目标的两侧都只有 28 行，
+   再逐词 `norm_num`——行数从 1500 降到 28，代价应大幅下降。
+
+
 
 **已跑通一条完整的基表引理**（`T₂`，探针已删，配方保留）：度数 2 的基表
 `T₂ = a²/2 + ab + b²/2` 满足
