@@ -51,6 +51,63 @@
 
 ---
 
+## 0ter 施工记录（第 2 步：表基建 + 定义的自然一般性；四次 commit）
+
+`e810e05`（第 1 步的桥）→ `323417f`（degree-6 表 + collapse 层）→ `fbed7cc`（定义降到自然一般性）
+→ `49aebde`（六块表的自由代数桥）。每步都 `lake build FQFP` + `runLinter` + `lint-style` 全绿。
+
+### 已落地
+
+| 声明 | 内容 |
+|---|---|
+| `unitTab` / `powTab` / `evalTab_powTab` / `evalTab_singleton` | 表的幂（`z⁶` 这类分次件需要） |
+| `addRow` / `collapseAux` / `collapse` + `reprTab_{addRow,collapseAux,collapse}` / `evalTab_collapse` | **支撑规范化**：合并判据只比较**词**相等，所以可 kernel 归约 |
+| `w6Tab` / `y36Tab` / `y46Tab` / `y56Tab` / `z6Tab` / `sexticTab` / `dynkin6Tab` | degree-6 左端六块各自的表与整体 |
+| `evalTab_{w6Tab,y36Tab,y46Tab,y56Tab,sexticTab}` | 每张表**就是**它镜像的环表达式（纯 `simp only`，无 `norm_num`、无 bump） |
+| `mono_pair_eq_freeGen` | `![mono [0] 1, mono [1] 1] = freeGen` |
+
+### 本轮的两条实测结论
+
+1. **`collapse` 可 kernel 归约，整张 degree-6 表也算得动**：
+   `example : (collapse dynkin6Tab).length = 64 := by decide` 直接过。也就是说合并过程不需要
+   任何 `ℚ` 判定，支撑能在 kernel 层被钉到 64 个字。这是 §3 那张表能落地的机制。
+2. **`bchSexticTerm` 原先的 `[NormedRing 𝔸]` 是硬阻塞**：自由词代数不是赋范环，所以
+   `bchSexticTerm (mono [0] 1) (mono [1] 1)` 根本不是合法项。已按「定义降到自然一般性」放松
+   （见 §4.5），此后 `evalTab_sexticTab` 就是一次 `simp only`。
+
+### 剩下的（第 2 步收尾）与一个必须定的形状
+
+`evalTab dynkin6Tab = 0` 的**逐字比对**卡在一处：`sexticTab` 目前是
+`List.ofFn fun i : Fin 28 => (List.ofFn (bchSexticTermWords i), bchSexticTermCoeffs i)`，
+它的**行只能在 kernel 里归约，`simp only` 归约不动**（`bchSexticTermWords i j` 不是 simp 能拆的
+形状；实测 `bchSexticTermWords 27 = ![1,1,1,1,0,0] := rfl` 过，但 `simp only` 拆不开）。
+而 `List.ofFn` 形式与「28 行字面量表」**不是 defeq**（实测 `rfl` 失败），所以两条路只能选一条：
+
+* **(a) 把 `bchSexticTerm` 的表当字面量**：即 §4.3 的 Phase B——`bchSexticTermWords/Coeffs`
+  换成一张 28 行的 `bchSexticTermTable : Tab`，`bchSexticTerm a b := wordAlgebraLift a b (evalTab …)`。
+  这样 `sexticTab` 与它就是同一个对象（桥变成 `rfl`），逐字比对直接可做；代价是重做
+  `norm_bchSexticTerm_le`（需要一条 `List` 索引版的范数原语，§7 已列为缺口）。
+* **(b) 保留双数组，另证一条 `List.ofFn` ↔ 字面量的识别引理**：28 步 `List.ofFn_succ'` +
+  `rfl` 级向量归约。不动 `BCHTerms`，但多一条脆弱的引理。
+
+**倾向 (a)**，而且它同时就是 §4.3 要做的事；用户已明确「优秀架构优先，旧代码可以改」。
+七次/八次项（126 / 124 行）将来照抄同一形状。
+
+**逐字比对的形状**（两条都需要）：`reprTab_collapse` 把目标降到 `collapse dynkin6Tab`
+（64 行），`reprTab_apply_eq` 给出每行系数，`norm_num` 收尾（§2.2 实测 64 行量级秒级）。
+`collapse dynkin6Tab` 的展开约 983 行，实测在文件级 `maxRecDepth 20000` 下秒级通过；
+若最后仍需它，按 §2.3 用**文件级并写明理由**。
+
+### §4.5 本轮新增的架构决定
+
+`bchCubicTerm` / `bchQuarticTerm` / `bchQuinticTerm` / `bchQuinticGroup{1,4,6,24}` /
+`bchSexticTerm` / `bchSepticTerm` / `bchOcticTerm` 都**不需要** `NormedRing`（范数只在范数界里
+用得到）。已按自然层级改写为显式 binder：Ring+Algebra / Semiring / Semiring+Algebra。
+定理保持原有范数假设不动，调用点靠 `NormedRing → Ring/ Semiring`、`NormedAlgebra → Algebra`
+自动满足。这条与 §4.1 的「Tab 唯一之家」是同一类动作：**让接口停在它数学上真正需要的地方**。
+
+---
+
 ## 1. 目标与现状
 
 `FQFP/BCH/` 现在 17 个文件，`WordAlgebra.lean`（366 行）与 `SexticTable.lean`（162 行）是上一阶段
