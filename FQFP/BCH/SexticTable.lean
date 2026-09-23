@@ -253,6 +253,17 @@ def z6Tab : Tab := powTab (T 1) 6
 def sexticTab : Tab :=
   List.ofFn fun i : Fin 28 => (List.ofFn (bchSexticTermWords i), bchSexticTermCoeffs i)
 
+/-- **`bchSexticTerm` as a table**: `evalTab sexticTab = bchSexticTerm (mono [0] 1) (mono [1] 1)`.
+
+This one needs `bchSexticTerm` to be stated for a plain `ℚ`-algebra rather than for a `NormedRing`:
+the free word algebra is not normed, so a normed hypothesis would make the statement below
+ill-formed. The `sexticTab` row list stays in its `Fin 28`-indexed form here, which is what makes
+this bridge a rewrite rather than a 28-way case split. -/
+lemma evalTab_sexticTab : evalTab sexticTab = bchSexticTerm (mono [0] 1) (mono [1] 1) := by
+  unfold bchSexticTerm
+  simp only [sexticTab, evalTab, List.map_ofFn, List.sum_ofFn, Function.comp_apply,
+    mono_pair_eq_freeGen, wordEval_gen, smul_mono_eq, mul_one]
+
 /-- **The degree-6 Dynkin side as a table**: the left-hand side of `septic_pure_identity`. -/
 def dynkin6Tab : Tab :=
   smulTab ((2 : ℚ)⁻¹) w6Tab ++ smulTab ((3 : ℚ)⁻¹) y36Tab ++
