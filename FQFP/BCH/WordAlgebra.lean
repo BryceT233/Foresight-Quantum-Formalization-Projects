@@ -35,9 +35,10 @@ compare coefficients there.
 * `coeff_mono`, `coeff_smul_mono`, `coeff_mono_mul`, `coeff_mono_sum` — reading coefficients.
 * `prod_mono_aux` — a product of monomials is one monomial (concatenate the words, multiply the
   coefficients).
-* `evalTab`, `mulTab`, `evalTab_mulTab` — a *table* (a list of `(word, coefficient)` rows) is the
-  data of a term, and evaluation turns the table product into the ring product. A degree-`k`
-  identity between such tables is therefore a statement about `List` and `ℚ` only.
+* `evalTab`, `mulTab`, `smulTab`, `evalTab_mulTab`, `evalTab_smulTab` — a *table* (a list of
+  `(word, coefficient)` rows) is the data of a term, and evaluation turns the table operations into
+  the ring operations (`evalTab_append` handles sums). A degree-`k` identity between such tables is
+  therefore a statement about `List` and `ℚ` only.
 
 ## Implementation notes
 
@@ -270,6 +271,21 @@ lemma evalTab_mulTab (s t : List (List (Fin 2) × ℚ)) :
       rw [List.flatMap_cons, evalTab_append, evalTab_mul_single, evalTab_cons, add_mul]
       rw [show evalTab (List.flatMap (fun p => List.map (fun r => (p.1 ++ r.1, p.2 * r.2)) t) s)
           = evalTab s * evalTab t from ih]
+
+/-- Scale every coefficient of a table. -/
+def smulTab (c : ℚ) (t : List (List (Fin 2) × ℚ)) : List (List (Fin 2) × ℚ) :=
+  t.map fun p => (p.1, c * p.2)
+
+/-- **The evaluation of a scaled table is the scalar multiple of the evaluation.** -/
+lemma evalTab_smulTab (c : ℚ) (t : List (List (Fin 2) × ℚ)) :
+    evalTab (smulTab c t) = c • evalTab t := by
+  induction t with
+  | nil => rw [smulTab, List.map_nil, evalTab_nil, smul_zero]
+  | cons p t ih =>
+      change mono p.1 (c * p.2) + evalTab (smulTab c t) = c • evalTab (p :: t)
+      rw [ih, evalTab_cons, smul_add]
+      congr 1
+      exact (show c • mono p.1 p.2 = mono p.1 (c * p.2) from by rw [mono, mono, smul_smul]).symm
 
 end
 

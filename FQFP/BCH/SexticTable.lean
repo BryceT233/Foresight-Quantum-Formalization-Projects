@@ -127,23 +127,35 @@ lemma T_three : evalTab (T 3) = bchT3 (mono [0] 1) (mono [1] 1) := by
     FreeMonoid.ofList_cons, FreeMonoid.ofList_singleton]
   abel
 
-/-- **The degree-4 table evaluates to the degree-4 part of `y` at the two generators.**
-
-Parked: the power lemmas (`mono_pow_four 0`, `mono_cube 0`, `mono_sq 0`, `mono_sq 1`, …) all fire
-and leave the goal at
-
-    mono [0,0,1,1] (1/4) + … = 4⁻¹ • (mono [0,0] 1 * mono [1,1] 1) + …
-
-so only the collapse `mono l₁ r₁ * mono l₂ r₂ → mono (l₁ ++ l₂) (r₁ * r₂)` is left; a single `rw`
-cannot do that plus the scalar push in the same pass, and doing them in two passes then needs the
-word normalisation before `norm_num` can see the coefficients. -/
+/-- **The degree-4 table evaluates to the degree-4 part of `y` at the two generators.** -/
 lemma T_four : evalTab (T 4) = bchT4 (mono [0] 1) (mono [1] 1) := by
   rw [T, bchT4, evalTab]
   simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, add_zero]
   rw [mono_pow_four 0, mono_cube 0, mono_sq 0, mono_sq 1, mono_cube 1, mono_pow_four 1]
   norm_num [smul_mono_eq, mono, ← mul_assoc, List.nil_append, List.cons_append,
     List.singleton_append, FreeMonoid.ofList_cons, FreeMonoid.ofList_singleton]
-  abel_nf
+  abel
+
+/-- **The degree-5 table evaluates to the degree-5 part of `y` at the two generators.** -/
+lemma T_five : evalTab (T 5) = bchT5 (mono [0] 1) (mono [1] 1) := by
+  rw [T, bchT5, evalTab]
+  simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, add_zero]
+  rw [mono_pow_five 0, mono_pow_four 0, mono_cube 0, mono_sq 0,
+    mono_pow_five 1, mono_pow_four 1, mono_cube 1, mono_sq 1]
+  norm_num [smul_mono_eq, mono, ← mul_assoc, List.nil_append, List.cons_append,
+    List.singleton_append, FreeMonoid.ofList_cons, FreeMonoid.ofList_singleton]
+  abel
+
+/-- **`z · T₅`** evaluates to the product `z * y_d5`. -/
+lemma Z_mul_T5 :
+    evalTab (mulTab (T 1) (T 5)) = (mono [0] 1 + mono [1] 1) * bchT5 (mono [0] 1) (mono [1] 1) := by
+  rw [evalTab_mulTab, T_one, T_five]
+
+/-- **`T₂ · T₄`** evaluates to the product `y_d2 * y_d4`. -/
+lemma T2_mul_T4 :
+    evalTab (mulTab (T 2) (T 4))
+      = bchT2 (mono [0] 1) (mono [1] 1) * bchT4 (mono [0] 1) (mono [1] 1) := by
+  rw [evalTab_mulTab, T_two, T_four]
 
 end
 
