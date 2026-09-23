@@ -276,6 +276,34 @@ lemma evalTab_smulTab (c : ℚ) (t : Tab) :
       congr 1
       exact (show c • mono p.1 p.2 = mono p.1 (c * p.2) from by rw [mono, mono, smul_smul]).symm
 
+/-- A one-row table evaluates to its monomial. -/
+lemma evalTab_singleton (p : List (Fin 2) × ℚ) : evalTab [p] = mono p.1 p.2 := by
+  rw [evalTab_cons, evalTab_nil, add_zero]
+
+/-- The one-row table of the empty word with coefficient `1`: the identity of `mulTab`, and hence
+the base case of `powTab`. -/
+def unitTab : Tab := [([], 1)]
+
+/-- **The unit table evaluates to `1`.** -/
+lemma evalTab_unitTab : evalTab unitTab = 1 := by
+  rw [unitTab, evalTab_singleton, mono_nil]
+
+/-- **The `n`-fold product of a table with itself**: the data-level counterpart of `^`. A graded
+piece such as `z ^ 6` has to be computed as a table before it can be compared. -/
+def powTab (t : Tab) : ℕ → Tab
+  | 0 => unitTab
+  | n + 1 => mulTab (powTab t n) t
+
+lemma powTab_zero (t : Tab) : powTab t 0 = unitTab := rfl
+
+lemma powTab_succ (t : Tab) (n : ℕ) : powTab t (n + 1) = mulTab (powTab t n) t := rfl
+
+/-- **The evaluation of a table power is the power of the evaluation.** -/
+lemma evalTab_powTab (t : Tab) (n : ℕ) : evalTab (powTab t n) = evalTab t ^ n := by
+  induction n with
+  | zero => rw [powTab_zero, evalTab_unitTab, pow_zero]
+  | succ n ih => rw [powTab_succ, evalTab_mulTab, ih, pow_succ]
+
 /-- **The coefficient of a list of monomials, as data**: the rows whose word is `w`, with their
 coefficients. This is the list-level companion of `coeff_mono_sum`, and it is what turns a
 coefficient comparison of two tables into `List` and `ℚ` arithmetic.
@@ -392,6 +420,69 @@ theorem wordAlgebraLift_evalTab {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸
   | nil => rw [evalTab_nil, map_zero, List.map_nil, List.sum_nil]
   | cons p t ih =>
       rw [evalTab_cons, map_add, ih, List.map_cons, List.sum_cons, wordAlgebraLift_mono]
+
+/-! ### Collapsing a table to one row per word
+
+A table built by `mulTab` / `powTab` repeats words: the product of two tables has one row per pair
+of rows, and many of those pairs give the same word. `collapse` merges them, so that the result has
+one row per word and a coefficient comparison becomes a handful of small `ℚ` sums rather than one
+sum over the whole product.
+
+This is what makes the comparison affordable. `ℚ` has no kernel reduction, so a single `norm_num`
+call over the thousands of terms of a raw product table runs past the default heartbeat budget,
+while a collapsed table of at most `2 ^ k` rows is cheap. The merge tests only *word* equality,
+which `List (Fin 2)` decides by kernel reduction, so `collapse` is computable and its lemmas are
+plain inductions. -/
+
+/-- Add one row to an accumulator, merging it with an equal word. The merged row carries `p.1`
+as its word, which is the same word by the branch condition, so no projection is needed. -/
+def addRow (p : List (Fin 2) × ℚ) : Tab → Tab
+  | [] => [p]
+  | r :: t => if r.1 = p.1 then (p.1, r.2 + p.2) :: t else r :: addRow p t
+
+/-- Merge every row of a table into an accumulator, one row at a time. -/
+def collapseAux : Tab → Tab → Tab
+  | [], acc => acc
+  | p :: t, acc => collapseAux t (addRow p acc)
+
+/-- **The support-pinned normal form of a table**: one row per word. -/
+def collapse (t : Tab) : Tab := collapseAux t []
+
+/-- **Adding a row does not change the coefficient function.** -/
+lemma reprTab_addRow (p : List (Fin 2) × ℚ) (acc : Tab) :
+    reprTab (addRow p acc) = reprTab (p :: acc) := by
+  induction acc with
+  | nil => simp only [addRow, reprTab, add_zero]
+  | cons r t ih =>
+      rw [addRow]
+      split_ifs with h
+      · simp only [reprTab, h]
+        rw [Finsupp.single_add]
+        abel
+      · simp only [reprTab]
+        rw [ih]
+        simp only [reprTab]
+        abel
+
+/-- **Collapsing does not change the coefficient function.** -/
+lemma reprTab_collapseAux (t acc : Tab) :
+    reprTab (collapseAux t acc) = reprTab acc + reprTab t := by
+  induction t generalizing acc with
+  | nil => simp only [collapseAux, reprTab, add_zero]
+  | cons p t ih =>
+      rw [collapseAux, ih, reprTab_addRow]
+      simp only [reprTab]
+      abel
+
+/-- **A table and its collapsed form have the same coefficient function**: the criterion of this
+file, in the form a degree-`k` identity is settled by. -/
+lemma reprTab_collapse (t : Tab) : reprTab (collapse t) = reprTab t := by
+  rw [collapse, reprTab_collapseAux]
+  simp only [reprTab, zero_add]
+
+/-- **A table and its collapsed form evaluate equally.** -/
+lemma evalTab_collapse (t : Tab) : evalTab (collapse t) = evalTab t := by
+  rw [evalTab_eq_reprTab, evalTab_eq_reprTab, reprTab_collapse]
 
 end
 
