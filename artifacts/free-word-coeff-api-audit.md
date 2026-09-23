@@ -43,7 +43,7 @@
 
 **剩余的工程件**（已定位，不含数学障碍）：
 
-1. 用生成器输出规范表（行序 = 校验器的计算序，系数用与 `bchSexticTermCoeffs`
+1. 生成器输出规范表（行序 = 校验器的计算序，系数用与 `bchSexticTermCoeffs`
    相同的字面量）。
 2. 在 Lean 里写出**自由侧的 Dynkin 表**：`mulTab` 组合 `Z`、`T2`…`T5`，
    与生成器输出同序，于是「表相等」是 `rfl`。
@@ -51,6 +51,47 @@
    转成表，即得恒等式；再用 §3.2 的正向传输回到 `𝔸`，替换 `SmallSDischarge.lean` 的 `sorry`。
 4. 7/8 次项（`octic_pure_identity` / `nonic_pure_identity`）同一套流程：只要校验器扩到
    度 7/8 仍全绿，Lean 侧的形态完全不变。
+
+---
+
+## 阶段 A 施工记录（第三轮：基表落地的配方已定）
+
+**已跑通一条完整的基表引理**（`T₂`，探针已删，配方保留）：度数 2 的基表
+`T₂ = a²/2 + ab + b²/2` 满足
+
+```lean
+evalTab (tTab 2) = bchT2 (mono [0] 1) (mono [1] 1)
+```
+
+收尾的**固定配方**（五步，之后每个 `T_k` 都是一样的）：
+
+```lean
+rw [tTab, bchT_k, evalTab]                       -- 展开成单项式之和
+simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, add_zero]
+rw [mono_sq 0, mono_sq 1, mono_mul,              -- 幂与积 → 单项式
+    show (2:ℚ)⁻¹ • mono [0,0] 1 = mono [0,0] ((2:ℚ)⁻¹ * 1) from by rw [mono, mono, smul_smul],
+    ...]                                          -- 纯量搬进系数
+norm_num [mono, List.nil_append, List.cons_append, List.singleton_append, List.append_nil,
+  FreeMonoid.ofList_cons, FreeMonoid.ofList_singleton]   -- 词归一 + 系数算术
+abel                                              -- 加法重排（两侧项序不同）
+```
+
+其中新增的小引理只有一条：
+
+```lean
+lemma mono_sq (k : Fin 2) : (mono [k] 1) ^ 2 = mono [k, k] 1 := by
+  rw [mono_pow, List.replicate_succ, List.replicate_one]
+```
+
+**关键实测**：一旦 `mono` 用「幂 / 积」写成 `MonoidAlgebra.single (FreeMonoid.of 0 * …) …`，
+`norm_num` 配 `FreeMonoid.ofList_*` 就能把词归一，最后只剩**加法项序**不同，
+一条 `abel` 收掉。也就是说这条路的收尾成本是**常数级**的，不随度数增长。
+
+**注意**：`mono_pow` 之后的 `List.replicate` 归一用 `List.replicate_succ` + `List.replicate_one`
+即可，**不要**把 `List.append_cons` 放进 simp 集（会 `maximum recursion depth`）。
+
+**下一步**：把 `tTab` 0..5 与上面五个配方（T₂…T₅ 各一条）写进正式文件，
+接 `evalTab_mulTab` 组合出自由侧 Dynkin 表，再比对生成器输出的规范表。
 
 ---
 
