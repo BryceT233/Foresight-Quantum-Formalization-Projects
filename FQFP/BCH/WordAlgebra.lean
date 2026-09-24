@@ -254,6 +254,13 @@ lemma evalKTab_collapseK (a b : 𝔸) (t : KTab) :
     evalKTab a b (collapseK t) = evalKTab a b t := by
   rw [collapseK, evalKTab_collapseAuxK, evalKTab_nil, add_zero]
 
+/-- **Two tables with the same collapsed form evaluate equally.** This is how a coefficient
+comparison split across several goals — each collapsing one piece, with the collapsed results then
+merged — is carried back to a single evaluation. -/
+lemma evalKTab_congr_collapseK (a b : 𝔸) {s t : KTab} (h : collapseK s = t) :
+    evalKTab a b s = evalKTab a b t := by
+  rw [← h, evalKTab_collapseK]
+
 /-! ### The zero criterion
 
 A degree-`k` identity is proved by collapsing one side and checking that no coefficient survives.

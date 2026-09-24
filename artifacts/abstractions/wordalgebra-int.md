@@ -167,6 +167,77 @@ degree-6 仍是 984 → 64。两条 `decide` 都不是空真：`z5Tab`/`z6Tab` �
 **7/8 的模板已经就位**：`bchTTable`（共享）+ 每度的分块表 + `dynkinDTab` + 一条 `decide`。
 按度-7/8 的实测（§4.2），degree-7 需要把 `decide` 按「块」切分，degree-8 还要再切到「合成项」。
 
+### degree-7 第 1 步（已做）：项的数据换成表
+
+勘察时发现 degree-7/8 与 degree-5 **相反**、与 degree-6 **相同**：
+
+| | `bchSepticTermWords/Coeffs`（d=7） | `bchOcticTermWords/Coeffs`（d=8） | `bchQuinticGroup*`（d=5） |
+|---|---|---|---|
+| 家外的消费者 | **0** | **0** | `QuinticRemainder` 89 / `QuinticTaylor2` 68 |
+| 结论 | 表**取代**数组 | 表可以取代 | 表只能**追加** |
+
+`norm_bchSepticTerm_le` / `norm_bchOcticTerm_le` 在全树也**零消费者**，所以它们改走 `ratTab`
+不会影响任何下游。
+
+已落地（`BCHTerms.lean`）：`bchSepticTermWords` + `bchSepticTermCoeffs` → **`bchSepticTermTable`**
+（126 行，由 `scratch/gen_septic_table.py` 从源数组生成并校验：126 个字互异、恰好是非纯 7 字母字）；
+`bchSepticTerm a b := evalKTab a b bchSepticTermTable`；`norm_bchSepticTerm_le` 改走 `ratTab`。
+验收：`lake build FQFP` ✅、`runLinter` ✅、`lint-style` exit 0 ✅、
+`#print axioms norm_bchSepticTerm_le` = 三条标准公理；`bchSepticTermTable` 实检
+`length = 126`、`eraseDups.length = 126`、全为 7 字母。
+
+**这消掉了 degree-7 最大的一个风险**：源把 `bchSepticTerm` 写成 `Fin 126` 上的 `∑`；
+若保留数组、只加一张表，桥就得把 126 项 `∑` 展开成单项式，很可能撞心跳。
+改成「表即定义」之后 `bchSepticTerm` 与表逐字相同，桥是 `rfl`，**根本不需要展开**。
+
+**剩余（degree-7 第 2 步，未做）**：`bchTTable` 补 `k = 7`；环级 `bchW7`、`bchY37`、`bchY47`、
+`bchY57`、`bchY67`（照源 `octic_pure_identity` 的形状）；它们的表与桥；`dynkin7Tab`；
+`octic_pure_identity`（源名）。唯一的新问题仍是**心跳**：one-shot `decide` 在 degree-7 超 200k，
+要按「块」切分（§4.2 已验证可行，最大块 1040 行）。
+
+### degree-7 第 2 步（已做）：恒等式 + 按块切分的系数比对
+
+同一提交里落地：`bchTTable 7`；环级 `bchT6`/`bchT7`（`bchW6` 顺势改成 `2 • bchT6 a b - …`，
+degree-6 的 `y₆` 从此只有一个家）；`bchW7`、`bchY37`、`bchY47`、`bchY57`、`bchY67`
+（= 源的 `octic_pure_identity` 里 `W7` 与 `y3_7 … y6_7`，按 7 的正合成字典序，连续 1 段收成 `z^k`）；
+它们的 `KTab` 与桥；`dynkin7Tab`；`octic_pure_identity`。清分母用 `L = lcm(1..7) = 420`
+（乘子 `210, 140, −105, 84, −70, 60, −420`）。
+
+**切分（本轮唯一的新技术点）**：one-shot `decide` 在 degree-7 超 200k 心跳，所以
+**按块切分**——七块各自在**自己的目标**里 `rfl` 折成字面规范形（`collapseK_w7Tab` …），
+再把折叠后的表拼成 `dynkin7Norm`（822 行），最后一条 `decide` 折它（128 行）。
+两块都是 **`List` 事实**，所以切分是**可靠的**：规范形作为数据为零 ⇒ 它在**任意** `𝔸` 里求值为零。
+（这一点排除了「逐字系数」路线：那条需要自由代数的线性无关性，在任意 `𝔸` 里是**假**的。）
+
+验收：`octic_pure_identity` / `collapseK_dynkin7Norm_all_zero` 的 `#print axioms` 分别是
+三条标准公理 / `[propext]`；`collapseK dynkin7Norm` = **128 行**（满支撑，非空真），
+`dynkin7Norm` = 822 行，负向对照 `z7Tab` 单独折叠后非全零。
+
+**代价（要记住）**：`SmallSDischarge.lean` 现在的冷编译约 **115 s**（degree-7 之前约 20 s）。
+主要来自七条 `rfl` 规范形（最大块 1040 行）与那条 `decide`。文件也涨到 ~1620 行（约 850 行是
+生成的字面规范形）。如果嫌贵，可选：把规范形拆到单独文件（只在需要时构建），或把字面表换成
+「按合成项」再细一层的切分（degree-8 反正必须这么做）。
+
+### 与源 `SmallSDischarge.lean` 的差距（实查）
+
+源文件 80 条声明，我们 95 条（多出来的是表基建），其中 **76 条源声明在本树没有对应物**。
+本文件**只有纯恒等式这一半**：
+
+| 家族 | 源 | 本树 |
+|---|---|---|
+| `quintic_pure_identity(_cleared)` / `sextic_` / `septic_` / `octic_`（degree 4/5/6/7） | ✅ | ✅ |
+| `nonic_pure_identity`（degree 8） | ✅ | ❌ |
+| `pow{n}_sub_zpow{n}_telescope`（n=3..8）与 `norm_pow{n}_…_le` | ✅ | ❌ |
+| `y{m}_sub_z{m}_sub_…_decomp` 整梯 + 其 `norm_*` | ✅ | ❌ |
+| `I1/I2_residual_decomp_eq`（含 septic/octic/nonic 变体）与 `norm_I*` | ✅ | ❌ |
+| `R_eq_neg_deg5_residual` / `R_plus_T5_…` 四代 | ✅ | ❌ |
+| `norm_bch_{quintic,sextic,septic,octic}_remainder_large_s_le` | ✅ | ❌ |
+| `pieceB_{sextic,septic,octic,nonic}_decomp` | ✅ | ❌（只在注释里被引用） |
+
+也就是说：**纯恒等式是「代数」的一半，剩下那半是「余项记账」**——`y^m − z^m` 的逐度望远镜分解
+与残差范数界，里面才出现 `RCLike 𝕂` / `Real.exp` / `Real.log`。我们下面每一条 `*_pure_identity`
+都是那些定理的**输入**，而它们目前都还没有消费者。
+
 ### `bchQuinticTermTable` 上移到 `BCHTerms.lean`；以及 degree-5 的旧结果**不能**被取代
 
 用户提出：`quinticTab` 该不该放进 `BCHTerms.lean`？5 次的旧结果该不该都被它取代？
@@ -562,10 +633,16 @@ lake build FQFP                                  # 全树冷编译 86.7 s
 
 `scratch/` 里保留的是**可复用的生成器与独立校验器**：`ktab_api.lean`（新 `WordAlgebra` 整数层
 的草稿，已搬进 `FQFP/BCH/WordAlgebra.lean`）、`gen_int_deg.py` / `gen_int_split.py`
-（degree-7/8 的生成器雏形）、`gen_int_probe.py`、`model_check.py`、`degrees.py`、`sizes.py`。
-一次性的诊断探针（`int_*.lean`、`bridge_probe.lean`、`axioms.lean`、`dbg.py`、`cmp.py`、
-`mkvariants.py`）在迁移落地后已删除。`scratch/` 不在 `FQFP/` 下，既不进构建也不进
-`lint-style`（后者按 `FQFP`/`_spike` 两个目录枚举模块）。
+（degree-7/8 的生成器雏形）、`gen_int_probe.py`、`model_check.py`、`degrees.py`、`sizes.py`，
+以及产出库里字面量的三个生成器 `gen_quintic_table.py`、`gen_septic_table.py`、`gen_deg7.py` +
+`gen_deg7_norms.py`。一次性的诊断探针（`int_*.lean`、`bridge_probe.lean`、`axioms.lean`、
+`dbg.py`、`cmp.py`、`mkvariants.py`）在迁移落地后已删除。
+
+**`scratch/` 全部不进版本库**（`.gitignore` 里有 `/scratch/`）：本文所有 `scratch/...` 路径都是
+**当前工作副本**里的文件，fresh clone 里没有。`scratch/` 也不在 `FQFP/` 下，既不进构建也不进
+`lint-style`（后者按 `FQFP`/`_spike` 两个目录枚举模块）。因此**库里那批生成的字面量**
+（`bchQuinticTermTable`、`bchSepticTermTable`、degree-7 的环级件/表/规范形）在仓库内没有生成脚本，
+只有本文记录的算法；要重生成得先照本节把脚本写回来。
 
 ---
 

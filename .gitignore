@@ -1,1 +1,6 @@
 /.lake
+
+# Scratch space for probes, one-off generators and intermediate files. Nothing here is part of the
+# build; conclusions drawn from it belong in `artifacts/`.
+/scratch/
+__pycache__/
