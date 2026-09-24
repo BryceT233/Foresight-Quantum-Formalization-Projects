@@ -208,7 +208,10 @@ degree-8（`nonic_pure_identity`）与余项链都还没做。三条要记住的
    （`WordAlgebra.collapseK_append`，7 个命名的累加阶段 `dynkin7Acc1..6` + `dynkin7Norm`），
    一个字面规范形都不写。**阶段必须命名成 `def`**，七层嵌套的一个项在声明头就 `whnf` 超时。
 2. **degree-8 的数学已独立复算成立**，`K = 210` 不用换（`120960 | 210⁸`）。
-3. **代价要记账**：恒等式侧冷编译 115 s → 95 s，degree-7 单文件约 11 s → 47 s（原因未定）。
+3. **代价已定位**：恒等式侧冷编译 100–115 s → 95 s，但 degree-7 单文件约 11 s → 40 s。
+   贵的是那条 `decide +kernel` **在定义它的模块里**的类型检查（内核要把整条 `collapseAuxK` 链
+   归约出来）；同一段证明换成「import 已编译模块再跑」只要 1.3 s。两条退路写在
+   `smallsdischarge-split.md` §5.4。
 
 全文（含全部实测读数、degree-8 的分簇计划、探针复现清单）见
 `artifacts/abstractions/smallsdischarge-split.md`。

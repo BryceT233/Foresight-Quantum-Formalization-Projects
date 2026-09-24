@@ -330,7 +330,7 @@ def dynkin7Norm : KTab := collapseAuxK (smulKTab (-420) septicTab) dynkin7Acc6
 | 陈述逐字不变 | ✅ `scratch/check_split_statements.py`：**25/25 条恒等式陈述一致**（按去空白后的 name + binders + type 比对，从 `863a502` 的旧文件读原文） |
 | `#print axioms` | ✅ 五条 `*_pure_identity` 与三条 `evalKTab_dynkin*Tab_eq_zero` 都只剩 `[propext, Classical.choice, Quot.sound]`；`dynkin7Norm_all_zero` 只剩 `[propext]`；两条 `collapse*_append` **零公理** |
 
-### 5.4 代价：degree-7 变慢了（要记账）
+### 5.4 代价：degree-7 变慢了，**根因已定位**
 
 冷编译实测（逐个删 olean 后 `lake build`）：
 
@@ -339,22 +339,40 @@ def dynkin7Norm : KTab := collapseAuxK (smulKTab (-420) septicTab) dynkin7Acc6
 | `DynkinReeToolbox.lean` | 14.6 s |
 | `DynkinReeQuintic.lean` | 12.4 s |
 | `DynkinReeSextic.lean` | 21.4 s |
-| `DynkinReeSeptic.lean` | **47.1 s** |
-| 恒等式侧合计 | **95 s**（拆前 `SmallSDischarge` 整文件 ~115 s） |
+| `DynkinReeSeptic.lean` | **40–47 s** |
+| 恒等式侧合计 | **95 s**（拆前 `SmallSDischarge` 整文件约 100–115 s） |
 
-degree-7 单文件从约 11 s 涨到约 47 s。三个候选原因，**都还没定**：
+degree-7 单文件从约 11 s 涨到约 40 s。**定位过程与结论：**
 
-* 累加链的 kernel 归约是 7 段顺序计算，`decide +kernel` 要把整条链走完——而旧的
-  「逐块 `rfl` 折成字面表 + 一条 `decide`」是 7 次独立的小归约 + 1 次 128 行的判定，
-  总量可能更小；
-* `rw [dynkin7Tab]; simp only [collapseK_append]` 在 ~3400 行表上跑了 6 次接缝；
-* 对照读数还不干净：同一文件先后测到 77 s 与 47 s，需要 `set_option trace.profiler` 钉死。
+| 探针 | 读数 |
+|---|---|
+| `lake env lean --profile FQFP/BCH/DynkinReeSeptic.lean` | `import 3.86 s`、`elaboration 153 ms`、`tactic execution 92 ms`、**`type checking 33.9 s`** |
+| 把文件在 `set_option maxRecDepth 100000 in` 处截断（只留到累加阶段定义） | **7.7 s**（`scratch/septic_truncated.lean`） |
+| 从已编译模块 import 后**重跑**最后两条（`scratch/prof_tail.lean`） | 8.6 s 总（含 7.45 s import），即 **1.3 s** |
+| 重跑五条块桥（`scratch/prof_bridges.lean`） | 8.2 s 总，即 **0.7 s** |
+| `native_decide` 替代 | **不可用**：`bchTTable` 没有 native 实现（需 `supportInterpreter`），而且它会给 `#print axioms` 引入 `Lean.ofReduceBool` |
 
-**下一步若要回收这 36 s**，优先试 two 条：(i) 给 `dynkin7Acc{1..6}` 的 `decide +kernel`
-做成逐阶段的 `example`，看时间分布在哪一段；(ii) 把「逐块 `rfl` 折成字面表」这一半保留在
-degree-7（它过），只把 `dynkin7Norm` 也写成字面表——即退回 §4.3 的 (a)，代价是 degree-8 要另想
-办法（§3.2 的 256 行字面 `def` 墙仍然在，且现在有了 `decide +kernel` 这个新工具，degree-8 也许
-能直接走增量型而不必付这次的钱）。
+**结论：贵的是那一条 `decide +kernel` 在*定义它的模块里*的类型检查。** 证据是同一段证明
+「在模块内」要 ~33 s、「在 import 已编译模块的文件里」只要 1.3 s——差别在于前者的环境里
+`dynkin7Norm` 只存在于定义层面，内核必须把**整条 `collapseAuxK` 链**归约出来；而后者拿到的是
+olean 里已经归约好的值。也就是说：**增量 collapse 省掉了字面表，但没有省掉那次归约，
+只是把它从「逐块 7 次小归约」搬成了「一条链 1 次大归约」，搬到内核预算最紧的地方。**
+
+这与 §3.2 并不冲突：degree-8 的 256 行字面 `def` 墙是真的（那一项写不出来），所以
+**增量 collapse 仍然是 degree-8 的唯一可行形状**；但它在 degree-7 上是**净亏**。
+
+**下一步的两条路**（都还没做，等用户定）：
+
+* **(甲) degree-7 退回字面规范形**（§4.3 的 (a)）：恢复七个 `*Norm` 字面表 + 七条
+  `collapseK_* := rfl` + 一条 `decide`。这是**实测 ~11 s** 的形状。代价是 `DynkinReeSeptic.lean`
+  回到 ~1000 行生成数据，而 degree-8 仍得走增量型（两度形状不一致）。
+* **(乙) 保留增量型，把归约摊开**：让每个累加阶段自己配一条 `dynkin7Acc{n}_norm : collapseAuxK … = <该阶段的 128 行表>` 的 `rfl`，把一次大归约拆成七次小归约——
+  即「用量字面表买回编译时间」，但只买 7 张 128 行的表（~900 行），不是原来的一张大表。
+  若成立，degree-8 也能照抄（8 张 256 行的表 **写不出来**，所以这一步对 degree-8 不成立，
+  除非那七/八张表按**每块**再拆）。
+
+倾向 **(甲)**：degree-7 已经是最终产物、不会再改形状，用它的形状换 30 s 冷编译是划算的；
+degree-8 单独走增量型，并在它的 docstring 里写明「这里必须用增量型，因为字面表写不出来」。
 
 ---
 
