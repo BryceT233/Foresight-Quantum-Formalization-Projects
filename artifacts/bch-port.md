@@ -5,13 +5,15 @@
 而不只是搬运。
 
 **当前状态：阶段 1（BCH 核心）、阶段 2（三次/四次/五次项）、阶段 3 的五次项
-（含 `bchQuinticTermTaylor2Decomp`，见 §3.2）全部完成。** 验收全绿：`lake build FQFP`（零警告）、
-`lake exe runLinter`、`lake exe lint-style`；零 `sorry`、零自定义公理、零 `maxHeartbeats` bump，
-`#print axioms` 只剩 `[propext, Classical.choice, Quot.sound]`。
+（含 `bchQuinticTermTaylor2Decomp`，见 §3.2）全部完成。`SmallSDischarge.lean` 的纯恒等式侧
+（degree 4–7）也已拆成工具箱 + 每度一个文件并全部证完（§3.3bis），文件本身从 1627 行降到 47 行。**
+验收全绿：`lake build FQFP`（零警告）、`lake exe runLinter`、`lake exe lint-style`；零 `sorry`、
+零自定义公理、零 `maxHeartbeats` bump，`#print axioms` 只剩
+`[propext, Classical.choice, Quot.sound]`。
 
-**下一步就看 §3.3 那张表**：`SmallSDischarge.lean`（8.4k 行）是全表唯一只依赖阶段 1、可以立刻
-开工的大块；`bchQuinticTermTaylor2Decomp` 完成后，`QuinticMixed` / `SexticMixed` /
-`SymmetricSeptic*` 整条链（约 57k 行）的前置已解除。
+**下一步**：`SmallSDischarge.lean` 里 degree-8（`nonic_pure_identity`）与余项链都还没做；
+余项链是全表最大的剩余块（源 7.6k 行）。计划与实测见 `artifacts/abstractions/smallsdischarge-split.md`
+（§2–3 是 degree-8 的数学与墙的读数，§4 是分簇，§5 是已落地的拆分记录）。
 
 ---
 
@@ -166,7 +168,7 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 
 | 源 | 行数 | 目标 | 依赖 |
 |---|---|---|---|
-| `SmallSDischarge.lean` | 8.4k | 同名 | **阶段 1/2 + 六/七/八次项前置（见下，已完成）** |
+| `SmallSDischarge.lean` | 8.4k | `DynkinReeToolbox` + `DynkinRee{Quintic,Sextic,Septic,Octic}` + `SmallSDischarge` | **纯恒等式侧已完成（§3.3bis）；degree-8 与余项链待做** |
 | `Basic:4830–8714` + `QuinticMixed.lean` | 5.5k | `QuinticMixed.lean` | taylor2 `Decomp` |
 | `Basic:8715–11459` + `SexticMixed.lean` | 8.3k | `SexticMixed.lean` | 阶段 1 |
 | `SepticTaylor.lean` | 23.0k | 同名 | 阶段 1 |
@@ -184,6 +186,32 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 （`SymmetricQuintic.lean` 是 1.3k 的纯聚合模块，其 42k 行内容源自己已拆进
 `SymmetricQuinticCore` / `PhaseBC` / `Pieces` / `Assembly`；`SuzukiSepticMatchWords.lean` 并入
 `SuzukiSepticMatch`。）
+
+### 3.3bis `SmallSDischarge.lean` 的纯恒等式侧：已拆成工具箱 + 每度一个文件
+
+源的 `SmallSDischarge.lean` 有两半：**纯恒等式**（degree 4–8 的 Dynkin/Ree 消去）与**余项链**
+（`pow{n}_sub_zpow{n}` 望远镜、`y{m}_sub_z{m}` 分解与范数、`I1`/`I2` 残差、四条
+`pieceB_*_decomp`）。前半已全部落地并按「每度一条恒等式」拆开：
+
+| 目标文件 | 内容（源名） |
+|---|---|
+| `DynkinReeToolbox.lean` | `z`、`T₂ … T₇`、`bchTTable` + 7 条桥；degree-4 的 `quintic_pure_identity{_cleared}` |
+| `DynkinReeQuintic.lean` | degree-5（`sextic_pure_identity`，名字比次数大 1，沿用源名） |
+| `DynkinReeSextic.lean` | degree-6（`septic_pure_identity`） |
+| `DynkinReeSeptic.lean` | degree-7（`octic_pure_identity`） |
+| `SmallSDischarge.lean` | **只剩聚合 + 余项链的占位**（47 行） |
+
+degree-8（`nonic_pure_identity`）与余项链都还没做。三条要记住的结论：
+
+1. **degree-7 不能再按「生成整数字面规范形」写。** 那条路在 degree-8 撞死：256 行的字面
+   `def` 本身就超默认预算（实测）。degree-7 已改成**沿 `++` 链逐块 collapse 的累加**
+   （`WordAlgebra.collapseK_append`，7 个命名的累加阶段 `dynkin7Acc1..6` + `dynkin7Norm`），
+   一个字面规范形都不写。**阶段必须命名成 `def`**，七层嵌套的一个项在声明头就 `whnf` 超时。
+2. **degree-8 的数学已独立复算成立**，`K = 210` 不用换（`120960 | 210⁸`）。
+3. **代价要记账**：恒等式侧冷编译 115 s → 95 s，degree-7 单文件约 11 s → 47 s（原因未定）。
+
+全文（含全部实测读数、degree-8 的分簇计划、探针复现清单）见
+`artifacts/abstractions/smallsdischarge-split.md`。
 
 ### 3.3quater degree-6 的实测天花板：单块 `noncomm_ring` 路线走到头了（含 profiler 读数）
 

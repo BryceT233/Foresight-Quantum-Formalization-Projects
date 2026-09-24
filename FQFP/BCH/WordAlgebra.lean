@@ -261,6 +261,35 @@ lemma evalKTab_congr_collapseK (a b : 𝔸) {s t : KTab} (h : collapseK s = t) :
     evalKTab a b s = evalKTab a b t := by
   rw [← h, evalKTab_collapseK]
 
+/-! ### Collapsing in steps
+
+A degree-`d` left-hand side is a `++`-chain of *pieces*, and one collapse of the whole chain is the
+expensive step: it merges every row of every piece at once. Splitting it by piece — collapse one,
+merge the next into the accumulator, and so on — keeps every intermediate table at one row per
+word, so the largest goal sees a piece and an accumulator instead of the whole chain.
+
+`collapseK_append` is the single step, and `collapseAuxK_append` is the induction that applies it
+along a chain. -/
+
+/-- **Merging a concatenation into an accumulator**: the rows of `s` and then those of `t`, in that
+order. This is what turns `collapseK_append` into a left-to-right pass over a `++`-chain. -/
+lemma collapseAuxK_append (s t acc : KTab) :
+    collapseAuxK (s ++ t) acc = collapseAuxK t (collapseAuxK s acc) := by
+  induction s generalizing acc with
+  | nil => rw [List.nil_append]; rfl
+  | cons p s ih => rw [List.cons_append]; exact ih (addRowK p acc)
+
+/-- **Collapsing a concatenation**: collapse the first table, then merge the second into it.
+
+This is the step that lets a coefficient comparison be split by piece: the accumulator stays at one
+row per word, so the largest goal sees a piece and an accumulator rather than the whole chain. -/
+lemma collapseK_append (s t : KTab) : collapseK (s ++ t) = collapseAuxK t (collapseK s) := by
+  induction s with
+  | nil => rw [List.nil_append]; rfl
+  | cons p s _ =>
+      change collapseAuxK (s ++ t) (addRowK p []) = collapseAuxK t (collapseAuxK s (addRowK p []))
+      rw [collapseAuxK_append]
+
 /-! ### The zero criterion
 
 A degree-`k` identity is proved by collapsing one side and checking that no coefficient survives.
