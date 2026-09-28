@@ -5,15 +5,17 @@
 而不只是搬运。
 
 **当前状态：阶段 1（BCH 核心）、阶段 2（三次/四次/五次项）、阶段 3 的五次项
-（含 `bchQuinticTermTaylor2Decomp`，见 §3.2）全部完成。`SmallSDischarge.lean` 的纯恒等式侧
-（degree 4–7）也已拆成工具箱 + 每度一个文件并全部证完（§3.3bis），文件本身从 1627 行降到 47 行。**
+（含 `bchQuinticTermTaylor2Decomp`，见 §3.2）全部完成。源的 `SmallSDischarge.lean` 的纯恒等式侧
+（degree 4–7）也已拆成工具箱 + 每度一个文件并全部证完（§3.3bis），承载它的
+`FQFP/BCH/SmallSDischarge.lean` 本身已删除。
+degree 8 已**决定暂缓**（§3.3ter），相关的证明文件与生成器已撤回，只保留 `bchOcticTerm` 的定义。**
 验收全绿：`lake build FQFP`（零警告）、`lake exe runLinter`、`lake exe lint-style`；零 `sorry`、
 零自定义公理、零 `maxHeartbeats` bump，`#print axioms` 只剩
 `[propext, Classical.choice, Quot.sound]`。
 
-**下一步**：`SmallSDischarge.lean` 里 degree-8（`nonic_pure_identity`）与余项链都还没做；
-余项链是全表最大的剩余块（源 7.6k 行）。计划与实测见 `artifacts/abstractions/smallsdischarge-split.md`
-（§2–3 是 degree-8 的数学与墙的读数，§4 是分簇，§5 是已落地的拆分记录）。
+**下一步**：源的 `SmallSDischarge.lean` 里 degree-8（`nonic_pure_identity`）暂缓、余项链还没做；
+余项链是全表最大的剩余块（源 7.6k 行）。计划与实测见 `artifacts/abstractions/deg8-split.md`
+（§1–3 是 degree-8 的墙的读数与拆分方案，§4 是暂缓决定，§5 是重启所需的规格）。
 
 ---
 
@@ -168,7 +170,7 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 
 | 源 | 行数 | 目标 | 依赖 |
 |---|---|---|---|
-| `SmallSDischarge.lean` | 8.4k | `DynkinReeToolbox` + `DynkinRee{Quintic,Sextic,Septic,Octic}` + `SmallSDischarge` | **纯恒等式侧已完成（§3.3bis）；degree-8 与余项链待做** |
+| `SmallSDischarge.lean` | 8.4k | `DynkinReeToolbox` + `DynkinRee{Quintic,Sextic,Septic}` | **纯恒等式侧 degree 4–7 已完成（§3.3bis）；degree-8 暂缓（§3.3ter）、余项链待做** |
 | `Basic:4830–8714` + `QuinticMixed.lean` | 5.5k | `QuinticMixed.lean` | taylor2 `Decomp` |
 | `Basic:8715–11459` + `SexticMixed.lean` | 8.3k | `SexticMixed.lean` | 阶段 1 |
 | `SepticTaylor.lean` | 23.0k | 同名 | 阶段 1 |
@@ -191,7 +193,7 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 
 源的 `SmallSDischarge.lean` 有两半：**纯恒等式**（degree 4–8 的 Dynkin/Ree 消去）与**余项链**
 （`pow{n}_sub_zpow{n}` 望远镜、`y{m}_sub_z{m}` 分解与范数、`I1`/`I2` 残差、四条
-`pieceB_*_decomp`）。前半已全部落地并按「每度一条恒等式」拆开：
+`pieceB_*_decomp`）。前半的 degree 4–7 已全部落地并按「每度一条恒等式」拆开：
 
 | 目标文件 | 内容（源名） |
 |---|---|
@@ -199,22 +201,48 @@ bchQuinticTerm (x + V) y - bchQuinticTerm x y
 | `DynkinReeQuintic.lean` | degree-5（`sextic_pure_identity`，名字比次数大 1，沿用源名） |
 | `DynkinReeSextic.lean` | degree-6（`septic_pure_identity`） |
 | `DynkinReeSeptic.lean` | degree-7（`octic_pure_identity`） |
-| `SmallSDischarge.lean` | **只剩聚合 + 余项链的占位**（47 行） |
 
-degree-8（`nonic_pure_identity`）与余项链都还没做。三条要记住的结论：
+**不再有 `FQFP/BCH/SmallSDischarge.lean`。** 拆分之后它只剩聚合 import 与 docstring（47 行），
+degree-8 撤回后连聚合的对象都没有了，所以已删除；余项链将来落地时按主题另开模块，不复活它。
+注意这四个模块目前**不在任何构建图里**（`FQFP.lean` 不再 import 它们），验证要用
+`lake build FQFP.BCH.DynkinReeSeptic` 这类按模块名的方式。
 
-1. **degree-7 不能再按「生成整数字面规范形」写。** 那条路在 degree-8 撞死：256 行的字面
-   `def` 本身就超默认预算（实测）。degree-7 已改成**沿 `++` 链逐块 collapse 的累加**
+degree-8（`nonic_pure_identity`）已决定暂缓（§3.3ter），余项链还没做。三条要记住的结论：
+
+1. **degree-7 不能再按「生成整数字面规范形」写。** degree-7 已改成**沿 `++` 链逐块 collapse 的累加**
    （`WordAlgebra.collapseK_append`，7 个命名的累加阶段 `dynkin7Acc1..6` + `dynkin7Norm`），
    一个字面规范形都不写。**阶段必须命名成 `def`**，七层嵌套的一个项在声明头就 `whnf` 超时。
 2. **degree-8 的数学已独立复算成立**，`K = 210` 不用换（`120960 | 210⁸`）。
 3. **代价已定位**：恒等式侧冷编译 100–115 s → 95 s，但 degree-7 单文件约 11 s → 40 s。
    贵的是那条 `decide +kernel` **在定义它的模块里**的类型检查（内核要把整条 `collapseAuxK` 链
-   归约出来）；同一段证明换成「import 已编译模块再跑」只要 1.3 s。两条退路写在
-   `smallsdischarge-split.md` §5.4。
+   归约出来）；同一段证明换成「import 已编译模块再跑」只要 1.3 s。完整读数见
+   `artifacts/abstractions/deg8-split.md` §5.1。
 
-全文（含全部实测读数、degree-8 的分簇计划、探针复现清单）见
-`artifacts/abstractions/smallsdischarge-split.md`。
+### 3.3ter degree-8：决定暂缓，证明文件已撤回
+
+**degree 8 暂不做。** `DynkinReeOctic.lean`（800 行，`nonic_pure_identity`）与
+`scripts/gen_degree8_tables.py` 已删除；`DynkinReeToolbox.lean` 的 `bchT8` / `bchTTable 8` /
+`evalKTab_bchTTable_eight` 也一并撤回，因为只服务 `W8`。`SmallSDischarge.lean` 的 docstring
+已相应改为「degree 4–7 已完成，degree 8 暂缓」。
+
+**保留**：`BCHTerms.lean` 的 `bchOcticTermTable` / `bchOcticTerm` / `norm_bchOcticTerm_le`。
+`C₈` 是**定义**与范数界，不消耗任何证明预算，而余项链（本文件 §3.3 表里最大的剩余块）需要它；
+`bchOcticTerm` 已迁移到与六次/七次同构的**表形式**（`KTab`，124 行），留着可以省掉将来重做这次迁移。
+`WordAlgebra.evalKTab_eq_zero_of_collapseK` 也保留——它是通用落地引理。
+
+**为什么暂缓**：那个文件**从未编译成功过一次**。最后一次得到的是 12 条 `unknownIdentifier`
+（`dynkin8Y3a` … `dynkin8Y6c` 被前向引用：`y38Tab` 等四张表用到了后面才定义的 fragment），
+`maxHeartbeats` 类报错是次级连锁（`545/575/584/588/643/664`）；`FQFP/` 下 `set_option maxHeartbeats`
+零命中。真正测到的墙是 **`whnf` 对链深敏感**（4 层嵌套 `collapseAuxK`、操作数全是 256 行表时
+超 200k 心跳），§2 的浅合并树就是针对它设计的，但树根那两条 `decide +kernel` 的**总工程量从未被测过**。
+
+**更正**：本文件此前把「256 行字面 `def` 本身就超默认预算」当作 degree-8 撞墙的原因之一，
+`deg8-split.md` §3 实测证明那是**误诊**——真因是 `maxRecDepth`（tactic 递归深度），不是心跳；
+同一份 256 行字面表在默认心跳下配 `set_option maxRecDepth 100000` 直接过。结论（切小仍必需）
+不变，但理由要换成「单片 3400 行的 `decide` 要 498 s」与「`whnf` 对链深敏感」。
+
+全部实测读数与重启规格（数学规格、整数化乘子、待修的两处生成器缺陷、重启顺序）见
+`artifacts/abstractions/deg8-split.md`。
 
 ### 3.3quater degree-6 的实测天花板：单块 `noncomm_ring` 路线走到头了（含 profiler 读数）
 

@@ -22,6 +22,9 @@ form `bchTTable`, and the bridge saying the table evaluates to the ring expressi
 themselves live one degree to a file (`DynkinReeQuintic.lean` … `DynkinReeSeptic.lean`), because
 each is a self-contained computation whose only shared input is what is below.
 
+Degree 8 shares the same shape but is deferred, so `T₈` is not here: it would be used by nothing
+else. See `artifacts/abstractions/deg8-split.md`.
+
 ## Why the pieces are `def`s and not `let`s
 
 A statement whose type is a `let` chain nested six to nine deep costs superlinearly in
@@ -36,13 +39,15 @@ so a coefficient comparison over `ℚ` can only be driven by `norm_num`, one sma
 time. `WordAlgebra.lean` replaces the coefficients by integers: a degree-`d` table stores `K ^ d`
 times its rational coefficients, with `K = 210`, and integer arithmetic *is* kernel-reducible.
 `bchTTable` is the degree-`k` part of `y` in that form, and `evalKTab_bchTTable_*` below say what it
-evaluates to. See `artifacts/abstractions/wordalgebra-int.md`.
+evaluates to.
 
 ## Provenance
 
 Ported from `Lean-BCH/BCH/SmallSDischarge.lean` (`BCH/SmallSDischarge.lean:37-786`): the source
 states each identity inline as a `let` chain over an arbitrary `RCLike 𝕂`. The statements here are
-the same identities with the pieces named and the scalar interface narrowed to `ℚ`.
+the same identities with the pieces named and the scalar interface narrowed to `ℚ`. The range covers
+degrees 4–8; degree 8 is deferred (`artifacts/abstractions/deg8-split.md`), so `T₈` is absent and
+the degrees built on this file are 4–7.
 `quintic_pure_identity` is the degree-4 cancellation, and it is the one identity of the family that
 is *not* proved through a table: it is stated over a bare `Ring` (its scalars are `Nat`-valued),
 while `evalKTab` needs `[Algebra ℚ 𝔸]`. Its companion `quintic_pure_identity_cleared` is the same

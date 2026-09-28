@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify that the degree-6 Dynkin/Ree cancellation identity holds as a *table* identity.
 
-The pure identity of `SmallSDischarge.lean` is
+The pure identity of `DynkinReeSextic.lean` is
 
     ½·W6 + ⅓·y3₆ - ¼·y4₆ + ⅕·y5₆ - ⅙·z⁶ - bchSexticTerm = 0
 
@@ -12,7 +12,7 @@ A table is a list of `(word, coefficient)` pairs, where a word is a list of lett
 `1` = `b`). Tables multiply by cartesian product: concatenate the words, multiply the coefficients.
 `T_k` is the table of `a^n b^(k-n) / (n! (k-n)!)` over `n = 0..k`.
 
-`SmallSDischarge.lean` stores the coefficients as **integers**, cleared by `K ^ 6` with
+`DynkinReeToolbox.lean` stores the coefficients as **integers**, cleared by `K ^ 6` with
 `K = 210` (`WordAlgebra.lean`); the tables read out of it are therefore integer-valued, and the
 Dynkin/Ree scalars `1/2 … 1/6` appear there already cleared by `60`.
 
@@ -22,11 +22,11 @@ The check runs twice, from two independent models:
   compositions of 6 into `p` parts of the product of the corresponding `T_i`, and the rational form
   of `bchSexticTerm` is recovered from the Lean table by dividing out `K ^ 6`.
 * **pieces** — the code: the six degree-6 piece tables `w6Tab`, `y36Tab`, `y46Tab`, `y56Tab`,
-  `z6Tab` are read out of `SmallSDischarge.lean` and evaluated with the same
-  `mulKTab`/`powKTab`/`smulKTab` algebra that Lean uses.  A change to the Lean expressions is
-  therefore picked up automatically.
+  `z6Tab` are read out of `DynkinReeSextic.lean` (with `bchTTable` read out of
+  `DynkinReeToolbox.lean`) and evaluated with the same `mulKTab`/`powKTab`/`smulKTab` algebra that
+  Lean uses.  A change to the Lean expressions is therefore picked up automatically.
 
-It also prints the 64 coefficients that `SmallSDischarge.lean` asserts to vanish, in the word order of
+It also prints the 64 coefficients that the identity asserts to vanish, in the word order of
 the `2 ^ 6` six-letter words.
 
 Usage:
@@ -45,7 +45,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BCH_TERMS = ROOT / "FQFP" / "BCH" / "BCHTerms.lean"
-SMALL_S_DISCHARGE = ROOT / "FQFP" / "BCH" / "SmallSDischarge.lean"
+TOOLBOX = ROOT / "FQFP" / "BCH" / "DynkinReeToolbox.lean"
+SEXTIC = ROOT / "FQFP" / "BCH" / "DynkinReeSextic.lean"
 
 Tab = list[tuple[tuple[int, ...], Fraction]]
 Map = dict[tuple[int, ...], Fraction]
@@ -134,7 +135,7 @@ LHS = collapse(add(scale(Fraction(1, 2), W6),
                    scale(Fraction(-1, 6), Z6)))
 
 
-# ── Model 2 (code): the piece tables read out of `SmallSDischarge.lean` ─────────────────────────────
+# ── Model 2 (code): the piece tables read out of `DynkinReeSextic.lean` ────────────────────────────
 
 
 def strip_comments(text: str) -> str:
@@ -217,7 +218,7 @@ def parse_rat(text: str) -> Fraction:
 
 def parse_t_tables() -> dict[int, Tab]:
     """The literal branches of the degree-`k` table `T`."""
-    text = strip_comments(SMALL_S_DISCHARGE.read_text(encoding="utf-8"))
+    text = strip_comments(TOOLBOX.read_text(encoding="utf-8"))
     body = definition_body(text, "bchTTable")
     branches = list(re.finditer(r"\n\s*\|\s*(\d+)\s*=>", body))
     out: dict[int, Tab] = {}
@@ -233,11 +234,11 @@ def parse_t_tables() -> dict[int, Tab]:
 def piece_tables() -> dict[str, Map]:
     """Evaluate the six degree-6 piece definitions with the `WordAlgebra` table algebra.
 
-    The bodies are read out of `SmallSDischarge.lean` and parsed, not rewritten: Lean and Python agree
+    The bodies are read out of `DynkinReeSextic.lean` and parsed, not rewritten: Lean and Python agree
     on the syntax of this fragment (`f a b` application, `++`/`+`, `*`, parentheses) except for
     precedence — Lean's application binds tighter than Python's `-` — so a small recursive-descent
     parser is used instead of `eval`."""
-    text = strip_comments(SMALL_S_DISCHARGE.read_text(encoding="utf-8"))
+    text = strip_comments(SEXTIC.read_text(encoding="utf-8"))
     t = parse_t_tables()
     env = {
         "bchTTable": t,

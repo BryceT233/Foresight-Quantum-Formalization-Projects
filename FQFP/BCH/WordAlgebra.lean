@@ -19,8 +19,7 @@ compared coefficient by coefficient.
 The coefficients are what makes that comparison expensive. `ℚ` has no kernel reduction
 (`(2 : ℚ) * 3 = 6` is not `rfl`, and `DecidableEq ℚ` does not reduce), so a coefficient comparison
 can only be driven by `norm_num`, one small expression at a time — and the degree-6 identity
-written that way needs 64 separate declarations, each unfolding a ~1000-row table. See
-`artifacts/abstractions/wordalgebra-int.md` and `artifacts/bch-wordalgebra-next-step.md`.
+written that way needs 64 separate declarations, each unfolding a ~1000-row table.
 
 This file replaces the coefficients by **integers**: a degree-`d` table stores `K ^ d` times its
 rational coefficients, where `K = 210` clears every denominator occurring in degrees `≤ 8`.
@@ -311,5 +310,14 @@ lemma evalKTab_eq_zero_of_all_beq (a b : 𝔸) (t : KTab) (h : t.all (fun p => p
   evalKTab_eq_zero_of_rows a b t fun p hp => by
     have := (List.all_eq_true.mp h) p hp
     simpa [beq_iff_eq] using this
+
+/-- **The zero criterion, applied to a normal form of the table.** When a comparison is split by
+piece, the kernel check runs on the *merged* normal form rather than on the chain, so this is the
+form a split comparison uses: `collapseK t = u` and `u` has no nonzero coefficient give
+`evalKTab a b t = 0`. -/
+lemma evalKTab_eq_zero_of_collapseK (a b : 𝔸) (t u : KTab) (h : u.all (fun p => p.2 == 0) = true)
+    (hc : collapseK t = u) : evalKTab a b t = 0 := by
+  rw [← evalKTab_collapseK a b t, hc]
+  exact evalKTab_eq_zero_of_all_beq a b u h
 
 end FQFP.BCH.WordAlgebra
