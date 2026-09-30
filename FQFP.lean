@@ -16,7 +16,8 @@ public import FQFP.BCH.WordAlgebra
 public import FQFP.BCH.WordNorm
 public import FQFP.BCH.WordExpansion
 public import FQFP.CQM.Category.DaggerCategory
-public import FQFP.CQM.Category.MonoidalCategory
+public import FQFP.CQM.Category.DaggerBiproduct
+public import FQFP.CQM.Category.Measurement
 public import FQFP.CQM.QuditCat.Basic
 public import FQFP.CQM.HilbCat
 public import FQFP.CQM.RelCat
