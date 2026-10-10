@@ -5,7 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.TrotterError.ProductFormula
+public import FQFP.TrotterError.ProductFormula.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 import FQFP.TrotterError.ListLemmas
 

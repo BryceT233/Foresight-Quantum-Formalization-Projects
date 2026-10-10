@@ -86,17 +86,41 @@ noncomputable def invStrictSuffixFactorProd {Υ Γ : ℕ} (P : ProductFormulaDat
 lemma factorProdOver_evalIndexList {𝔸 : Type*} [NormedRing 𝔸] [NormedSpace ℝ 𝔸]
     (H : Fin Γ → 𝔸) (τ : ℝ) : factorProdOver P H τ (evalIndexList Υ Γ) = P.eval H τ := rfl
 
-/-- `evalIndexList` has no duplicates. -/
-lemma evalIndexList_nodup : (evalIndexList Υ Γ).Nodup :=
-  (List.nodup_reverse.mpr (List.nodup_finRange Υ)).product
-    (List.nodup_reverse.mpr (List.nodup_finRange Γ))
+/-- Any list of product-formula factors with skew-adjoint summands has unitary product.
+This also applies to prefixes, suffixes, and their reversed products at negative time. -/
+lemma factorProdOver_mem_unitary_of_skewAdjoint
+    {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormedSpace ℝ 𝔸] [CompleteSpace 𝔸]
+    [StarRing 𝔸] [ContinuousStar 𝔸] [StarModule ℝ 𝔸]
+    (H : Fin Γ → 𝔸) (hskew : ∀ γ, star (H γ) = -(H γ)) (t : ℝ)
+    (l : List (Fin Υ × Fin Γ)) : factorProdOver P H t l ∈ unitary 𝔸 := by
+  apply (unitary 𝔸).list_prod_mem
+  intro x hx
+  obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
+  exact P.evalFactor_mem_unitary_of_skewAdjoint H hskew i t
 
-/-- Every factor index `i : Fin Υ × Fin Γ` occurs in `evalIndexList`. -/
-lemma evalIndexList_mem (i : Fin Υ × Fin Γ) : i ∈ evalIndexList Υ Γ := by
-  rcases i with ⟨a, b⟩
-  simp [evalIndexList]
+/-! ### Bridges between list products and indexed generators -/
 
-/-! ### Continuity of the building blocks -/
+/-- Express the strict suffix product using its `Fin`-indexed generators, in the same order. -/
+lemma strictSuffixFactorProd_eq_prod_suffixGenerators
+    {𝔸 : Type*} [NormedRing 𝔸] [NormedSpace ℝ 𝔸]
+    (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) (t : ℝ) :
+    strictSuffixFactorProd P H i t =
+      (List.ofFn (fun k => exp (t • suffixGenerators P H i k))).prod := by
+  unfold suffixGenerators
+  rw [ofFn_get_comp ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1))
+    (fun j => exp (t • P.generator H j))]
+  rfl
+
+/-- Split the product formula before and after a given factor, preserving factor order. -/
+lemma eval_eq_prefix_mul_evalFactor_mul_strictSuffix
+    {𝔸 : Type*} [NormedRing 𝔸] [NormedSpace ℝ 𝔸]
+    (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) (t : ℝ) :
+    P.eval H t = prefixFactorProd P H i t * P.evalFactor H i t *
+      strictSuffixFactorProd P H i t :=
+  prod_map_eq_take_mul_get_mul_drop (evalIndexList Υ Γ) (fun j => P.evalFactor H j t)
+    i (evalIndexList_mem i)
+
+/-! ### Continuity and smoothness of the building blocks -/
 
 /-- Each factor `t ↦ P.evalFactor H i t` is continuous. -/
 @[fun_prop]
@@ -107,25 +131,50 @@ lemma continuous_evalFactor (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) :
 /-- `s ↦ factorProdOver P H s l` is continuous. -/
 @[fun_prop]
 lemma continuous_factorProdOver (H : Fin Γ → 𝔸) (l : List (Fin Υ × Fin Γ)) :
-    Continuous (fun s : ℝ => factorProdOver P H s l) := by
-  unfold factorProdOver
-  induction l with
-  | nil => simpa using (continuous_const : Continuous (fun _ : ℝ => (1 : 𝔸)))
-  | cons a l ih =>
-      simp only [List.map_cons, List.prod_cons]
-      exact (continuous_evalFactor P H a).mul ih
+    Continuous (fun s : ℝ => factorProdOver P H s l) :=
+  continuous_list_prod l (fun i _ => continuous_evalFactor P H i)
 
 /-- The product formula `t ↦ P.eval H t` is continuous. -/
 @[fun_prop]
 lemma continuous_eval (H : Fin Γ → 𝔸) : Continuous (fun t : ℝ => P.eval H t) :=
   continuous_factorProdOver P H (evalIndexList Υ Γ)
 
+/-- Each factor of a product formula is smooth in time. -/
+lemma contDiff_evalFactor (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) :
+    ContDiff ℝ ∞ (fun t : ℝ => P.evalFactor H i t) := by
+  simpa [ProductFormulaData.evalFactor] using contDiff_exp_smul_const (P.generator H i)
+
+/-- An ordered product over any list of product-formula factors is smooth in time. -/
+lemma contDiff_factorProdOver (H : Fin Γ → 𝔸) (l : List (Fin Υ × Fin Γ)) :
+    ContDiff ℝ ∞ (fun t : ℝ => factorProdOver P H t l) :=
+  contDiff_list_prod l (fun i t => P.evalFactor H i t) (fun i _ => contDiff_evalFactor P H i)
+
 /-- The product formula `t ↦ P.eval H t` is smooth. -/
 lemma contDiff_eval {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
-    (H : Fin Γ → 𝔸) : ContDiff ℝ ∞ (fun t : ℝ => P.eval H t) := by
-  refine contDiff_list_prod (evalIndexList Υ Γ) (fun i t => P.evalFactor H i t) ?_
-  intro i _
-  simpa [ProductFormulaData.evalFactor] using contDiff_exp_smul_const (P.generator H i)
+    (H : Fin Γ → 𝔸) : ContDiff ℝ ∞ (fun t : ℝ => P.eval H t) :=
+  contDiff_factorProdOver P H (evalIndexList Υ Γ)
+
+/-- A prefix product is smooth in time. -/
+lemma contDiff_prefixFactorProd (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) :
+    ContDiff ℝ ∞ (prefixFactorProd P H i) :=
+  contDiff_factorProdOver P H ((evalIndexList Υ Γ).take ((evalIndexList Υ Γ).idxOf i))
+
+/-- A strict suffix product is smooth in time. -/
+lemma contDiff_strictSuffixFactorProd (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) :
+    ContDiff ℝ ∞ (strictSuffixFactorProd P H i) :=
+  contDiff_factorProdOver P H ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1))
+
+/-- The inverse prefix product is smooth in time. -/
+lemma contDiff_invPrefixFactorProd (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) :
+    ContDiff ℝ ∞ (invPrefixFactorProd P H i) :=
+  (contDiff_factorProdOver P H
+    (((evalIndexList Υ Γ).take ((evalIndexList Υ Γ).idxOf i)).reverse)).comp contDiff_neg
+
+/-- The inverse strict suffix product is smooth in time. -/
+lemma contDiff_invStrictSuffixFactorProd (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) :
+    ContDiff ℝ ∞ (invStrictSuffixFactorProd P H i) :=
+  (contDiff_factorProdOver P H
+    (((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)).reverse)).comp contDiff_neg
 
 /-! ### Elementary `exp` identities (need `ℚ`-algebra) -/
 
@@ -227,9 +276,9 @@ lemma posDerivSum_eq_evalDeriv (H : Fin Γ → 𝔸) (t : ℝ) :
 theorem eval_hasDerivAt (H : Fin Γ → 𝔸) (t : ℝ) :
     HasDerivAt (fun s : ℝ => P.eval H s) (evalDeriv P H t) t := by
   have hpos : HasDerivAt (fun s : ℝ => P.eval H s) (posDerivSum P H t) t := by
-    have h := hasDerivAt_list_prod (evalIndexList Υ Γ) (fun i => P.evalFactor H i)
-      (fun i s => (P.generator H i) * P.evalFactor H i s)
-      (fun i _ s => evalFactor_hasDerivAt P H i s) t
+    have h := hasDerivAt_list_prod_at (evalIndexList Υ Γ) (fun i => P.evalFactor H i)
+      (fun i => (P.generator H i) * P.evalFactor H i t) t
+      (fun i _ => evalFactor_hasDerivAt P H i t)
     change HasDerivAt (fun s : ℝ => ((evalIndexList Υ Γ).map (fun i => P.evalFactor H i s)).prod)
       (posDerivSum P H t) t
     simpa only [posDerivSum] using h
@@ -383,25 +432,11 @@ lemma prefix_point_suffix_norm_sum_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAl
         (drop.map g).sum := by
     simpa [drop] using
       sum_map_eq_take_add_get_add_drop (evalIndexList Υ Γ) g i (evalIndexList_mem i)
-  have hsuffix : (∑ k : Fin drop.length, ‖suffixGenerators P H i k‖) ≤ (drop.map g).sum := by
-    have hle : ∀ k : Fin drop.length, ‖suffixGenerators P H i k‖ ≤ g (drop.get k) := by
-      intro k
-      dsimp [suffixGenerators, g, drop, ProductFormulaData.generator]
-      rw [norm_smul, Real.norm_eq_abs]
-      exact mul_le_of_le_one_left (norm_nonneg _) (P.coeff_abs_le_one (drop.get k))
-    calc
-      (∑ k : Fin drop.length, ‖suffixGenerators P H i k‖)
-          ≤ ∑ k : Fin drop.length, g (drop.get k) := Finset.sum_le_sum (fun k _ => hle k)
-      _ = (drop.map g).sum := by simp
+  have hsuffix : (∑ k : Fin drop.length, ‖suffixGenerators P H i k‖) ≤ (drop.map g).sum :=
+    sum_norm_suffixGenerators_le_sum P H i
   have hfull : ((evalIndexList Υ Γ).map g).sum = (Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖ := by
-    calc
-      ((evalIndexList Υ Γ).map g).sum =
-        ∑ k : Fin (evalIndexList Υ Γ).length, ‖fullGenerators P H k‖ := by
-        rw [← List.sum_ofFn]
-        congr 1
-        rw [← List.ofFn_getElem_eq_map (evalIndexList Υ Γ) g]
-        congr 1
-      _ = (Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖ := sum_norm_fullGenerators_eq P H
+    rw [sum_evalIndexList]
+    exact P.sum_norm_prod H
   calc
     (((evalIndexList Υ Γ).take ((evalIndexList Υ Γ).idxOf i)).map g).sum + g i +
         (∑ k : Fin drop.length, ‖suffixGenerators P H i k‖)
@@ -502,17 +537,32 @@ lemma additiveResidual_eq_eval_mul_kernel [NormedAlgebra ℚ 𝔸]
   intro i hi
   exact (eval_mul_kernel_term P H i τ).symm
 
+/-- The additive kernel `𝒯` is smooth. -/
+lemma contDiff_additiveKernel (H : Fin Γ → 𝔸) : ContDiff ℝ ∞ (additiveKernel P H) := by
+  unfold additiveKernel
+  refine (ContDiff.sum (fun i _ =>
+    ((contDiff_invStrictSuffixFactorProd P H i).mul contDiff_const).mul
+      (contDiff_strictSuffixFactorProd P H i))).sub ?_
+  exact (((contDiff_factorProdOver P H ((evalIndexList Υ Γ).reverse)).comp contDiff_neg).mul
+    contDiff_const).mul (contDiff_factorProdOver P H (evalIndexList Υ Γ))
+
+/-- The exponentiated error `ℰ` is smooth. -/
+lemma contDiff_exponentiatedError (H : Fin Γ → 𝔸) :
+    ContDiff ℝ ∞ (exponentiatedError P H) := by
+  unfold exponentiatedError exponentiatedGenerator
+  exact (ContDiff.sum (fun i _ =>
+    ((contDiff_prefixFactorProd P H i).mul contDiff_const).mul
+      (contDiff_invPrefixFactorProd P H i))).sub contDiff_const
+
 /-- The additive kernel is continuous. -/
 @[fun_prop]
-lemma continuous_additiveKernel (H : Fin Γ → 𝔸) : Continuous (additiveKernel P H) := by
-  unfold additiveKernel invStrictSuffixFactorProd strictSuffixFactorProd
-  fun_prop
+lemma continuous_additiveKernel (H : Fin Γ → 𝔸) : Continuous (additiveKernel P H) :=
+  (contDiff_additiveKernel P H).continuous
 
 /-- The exponentiated error is continuous. -/
 @[fun_prop]
-lemma continuous_exponentiatedError (H : Fin Γ → 𝔸) : Continuous (exponentiatedError P H) := by
-  unfold exponentiatedError exponentiatedGenerator prefixFactorProd invPrefixFactorProd
-  fun_prop
+lemma continuous_exponentiatedError (H : Fin Γ → 𝔸) : Continuous (exponentiatedError P H) :=
+  (contDiff_exponentiatedError P H).continuous
 
 /-! ### The three representations of `thm:error_type` -/
 

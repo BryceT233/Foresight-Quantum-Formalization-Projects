@@ -195,69 +195,32 @@ lemma additiveKernel_eq_commutatorRemainder_sum
         commutatorExpansion_conj (suffixGenerators P H i) (P.generator H i) p (-τ) hp)]
       rw [commutatorExpansion_conj (orderedGenerators P H) (∑ γ : Fin Γ, H γ) p (-τ) hp]
     exact h_rearrange (-τ)
-  have hkernel : (fun τ : ℝ => ‖additiveKernel P H τ‖) =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) :=
-    (errorOrderCond_additive_iff P p H).mp h_order
+  have hkernel : additiveKernel P H =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) :=
+    ((errorOrderCond_additive_iff P p H).mp h_order).of_norm_left
   have hrem_i : ∀ i : Fin Υ × Fin Γ,
-      (fun τ : ℝ => ‖commutatorRemainder (suffixGenerators P H i) (P.generator H i) p (-τ)‖)
+      (fun τ : ℝ => commutatorRemainder (suffixGenerators P H i) (P.generator H i) p (-τ))
         =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := by
     intro i
     have hcomp := (commutatorRemainder_isBigO (suffixGenerators P H i)
-      (P.generator H i) p).comp_tendsto tendsto_neg_nhds_zero
+      (P.generator H i) p).of_norm_left.comp_tendsto tendsto_neg_nhds_zero
     exact hcomp.trans (neg_pow_isBigO p)
-  have hremSum : (fun τ : ℝ => ‖∑ i : Fin Υ × Fin Γ,
-      commutatorRemainder (suffixGenerators P H i) (P.generator H i) p (-τ)‖)
-      =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := by
-    have htri : (fun τ : ℝ => ‖∑ i : Fin Υ × Fin Γ,
-        commutatorRemainder (suffixGenerators P H i) (P.generator H i) p (-τ)‖)
-        =O[𝓝 (0 : ℝ)] (fun τ : ℝ => ∑ i : Fin Υ × Fin Γ,
-        ‖commutatorRemainder (suffixGenerators P H i) (P.generator H i) p (-τ)‖) := by
-      refine IsBigO.of_bound 1 ?_
-      filter_upwards with τ
-      rw [Real.norm_of_nonneg (norm_nonneg _),
-        Real.norm_of_nonneg (sum_nonneg (fun _ _ => norm_nonneg _)), one_mul]
-      exact norm_sum_le univ
-        (fun i => commutatorRemainder (suffixGenerators P H i) (P.generator H i) p (-τ))
-    have hsum : (fun τ : ℝ => ∑ i : Fin Υ × Fin Γ,
-        ‖commutatorRemainder (suffixGenerators P H i) (P.generator H i) p (-τ)‖)
-        =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := by
-      simpa [Finset.sum_fn] using IsBigO.sum (s := (univ : Finset (Fin Υ × Fin Γ)))
-        (fun i _ => hrem_i i)
-    exact htri.trans hsum
-  have hremAll :
-      (fun τ : ℝ => ‖commutatorRemainder (orderedGenerators P H) (∑ γ : Fin Γ, H γ) p (-τ)‖)
+  have hremSum : (fun τ : ℝ => remSum (-τ)) =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := by
+    simpa only [remSum, Finset.sum_fn] using
+      IsBigO.sum (s := (univ : Finset (Fin Υ × Fin Γ))) (fun i _ => hrem_i i)
+  have hremAll : (fun τ : ℝ => remAll (-τ))
       =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := by
     have hcomp := (commutatorRemainder_isBigO (orderedGenerators P H)
-      (∑ γ : Fin Γ, H γ) p).comp_tendsto tendsto_neg_nhds_zero
+      (∑ γ : Fin Γ, H γ) p).of_norm_left.comp_tendsto tendsto_neg_nhds_zero
     exact hcomp.trans (neg_pow_isBigO p)
-  have hpoly_neg : (fun τ : ℝ => ‖poly (-τ)‖) =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := by
-    have htri : (fun τ : ℝ => ‖poly (-τ)‖) =O[𝓝 (0 : ℝ)]
-        (fun τ : ℝ => ‖additiveKernel P H τ‖ + ‖remSum (-τ)‖ + ‖remAll (-τ)‖) := by
-      refine IsBigO.of_bound 1 ?_
-      filter_upwards with τ
-      rw [Real.norm_of_nonneg (norm_nonneg _),
-        Real.norm_of_nonneg
-          (add_nonneg (add_nonneg (norm_nonneg _) (norm_nonneg _)) (norm_nonneg _)),
-        one_mul]
-      have hpoly_pt : poly (-τ) = additiveKernel P H τ - remSum (-τ) + remAll (-τ) := by
-        have h := h_expand τ
-        calc
-          poly (-τ) = (poly (-τ) + remSum (-τ) - remAll (-τ)) - remSum (-τ) + remAll (-τ) := by abel
-          _ = additiveKernel P H τ - remSum (-τ) + remAll (-τ) := by rw [h]
-      calc
-        ‖poly (-τ)‖ = ‖additiveKernel P H τ - remSum (-τ) + remAll (-τ)‖ := by
-              rw [hpoly_pt]
-        _ ≤ ‖additiveKernel P H τ - remSum (-τ)‖ + ‖remAll (-τ)‖ := norm_add_le _ _
-        _ ≤ ‖additiveKernel P H τ‖ + ‖remSum (-τ)‖ + ‖remAll (-τ)‖ := by
-              gcongr
-              exact norm_sub_le _ _
-    have hsum : (fun τ : ℝ => ‖additiveKernel P H τ‖ + ‖remSum (-τ)‖ + ‖remAll (-τ)‖)
-        =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := (hkernel.add hremSum).add hremAll
-    exact htri.trans hsum
-  have hpoly_big : (fun σ : ℝ => ‖poly σ‖) =O[𝓝 (0 : ℝ)] (fun σ : ℝ => σ ^ p) := by
+  have hpoly_neg : (fun τ : ℝ => poly (-τ)) =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := by
+    refine ((hkernel.sub hremSum).add hremAll).congr_left fun τ => ?_
+    rw [h_expand τ]
+    abel
+  have hpoly_big : poly =O[𝓝 (0 : ℝ)] (fun σ : ℝ => σ ^ p) := by
     have hcomp := hpoly_neg.comp_tendsto tendsto_neg_nhds_zero
     exact (hcomp.trans (neg_pow_isBigO p)).congr_left (fun σ => by simp)
   have hT_zero : ∀ j : ℕ, j < p → T j = 0 :=
-    (polynomial_isBigO_iff_coeffs_zero p T).mp hpoly_big
+    (polynomial_isBigO_iff_coeffs_zero p T).mp hpoly_big.norm_left
   have hpoly_zero : poly = 0 := by
     funext σ
     dsimp [poly]

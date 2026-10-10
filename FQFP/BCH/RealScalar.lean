@@ -23,6 +23,12 @@ structure, and that structure is unique.
   ring homomorphism `algebraMap ℚ 𝔸` along the dense inclusion `ℚ → ℝ`.
 * `realNormedAlgebraUnique` — that structure is unique.
 
+Use `open scoped RealScalar` to synthesize the canonical real structure from the rational
+structure and completeness. This opt-in instance has low priority, so an existing real
+structure is preferred. Statements elaborated with the canonical structure use its scalar
+action; when applying them with another real structure, use `Subsingleton.elim` to identify
+the two structures first.
+
 -/
 
 @[expose] public noncomputable section
@@ -62,6 +68,12 @@ abbrev normedAlgebraReal [CompleteSpace 𝔸] : NormedAlgebra ℝ 𝔸 where
     · change ‖(ue.isDenseInducing Rat.denseRange_cast).extend (algebraMap ℚ 𝔸) a * x‖ ≤ _
       rw [(ue.isDenseInducing Rat.denseRange_cast).extend_eq (by fun_prop), ← Algebra.smul_def]
       exact norm_smul_le a x
+
+namespace RealScalar
+
+attribute [scoped instance 100] normedAlgebraReal
+
+end RealScalar
 
 /-- A complete normed `ℚ`-algebra carries a unique `NormedAlgebra ℝ` structure. -/
 noncomputable instance realNormedAlgebraUnique [CompleteSpace 𝔸] :

@@ -460,6 +460,15 @@ lemma αCommConj_smul_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ �
   exact mul_le_mul_of_nonneg_left
     (mul_le_of_le_one_left (norm_nonneg _) hc) (Nat.cast_nonneg _)
 
+/-- Transporting operators and multiplicities along a length equality preserves `adSequence`.
+This only changes the index type; it does not permute the commutators. -/
+lemma adSequence_cast {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] {s t : ℕ} (h : s = t)
+    (A : Fin s → 𝔸) (q : Fin s → ℕ) (B : 𝔸) :
+    adSequence (fun i : Fin t => A (Fin.cast h.symm i))
+      (fun i => q (Fin.cast h.symm i)) B = adSequence A q B := by
+  subst h
+  rfl
+
 /-- `αCommConj` is invariant under `Fin.cast` reindexing. -/
 lemma αCommConj_cast {𝔸 : Type*} [NormedRing 𝔸] [Algebra ℝ 𝔸] {s t : ℕ} (h : s = t) (A : Fin s → 𝔸)
     (B : 𝔸) (p : ℕ) :
@@ -611,6 +620,21 @@ lemma αCommConj_natAdd_le {𝔸 : Type*} [NormedRing 𝔸] [Algebra ℝ 𝔸] {
         _ ≤ αCommConj (A ∘ Fin.cast e.symm) B p :=
                 αCommConj_succ_le (A ∘ Fin.cast e.symm) B p
         _ = αCommConj A B p := αCommConj_cast e A B p
+
+/-- Removing an initial segment of a list cannot increase its commutator scaling.
+The list representation hides the dependent lengths and index casts from callers. -/
+lemma αCommConj_get_drop_le {ι 𝔸 : Type*} [NormedRing 𝔸] [Algebra ℝ 𝔸]
+    (l : List ι) (f : ι → 𝔸) (n : ℕ) (B : 𝔸) (p : ℕ) :
+    αCommConj (fun k => f ((l.drop n).get k)) B p ≤
+      αCommConj (fun k => f (l.get k)) B p := by
+  induction n generalizing l with
+  | zero => exact le_rfl
+  | succ n ih =>
+      cases l with
+      | nil => exact le_rfl
+      | cons a l =>
+          exact (ih l).trans (by
+            simpa using αCommConj_succ_le (fun k => f ((a :: l).get k)) B p)
 
 /-- `αCommConj A B p` is a sum of nonnegative terms, hence nonnegative. -/
 lemma αCommConj_nonneg {𝔸 : Type*} [NormedRing 𝔸] [Algebra ℝ 𝔸] {s : ℕ} (A : Fin s → 𝔸) (B : 𝔸)

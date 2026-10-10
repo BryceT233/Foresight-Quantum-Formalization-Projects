@@ -5,8 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Mul
-public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import FQFP.TrotterError.ListCalculus
 
 /-!
 # General list lemmas
@@ -24,8 +23,6 @@ used by the Trotter error theory (arXiv:1912.08854). This is the shared home for
   prefix `· f i ·` suffix.
 * `sum_get_eq_sum_idxOf`: reindexing a sum over positions `Fin l.length` to a sum over the
   (nodup) elements of `l`.
-* `hasDerivAt_list_prod`: the product rule for the ordered product `t ↦ (l.map (f · t)).prod`.
-* `contDiff_list_prod`: smoothness of the ordered product `t ↦ (l.map (f · t)).prod`.
 * `prod_mul_rev_eq_one_of_mul_eq_one`, `rev_mul_prod_eq_one_of_mul_eq_one`: telescoping
   product-of-units identities.
 * `ofFn_castSucc_drop_prod`, `ofFn_castSucc_drop_reverse_prod`: peeling the outermost entry
@@ -121,65 +118,6 @@ lemma sum_get_eq_sum_idxOf {ι A : Type*} [Fintype ι] [BEq ι] [LawfulBEq ι] [
   · intro a ha
     rw [List.idxOf_get (List.idxOf_lt_length_iff.mpr (hmem a))]
 
-/-! ### Derivative of an ordered product -/
-
-/-- The product rule for an ordered `List.prod`: the derivative of `t ↦ (l.map (f · t)).prod` is
-the sum over positions `k` of the `k`-th factor differentiated, surrounded by the earlier and later
-factors. -/
-lemma hasDerivAt_list_prod {ι 𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    (l : List ι) (f : ι → ℝ → 𝔸) (Df : ι → ℝ → 𝔸)
-    (hf : ∀ i ∈ l, ∀ t : ℝ, HasDerivAt (f i) (Df i t) t) (t : ℝ) :
-    HasDerivAt (fun s : ℝ => (l.map (fun i => f i s)).prod)
-      (∑ k : Fin l.length,
-        ((l.take (k : ℕ)).map (fun i => f i t)).prod * Df (l.get k) t *
-          ((l.drop ((k : ℕ) + 1)).map (fun i => f i t)).prod) t := by
-  induction l with
-  | nil => simpa using (hasDerivAt_const t (1 : 𝔸))
-  | cons a l ih =>
-      have hf' : ∀ i ∈ l, ∀ t : ℝ, HasDerivAt (f i) (Df i t) t := by
-        intro i hi s
-        exact hf i (List.mem_cons_of_mem a hi) s
-      have ih' : HasDerivAt (fun s : ℝ => (l.map (fun i => f i s)).prod)
-          (∑ k : Fin l.length,
-            ((l.take (k : ℕ)).map (fun i => f i t)).prod * Df (l.get k) t *
-              ((l.drop ((k : ℕ) + 1)).map (fun i => f i t)).prod) t := ih hf'
-      have hfa : HasDerivAt (f a) (Df a t) t := hf a (show a ∈ a :: l from List.mem_cons_self) t
-      have hprod : HasDerivAt (fun s : ℝ => f a s * (l.map (fun i => f i s)).prod)
-          (Df a t * (l.map (fun i => f i t)).prod + f a t *
-            (∑ k : Fin l.length,
-              ((l.take (k : ℕ)).map (fun i => f i t)).prod * Df (l.get k) t *
-                ((l.drop ((k : ℕ) + 1)).map (fun i => f i t)).prod)) t := hfa.mul ih'
-      have hsum :
-          (∑ k : Fin (l.length + 1),
-            (((a :: l).take (k : ℕ)).map (fun i => f i t)).prod * Df ((a :: l).get k) t *
-              (((a :: l).drop ((k : ℕ) + 1)).map (fun i => f i t)).prod)
-            = Df a t * (l.map (fun i => f i t)).prod + f a t *
-                (∑ k : Fin l.length,
-                  ((l.take (k : ℕ)).map (fun i => f i t)).prod * Df (l.get k) t *
-                    ((l.drop ((k : ℕ) + 1)).map (fun i => f i t)).prod) := by
-        rw [Fin.sum_univ_succ]
-        congr 1; · simp
-        · rw [Finset.mul_sum]
-          apply Finset.sum_congr rfl
-          intro k hk
-          simp [mul_assoc]
-      change HasDerivAt (fun s : ℝ => f a s * (l.map (fun i => f i s)).prod)
-        (∑ k : Fin (l.length + 1),
-          (((a :: l).take (k : ℕ)).map (fun i => f i t)).prod * Df ((a :: l).get k) t *
-            (((a :: l).drop ((k : ℕ) + 1)).map (fun i => f i t)).prod) t
-      rwa [hsum]
-
-/-- The pointwise product of a finite list of smooth functions is smooth. -/
-lemma contDiff_list_prod {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    {ι : Type*} (l : List ι) (f : ι → ℝ → 𝔸)
-    (hf : ∀ i ∈ l, ContDiff ℝ ∞ (f i)) :
-    ContDiff ℝ ∞ (fun t : ℝ => (l.map (fun i => f i t)).prod) := by
-  induction l with
-  | nil => simpa using (contDiff_const : ContDiff ℝ ∞ (fun _ : ℝ => (1 : 𝔸)))
-  | cons a l ih =>
-      simp only [List.map_cons, List.prod_cons]
-      exact ContDiff.mul (hf a (by simp)) (ih (fun i hi => hf i (by simp [hi])))
-
 /-! ### Products of `List.ofFn` suffixes -/
 
 /-- Peeling the outermost entry off a dropped suffix of a `List.ofFn`: the reverse product of the
@@ -212,6 +150,11 @@ lemma ofFn_get_comp {α β : Type*} (l : List α) (f : α → β) :
     List.ofFn (fun i : Fin l.length => f (l.get i)) = l.map f := by
   change List.ofFn (f ∘ List.get l) = List.map f l
   rw [← List.map_ofFn, List.ofFn_get]
+
+/-- Sum a function over list positions or over the mapped list, preserving multiplicities. -/
+lemma sum_get_comp {α M : Type*} [AddCommMonoid M] (l : List α) (f : α → M) :
+    (∑ i : Fin l.length, f (l.get i)) = (l.map f).sum := by
+  rw [← List.sum_ofFn, ofFn_get_comp l f]
 
 /-- `List.product` of two `List.ofFn` lists is the `List.ofFn` of the `divNat`/`modNat` pairing. -/
 lemma product_ofFn {α β : Type*} {m n : ℕ} (f : Fin m → α) (g : Fin n → β) :

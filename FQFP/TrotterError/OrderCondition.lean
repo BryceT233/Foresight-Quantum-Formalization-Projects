@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.TrotterError.OrderCondition.Basic
 public import FQFP.TrotterError.Calculus
 public import FQFP.TrotterError.TimeOrderedExp
 public import FQFP.TrotterError.ErrorTypes
@@ -52,20 +53,6 @@ variable {Υ Γ : ℕ}
 variable {𝔸 : Type*} [NormedRing 𝔸]
 variable (P : ProductFormulaData Υ Γ)
 
-/-! ### The `p`-th order condition (`P.IsOrderOf`) -/
-
-namespace ProductFormulaData
-
-open NormedSpace
-
-/-- `P` is a `p`-th order formula on summands `H` if `‖𝒮(t) − e^{tH}‖ = O(t^{p+1})`
-as `t → 0` (`prelim.tex:150`). -/
-def IsOrderOf {Υ Γ : ℕ} (P : ProductFormulaData Υ Γ) (p : ℕ) {𝔸 : Type*} [NormedRing 𝔸]
-    [NormedSpace ℝ 𝔸] (H : Fin Γ → 𝔸) : Prop :=
-  (fun t : ℝ => ‖P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)‖)
-    =O[𝓝 (0 : ℝ)] (fun t : ℝ => t ^ (p + 1))
-
-end ProductFormulaData
 
 /-! ### Auxiliary order estimates -/
 
@@ -517,67 +504,6 @@ lemma inverse_isBigO_one_of_continuous_unit [NormedAlgebra ℝ 𝔸] [CompleteSp
   have hcont : ContinuousAt (fun τ => Ring.inverse (U τ)) 0 :=
     (differentiableAt_inverse (𝕜 := ℝ) hU0).continuousAt.comp hU.continuousAt
   exact hcont.norm.isBigO_one (F := ℝ)
-
-/-- `s ↦ factorProdOver P H s l` is smooth. -/
-lemma contDiff_factorProdOver [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
-    (H : Fin Γ → 𝔸) (l : List (Fin Υ × Fin Γ)) :
-    ContDiff ℝ ∞ (fun s : ℝ => factorProdOver P H s l) := by
-  unfold factorProdOver
-  exact contDiff_list_prod l (fun j s => P.evalFactor H j s)
-    (fun j _ => by
-      simpa [ProductFormulaData.evalFactor] using contDiff_exp_smul_const (P.generator H j))
-
-/-- The additive kernel `𝒯` is smooth. -/
-lemma contDiff_additiveKernel [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
-    (H : Fin Γ → 𝔸) :
-    ContDiff ℝ ∞ (additiveKernel P H) := by
-  unfold additiveKernel invStrictSuffixFactorProd strictSuffixFactorProd
-  have hsummand : ∀ i : Fin Υ × Fin Γ,
-      ContDiff ℝ ∞ (fun τ =>
-        factorProdOver P H (-τ)
-          (((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)).reverse) *
-          P.generator H i * factorProdOver P H τ
-            ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1))) := by
-    intro i
-    exact (((contDiff_factorProdOver P H
-      (((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)).reverse)).comp contDiff_neg).mul
-        contDiff_const).mul
-      (contDiff_factorProdOver P H ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)))
-  have hsum : ContDiff ℝ ∞ (fun τ => ∑ i : Fin Υ × Fin Γ,
-      factorProdOver P H (-τ)
-        (((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)).reverse) *
-        P.generator H i * factorProdOver P H τ
-          ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1))) :=
-    ContDiff.sum (fun i _ => hsummand i)
-  have hother : ContDiff ℝ ∞ (fun τ => factorProdOver P H (-τ) ((evalIndexList Υ Γ).reverse) *
-      (∑ γ, H γ) * factorProdOver P H τ (evalIndexList Υ Γ)) :=
-    (((contDiff_factorProdOver P H ((evalIndexList Υ Γ).reverse)).comp contDiff_neg).mul
-      contDiff_const).mul (contDiff_factorProdOver P H (evalIndexList Υ Γ))
-  exact hsum.sub hother
-
-/-- The exponentiated error `ℰ` is smooth. -/
-lemma contDiff_exponentiatedError [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
-    (H : Fin Γ → 𝔸) :
-    ContDiff ℝ ∞ (exponentiatedError P H) := by
-  unfold exponentiatedError exponentiatedGenerator prefixFactorProd invPrefixFactorProd
-  have hsummand : ∀ i : Fin Υ × Fin Γ,
-      ContDiff ℝ ∞ (fun τ =>
-        factorProdOver P H τ
-          ((evalIndexList Υ Γ).take ((evalIndexList Υ Γ).idxOf i)) * P.generator H i *
-          factorProdOver P H (-τ)
-            (((evalIndexList Υ Γ).take ((evalIndexList Υ Γ).idxOf i)).reverse)) := by
-    intro i
-    exact ((contDiff_factorProdOver P H
-      ((evalIndexList Υ Γ).take ((evalIndexList Υ Γ).idxOf i))).mul
-      contDiff_const).mul ((contDiff_factorProdOver P H
-        (((evalIndexList Υ Γ).take ((evalIndexList Υ Γ).idxOf i)).reverse)).comp contDiff_neg)
-  have hsum : ContDiff ℝ ∞ (fun τ => ∑ i : Fin Υ × Fin Γ,
-      factorProdOver P H τ
-        ((evalIndexList Υ Γ).take ((evalIndexList Υ Γ).idxOf i)) * P.generator H i *
-        factorProdOver P H (-τ)
-          (((evalIndexList Υ Γ).take ((evalIndexList Υ Γ).idxOf i)).reverse)) :=
-    ContDiff.sum (fun i _ => hsummand i)
-  exact hsum.sub contDiff_const
 
 /-- The additive error, factored: `𝒮(t) − e^{tH} = e^{tH} ∫₀ᵗ e^{−τH} 𝒮(τ) 𝒯(τ) dτ`. -/
 lemma eval_sub_exp_eq_exp_mul_integral [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ 𝔸]

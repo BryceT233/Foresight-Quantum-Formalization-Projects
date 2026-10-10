@@ -7,7 +7,6 @@ module
 
 public import FQFP.CQM.Category.DaggerCategory
 public import Mathlib.Analysis.InnerProductSpace.Positive
-public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 public import Mathlib.RingTheory.PicardGroup
 
 /-!
@@ -15,11 +14,12 @@ public import Mathlib.RingTheory.PicardGroup
 
 This file defines `QuditCat`, the category of qudits: objects are finite-dimensional
 complex Hilbert spaces (the state spaces of qudits) and morphisms are linear maps between
-them. The category is equipped with a dagger structure given by the adjoint, a monoidal
-structure given by the tensor product, and it is shown that these interact to form a
-braided, symmetric monoidal dagger category. The file also sets up Dirac bra-ket notation,
-the standard `n`-dimensional Hilbert space `ℂⁿ` with its computational basis, and the
-usual single-qubit gates.
+them. The category is equipped with a dagger structure given by the adjoint. The file also
+sets up Dirac bra-ket notation, the standard `n`-dimensional Hilbert space `ℂⁿ` with its
+computational basis, and the usual single-qubit gates.
+
+The tensor product of state spaces, and with it the monoidal structure on `QuditCat`, lives
+in `FQFP.CQM.QuditCat.Monoidal`.
 
 ## Main definitions
 
@@ -40,8 +40,7 @@ usual single-qubit gates.
 
 ## Main results
 
-* `QuditCat` is a dagger category, a braided monoidal category, a symmetric monoidal
-  category, and a monoidal dagger category.
+* `QuditCat` is a dagger category.
 * `isUnitary_matrixToEnd_iff` characterizes unitary matrices by `M * star M = 1`.
 
 ## Implementation notes
@@ -318,104 +317,6 @@ lemma hom_adjoint_of_isPositive {H : QuditCat} (f : End H) [IsPositive f] :
 lemma inner_self_nonneg_of_isPositive {H : QuditCat} (f : End H) [IsPositive f] (x : H.state) :
     0 ≤ RCLike.re (inner ℂ (f.hom x) x) :=
   (hom_isPositive_of_isPositive f).re_inner_nonneg_left x
-
-noncomputable section
-
-open TensorProduct MonoidalCategory
-
-instance : MonoidalCategoryStruct QuditCat where
-  tensorObj H₁ H₂ := of (H₁.state ⊗[ℂ] H₂.state)
-  whiskerLeft _ _ _ f := ofHom (TensorProduct.map LinearMap.id f.hom)
-  whiskerRight f _ := ofHom (TensorProduct.map f.hom LinearMap.id)
-  tensorUnit := of ℂ
-  associator X Y Z := isoMk (TensorProduct.assoc ℂ X.state Y.state Z.state)
-  leftUnitor X := isoMk (TensorProduct.lid ℂ X.state)
-  rightUnitor X := isoMk (TensorProduct.rid ℂ X.state)
-
-instance : MonoidalCategory QuditCat where
-  id_tensorHom_id X₁ X₂ := by
-    apply hom_ext; apply TensorProduct.ext'
-    intros; rfl
-  tensorHom_comp_tensorHom f₁ f₂ g₁ g₂ := by
-    apply hom_ext; apply TensorProduct.ext'
-    intros; rfl
-  whiskerLeft_id X Y := by
-    apply hom_ext; apply TensorProduct.ext'
-    intros; rfl
-  id_whiskerRight X Y := by
-    apply hom_ext; apply TensorProduct.ext'
-    intros; rfl
-  associator_naturality f₁ f₂ f₃ := by
-    apply hom_ext; apply TensorProduct.ext_threefold
-    intros; rfl
-  leftUnitor_naturality := by
-    intro X Y f
-    apply hom_ext; apply TensorProduct.ext'
-    intro c x
-    change TensorProduct.lid ℂ Y.state (TensorProduct.map LinearMap.id f.hom (c ⊗ₜ x)) =
-      f.hom (TensorProduct.lid ℂ X.state (c ⊗ₜ x))
-    simp
-  rightUnitor_naturality := by
-    intro X Y f
-    apply hom_ext; apply TensorProduct.ext'
-    intro x c
-    change TensorProduct.rid ℂ Y.state (TensorProduct.map f.hom LinearMap.id (x ⊗ₜ c)) =
-      f.hom (TensorProduct.rid ℂ X.state (x ⊗ₜ c))
-    simp
-  pentagon W X Y Z := by
-    apply hom_ext; apply TensorProduct.ext_fourfold
-    intros; rfl
-  triangle X Y := by
-    apply hom_ext; apply TensorProduct.ext_threefold
-    intros; exact TensorProduct.tmul_smul ..
-
-lemma hom_tensorHom {X₁ Y₁ X₂ Y₂ : QuditCat} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂) :
-    (f ⊗ₘ g).hom = TensorProduct.map f.hom g.hom := by
-  change ((f ▷ X₂) ≫ (Y₁ ◁ g)).hom = _
-  simp only [hom_comp]
-  apply TensorProduct.ext'
-  intros; rfl
-
-instance monoidalDaggerCategory : MonoidalDaggerCategory QuditCat where
-  dagger_tensor f₁ f₂ := by
-    apply hom_ext
-    rw [hom_dagger, hom_tensorHom f₁ f₂, hom_tensorHom f₁† f₂†]
-    exact adjoint_map f₁.hom f₂.hom
-  isUnitary_associator H₁ H₂ H₃ := by
-    dsimp [associator]
-    rw [← toLinearEquiv_assocIsometry]
-    exact isUnitary_isoMk_coe_LIEquiv ..
-  isUnitary_leftUnitor H := by
-    dsimp [leftUnitor]
-    rw [← toLinearEquiv_lidIsometry]
-    exact isUnitary_isoMk_coe_LIEquiv ..
-  isUnitary_rightUnitor H := by
-    dsimp [rightUnitor]
-    rw [← toLinearEquiv_ridIsometry]
-    exact isUnitary_isoMk_coe_LIEquiv ..
-
-instance : BraidedCategory QuditCat where
-  braiding H₁ H₂ := isoMk (TensorProduct.comm ..)
-  braiding_naturality_left f H := by
-    apply hom_ext; apply TensorProduct.ext'
-    intros; rfl
-  braiding_naturality_right H f K g := by
-    apply hom_ext; apply TensorProduct.ext'
-    intros; rfl
-  hexagon_forward H K L := by
-    apply hom_ext; apply TensorProduct.ext_threefold
-    intros; rfl
-  hexagon_reverse H K L := by
-    apply hom_ext; apply TensorProduct.ext_threefold'
-    intros; rfl
-
-instance symmetricCategory : SymmetricCategory QuditCat where
-  symmetry H₁ H₂ := by
-    apply hom_ext
-    rw [hom_comp, hom_id]
-    exact TensorProduct.comm_comp_comm ..
-
-end
 
 section braket
 

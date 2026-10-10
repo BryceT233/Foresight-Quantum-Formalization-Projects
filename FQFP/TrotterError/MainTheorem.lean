@@ -18,6 +18,9 @@ The main theorems of *A Theory of Trotter Error* (arXiv:1912.08854): the norm bo
 additive kernel `𝒯(τ)` and the commuting-scaling bounds for the Trotter error
 `thm:trotter_error_comm_scaling`.
 
+Real scalars are supplied by the canonical extension of the complete normed `ℚ`-algebra
+(`open scoped RealScalar`), rather than a separate real-algebra hypothesis.
+
 Supporting steps live in dedicated files:
 * `OrderingRemoval.lean` — `αCommConj_sum_le_αComm` (`papers/rep.tex` lines 129–139).
 * `CommutatorScaling.lean` — the `additiveKernel = Σ multiConj − multiConj` bridge and the
@@ -34,7 +37,7 @@ namespace TrotterError
 open NormedSpace Asymptotics Finset
 open TrotterError.List
 open ProductFormulaData
-open scoped Topology BigOperators algebraMap
+open scoped Topology BigOperators algebraMap RealScalar
 
 variable {Υ Γ : ℕ}
 variable {𝔸 : Type*} [NormedRing 𝔸]
@@ -47,7 +50,7 @@ per-remainder bounds `‖remᵢ(−τ)‖ ≤ αᵢ · C` and `‖rem_all(−τ)
 coefficient bound `Σᵢ αᵢ + α_all ≤ 2 Υ Σ_γ α_γ`, conclude
 `‖additiveKernel P H τ‖ ≤ 2 Υ (Σ_γ α_γ) · C`. -/
 lemma norm_additiveKernel_le_of_rem_bound
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸] [CompleteSpace 𝔸]
+    [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸] [CompleteSpace 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H) (τ : ℝ) (C : ℝ)
     (hC : 0 ≤ C)
     (hrem_i : ∀ i : Fin Υ × Fin Γ,
@@ -91,7 +94,7 @@ lemma norm_additiveKernel_le_of_rem_bound
 /-- `thm:trotter_error_order_cond` (anti-Hermitian branch): the spectral norm of the additive
 kernel is bounded by `2 Υ (Σ_γ α_comm) |τ|^p / p!`. -/
 theorem norm_additiveKernel_le_of_skewAdjoint
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
     (h_skew : ∀ γ, star (H γ) = -(H γ)) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H)
     (hΥ : 0 < Υ) (τ : ℝ) :
@@ -128,7 +131,7 @@ theorem norm_additiveKernel_le_of_skewAdjoint
 /-- `thm:trotter_error_comm_scaling` (general branch): the spectral norm of the additive kernel is
 bounded by `2 Υ (Σ_γ α_comm) |τ|^p / p! · exp(2|τ| Υ Σ ‖H_γ‖)`. -/
 theorem norm_additiveKernel_le
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H) (hΥ : 0 < Υ) (τ : ℝ) :
     ‖additiveKernel P H τ‖ ≤
       2 * (Υ : ℝ) * (∑ γ : Fin Γ, αCommConj (orderedSummandsEval P H) (H γ) p) *
@@ -196,7 +199,7 @@ theorem norm_additiveKernel_le
 /-- The single suffix-remainder summand, scaled by `P.eval H τ`, telescopes to a single exponential
 `exp (|τ| · Υ · Σ ‖H γ‖)` (rep.tex:50–113). -/
 lemma norm_eval_mul_commutatorRemainderTerm_le
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) (p : ℕ)
     (j : Fin ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)).length)
     (q : Fin (j + 1) → ℕ) (τ : ℝ) (hτ : 0 ≤ τ)
@@ -210,36 +213,11 @@ lemma norm_eval_mul_commutatorRemainderTerm_le
     (fun j => ‖H (P.perm j.1 j.2)‖)).sum + ‖H (P.perm i.1 i.2)‖
   have hL : ‖prefixFactorProd P H i τ * P.evalFactor H i τ‖ ≤ Real.exp (|τ| * Cprefix) :=
     norm_prefixFactorProd_mul_evalFactor_le P H i τ
-  have hstrict : strictSuffixFactorProd P H i τ =
-      (List.ofFn (fun k : Fin ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)).length =>
-        exp (τ • suffixGenerators P H i k))).prod := by
-    dsimp [strictSuffixFactorProd, factorProdOver, suffixGenerators]
-    congr 1
-    change ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)).map
-        (fun j => P.evalFactor H j τ) =
-      List.ofFn (fun k : Fin ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)).length =>
-        exp (τ • P.generator H
-          (((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)).get k)))
-    rw [← List.ofFn_get ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)), List.map_ofFn]
-    simp [ProductFormulaData.evalFactor]
-  have hdec : P.eval H τ = prefixFactorProd P H i τ * P.evalFactor H i τ *
-      strictSuffixFactorProd P H i τ := by
-    rw [← factorProdOver_evalIndexList P H τ]
-    simpa only [prefixFactorProd, strictSuffixFactorProd, factorProdOver] using
-      (prod_map_eq_take_mul_get_mul_drop (l := evalIndexList Υ Γ) (f := fun j => P.evalFactor H j τ)
-        i (evalIndexList_mem i))
   have hdecomp : P.eval H τ = (prefixFactorProd P H i τ * P.evalFactor H i τ) *
       (List.ofFn (fun k : Fin ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)).length =>
         exp (τ • suffixGenerators P H i k))).prod := by
-    calc
-      P.eval H τ = prefixFactorProd P H i τ * P.evalFactor H i τ * strictSuffixFactorProd P H i τ :=
-        hdec
-      _ = (prefixFactorProd P H i τ * P.evalFactor H i τ) * strictSuffixFactorProd P H i τ := by
-        ac_rfl
-      _ = (prefixFactorProd P H i τ * P.evalFactor H i τ) *
-          (List.ofFn
-            (fun k : Fin ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)).length =>
-              exp (τ • suffixGenerators P H i k))).prod := by rw [hstrict]
+    rw [← strictSuffixFactorProd_eq_prod_suffixGenerators]
+    exact eval_eq_prefix_mul_evalFactor_mul_strictSuffix P H i τ
   have hCsum :
       Cprefix + (∑ k : Fin ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1)).length,
       ‖suffixGenerators P H i k‖) ≤ (Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖ :=
@@ -273,7 +251,7 @@ lemma norm_eval_mul_commutatorRemainderTerm_le
 /-- The single ordered-remainder summand, scaled by `P.eval H τ`, telescopes to a single exponential
 `exp (|τ| · Υ · Σ ‖H γ‖)`. -/
 lemma norm_eval_mul_commutatorRemainderTerm_ordered_le
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (j : Fin (evalIndexList Υ Γ).length) (q : Fin (j + 1) → ℕ) (τ : ℝ)
     (hτ : 0 ≤ τ) (hq : q ∈ finAntidiagonal (j + 1) p) (hlast : q (Fin.last j) ≠ 0) :
     ‖P.eval H τ * commutatorRemainderTerm (orderedGenerators P H) (∑ γ : Fin Γ, H γ) (-τ) j q‖ ≤
@@ -285,18 +263,7 @@ lemma norm_eval_mul_commutatorRemainderTerm_ordered_le
   have hdecomp : P.eval H τ = (1 : 𝔸) * (List.ofFn (fun k : Fin (evalIndexList Υ Γ).length =>
       exp (τ • orderedGenerators P H k))).prod := by
     rw [one_mul]
-    calc
-      P.eval H τ = ((evalIndexList Υ Γ).map (fun i => P.evalFactor H i τ)).prod := rfl
-      _ = ((evalIndexList Υ Γ).map (fun i => exp (τ • P.generator H i))).prod := by
-              simp [ProductFormulaData.evalFactor]
-      _ = (List.ofFn (fun k : Fin (evalIndexList Υ Γ).length =>
-            exp (τ • P.generator H ((evalIndexList Υ Γ).get k)))).prod := by
-              congr 1
-              change (evalIndexList Υ Γ).map (fun i => exp (τ • P.generator H i)) =
-                List.ofFn ((fun i => exp (τ • P.generator H i)) ∘ (evalIndexList Υ Γ).get)
-              rw [← List.map_ofFn, List.ofFn_get]
-      _ = (List.ofFn (fun k : Fin (evalIndexList Υ Γ).length =>
-            exp (τ • orderedGenerators P H k))).prod := by rfl
+    exact eval_eq_prod_orderedGenerators P H τ
   have hsum : (0 : ℝ) + (∑ k : Fin (evalIndexList Υ Γ).length, ‖orderedGenerators P H k‖) ≤
       (Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖ := by
     simpa using sum_norm_orderedGenerators_le P H
@@ -327,7 +294,7 @@ lemma norm_eval_mul_commutatorRemainderTerm_ordered_le
 /-- Shared skeleton of the additive-residual norm bound: from per-remainder bounds of the scaled
 `P.eval H τ · remᵢ(-τ)` terms and the coefficient bound, conclude the telescoped residual bound. -/
 lemma norm_additiveResidual_le_of_rem_bound
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸] [CompleteSpace 𝔸]
+    [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸] [CompleteSpace 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H) (τ : ℝ) (C : ℝ)
     (hC : 0 ≤ C)
     (hrem_i : ∀ i : Fin Υ × Fin Γ,
@@ -373,7 +340,7 @@ lemma norm_additiveResidual_le_of_rem_bound
 /-- `thm:trotter_error_comm_scaling` (general branch): the additive residual telescopes to
 `2 Υ (Σ_γ α_comm) |τ|^p / p! · exp(|τ| Υ Σ ‖H_γ‖)` (rep.tex:96–113). -/
 theorem norm_additiveResidual_le
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H) (hΥ : 0 < Υ)
     (τ : ℝ) (hτ : 0 ≤ τ) :
     ‖additiveResidual P H τ‖ ≤
@@ -414,7 +381,7 @@ theorem norm_additiveResidual_le
 /-- The additive error as an integral of the additive residual (the unfactored form of
 `errorType_additive`). -/
 lemma eval_sub_exp_eq_integral_residual
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (H : Fin Γ → 𝔸) (t : ℝ) :
     P.eval H t - exp (t • ∑ γ : Fin Γ, H γ) =
       ∫ τ in 0..t, exp ((t - τ) • (∑ γ : Fin Γ, H γ)) * additiveResidual P H τ := by
@@ -429,7 +396,7 @@ lemma eval_sub_exp_eq_integral_residual
 /-- `thm:trotter_error_comm_scaling` (general branch): the explicit pointwise commuting-scaling
 bound with the exponential prefactor `exp (2 t Υ Σ ‖H_γ‖)`. -/
 theorem trotter_error_bound_comm_scaling
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H) (hΥ : 0 < Υ) :
     ∀ t : ℝ, 0 ≤ t →
       ‖P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)‖ ≤
@@ -517,7 +484,7 @@ theorem trotter_error_bound_comm_scaling
 
 /-- `thm:trotter_error_comm_scaling` (general branch): the commuting-scaling bound as `t → ∞`. -/
 theorem trotter_error_comm_scaling
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H) (hΥ : 0 < Υ) :
     (fun t : ℝ ↦ ‖P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)‖) =O[Filter.atTop]
       (fun t : ℝ ↦ αComm p H * t ^ (p + 1) *
@@ -540,7 +507,7 @@ theorem trotter_error_comm_scaling
 /-- `eq:trotter_error_comm_scaling_bound` (anti-Hermitian): the explicit pointwise commuting-scaling
 bound, valid for all `t ≥ 0`. -/
 theorem trotter_error_bound_comm_scaling_of_skewAdjoint
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
     (h_skew : ∀ γ, star (H γ) = -(H γ)) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H)
     (hΥ : 0 < Υ) :
@@ -603,7 +570,7 @@ theorem trotter_error_bound_comm_scaling_of_skewAdjoint
 
 /-- `thm:trotter_error_comm_scaling` (anti-Hermitian): the commuting-scaling bound as `t → ∞`. -/
 theorem trotter_error_comm_scaling_of_skewAdjoint
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
     (h_skew : ∀ γ, star (H γ) = -(H γ)) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H)
     (hΥ : 0 < Υ) :
@@ -626,7 +593,7 @@ theorem trotter_error_comm_scaling_of_skewAdjoint
 `ℳ(t) = ∫₀ᵗ e^{-τH} ℛ(τ) dτ`. Follows from `errorType_multiplicative` together with the additive
 representation `𝒮(t) − e^{tH} = e^{tH} ∫₀ᵗ e^{-τH} ℛ(τ) dτ`. -/
 lemma multiplicativeError_eq_integral_residual
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (H : Fin Γ → 𝔸) (t : ℝ) :
     multiplicativeError P H t =
       ∫ τ in 0..t, exp ((-τ) • (∑ γ : Fin Γ, H γ)) * additiveResidual P H τ := by
@@ -663,7 +630,7 @@ lemma multiplicativeError_eq_integral_residual
 commuting-scaling bound for the multiplicative error with exponential prefactor
 `exp (2 t Υ Σ ‖H_γ‖)`. -/
 theorem multiplicative_error_bound_comm_scaling
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H) (hΥ : 0 < Υ) :
     ∀ t : ℝ, 0 ≤ t →
       ‖multiplicativeError P H t‖ ≤
@@ -753,7 +720,7 @@ theorem multiplicative_error_bound_comm_scaling
 /-- `thm:trotter_error_comm_scaling` (general branch, multiplicative): the multiplicative-error
 commuting-scaling bound as `t → ∞`. -/
 theorem multiplicative_error_comm_scaling
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H) (hΥ : 0 < Υ) :
     (fun t : ℝ ↦ ‖multiplicativeError P H t‖) =O[Filter.atTop]
       (fun t : ℝ ↦ αComm p H * t ^ (p + 1) *
@@ -772,12 +739,12 @@ theorem multiplicative_error_comm_scaling
           (αComm p H * t ^ (p + 1) * Real.exp (2 * t * (Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖)) := by ring
 
 /-- In the skew-adjoint case, the multiplicative error is the additive error left-multiplied by a
-unitary, hence its norm is bounded by the additive-error norm. -/
-lemma norm_multiplicativeError_le_norm_sub_of_skewAdjoint
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
-    [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
+unitary, so their norms agree. -/
+lemma norm_multiplicativeError_eq_norm_sub_of_skewAdjoint
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+    [StarRing 𝔸] [CStarRing 𝔸] [StarModule ℝ 𝔸]
     (H : Fin Γ → 𝔸) (h_skew : ∀ γ, star (H γ) = -(H γ)) (t : ℝ) :
-    ‖multiplicativeError P H t‖ ≤ ‖P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)‖ := by
+    ‖multiplicativeError P H t‖ = ‖P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)‖ := by
   let S : 𝔸 := ∑ γ : Fin Γ, H γ
   have hS_skew : star S = -S := sum_skewAdjoint H h_skew
   have hrel : multiplicativeError P H t = exp (-(t • S)) * (P.eval H t - exp (t • S)) := by
@@ -786,16 +753,22 @@ lemma norm_multiplicativeError_le_norm_sub_of_skewAdjoint
       rw [errorType_multiplicative P H t, ← mul_assoc, exp_neg_mul_self (t • S), one_mul]
     rw [hkey, exp_neg_mul_self (t • S)]
     abel
-  calc
-    ‖multiplicativeError P H t‖ = ‖exp (-(t • S)) * (P.eval H t - exp (t • S))‖ := by rw [hrel]
-    _ ≤ ‖exp (-(t • S))‖ * ‖P.eval H t - exp (t • S)‖ := norm_mul_le _ _
-    _ = ‖P.eval H t - exp (t • S)‖ := by
-        rw [← neg_smul t S, norm_exp_smul_of_skewAdjoint hS_skew (-t), one_mul]
+  rw [hrel, ← neg_smul t S]
+  exact CStarRing.norm_mem_unitary_mul _ (exp_smul_mem_unitary_of_skewAdjoint hS_skew (-t))
+
+/-- For skew-adjoint summands, the multiplicative-error norm is bounded by the additive-error
+norm. -/
+lemma norm_multiplicativeError_le_norm_sub_of_skewAdjoint
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+    [StarRing 𝔸] [CStarRing 𝔸] [StarModule ℝ 𝔸]
+    (H : Fin Γ → 𝔸) (h_skew : ∀ γ, star (H γ) = -(H γ)) (t : ℝ) :
+    ‖multiplicativeError P H t‖ ≤ ‖P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)‖ :=
+  (norm_multiplicativeError_eq_norm_sub_of_skewAdjoint P H h_skew t).le
 
 /-- `thm:trotter_error_comm_scaling` (anti-Hermitian branch, multiplicative): the multiplicative
 error pointwise commuting-scaling bound, valid for all `t ≥ 0` (no exponential prefactor). -/
 theorem multiplicative_error_bound_comm_scaling_of_skewAdjoint
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
     (h_skew : ∀ γ, star (H γ) = -(H γ)) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H)
     (hΥ : 0 < Υ) :
@@ -809,7 +782,7 @@ theorem multiplicative_error_bound_comm_scaling_of_skewAdjoint
 /-- `thm:trotter_error_comm_scaling` (anti-Hermitian branch, multiplicative): the
 multiplicative-error commuting-scaling bound as `t → ∞`. -/
 theorem multiplicative_error_comm_scaling_of_skewAdjoint
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
     (h_skew : ∀ γ, star (H γ) = -(H γ)) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H)
     (hΥ : 0 < Υ) :

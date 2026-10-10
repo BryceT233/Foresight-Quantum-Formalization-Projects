@@ -7,31 +7,43 @@ module
 
 public import FQFP.CQM.Category.DaggerCategory
 public import Mathlib.CategoryTheory.Category.RelCat
-public import Mathlib.CategoryTheory.Monoidal.Types.Basic
-public import Mathlib.Data.Set.BooleanAlgebra
-public import Mathlib.Order.CompletePartialOrder
+public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 
 /-!
-# The monoidal dagger structure on the category of relations
+# The symmetric monoidal dagger structure on the category of relations
 
 This file equips `RelCat`, the category of types with binary relations as morphisms,
-with its monoidal dagger category structure: the tensor product is the cartesian product of types,
-the tensor unit is `PUnit` and the dagger is `SetRel.inv`.
+with a symmetric monoidal structure and a compatible dagger. The tensor product is the cartesian
+product of types, the tensor unit is `PUnit`, the braiding swaps coordinates, and the dagger
+reverses relations.
 
 It also characterizes the dagger-derived morphism classes (`IsUnitary`, `IsIsometry`, `IsProj`,
 `IsPositive`) in terms of the underlying relations.
 
 ## Main definitions
 
-* the monoidal dagger category structure on `RelCat`.
+* The monoidal, braided, symmetric, and monoidal dagger category structures on `RelCat`.
+* Membership lemmas for identities, composition, tensor products, whiskering, the structural
+  isomorphisms, and the dagger.
 
 ## Main results
 
 * `isUnitary_iff_isIso`: unitary morphisms are exactly the isomorphisms.
-* `isIsometry_iff_leftTotal_leftUnique`: isometries are exactly total and injective relations.
+* `isIsometry_iff_leftTotal_leftUnique`: isometries are exactly left-total, left-unique relations.
 * `isProj_iff_symm_trans`: projections are exactly partial equivalence relations.
-* `isPositive_iff_symm_reflOnDom`: positive morphisms are exactly symmetric relations that are
+* `isPositive_iff_isSymm_reflOnDom`: positive morphisms are exactly symmetric relations that are
   reflexive on their domain.
+
+## Implementation notes
+
+The tensor product of morphisms is defined directly as the coordinatewise product of relations.
+Its agreement with composition of whiskerings is proved in `tensorHom_def`. The membership API
+computes on arbitrary product elements, so proofs can use projections without unpacking nested
+tuples or unfolding the category instances. The `rel_*` lemmas are registered for `simp`;
+the structural membership lemmas are explicit interfaces to the same computations.
+
+As in Mathlib's `RelCat` instances, proofs that simplify expressions involving the opaque
+`RelCat := Type u` synonym use `backward.isDefEq.respectTransparency.types false` locally.
 
 **Assisted by Deepseek Harness**
 -/
@@ -40,12 +52,67 @@ It also characterizes the dagger-derived morphism classes (`IsUnitary`, `IsIsome
 
 universe u
 
+/-! ### Relations underlying dagger morphism properties -/
+
+/-- Membership in a function graph, expressed for an arbitrary product element. -/
+@[simp] theorem Function.mem_graph_iff {A B : Type*} (f : A → B) (p : A × B) :
+    p ∈ f.graph ↔ f p.1 = p.2 := Iff.rfl
+
+namespace SetRel
+
+variable {A B : Type*}
+
+/-- Membership in an inverse relation, expressed for an arbitrary product element. -/
+@[simp] theorem mem_inv_iff (R : SetRel A B) (p : B × A) :
+    p ∈ R.inv ↔ (p.2, p.1) ∈ R := Iff.rfl
+
+/-- Composing a relation with its inverse gives a symmetric relation. -/
+theorem comp_inv_isSymm (R : SetRel A B) : (R.comp R.inv).IsSymm where
+  symm _ _ := by
+    rintro ⟨b, hab, hcb⟩
+    exact ⟨b, hcb, hab⟩
+
+/-- A relation composed with its inverse is the identity exactly when it is left-total
+and left-unique. -/
+theorem comp_inv_eq_id_iff (R : SetRel A B) :
+    R.comp R.inv = SetRel.id ↔
+      Relator.LeftTotal (fun a b ↦ (a, b) ∈ R) ∧
+        Relator.LeftUnique (fun a b ↦ (a, b) ∈ R) := by
+  constructor
+  · intro h
+    constructor
+    · intro a
+      have haa : (a, a) ∈ R.comp R.inv := h.symm ▸ rfl
+      obtain ⟨b, hab, _⟩ := haa
+      exact ⟨b, hab⟩
+    · intro a a' b hab ha'b
+      exact mem_id.1 (h ▸ (show (a, a') ∈ R.comp R.inv from ⟨b, hab, ha'b⟩))
+  · rintro ⟨htotal, hunique⟩
+    ext ⟨a, a'⟩
+    simp only [mem_comp, mem_inv, mem_id]
+    constructor
+    · rintro ⟨b, hab, ha'b⟩
+      exact hunique hab ha'b
+    · rintro rfl
+      obtain ⟨b, hab⟩ := htotal a
+      exact ⟨b, hab, hab⟩
+
+/-- A partial equivalence relation is idempotent under relational composition. -/
+theorem comp_eq_self_of_isSymm_of_isTrans (R : SetRel A A) [R.IsSymm] [R.IsTrans] :
+    R.comp R = R :=
+  Set.Subset.antisymm comp_subset_self fun ⟨a, _⟩ hab ↦
+    ⟨a, R.trans hab (R.symm hab), hab⟩
+
+end SetRel
+
 open CategoryTheory
 open scoped MonoidalCategory
 
+namespace CategoryTheory.RelCat
+
 variable {X Y Z : RelCat.{u}}
 
-namespace CategoryTheory.RelCat
+/-! ### Monoidal structure and structural membership lemmas -/
 
 /-- The monoidal category structure on `RelCat`: the tensor product is the cartesian
 product of types, and the tensor unit is `PUnit`. -/
@@ -53,259 +120,135 @@ instance instMonoidalCategoryStructRelCat : MonoidalCategoryStruct RelCat.{u} wh
   tensorObj X Y := X × Y
   whiskerLeft _ _ _ f := .ofRel {((x, y₁), (x', y₂)) | x = x' ∧ (y₁, y₂) ∈ f.rel}
   whiskerRight f _ := .ofRel {((x, y), (x', y')) | (x, x') ∈ f.rel ∧ y = y'}
+  tensorHom f g := .ofRel {p | (p.1.1, p.2.1) ∈ f.rel ∧ (p.1.2, p.2.2) ∈ g.rel}
   tensorUnit := PUnit
   associator X Y Z := graphFunctor.mapIso (Equiv.prodAssoc X Y Z).toIso
   leftUnitor X := graphFunctor.mapIso (Equiv.punitProd X).toIso
   rightUnitor X := graphFunctor.mapIso (Equiv.prodPUnit X).toIso
 
-lemma tensorObj_ext_iff (u v : X ⊗ Y) : u = v ↔ u.1 = v.1 ∧ u.2 = v.2 :=
+@[simp] lemma tensorObj_def (X Y : RelCat.{u}) : (X ⊗ Y : RelCat.{u}) = (X × Y) := rfl
+
+@[simp] lemma tensorUnit_def : (𝟙_ RelCat.{u} : RelCat.{u}) = PUnit.{u + 1} := rfl
+
+@[simp] lemma rel_tensorHom {X₁ Y₁ X₂ Y₂ : RelCat.{u}} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂) :
+    (f ⊗ₘ g).rel = {p | (p.1.1, p.2.1) ∈ f.rel ∧ (p.1.2, p.2.2) ∈ g.rel} := rfl
+
+@[simp] lemma rel_whiskerLeft (f : Y ⟶ Z) :
+    (X ◁ f).rel = {p | p.1.1 = p.2.1 ∧ (p.1.2, p.2.2) ∈ f.rel} := rfl
+
+@[simp] lemma rel_whiskerRight (f : X ⟶ Y) :
+    (f ▷ Z).rel = {p | (p.1.1, p.2.1) ∈ f.rel ∧ p.1.2 = p.2.2} := rfl
+
+@[simp] lemma rel_associator_hom :
+    (α_ X Y Z).hom.rel = {p | (p.1.1.1, p.1.1.2, p.1.2) = p.2} := rfl
+
+@[simp] lemma rel_associator_inv :
+    (α_ X Y Z).inv.rel = {p | ((p.1.1, p.1.2.1), p.1.2.2) = p.2} := rfl
+
+@[simp] lemma rel_leftUnitor_hom : (λ_ X).hom.rel = {p | p.1.2 = p.2} := rfl
+
+@[simp] lemma rel_leftUnitor_inv : (λ_ X).inv.rel = {p | (PUnit.unit, p.1) = p.2} := rfl
+
+@[simp] lemma rel_rightUnitor_hom : (ρ_ X).hom.rel = {p | p.1.1 = p.2} := rfl
+
+@[simp] lemma rel_rightUnitor_inv : (ρ_ X).inv.rel = {p | (p.1, PUnit.unit) = p.2} := rfl
+
+lemma tensorObj_ext_iff (u v : X × Y) : u = v ↔ u.1 = v.1 ∧ u.2 = v.2 :=
   Prod.ext_iff
 
-lemma mem_id (u : X ⊗ X) : u ∈ SetRel.id ↔ u.1 = u.2 := Iff.rfl
+@[simp] lemma mem_id (u : X × X) : u ∈ SetRel.id ↔ u.1 = u.2 := Iff.rfl
 
-lemma mem_comp (f : X ⟶ Y) (g : Y ⟶ Z) (u : X ⊗ Z) :
+@[simp] lemma mem_comp (f : X ⟶ Y) (g : Y ⟶ Z) (u : X × Z) :
     u ∈ f.rel.comp g.rel ↔ ∃ y : Y, (u.1, y) ∈ f.rel ∧ (y, u.2) ∈ g.rel := SetRel.mem_comp
 
-lemma mem_whiskerLeft (f : Y ⟶ Z) (u : X ⊗ Y) (v : X ⊗ Z) :
+lemma mem_whiskerLeft (f : Y ⟶ Z) (u : X × Y) (v : X × Z) :
     (u, v) ∈ (X ◁ f).rel ↔ u.1 = v.1 ∧ (u.2, v.2) ∈ f.rel := Iff.rfl
 
-lemma mem_whiskerRight (f : X ⟶ Y) (u : X ⊗ Z) (v : Y ⊗ Z) :
+lemma mem_whiskerRight (f : X ⟶ Y) (u : X × Z) (v : Y × Z) :
     (u, v) ∈ (f ▷ Z).rel ↔ (u.1, v.1) ∈ f.rel ∧ u.2 = v.2 := Iff.rfl
 
 lemma mem_tensorHom {X₁ Y₁ X₂ Y₂ : RelCat.{u}} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂)
-    (u : X₁ ⊗ X₂) (v : Y₁ ⊗ Y₂) :
-    (u, v) ∈ (f ⊗ₘ g).rel ↔ (u.1, v.1) ∈ f.rel ∧ (u.2, v.2) ∈ g.rel := by
-  constructor
-  · rintro ⟨⟨z₁, z₂⟩, hf, hg⟩; grind only [usr Set.mem_ofPred_eq]
-  · rintro ⟨h₁, h₂⟩
-    exact ⟨(v.1, u.2), (mem_whiskerRight ..).2 ⟨h₁, rfl⟩, (mem_whiskerLeft ..).2 ⟨rfl, h₂⟩⟩
+    (u : X₁ × X₂) (v : Y₁ × Y₂) : (u, v) ∈ (f ⊗ₘ g).rel ↔
+      (u.1, v.1) ∈ f.rel ∧ (u.2, v.2) ∈ g.rel := Iff.rfl
 
-lemma mem_associator_hom (x : X) (y : Y) (z : Z) (p : X ⊗ (Y ⊗ Z)) :
-    (((x, y), z), p) ∈ (α_ X Y Z).hom.rel ↔ (x, y, z) = p := Iff.rfl
+lemma mem_associator_hom (u : (X × Y) × Z) (v : X × (Y × Z)) :
+    (u, v) ∈ (α_ X Y Z).hom.rel ↔ (u.1.1, u.1.2, u.2) = v := Iff.rfl
 
-lemma mem_leftUnitor_hom (u : PUnit) (x : X) (y : X) :
-    ((u, x), y) ∈ (λ_ X).hom.rel ↔ x = y := Iff.rfl
+lemma mem_associator_inv (u : X × (Y × Z)) (v : (X × Y) × Z) :
+    (u, v) ∈ (α_ X Y Z).inv.rel ↔ ((u.1, u.2.1), u.2.2) = v := Iff.rfl
 
-lemma mem_rightUnitor_hom (x : X) (u : PUnit) (y : X) :
-    ((x, u), y) ∈ (ρ_ X).hom.rel ↔ x = y := Iff.rfl
+lemma mem_leftUnitor_hom (u : PUnit.{u + 1} × X) (v : X) :
+    (u, v) ∈ (λ_ X).hom.rel ↔ u.2 = v := Iff.rfl
 
+lemma mem_leftUnitor_inv (u : X) (v : PUnit.{u + 1} × X) :
+    (u, v) ∈ (λ_ X).inv.rel ↔ (PUnit.unit, u) = v := Iff.rfl
+
+lemma mem_rightUnitor_hom (u : X × PUnit.{u + 1}) (v : X) :
+    (u, v) ∈ (ρ_ X).hom.rel ↔ u.1 = v := Iff.rfl
+
+lemma mem_rightUnitor_inv (u : X) (v : X × PUnit.{u + 1}) :
+    (u, v) ∈ (ρ_ X).inv.rel ↔ (u, PUnit.unit) = v := Iff.rfl
+
+set_option backward.isDefEq.respectTransparency.types false in
 /-- `RelCat` is a monoidal category. -/
 instance instMonoidalCategoryRelCat : MonoidalCategory RelCat.{u} where
-  id_tensorHom_id X₁ X₂ := by
-    ext ⟨⟨x₁, x₂⟩, ⟨y₁, y₂⟩⟩
-    rw [mem_tensorHom, Hom.rel_id, mem_id, Hom.rel_id, mem_id, Hom.rel_id, mem_id,
-      tensorObj_ext_iff]
+  tensorHom_def f g := by
+    ext ⟨u, v⟩
+    simp only [Set.mem_ofPred_eq, rel_tensorHom, Hom.rel_comp, rel_whiskerRight, rel_whiskerLeft]
+    constructor
+    · rintro ⟨hf, hg⟩
+      exact ⟨(v.1, u.2), ⟨hf, rfl⟩, ⟨rfl, hg⟩⟩
+    · rintro ⟨w, ⟨hf, h₂⟩, ⟨h₁, hg⟩⟩
+      exact ⟨h₁ ▸ hf, h₂ ▸ hg⟩
+  id_tensorHom_id X Y := by
+    ext ⟨u, v⟩
+    simp only [Set.mem_ofPred_eq, rel_tensorHom, Hom.rel_id, mem_id]
+    exact Prod.ext_iff.symm
   tensorHom_comp_tensorHom f₁ f₂ g₁ g₂ := by
-    ext ⟨⟨x₁, x₂⟩, ⟨z₁, z₂⟩⟩; constructor
-    · rintro ⟨⟨y₁, y₂⟩, hf, hg⟩
-      rw [mem_tensorHom] at hf hg
-      rw [mem_tensorHom, Hom.rel_comp, Hom.rel_comp, mem_comp, mem_comp]
-      grind only
-    · intro h
-      rw [mem_tensorHom, Hom.rel_comp, Hom.rel_comp, mem_comp, mem_comp] at h
-      rcases h with ⟨⟨y₁, hf, hg⟩, ⟨y₂, hf', hg'⟩⟩
-      refine ⟨(y₁, y₂), ?_, ?_⟩
-      all_goals rw [mem_tensorHom]; grind only
+    ext ⟨u, w⟩
+    simp only [Set.mem_ofPred_eq, Hom.rel_comp, mem_comp, rel_tensorHom]
+    constructor
+    · rintro ⟨y, ⟨h₁, h₂⟩, ⟨h₃, h₄⟩⟩
+      exact ⟨⟨y.1, h₁, h₃⟩, ⟨y.2, h₂, h₄⟩⟩
+    · rintro ⟨⟨y₁, h₁, h₃⟩, ⟨y₂, h₂, h₄⟩⟩
+      exact ⟨(y₁, y₂), ⟨h₁, h₂⟩, ⟨h₃, h₄⟩⟩
   whiskerLeft_id X Y := by
-    ext ⟨⟨x₁, y₁⟩, ⟨x₂, y₂⟩⟩
-    rw [mem_whiskerLeft, Hom.rel_id, mem_id, Hom.rel_id, mem_id, tensorObj_ext_iff]
+    ext ⟨u, v⟩
+    simp only [Set.mem_ofPred_eq, rel_whiskerLeft, Hom.rel_id, mem_id]
+    exact Prod.ext_iff.symm
   id_whiskerRight X Y := by
-    ext ⟨⟨x₁, y₁⟩, ⟨x₂, y₂⟩⟩
-    rw [mem_whiskerRight, Hom.rel_id, mem_id, Hom.rel_id, mem_id, tensorObj_ext_iff]
+    ext ⟨u, v⟩
+    simp only [Set.mem_ofPred_eq, rel_whiskerRight, Hom.rel_id, mem_id]
+    exact Prod.ext_iff.symm
   associator_naturality f₁ f₂ f₃ := by
-    ext ⟨⟨⟨x₁, x₂⟩, x₃⟩, ⟨y₁, ⟨y₂, y₃⟩⟩⟩; constructor
-    · rintro ⟨⟨⟨a₁, a₂⟩, a₃⟩, hf, hα⟩
-      rw [mem_tensorHom] at hf
-      rcases hf with ⟨hf₁₂, hf₃⟩
-      rw [mem_tensorHom] at hf₁₂
-      rw [mem_associator_hom] at hα
-      refine ⟨(x₁, x₂, x₃), ?_, ?_⟩
-      · rw [mem_associator_hom]
-      · rw [mem_tensorHom, mem_tensorHom]
-        grind only
-    · rintro ⟨⟨r₁, ⟨r₂, r₃⟩⟩, hα, hf⟩
-      rw [mem_associator_hom] at hα
-      rw [mem_tensorHom,mem_tensorHom] at hf
-      refine ⟨((y₁, y₂), y₃), ?_, ?_⟩
-      · rw [mem_tensorHom, mem_tensorHom]
-        grind only
-      · rw [mem_associator_hom]
+    ext ⟨u, v⟩
+    simp [Prod.ext_iff, and_assoc]
   leftUnitor_naturality f := by
-    ext ⟨⟨u, x⟩, y⟩; constructor
-    · rintro ⟨⟨u₁, y₁⟩, hf, hl⟩
-      rw [mem_whiskerLeft] at hf
-      rw [mem_leftUnitor_hom] at hl
-      refine ⟨x, ?_, ?_⟩
-      · rw [mem_leftUnitor_hom]
-      · simpa [hl] using hf.2
-    · rintro ⟨r, hl, hf⟩
-      rw [mem_leftUnitor_hom] at hl
-      refine ⟨(u, y), ?_, ?_⟩
-      · rw [mem_whiskerLeft]
-        grind only
-      · rw [mem_leftUnitor_hom]
+    ext ⟨u, v⟩
+    simp [Prod.exists]
   rightUnitor_naturality f := by
-    ext ⟨⟨x, u⟩, y⟩; constructor
-    · rintro ⟨⟨y₁, u₁⟩, hf, hr⟩
-      rw [mem_whiskerRight] at hf
-      rw [mem_rightUnitor_hom] at hr
-      refine ⟨x, ?_, ?_⟩
-      · rw [mem_rightUnitor_hom]
-      · simpa [hr] using hf.1
-    · rintro ⟨r, hr, hf⟩
-      rw [mem_rightUnitor_hom] at hr
-      refine ⟨(y, u), ?_, ?_⟩
-      · rw [mem_whiskerRight]
-        exact ⟨by simpa [← hr] using hf, rfl⟩
-      · rw [mem_rightUnitor_hom]
+    ext ⟨u, v⟩
+    simp [Prod.exists]
   pentagon W X Y Z := by
-    ext ⟨⟨⟨⟨w, x⟩, y⟩, z⟩, ⟨w', ⟨x', ⟨y', z'⟩⟩⟩⟩; constructor
-    · rintro ⟨⟨⟨m₁, ⟨m₂₁, m₂₂⟩⟩, m₃⟩, hA, hBC⟩
-      rw [mem_whiskerRight, mem_associator_hom] at hA
-      rcases hBC with ⟨⟨n₁, ⟨⟨n₂₁, n₂₂⟩, n₃⟩⟩, hB, hC⟩
-      rw [mem_associator_hom] at hB
-      rw [mem_whiskerLeft, mem_associator_hom] at hC
-      refine ⟨((w, x), y, z), ?_, ?_⟩
-      · rw [mem_associator_hom]
-      · rw [mem_associator_hom]
-        ext <;> grind only
-    · rintro ⟨⟨⟨p₁, p₂⟩, ⟨p₃, p₄⟩⟩, hR, hS⟩
-      rw [mem_associator_hom] at hR hS
-      refine ⟨((w, x, y), z), ?_, ?_⟩
-      · rw [mem_whiskerRight, mem_associator_hom]
-        exact ⟨rfl, rfl⟩
-      · refine ⟨(w, (x, y), z), ?_, ?_⟩
-        · rw [mem_associator_hom]
-        · rw [mem_whiskerLeft, mem_associator_hom]
-          constructor; · grind only
-          ext <;> grind only
+    ext ⟨u, v⟩
+    simp [Prod.exists, Prod.ext_iff]
   triangle X Y := by
-    ext ⟨⟨⟨x, u⟩, y⟩, ⟨x', y'⟩⟩; constructor
-    · rintro ⟨⟨q₁, q₂, q₃⟩, hα, hf⟩
-      rw [mem_associator_hom] at hα
-      rw [mem_whiskerLeft, mem_leftUnitor_hom] at hf
-      rw [mem_whiskerRight, mem_rightUnitor_hom]
-      grind only
-    · intro h
-      rw [mem_whiskerRight, mem_rightUnitor_hom] at h
-      refine ⟨(x, u, y), ?_, ?_⟩
-      · rw [mem_associator_hom]
-      · rwa [mem_whiskerLeft, mem_leftUnitor_hom]
+    ext ⟨u, v⟩
+    simp [Prod.exists, Prod.ext_iff]
 
+/-! ### Dagger structure -/
+
+/-- The dagger on `RelCat` reverses the underlying relation. -/
 instance : DaggerCategory RelCat.{u} where
   dagger f := .ofRel (SetRel.inv f.rel)
   dagger_comp f g := Hom.ext _ _ (SetRel.inv_comp f.rel g.rel)
   dagger_id _ := Hom.ext _ _ SetRel.inv_id
   involutive_dagger _ := Hom.ext _ _ SetRel.inv_inv
 
-lemma rel_dagger {X Y : RelCat.{u}} (f : X ⟶ Y) : f†.rel = f.rel.inv := rfl
+@[simp] lemma rel_dagger (f : X ⟶ Y) : f†.rel = f.rel.inv := rfl
 
 lemma mem_dagger {X Y : RelCat.{u}} (f : X ⟶ Y) (x : X) (y : Y) :
     (y, x) ∈ f†.rel ↔ (x, y) ∈ f.rel := Iff.rfl
-
-instance monoidalDaggerCategory : MonoidalDaggerCategory RelCat.{u} where
-  dagger_tensor f g := by
-    ext ⟨⟨x₁, x₂⟩, ⟨y₁, y₂⟩⟩
-    rw [mem_dagger, mem_tensorHom, mem_tensorHom, mem_dagger, mem_dagger]
-  isUnitary_associator _ _ _ := DaggerCategory.isUnitary_of_dagger_eq_inv _ <|
-    Hom.ext _ _ (Equiv.graph_inv (Equiv.prodAssoc ..)).symm
-  isUnitary_leftUnitor _ := DaggerCategory.isUnitary_of_dagger_eq_inv _ <|
-    Hom.ext _ _ (Equiv.graph_inv (Equiv.punitProd ..)).symm
-  isUnitary_rightUnitor _ := DaggerCategory.isUnitary_of_dagger_eq_inv _ <|
-    Hom.ext _ _ (Equiv.graph_inv (Equiv.prodPUnit ..)).symm
-
-instance instBraidedCategoryRelCat : BraidedCategory RelCat.{u} where
-  braiding X Y := graphFunctor.mapIso (Equiv.prodComm X Y).toIso
-  braiding_naturality_left f Z := by
-    apply Hom.ext; ext ⟨⟨x, z⟩, ⟨z'', y'⟩⟩
-    rw [Hom.rel_comp, mem_comp, Hom.rel_comp, mem_comp]
-    constructor
-    · rintro ⟨⟨y, z'⟩, hfz, hβ⟩
-      rw [mem_whiskerRight] at hfz
-      refine ⟨(z, x), by tauto, ?_⟩
-      · change (z', y) = (z'', y') at hβ
-        rw [mem_whiskerLeft]; grind only
-    · rintro ⟨⟨z', x'⟩, hβ, hzf⟩
-      change (z, x) = (z', x') at hβ
-      rw [mem_whiskerLeft] at hzf
-      refine ⟨(y', z), ?_, ?_⟩
-      · rw [mem_whiskerRight]; grind only
-      · change (z, y') = (z'', y'); grind only
-  braiding_naturality_right X f Z g := by
-    apply Hom.ext; ext ⟨⟨x, y⟩, ⟨z'', x'⟩⟩
-    rw [Hom.rel_comp, mem_comp, Hom.rel_comp, mem_comp]
-    constructor
-    · rintro ⟨⟨x'', z'⟩, hxf, hβ⟩
-      rw [mem_whiskerLeft] at hxf
-      change (z', x'') = (z'', x') at hβ
-      refine ⟨(y, x), by tauto, ?_⟩
-      rw [mem_whiskerRight]; grind only
-    · rintro ⟨⟨y', x''⟩, hβ, hfx⟩
-      change (y, x) = (y', x'') at hβ
-      rw [mem_whiskerRight] at hfx
-      refine ⟨(x, z''), ?_, ?_⟩
-      · rw [mem_whiskerLeft]; grind only
-      · change (z'', x) = (z'', x'); grind only
-  hexagon_forward X Y Z := by
-    apply Hom.ext; ext ⟨⟨⟨x, y⟩, z⟩, ⟨y', ⟨z', x'⟩⟩⟩; constructor
-    · rintro ⟨p, hα₁, ⟨⟨⟨m₁, m₂⟩, m₃⟩, hβ, hα₂⟩⟩
-      rw [mem_associator_hom] at hα₁; subst p
-      change ((y, z), x) = ((m₁, m₂), m₃) at hβ
-      rw [mem_associator_hom] at hα₂
-      refine ⟨((y, x), z), ?_, ?_⟩
-      · rw [mem_whiskerRight]; tauto
-      · refine ⟨(y, (x, z)), ?_, ?_⟩
-        · rw [mem_associator_hom]
-        · rw [mem_whiskerLeft]
-          change y = y' ∧ (z, x) = (z', x')
-          grind only
-    · rintro ⟨⟨⟨y'', x''⟩, z''⟩, hβ₁, ⟨q, hα₁, hrest⟩⟩
-      rw [mem_whiskerRight] at hβ₁
-      change (y, x) = (y'', x'') ∧ z = z'' at hβ₁
-      rw [mem_associator_hom] at hα₁
-      subst q; rw [mem_whiskerLeft] at hrest
-      change y'' = y' ∧ (z'', x'') = (z', x') at hrest
-      refine ⟨(x, (y, z)), ?_, ?_⟩
-      · rw [mem_associator_hom]
-      · refine ⟨((y, z), x), rfl, ?_⟩
-        rw [mem_associator_hom]
-        ext <;> grind only
-  hexagon_reverse X Y Z := by
-    apply Hom.ext; ext ⟨⟨x, ⟨y, z⟩⟩, ⟨⟨z', x'⟩, y'⟩⟩; constructor
-    · rintro ⟨p, hα₁, ⟨q, hβ, hα₂⟩⟩
-      change ((x, y), z) = p at hα₁; subst p
-      change (z, (x, y)) = q at hβ; subst q
-      change ((z, x), y) = ((z', x'), y') at hα₂
-      refine ⟨(x, (z, y)), ?_, ?_⟩
-      · rw [mem_whiskerLeft]; tauto
-      · refine ⟨((x, z), y), rfl, ?_⟩
-        rw [mem_whiskerRight]
-        change (z, x) = (z', x') ∧ y = y'
-        grind only
-    · rintro ⟨⟨x'', ⟨z'', y''⟩⟩, hw, ⟨q, hα₁, hrest⟩⟩
-      rw [mem_whiskerLeft] at hw
-      change x = x'' ∧ (z, y) = (z'', y'') at hw
-      change ((x'', z''), y'') = q at hα₁
-      subst q; rw [mem_whiskerRight] at hrest
-      change (z'', x'') = (z', x') ∧ y'' = y' at hrest
-      refine ⟨((x, y), z), rfl, ⟨(z, (x, y)), rfl, ?_⟩⟩
-      change ((z, x), y) = ((z', x'), y')
-      grind only
-
-instance symmetricCategory : SymmetricCategory RelCat.{u} where
-  symmetry X Y := by
-    apply Hom.ext; ext ⟨⟨x, y⟩, ⟨x', y'⟩⟩
-    rw [Hom.rel_comp, mem_comp, Hom.rel_id, mem_id]
-    constructor
-    · rintro ⟨⟨y'', x''⟩, hβ₁, hβ₂⟩
-      change (y, x) = (y'', x'') at hβ₁
-      change (x'', y'') = (x', y') at hβ₂
-      grind only
-    · intro h; exact ⟨(y, x), by tauto, h⟩
-
-/-! ### Morphism properties related to the dagger category structure on `RelCat` -/
-
-variable {X Y : RelCat.{u}}
 
 /-- The graph of a bijection is a unitary morphism in `RelCat`. -/
 theorem isUnitary_graphFunctor_mapIso {X Y : Type u} (e : X ≅ Y) :
@@ -314,77 +257,101 @@ theorem isUnitary_graphFunctor_mapIso {X Y : Type u} (e : X ≅ Y) :
     apply Hom.ext
     exact (Equiv.graph_inv e.toEquiv).symm
 
+set_option backward.isDefEq.respectTransparency.types false in
+/-- The cartesian tensor product is compatible with relation reversal. -/
+instance monoidalDaggerCategory : MonoidalDaggerCategory RelCat.{u} where
+  dagger_tensor f g := by
+    ext ⟨u, v⟩
+    simp
+  isUnitary_associator X Y Z := isUnitary_graphFunctor_mapIso (Equiv.prodAssoc X Y Z).toIso
+  isUnitary_leftUnitor X := isUnitary_graphFunctor_mapIso (Equiv.punitProd X).toIso
+  isUnitary_rightUnitor X := isUnitary_graphFunctor_mapIso (Equiv.prodPUnit X).toIso
+
+/-! ### Braided and symmetric structures -/
+
+set_option backward.isDefEq.respectTransparency.types false in
+/-- The braiding on `RelCat` is the graph of the coordinate-swap equivalence. -/
+instance instBraidedCategoryRelCat : BraidedCategory RelCat.{u} where
+  braiding X Y := graphFunctor.mapIso (Equiv.prodComm X Y).toIso
+  braiding_naturality_left f Z := by
+    ext ⟨u, v⟩
+    simp [Equiv.toIso, Prod.exists, Prod.ext_iff, and_comm]
+  braiding_naturality_right X {Y Z} f := by
+    ext ⟨u, v⟩
+    simp [Equiv.toIso, Prod.exists, Prod.ext_iff]
+  hexagon_forward X Y Z := by
+    ext ⟨u, v⟩
+    simp [Equiv.toIso, Prod.exists, Prod.ext_iff]
+  hexagon_reverse X Y Z := by
+    ext ⟨u, v⟩
+    simp [Equiv.toIso, Prod.exists, Prod.ext_iff]
+
+lemma mem_braiding_hom (u : X × Y) (v : Y × X) :
+    (u, v) ∈ (β_ X Y).hom.rel ↔ (u.2, u.1) = v := Iff.rfl
+
+lemma mem_braiding_inv (u : Y × X) (v : X × Y) :
+    (u, v) ∈ (β_ X Y).inv.rel ↔ (u.2, u.1) = v := Iff.rfl
+
+@[simp] lemma rel_braiding_hom : (β_ X Y).hom.rel = {p | (p.1.2, p.1.1) = p.2} := rfl
+
+@[simp] lemma rel_braiding_inv : (β_ X Y).inv.rel = {p | (p.1.2, p.1.1) = p.2} := rfl
+
+set_option backward.isDefEq.respectTransparency.types false in
+/-- Swapping coordinates twice gives the identity relation. -/
+instance symmetricCategory : SymmetricCategory RelCat.{u} where
+  symmetry X Y := by
+    ext ⟨u, v⟩
+    simp [Prod.exists, Prod.ext_iff]
+
+/-! ### Morphism properties related to the dagger category structure on `RelCat` -/
+
 /-- In `RelCat`, a morphism is unitary exactly when it is an isomorphism. -/
 theorem isUnitary_iff_isIso (f : X ⟶ Y) : DaggerCategory.IsUnitary f ↔ IsIso f := by
   refine ⟨fun h ↦ h.isIso, fun h ↦ ?_⟩
   rcases (rel_iso_iff f).1 h with ⟨e, he⟩
   rw [← he]
-  exact DaggerCategory.isUnitary_of_dagger_eq_inv (graphFunctor.mapIso e) <| by
-    apply Hom.ext
-    exact (Equiv.graph_inv e.toEquiv).symm
+  exact isUnitary_graphFunctor_mapIso e
 
-/-- In `RelCat`, an isometry is exactly a total and injective relation. -/
+/-- In `RelCat`, an isometry is exactly a left-total, left-unique relation. -/
 theorem isIsometry_iff_leftTotal_leftUnique (f : X ⟶ Y) : DaggerCategory.IsIsometry f ↔
     Relator.LeftTotal (fun x : X ↦ fun y : Y ↦ (x, y) ∈ f.rel) ∧
       Relator.LeftUnique (fun x : X ↦ fun y : Y ↦ (x, y) ∈ f.rel) := by
+  rw [← SetRel.comp_inv_eq_id_iff f.rel]
   constructor
-  · intro h; constructor
-    · intro x
-      have hmem : (x, x) ∈ (f ≫ f†).rel := by
-        rw [h.comp_dagger_eq_id, Hom.rel_id, mem_id]
-      rw [Hom.rel_comp, mem_comp] at hmem
-      rcases hmem with ⟨y, hy, _⟩
-      exact ⟨y, hy⟩
-    · intro x x' y hxy hx'y
-      have hmem : (x, x') ∈ (f ≫ f†).rel := by
-        rw [Hom.rel_comp, mem_comp]
-        exact ⟨y, hxy, (mem_dagger f x' y).2 hx'y⟩
-      rw [h.comp_dagger_eq_id, Hom.rel_id, mem_id] at hmem
-      exact hmem
-  · intro h; constructor; ext ⟨x, x'⟩
-    rw [Hom.rel_comp, mem_comp, Hom.rel_id, mem_id]
-    simp only; constructor
-    · rintro ⟨y, hxy, hyx'⟩
-      exact h.2 hxy ((mem_dagger f x' y).1 hyx')
-    · intro rfl
-      rcases h.1 x with ⟨y, hy⟩
-      exact ⟨y, hy, (mem_dagger f x y).2 hy⟩
+  · intro h
+    simpa only [Hom.rel_comp, rel_dagger, Hom.rel_id] using
+      congrArg Hom.rel h.comp_dagger_eq_id
+  · intro h
+    exact ⟨Hom.ext _ _ (by simpa only [Hom.rel_comp, rel_dagger, Hom.rel_id] using h)⟩
 
 /-- In `RelCat`, a projection is exactly a symmetric and transitive relation, i.e. a partial
 equivalence relation. -/
 theorem isProj_iff_symm_trans (f : End X) : DaggerCategory.IsProj f ↔
     f.rel.IsSymm ∧ f.rel.IsTrans := by
   constructor
-  · intro h; constructor
-    · have hself : f†.rel = f.rel := congrArg Hom.rel h.selfAdjoint
-      rw [rel_dagger] at hself
-      exact SetRel.inv_eq_self_iff.1 hself
-    · have hrel : (f ≫ f).rel = f.rel := congrArg Hom.rel h.idem
-      rw [Hom.rel_comp] at hrel
-      exact SetRel.isTrans_iff_comp_subset_self.2 (by simp [hrel])
-  · rintro ⟨hsymm, htrans⟩; constructor
+  · intro h
+    constructor
+    · exact SetRel.inv_eq_self_iff.1 (congrArg Hom.rel h.selfAdjoint)
+    · apply SetRel.isTrans_iff_comp_subset_self.2
+      exact (congrArg Hom.rel h.idem : f.rel.comp f.rel = f.rel).le
+  · rintro ⟨hsymm, htrans⟩
+    let := hsymm
+    let := htrans
+    constructor
     · rw [isIdempotentElem_iff, End.mul_def]
-      apply Hom.ext; ext ⟨x, x'⟩
-      rw [Hom.rel_comp, mem_comp]
-      constructor
-      · rintro ⟨y, hxy, hyx'⟩
-        exact htrans.trans x y x' hxy hyx'
-      · intro hxx'; refine ⟨x, ?_, hxx'⟩
-        exact htrans.trans x x' x hxx' (hsymm.symm x x' hxx')
-    · apply Hom.ext; ext ⟨x, x'⟩
-      rw [mem_dagger]
-      exact ⟨hsymm.symm x' x, hsymm.symm x x'⟩
+      exact Hom.ext _ _ (SetRel.comp_eq_self_of_isSymm_of_isTrans f.rel)
+    · exact Hom.ext _ _ (SetRel.inv_eq_self f.rel)
 
 /-- In `RelCat`, a positive morphism is exactly a symmetric relation that is reflexive on its
 domain. -/
 theorem isPositive_iff_isSymm_reflOnDom (f : End X) : DaggerCategory.IsPositive f ↔
     f.rel.IsSymm ∧ ∀ x : X, (∃ x' : X, (x, x') ∈ f.rel) → (x, x) ∈ f.rel := by
   constructor
-  · rintro ⟨Y, g, hfg⟩; constructor
-    · constructor; intro a b hab
-      rw [hfg, Hom.rel_comp, mem_comp] at hab ⊢
-      rcases hab with ⟨y, hay, hyb⟩
-      exact ⟨y, (mem_dagger g b y).1 hyb, (mem_dagger g a y).2 hay⟩
+  · intro h
+    obtain ⟨Y, g, hfg⟩ := h.out
+    constructor
+    · rw [hfg, Hom.rel_comp, rel_dagger]
+      exact SetRel.comp_inv_isSymm g.rel
     · rintro x ⟨x', hxx'⟩
       rw [hfg, Hom.rel_comp, mem_comp] at hxx' ⊢
       rcases hxx' with ⟨y, hxy, _⟩
@@ -392,11 +359,14 @@ theorem isPositive_iff_isSymm_reflOnDom (f : End X) : DaggerCategory.IsPositive 
   · rintro ⟨hsymm, hrefl⟩
     let E : RelCat.{u} := {p : X × X // p ∈ f.rel}
     let g : X ⟶ E := .ofRel {q : X × E | q.1 = q.2.1.1 ∨ q.1 = q.2.1.2}
-    have hg : ∀ a e, (a, e) ∈ g.rel ↔ a = e.1.1 ∨ a = e.1.2 := by intros; rfl
-    refine ⟨E, g, ?_⟩; apply Hom.ext
-    ext ⟨a, b⟩; constructor
-    · intro hab; rw [Hom.rel_comp, mem_comp]
-      exact ⟨⟨(a, b), hab⟩, by tauto, by tauto⟩
+    have hg : ∀ a e, (a, e) ∈ g.rel ↔ a = e.1.1 ∨ a = e.1.2 := fun _ _ ↦ Iff.rfl
+    refine ⟨E, g, ?_⟩
+    apply Hom.ext
+    ext ⟨a, b⟩
+    constructor
+    · intro hab
+      rw [Hom.rel_comp, mem_comp]
+      exact ⟨⟨(a, b), hab⟩, .inl rfl, .inr rfl⟩
     · intro hab
       rw [Hom.rel_comp, mem_comp] at hab
       rcases hab with ⟨e, hae, hbe⟩

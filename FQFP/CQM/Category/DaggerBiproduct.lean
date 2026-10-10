@@ -167,8 +167,8 @@ Note that `Preadditive C` must be the *only* route to `HasZeroMorphisms C` in sc
 `biprod.ext_to_iff` is elaborated against `Preadditive.preadditiveHasZeroMorphisms`, so an
 additional explicit `[HasZeroMorphisms C]` builds `HasBinaryBiproduct` from the wrong
 instance and instance synthesis fails. -/
-theorem dagger_add {X Y : C} [HasBinaryBiproduct X X] [HasBinaryBiproduct Y Y]
-    [IsDaggerBinaryBiproduct X X] [IsDaggerBinaryBiproduct Y Y] (f g : X ⟶ Y) :
+theorem dagger_add {X Y : C} [HasBinaryBiproduct X X]
+    [IsDaggerBinaryBiproduct X X] (f g : X ⟶ Y) :
     (f + g)† = f† + g† := by
   rw [biprod.add_eq_lift_id_desc f g, dagger_comp,
     IsDaggerBinaryBiproduct.dagger_desc (X := X) (Y := X) (Z := Y),

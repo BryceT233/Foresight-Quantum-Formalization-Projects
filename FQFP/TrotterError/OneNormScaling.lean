@@ -8,6 +8,7 @@ module
 public import FQFP.TrotterError.Integrals
 public import FQFP.TrotterError.ProductFormula
 public import FQFP.TrotterError.OrderCondition
+public import FQFP.BCH.RealScalar
 
 /-!
 # Trotter error with `1`-norm scaling
@@ -16,6 +17,9 @@ This file states `lem:trotter_error_one_norm_scaling` and
 `cor:trotter_number_one_norm_scaling` of arXiv:1912.08854 (§2.3): the Trotter
 error of a `p`-th order product formula is bounded by a `1`-norm scaling, and the
 corresponding Trotter number.
+
+Bounds assuming a complete normed `ℚ`-algebra use its canonical real scalar structure
+through `open scoped RealScalar`.
 
 **Assisted by Deepseek Harness**
 -/
@@ -43,9 +47,13 @@ lemma contDiff_exp_sum
 
 /-! ### Norm bounds for the derivatives -/
 
+section
+
+open scoped RealScalar
+
 /-- Norm bound for the `(p+1)`-st derivative of `s ↦ exp (s • Σ_i H_i)`, valid for all `s`. -/
 lemma norm_iteratedDeriv_exp_sum_le [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸] {ι : Type*} [Fintype ι]
+    [CompleteSpace 𝔸] [NormOneClass 𝔸] {ι : Type*} [Fintype ι]
     (H : ι → 𝔸) (p : ℕ) (s : ℝ) :
     ‖iteratedDeriv (p + 1) (fun r : ℝ => exp (r • ∑ i : ι, H i)) s‖ ≤
       (∑ i : ι, ‖H i‖) ^ (p + 1) * Real.exp (|s| * ∑ i : ι, ‖H i‖) := by
@@ -66,7 +74,7 @@ lemma norm_iteratedDeriv_exp_sum_le [NormedAlgebra ℚ 𝔸]
 
 /-- Norm bound for the `(p+1)`-st derivative of `s ↦ exp (s • Σ_i H_i)` for `0 ≤ u ≤ 1`, `0 ≤ t`. -/
 lemma norm_iteratedDeriv_exp_sum_le_of_nonneg
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     {ι : Type*} [Fintype ι]
     (H : ι → 𝔸) (p : ℕ) (u t : ℝ) (ht : 0 ≤ t) (hu0 : 0 ≤ u) (hu1 : u ≤ 1) :
     ‖iteratedDeriv (p + 1) (fun r : ℝ => exp (r • ∑ i : ι, H i)) (u * t)‖ ≤
@@ -84,7 +92,7 @@ lemma norm_iteratedDeriv_exp_sum_le_of_nonneg
 /-- The `(p+1)`-st derivative of the error `F = eval − exp` is bounded by the paper's
 two-term bound (prelim.tex:186–187), valid for `0 ≤ u ≤ 1`, `0 ≤ t`. -/
 lemma norm_iteratedDeriv_F_le
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (u t : ℝ) (ht : 0 ≤ t) (hu0 : 0 ≤ u) (hu1 : u ≤ 1) :
     ‖iteratedDeriv (p + 1) (fun s : ℝ => P.eval H s - exp (s • ∑ γ : Fin Γ, H γ)) (u * t)‖ ≤
       ((Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖) ^ (p + 1) * Real.exp (t * (Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖)
@@ -238,7 +246,7 @@ lemma paper_bound_le_target (Υ : ℕ) (S : ℝ) (p : ℕ) (t : ℝ) (hS : 0 ≤
 /-- `eq:trotter_error_one_norm_scaling_bound`: the explicit pointwise Trotter-error bound,
 valid for all `t ≥ 0`. -/
 theorem trotter_error_bound_one_norm_scaling
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (h_order : P.IsOrderOf p H) :
     ∀ t : ℝ, 0 ≤ t →
       ‖P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)‖ ≤
@@ -259,7 +267,7 @@ theorem trotter_error_bound_one_norm_scaling
 /-- `lem:trotter_error_one_norm_scaling` (general branch): for a `p`-th order product
 formula, `‖𝒮(t) − e^{tH}‖ = 𝒪((Σ_γ ‖H_γ‖ t)^{p+1} e^{tΥ Σ_γ ‖H_γ‖})` as `t → 0`. -/
 theorem trotter_error_one_norm_scaling
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (h_order : P.IsOrderOf p H) :
     (fun t : ℝ ↦ ‖P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)‖) =O[𝓝 (0 : ℝ)]
       (fun t : ℝ ↦ ((∑ γ : Fin Γ, ‖H γ‖) * t) ^ (p + 1) *
@@ -322,6 +330,8 @@ theorem trotter_error_one_norm_scaling
       simpa using (nhdsWithinLE_sup_nhdsWithinGE (a := (0 : ℝ)) (s := Set.univ))
     simpa [hsup_eq, F, g, S, Real.exp_eq_exp_ℝ] using hO_sup
 
+end
+
 /-- Per-factor norm bound in the anti-Hermitian case: the exponential factor is unitary. -/
 lemma norm_factor_le_skew
     [NormedAlgebra ℚ 𝔸] [NormedSpace ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
@@ -377,10 +387,14 @@ lemma norm_derivProd_le_skew
     _ ≤ ∏ i : Fin Υ × Fin Γ, ‖H (P.perm i.1 i.2)‖ ^ q i := Finset.prod_le_prod₀
       (fun i _ => norm_nonneg _) (fun i _ => norm_factor_le_skew P H h_skew i (q i) u t)
 
+section
+
+open scoped RealScalar
+
 /-- The `(p+1)`-st derivative of `eval` is bounded by `(Υ·Σ_γ ‖H_γ‖)^{p+1}` in the
 anti-Hermitian case. -/
 lemma eval_iteratedDeriv_norm_le_skew
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
     [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
     (H : Fin Γ → 𝔸) (h_skew : ∀ γ : Fin Γ, star (H γ) = -(H γ))
     (p : ℕ) (u t : ℝ) :
@@ -417,7 +431,7 @@ lemma eval_iteratedDeriv_norm_le_skew
 /-- Norm bound for the `(p+1)`-st derivative of `s ↦ exp (s • Σ_i H_i)` in the
 anti-Hermitian case. -/
 lemma norm_iteratedDeriv_exp_sum_le_skew [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
+    [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
     [Nontrivial 𝔸] [StarModule ℝ 𝔸] {ι : Type*} [Fintype ι]
     (H : ι → 𝔸) (p : ℕ) (h_skew_sum : star (∑ i : ι, H i) = -(∑ i : ι, H i)) (s : ℝ) :
     ‖iteratedDeriv (p + 1) (fun r : ℝ => exp (r • ∑ i : ι, H i)) s‖ ≤
@@ -436,7 +450,7 @@ lemma norm_iteratedDeriv_exp_sum_le_skew [NormedAlgebra ℚ 𝔸]
 /-- The `(p+1)`-st derivative of the error is bounded by `(ΥS)^{p+1} + S^{p+1}` in the
 anti-Hermitian case, for all `u`, `t`. -/
 lemma norm_iteratedDeriv_F_le_skew
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
     [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
     (H : Fin Γ → 𝔸) (h_skew : ∀ γ : Fin Γ, star (H γ) = -(H γ))
     (p : ℕ) (u t : ℝ) :
@@ -464,7 +478,7 @@ lemma norm_iteratedDeriv_F_le_skew
 /-- `eq:trotter_error_one_norm_scaling_bound` in the anti-Hermitian case: the explicit pointwise
 bound, valid for all `t ≥ 0`. -/
 theorem trotter_error_bound_one_norm_scaling_of_skew_adjoint
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
     [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (h_skew : ∀ γ : Fin Γ, star (H γ) = -(H γ))
     (h_order : P.IsOrderOf p H) :
@@ -486,7 +500,7 @@ theorem trotter_error_bound_one_norm_scaling_of_skew_adjoint
 /-- `lem:trotter_error_one_norm_scaling` (anti-Hermitian branch): the exponential
 factor drops out when the `H_γ` are anti-Hermitian. -/
 theorem trotter_error_one_norm_scaling_of_skew_adjoint
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
     [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (h_skew : ∀ γ : Fin Γ, star (H γ) = -(H γ))
     (h_order : P.IsOrderOf p H) :
@@ -546,6 +560,8 @@ theorem trotter_error_one_norm_scaling_of_skew_adjoint
       simpa using (nhdsWithinLE_sup_nhdsWithinGE (a := (0 : ℝ)) (s := Set.univ))
     simpa [hsup_eq, F, g, S] using hO_sup
 
+end
+
 /-- Telescoping bound: if `‖A‖ ≤ 1` and `‖B‖ ≤ 1`, then `‖A^r − B^r‖ ≤ r · ‖A − B‖`. -/
 lemma norm_pow_sub_pow_le_of_norm_le_one [NormOneClass 𝔸]
     (A B : 𝔸) (r : ℕ) (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) :
@@ -589,25 +605,22 @@ lemma norm_eval_le_one_of_skew
     [NormedAlgebra ℚ 𝔸] [NormedSpace ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
     [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
     (H : Fin Γ → 𝔸) (h_skew : ∀ γ : Fin Γ, star (H γ) = -(H γ)) (s : ℝ) :
-    ‖P.eval H s‖ ≤ 1 := by
-  calc
-    ‖P.eval H s‖
-        ≤ ((evalIndexList Υ Γ).map (fun i => ‖P.evalFactor H i s‖)).prod := by
-            simpa [ProductFormulaData.eval, List.map_map, Function.comp_def] using
-              List.norm_prod_le ((evalIndexList Υ Γ).map (fun i => P.evalFactor H i s))
-    _ = 1 := by
-        have hfac : ∀ i : Fin Υ × Fin Γ, ‖P.evalFactor H i s‖ = 1 := by
-          rintro ⟨υ, γ⟩
-          have hA_skew : star (P.generator H (υ, γ)) = -(P.generator H (υ, γ)) :=
-            star_smul_of_skew (h_skew (P.perm υ γ))
-          rw [ProductFormulaData.evalFactor]
-          exact norm_exp_smul_of_skewAdjoint hA_skew s
-        exact List.prod_eq_one (by
-          intro x hx
-          rw [List.mem_map] at hx
-          obtain ⟨i, hi, hxi⟩ := hx
-          rw [← hxi]
-          exact hfac i)
+    ‖P.eval H s‖ ≤ 1 :=
+  (P.norm_eval_eq_one_of_skewAdjoint H h_skew s).le
+
+/-- For anti-Hermitian summands, the error after `r > 0` equal steps is at most
+`r` times the single-step error. No order condition or restriction on `t` is needed. -/
+lemma norm_eval_pow_sub_exp_le_of_skewAdjoint
+    [NormedAlgebra ℚ 𝔸] [NormedSpace ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
+    [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
+    (H : Fin Γ → 𝔸) (h_skew : ∀ γ, star (H γ) = -(H γ)) (t : ℝ)
+    {r : ℕ} (hr : 0 < r) :
+    ‖(P.eval H (t / (r : ℝ))) ^ r - exp (t • ∑ γ, H γ)‖ ≤
+      (r : ℝ) * ‖P.eval H (t / (r : ℝ)) - exp ((t / (r : ℝ)) • ∑ γ, H γ)‖ := by
+  rw [exp_smul_eq_pow_of_div (∑ γ, H γ) t hr]
+  exact norm_pow_sub_pow_le_of_norm_le_one _ _ r
+    (norm_eval_le_one_of_skew P H h_skew _)
+    (norm_exp_smul_of_skewAdjoint (sum_skewAdjoint H h_skew) _).le
 
 /-- The real identity `r · (a / r)^(p+1) = a^(p+1) · (r^p)⁻¹`, for `r ≠ 0`. -/
 lemma natCast_mul_pow_div_pow_succ (a : ℝ) (r p : ℕ) (hr : (r : ℝ) ≠ 0) :
@@ -616,11 +629,16 @@ lemma natCast_mul_pow_div_pow_succ (a : ℝ) (r p : ℕ) (hr : (r : ℝ) ≠ 0) 
   field_simp [hr, pow_ne_zero p hr]
   ring
 
-/-- `cor:trotter_number_one_norm_scaling`: for anti-Hermitian summands, the `r`-step
-Trotter error decays as `O(r^{-p})` as `r → ∞`; equivalently, `r = O(ε^{-1/p})` steps
-suffice for accuracy `ε`. -/
+section
+
+open scoped RealScalar
+
+/-- For fixed anti-Hermitian summands `H` and fixed `t ≥ 0`, the `r`-step Trotter error
+is `O(r^{-p})` as `r → ∞`. This is the fixed-parameter version of
+`cor:trotter_number_one_norm_scaling`; the implicit constant may depend on `H` and `t`.
+The usual step-count consequence as `ε → 0` additionally requires `p > 0`. -/
 theorem trotter_number_one_norm_scaling
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
     [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (h_skew : ∀ γ : Fin Γ, star (H γ) = -(H γ))
     (h_order : P.IsOrderOf p H) (t : ℝ) (ht : 0 ≤ t) :
@@ -628,7 +646,6 @@ theorem trotter_number_one_norm_scaling
       (fun r : ℕ => ((r : ℝ) ^ p)⁻¹) := by
   let S : 𝔸 := ∑ γ : Fin Γ, H γ
   let Snorm : ℝ := ∑ γ : Fin Γ, ‖H γ‖
-  have hS_skew : star S = -S := sum_skewAdjoint H h_skew
   have hSnorm : 0 ≤ Snorm := Finset.sum_nonneg (fun γ _ => norm_nonneg _)
   have hO : (fun s : ℝ => ‖P.eval H s - exp (s • S)‖) =O[𝓝 (0 : ℝ)]
       (fun s : ℝ => (Snorm * s) ^ (p + 1)) := by
@@ -645,10 +662,6 @@ theorem trotter_number_one_norm_scaling
   have hrpos : 0 < (r : ℝ) := mod_cast hrpos_nat
   have hr_ne : (r : ℝ) ≠ 0 := ne_of_gt hrpos
   have hr_nonneg : 0 ≤ (r : ℝ) := le_of_lt hrpos
-  have hA_le : ‖P.eval H (t / (r : ℝ))‖ ≤ 1 :=
-    norm_eval_le_one_of_skew P H h_skew (t / (r : ℝ))
-  have hB_le : ‖exp ((t / (r : ℝ)) • S)‖ ≤ 1 :=
-    le_of_eq (norm_exp_smul_of_skewAdjoint hS_skew (t / (r : ℝ)))
   have hnonneg_arg : 0 ≤ Snorm * (t / (r : ℝ)) :=
     mul_nonneg hSnorm (div_nonneg ht hr_nonneg)
   have hr_le' : ‖P.eval H (t / (r : ℝ)) - exp ((t / (r : ℝ)) • S)‖ ≤
@@ -657,11 +670,8 @@ theorem trotter_number_one_norm_scaling
   rw [Real.norm_of_nonneg (norm_nonneg ((P.eval H (t / (r : ℝ))) ^ r - exp (t • S)))]
   calc
     ‖(P.eval H (t / (r : ℝ))) ^ r - exp (t • S)‖
-        = ‖(P.eval H (t / (r : ℝ))) ^ r - exp ((t / (r : ℝ)) • S) ^ r‖ := by
-            rw [exp_smul_eq_pow_of_div S t hrpos_nat]
-    _ ≤ (r : ℝ) * ‖P.eval H (t / (r : ℝ)) - exp ((t / (r : ℝ)) • S)‖ :=
-            norm_pow_sub_pow_le_of_norm_le_one (P.eval H (t / (r : ℝ)))
-              (exp ((t / (r : ℝ)) • S)) r hA_le hB_le
+        ≤ (r : ℝ) * ‖P.eval H (t / (r : ℝ)) - exp ((t / (r : ℝ)) • S)‖ :=
+            norm_eval_pow_sub_exp_le_of_skewAdjoint P H h_skew t hrpos_nat
     _ ≤ (r : ℝ) * (C * ‖(Snorm * (t / (r : ℝ))) ^ (p + 1)‖) :=
             mul_le_mul_of_nonneg_left hr_le' hr_nonneg
     _ = C * (Snorm * t) ^ (p + 1) * ‖((r : ℝ) ^ p)⁻¹‖ := by
@@ -676,5 +686,7 @@ theorem trotter_number_one_norm_scaling
               _ = C * (Snorm * t) ^ (p + 1) * ((r : ℝ) ^ p)⁻¹ := by
                       rw [natCast_mul_pow_div_pow_succ (Snorm * t) r p hr_ne]
                       ring
+
+end
 
 end TrotterError

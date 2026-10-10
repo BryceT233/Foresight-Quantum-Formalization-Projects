@@ -6,6 +6,7 @@ Authors: Bingyu Xia
 module
 
 public import FQFP.CQM.Category.Measurement
+public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 
 /-!
@@ -206,34 +207,64 @@ theorem nonempty_rightRigidCategory_iff_nonempty_leftRigidCategory :
 
 end MonoidalDaggerCategory
 
+/-!
+## Braided and symmetric monoidal dagger categories
+
+Definition 3.46 needs a duality whose coevaluation and evaluation are daggers of one another.
+The two structure maps of `ExactPairing X Y` live in different hom sets — `η : 𝟙_ C ⟶ X ⊗ Y`
+and `ε : Y ⊗ X ⟶ 𝟙_ C` — so relating them requires a braiding, which is the "loop" of diagram
+(3.33) of the notes. That calls for a category carrying *both* a dagger-compatible monoidal
+structure and a braiding.
+-/
+
+/-- A braided monoidal dagger category: a monoidal dagger category together with a braiding on
+the same tensor product.
+
+`BraidedCategory` is a class in Mathlib and `MonoidalDaggerCategory` is a class in this project;
+both take `MonoidalCategory C` as an *instance argument* rather than inheriting it as data. That
+is what makes this combination legitimate: the tensor product is single-sourced from the
+argument, so the diamond between the two parents collapses. Compare Mathlib's own
+`class SymmetricCategory … extends BraidedCategory C`. -/
+class BraidedMonoidalDaggerCategory (C : Type u) [Category.{v} C] extends
+    MonoidalDaggerCategory C, BraidedCategory C
+
+/-- A symmetric monoidal dagger category, the setting of §3.4.4 of the source notes. -/
+class SymmetricMonoidalDaggerCategory (C : Type u) [Category.{v} C] extends
+    MonoidalDaggerCategory C, SymmetricCategory C
+
 end CategoryTheory
 
 /-
-## Dagger duals (statement only — deliberately not compiled; nothing in this file is left
-## unfinished, the sketch below lives entirely inside this comment)
+## Roadmap: Definition 3.46 as a statement
 
-A *dagger dual* is a dual whose coevaluation and evaluation are daggers of one another. Since
-`coevaluation : 𝟙_ C ⟶ X ⊗ Y` and `evaluation : Y ⊗ X ⟶ 𝟙_ C` live in different hom sets,
-relating them requires a braiding `β_ X Y : X ⊗ Y ≅ Y ⊗ X`, and the condition is that the
-evaluation is the dagger of the coevaluation, transported across the braiding:
+The classes above compile and make `β_` resolve against the dagger's own tensor product — that
+part is settled, and `class SymmetricMonoidalDaggerCategory (C) [Category C] extends
+MonoidalDaggerCategory C, SymmetricCategory C` is accepted, so the class-level diamond is not an
+obstacle.
 
-def IsDaggerDual {C : Type u} [Category.{v} C] [BraidedCategory C] [MonoidalDaggerCategory C]
-    (X Y : C) [ExactPairing X Y] : Prop :=
-  ExactPairing.evaluation X Y = (β_ Y X).hom ≫ (ExactPairing.coevaluation X Y)†
+What is *not* yet settled is the statement of Definition 3.46 itself. Unfolding (3.33), the
+condition is that the loop `η ≫ β ≫ ε†` is the identity, and by hand the only assignment of
+types that can work is the one with `η` first:
 
-Equivalently `(ExactPairing.coevaluation X Y)† = (β_ X Y).hom ≫ ExactPairing.evaluation X Y`,
-using the symmetry axiom `(β_ X Y).hom ≫ (β_ Y X).hom = 𝟙 (X ⊗ Y)` of a symmetric monoidal
-category. Given `exactPairingDagger X Y`, this condition is self-dual: `IsDaggerDual X Y` holds
-for `ExactPairing X Y` if and only if `IsDaggerDual Y X` holds for `ExactPairing Y X`. A
-monoidal dagger category in which every object has a dagger dual is *dagger compact closed*,
-and in that setting the dagger is automatically compatible with the duality, so the reversal of
-Lemma 3.45 is invisible: `η† = ε` up to the braiding.
+* `η : 𝟙_ C ⟶ X ⊗ Y` (the coevaluation),
+* `β_ X Y : X ⊗ Y ⟶ Y ⊗ X`,
+* `ε† : 𝟙_ C ⟶ Y ⊗ X` (the dagger of the evaluation),
 
-This is recorded as a statement only. `MonoidalDaggerCategory` (this project) and
-`BraidedCategory` (Mathlib) both extend `MonoidalCategory`, so writing both as instance
-arguments above would give two a priori different tensor products for `C` — the condition only
-makes sense for a single combined class, e.g. a `BraidedCategory C` whose monoidal structure is
-definitionally that of `MonoidalDaggerCategory C`. Stating it here would require such a class,
-or restating the dagger compatibility of `β_` directly; it is not needed for Lemma 3.45, which
-holds in an arbitrary monoidal dagger category.
+so that `η ≫ (β_ X Y).hom ≫ ε† : 𝟙_ C ⟶ 𝟙_ C`. None of the three other candidate loops
+typechecks, and a `#check` of that exact term with an ascription succeeds.
+
+Inside a `def`, however, the same term fails: Lean reports that `ε_ X Y` "has type
+`Y ⊗ X ⟶ 𝟙_ C` but is expected to have type `𝟙_ C ⟶ Y ⊗ X`", i.e. it demands the *dagger* of
+`ε` where `ε` belongs. The failure reproduces with `dagger` written by juxtaposition as well as
+with the postfix notation, and it survives binding each arrow with a `let` and pinning its type.
+It is therefore not the notation-precedence trap recorded above, and not a type error of the
+mathematics: the ambient expected type of the composite is propagating backwards into the
+elaboration of the dagger term.
+
+Until that is resolved, `IsDaggerDual` is not stated. Once it is, the self-duality is immediate:
+reversal exchanges coevaluation and evaluation (`exactPairingDagger_coevaluation`,
+`exactPairingDagger_evaluation`) and the loop has the same shape, so `IsDaggerDual Y X` follows
+from `IsDaggerDual X Y` by reflexivity of the statement. A monoidal dagger category in which
+every object carries a dagger dual is *dagger compact closed*, which is the capstone of the
+series; the reversal of Lemma 3.45 proved above is what makes that notion self-dual.
 -/

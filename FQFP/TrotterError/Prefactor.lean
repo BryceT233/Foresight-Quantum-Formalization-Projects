@@ -8,6 +8,7 @@ module
 public import FQFP.TrotterError.ExpSMulConj
 public import FQFP.TrotterError.ProductFormula
 public import FQFP.TrotterError.Suzuki
+public import FQFP.BCH.RealScalar
 
 import FQFP.TrotterError.TimeOrderedExp
 
@@ -16,6 +17,9 @@ import FQFP.TrotterError.TimeOrderedExp
 
 Tight-constant Trotter error bounds for the first-order Lie-Trotter and second-order Suzuki
 formulas, following `papers/prefactor.tex` `sec:prefactor_pf12`.
+
+Bounds assuming a complete normed `ℚ`-algebra use its canonical real scalar structure
+through `open scoped RealScalar`.
 
 The paper states these in terms of a Hermitian `H = Σ_γ H_γ` and the real-time evolution
 `e^{-itH}`. Here, following the anti-Hermitian-generator convention of the surrounding theory,
@@ -37,7 +41,7 @@ we work with anti-Hermitian generators `K_γ` (`star (K γ) = -(K γ)`) and the 
 namespace TrotterError
 
 open NormedSpace Finset LieAlgebra MeasureTheory
-open scoped BigOperators algebraMap
+open scoped BigOperators algebraMap RealScalar
 
 /- The associative-ring Lie bracket `⁅A, B⁆ = A * B - B * A`, matching `Commutator.lean`. -/
 attribute [local instance] LieRing.ofAssociativeRing
@@ -48,7 +52,7 @@ attribute [local instance] LieRing.ofAssociativeRing
 form): for `S₁(t) = e^{tB} e^{tA}` and `H = A + B`,
 `S₁(t) - e^{tH} = ∫₀ᵗ e^{(t-τ)H} (e^{τB} A e^{-τB} - A) e^{τB} e^{τA} dτ`. -/
 lemma exp_mul_exp_sub_exp_add_eq_integral {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] (A B : 𝔸) (t : ℝ) :
+    [CompleteSpace 𝔸] (A B : 𝔸) (t : ℝ) :
     exp (t • B) * exp (t • A) - exp (t • (A + B)) =
       ∫ τ in 0..t,
         exp ((t - τ) • (A + B)) * (expSMulConj B A τ - A) * exp (τ • B) * exp (τ • A) := by
@@ -112,7 +116,7 @@ lemma exp_mul_exp_sub_exp_add_eq_integral {𝔸 : Type*} [NormedRing 𝔸] [Norm
 /-- The two-summand first-order Lie-Trotter bound (`prefactor.tex:29`, anti-Hermitian-generator
 form): for anti-Hermitian `A, B`, `‖e^{tB} e^{tA} - e^{t(A+B)}‖ ≤ (t²/2) · ‖⁅B, A⁆‖`. -/
 theorem firstOrder_twoTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
+    [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
     [StarModule ℝ 𝔸] (A B : 𝔸) (hA : star A = -A) (hB : star B = -B) :
     ∀ t : ℝ, 0 ≤ t →
       ‖exp (t • B) * exp (t • A) - exp (t • (A + B))‖ ≤ (t ^ 2 / 2) * ‖⁅B, A⁆‖ := by
@@ -207,7 +211,7 @@ lemma upperSum_succ {𝔸 : Type*} [AddCommMonoid 𝔸] {n : ℕ} (K : Fin (n + 
 /-- The Lie-Trotter product of anti-Hermitian factors has norm at most `1` (each factor is
 unitary). -/
 lemma norm_lieTrotter_le_one_of_skew {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
+    [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
     [StarModule ℝ 𝔸] {Γ : ℕ} (K : Fin Γ → 𝔸) (h : ∀ γ, star (K γ) = -(K γ)) (t : ℝ) :
     ‖lieTrotter K t‖ ≤ 1 := by
   induction Γ with
@@ -224,7 +228,7 @@ lemma norm_lieTrotter_le_one_of_skew {𝔸 : Type*} [NormedRing 𝔸] [NormedAlg
 /-- `prop:pf1_bound` (prefactor.tex:45–50, anti-Hermitian-generator form): the tight first-order
 Lie-Trotter bound for general `Γ`. -/
 theorem firstOrder_bound {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
+    [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
     [StarModule ℝ 𝔸] (Γ : ℕ) (K : Fin Γ → 𝔸) (h : ∀ γ, star (K γ) = -(K γ)) :
     ∀ t : ℝ, 0 ≤ t →
       ‖lieTrotter K t - exp (t • ∑ γ, K γ)‖ ≤
@@ -294,7 +298,7 @@ noncomputable def secondOrderKernel {𝔸 : Type*} [NormedRing 𝔸] [NormedAlge
 
 /-- The second-order Duhamel identity (prefactor.tex:52–57, anti-Hermitian-generator form). -/
 lemma secondOrder_sub_eq_integral {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] (A B : 𝔸) (t : ℝ) :
+    [CompleteSpace 𝔸] (A B : 𝔸) (t : ℝ) :
     exp ((t / 2) • A) * exp (t • B) * exp ((t / 2) • A) - exp (t • (A + B)) =
       ∫ τ in 0..t, exp ((t - τ) • (A + B)) * exp ((τ / 2) • A) * secondOrderKernel A B τ *
         exp (τ • B) * exp ((τ / 2) • A) := by
@@ -445,8 +449,8 @@ lemma secondOrderKernel_eq_remainder {𝔸 : Type*} [NormedRing 𝔸] [NormedAlg
 /-- Norm bound for a single-layer `p = 2` Taylor remainder under an anti-Hermitian generator:
 `‖∫₀^τ expSMulConj A Y (τ-s) * s‖ ≤ ‖Y‖ · |τ|²/2`. -/
 lemma norm_expSMulConj_taylor_remainder_le_of_skew {𝔸 : Type*} [NormedRing 𝔸]
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
-    [Nontrivial 𝔸] [StarModule ℝ 𝔸] (A Y : 𝔸) (hA : star A = -A) (τ : ℝ) :
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
+    [StarModule ℝ 𝔸] (A Y : 𝔸) (hA : star A = -A) (τ : ℝ) :
     ‖∫ s in 0..τ, expSMulConj A Y (τ - s) * (s : 𝔸)‖ ≤ ‖Y‖ * (|τ| ^ 2 / 2) := by
   have hpoint : ∀ s ∈ Set.uIoc (0 : ℝ) τ,
       ‖expSMulConj A Y (τ - s) * (s : 𝔸)‖ ≤ ‖Y‖ * |s| := by
@@ -480,7 +484,7 @@ lemma norm_expSMulConj_taylor_remainder_le_of_skew {𝔸 : Type*} [NormedRing �
 /-- The second-order kernel bound (prefactor.tex:82–85, anti-Hermitian-generator form):
 `‖𝒯₂(τ)‖ ≤ (τ²/4) ‖adPow B 2 A‖ + (τ²/8) ‖adPow A 2 B‖`. -/
 lemma norm_secondOrderKernel_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
+    [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
     [StarModule ℝ 𝔸] (A B : 𝔸) (hA : star A = -A) (hB : star B = -B) (τ : ℝ) :
     ‖secondOrderKernel A B τ‖ ≤ (τ ^ 2 / 4) * ‖adPow B 2 A‖ + (τ ^ 2 / 8) * ‖adPow A 2 B‖ := by
   rw [secondOrderKernel_eq_remainder A B τ]
@@ -506,7 +510,7 @@ lemma norm_secondOrderKernel_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra 
 
 /-- The two-summand second-order Suzuki bound (prefactor.tex:82–85, anti-Hermitian-generator
 form): `‖e^{(t/2)A} e^{tB} e^{(t/2)A} - e^{t(A+B)}‖ ≤ (t³/12)‖⁅B,⁅B,A⁆⁆‖ + (t³/24)‖⁅A,⁅A,B⁆⁆‖`. -/
-theorem secondOrder_twoTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸]
+theorem secondOrder_twoTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
     [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
     (A B : 𝔸) (hA : star A = -A) (hB : star B = -B) :
     ∀ t : ℝ, 0 ≤ t →
@@ -596,7 +600,7 @@ theorem secondOrder_twoTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 
 
 /-- The second-order Suzuki product of anti-Hermitian factors has norm at most `1`. -/
 lemma norm_suzuki2_le_one_of_skew {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
+    [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
     [StarModule ℝ 𝔸] {Γ : ℕ} (K : Fin Γ → 𝔸) (h : ∀ γ, star (K γ) = -(K γ)) (t : ℝ) :
     ‖suzuki2 K t‖ ≤ 1 := by
   induction Γ with
@@ -619,7 +623,7 @@ lemma norm_suzuki2_le_one_of_skew {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebr
 
 /-- `prop:pf2_bound` (prefactor.tex:105–114, anti-Hermitian-generator form): the tight second-order
 Suzuki bound for general `Γ`. -/
-theorem secondOrder_bound {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸]
+theorem secondOrder_bound {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
     [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
     (Γ : ℕ) (K : Fin Γ → 𝔸) (h : ∀ γ, star (K γ) = -(K γ)) :
     ∀ t : ℝ, 0 ≤ t →
