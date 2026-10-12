@@ -146,9 +146,6 @@ instance instMonoidalCategoryStructRelCat : MonoidalCategoryStruct RelCat.{u} wh
 
 @[simp] lemma rel_rightUnitor_inv : (ρ_ X).inv.rel = {p | (p.1, PUnit.unit) = p.2} := rfl
 
-@[simp] lemma mem_comp (f : X ⟶ Y) (g : Y ⟶ Z) (u : X × Z) :
-    u ∈ f.rel.comp g.rel ↔ ∃ y : Y, (u.1, y) ∈ f.rel ∧ (y, u.2) ∈ g.rel := SetRel.mem_comp
-
 set_option backward.isDefEq.respectTransparency.types false in
 /-- `RelCat` is a monoidal category. -/
 instance instMonoidalCategoryRelCat : MonoidalCategory RelCat.{u} where
@@ -166,12 +163,7 @@ instance instMonoidalCategoryRelCat : MonoidalCategory RelCat.{u} where
     exact Prod.ext_iff.symm
   tensorHom_comp_tensorHom f₁ f₂ g₁ g₂ := by
     ext ⟨u, w⟩
-    simp only [Set.mem_ofPred_eq, Hom.rel_comp, mem_comp, rel_tensorHom]
-    constructor
-    · rintro ⟨y, ⟨h₁, h₂⟩, ⟨h₃, h₄⟩⟩
-      exact ⟨⟨y.1, h₁, h₃⟩, ⟨y.2, h₂, h₄⟩⟩
-    · rintro ⟨⟨y₁, h₁, h₃⟩, ⟨y₂, h₂, h₄⟩⟩
-      exact ⟨(y₁, y₂), ⟨h₁, h₂⟩, ⟨h₃, h₄⟩⟩
+    simp; grind
   whiskerLeft_id X Y := by
     ext
     simp only [tensorObj_def, rel_whiskerLeft, Hom.rel_id, SetRel.mem_id, Set.mem_ofPred_eq]
@@ -220,9 +212,7 @@ theorem isUnitary_graphFunctor_mapIso {X Y : Type u} (e : X ≅ Y) :
 set_option backward.isDefEq.respectTransparency.types false in
 /-- The cartesian tensor product is compatible with relation reversal. -/
 instance monoidalDaggerCategory : MonoidalDaggerCategory RelCat.{u} where
-  dagger_tensor f g := by
-    ext ⟨u, v⟩
-    simp
+  dagger_tensor f g := by ext; simp
   isUnitary_associator X Y Z := isUnitary_graphFunctor_mapIso (Equiv.prodAssoc X Y Z).toIso
   isUnitary_leftUnitor X := isUnitary_graphFunctor_mapIso (Equiv.punitProd X).toIso
   isUnitary_rightUnitor X := isUnitary_graphFunctor_mapIso (Equiv.prodPUnit X).toIso
@@ -235,16 +225,16 @@ instance instBraidedCategoryRelCat : BraidedCategory RelCat.{u} where
   braiding X Y := graphFunctor.mapIso (Equiv.prodComm X Y).toIso
   braiding_naturality_left f Z := by
     ext ⟨u, v⟩
-    simp [Equiv.toIso, Prod.exists, Prod.ext_iff, and_comm]
+    simp [Prod.exists, Prod.ext_iff, and_comm]
   braiding_naturality_right X {Y Z} f := by
     ext ⟨u, v⟩
-    simp [Equiv.toIso, Prod.exists, Prod.ext_iff]
+    simp [Prod.exists, Prod.ext_iff]
   hexagon_forward X Y Z := by
     ext ⟨u, v⟩
-    simp [Equiv.toIso, Prod.exists, Prod.ext_iff]
+    simp [Prod.exists, Prod.ext_iff]
   hexagon_reverse X Y Z := by
     ext ⟨u, v⟩
-    simp [Equiv.toIso, Prod.exists, Prod.ext_iff]
+    simp [Prod.exists, Prod.ext_iff]
 
 @[simp] lemma rel_braiding_hom : (β_ X Y).hom.rel = {p | (p.1.2, p.1.1) = p.2} := rfl
 
@@ -305,7 +295,7 @@ theorem isPositive_iff_isSymm_reflOnDom (f : End X) : DaggerCategory.IsPositive 
     · rw [hfg, Hom.rel_comp, rel_dagger]
       exact SetRel.comp_inv_isSymm g.rel
     · rintro x ⟨x', hxx'⟩
-      rw [hfg, Hom.rel_comp, mem_comp] at hxx' ⊢
+      rw [hfg, Hom.rel_comp] at hxx' ⊢
       rcases hxx' with ⟨y, hxy, _⟩
       exact ⟨y, hxy, (mem_dagger g x y).2 hxy⟩
   · rintro ⟨hsymm, hrefl⟩
@@ -317,10 +307,10 @@ theorem isPositive_iff_isSymm_reflOnDom (f : End X) : DaggerCategory.IsPositive 
     ext ⟨a, b⟩
     constructor
     · intro hab
-      rw [Hom.rel_comp, mem_comp]
+      rw [Hom.rel_comp]
       exact ⟨⟨(a, b), hab⟩, .inl rfl, .inr rfl⟩
     · intro hab
-      rw [Hom.rel_comp, mem_comp] at hab
+      rw [Hom.rel_comp] at hab
       rcases hab with ⟨e, hae, hbe⟩
       rcases (hg a e).1 hae with (rfl | rfl) <;> rcases (hg b e).1 hbe with (rfl | rfl)
       · exact hrefl e.1.1 ⟨e.1.2, e.2⟩
