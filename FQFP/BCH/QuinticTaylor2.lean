@@ -42,8 +42,6 @@ Ported from `Lean-BCH/BCH/Basic.lean:3028-4830`. The source presents both sides 
 `maxHeartbeats 1024000000`; see `artifacts/quintic-taylor2-route.md` for why that presentation is
 not available here. The source constant of the remainder is `(1680 + 720 + 30)/720 = 2430/720`, the
 sum of the three pieces' constants.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

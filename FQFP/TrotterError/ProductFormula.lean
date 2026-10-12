@@ -48,8 +48,6 @@ commutativity).
 * `evalIndexList_eq_ofFn`, `evalIndexList_length`: the flattened index list as `List.ofFn`.
 * `lieTrotter_eq_eval`, `suzuki2_eq_eval`, `suzuki_eq_eval`: agreement of the standard formulas
   with their product-formula data.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

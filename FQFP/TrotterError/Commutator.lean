@@ -42,8 +42,6 @@ norm bounds.
 * `norm_adPow_le`: `‖ad_A^k(B)‖ ≤ (2 * ‖A‖)^k * ‖B‖`.
 * `norm_adSequence_le`: the product bound for an iterated `ad` over a sequence.
 * `αComm_nonneg`: `0 ≤ αComm p H`.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

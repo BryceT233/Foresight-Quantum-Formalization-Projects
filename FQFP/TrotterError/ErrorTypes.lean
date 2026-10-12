@@ -32,8 +32,6 @@ left-to-right order of `evalIndexList`, so the prefix / suffix products
 * `additiveResidual`, `additiveKernel`, `exponentiatedGenerator`, `exponentiatedError`,
   `multiplicativeError`: the residual `ℛ` and the three error operators `𝒯`, `ℰ`, `ℳ` of the paper.
 * `errorType_additive`, `errorType_exponentiated`, `errorType_multiplicative`: `thm:error_type`.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

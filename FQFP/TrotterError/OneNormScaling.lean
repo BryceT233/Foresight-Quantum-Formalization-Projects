@@ -27,8 +27,6 @@ through `open scoped RealScalar`.
   `trotter_error_bound_one_norm_scaling_of_skew_adjoint`: pointwise error bounds.
 * `norm_eval_pow_sub_exp_le_of_skewAdjoint`: bound the error after repeated equal steps.
 * `trotter_number_one_norm_scaling`: the asymptotic number of steps.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

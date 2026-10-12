@@ -48,8 +48,6 @@ goal such as `(f ⊗ₘ g) (x ⊗ₜ y) = f x ⊗ₜ g y` is definitionally true
 their `ModuleCat` counterparts are: expanding `(λ_ X).inv` to `1 ⊗ₜ ·` blocks
 `leftUnitor_hom_apply` on the `𝟙_ ◁ f` normal form that `MonoidalCategory.id_whiskerLeft`
 produces.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

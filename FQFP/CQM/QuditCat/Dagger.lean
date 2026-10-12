@@ -48,8 +48,6 @@ plain `Add`/`Zero`/`SMul ℕ`/`Neg`/`Sub`/`SMul ℤ` instances are given first s
 `addCommGroup` instance's proof obligations are `rfl`, exactly as Mathlib's `ModuleCat` does.
 `Preadditive` then follows from additivity of composition of linear maps, and every
 `hom_*` lemma is `rfl`, so `simp` can push the forgetful functor through these operations.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

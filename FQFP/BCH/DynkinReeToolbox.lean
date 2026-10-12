@@ -52,8 +52,6 @@ the degrees built on this file are 4–7.
 is *not* proved through a table: it is stated over a bare `Ring` (its scalars are `Nat`-valued),
 while `evalKTab` needs `[Algebra ℚ 𝔸]`. Its companion `quintic_pure_identity_cleared` is the same
 identity multiplied through by `24`.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

@@ -36,8 +36,6 @@ side, so `τ^p` acts as `|τ|^p`.
 
 All rules are stated for smooth generators (the paper's standing hypothesis "infinitely
 differentiable", order.tex:78).
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

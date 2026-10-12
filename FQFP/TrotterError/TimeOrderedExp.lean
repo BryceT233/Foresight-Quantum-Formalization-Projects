@@ -44,8 +44,6 @@ The interval integral carries the orientation, so the definition is automaticall
   continuity/smoothness of the solution in its upper and lower limits.
 * `timeOrderedExp_sub`: the difference identity between two evolutions
   (`cor:time_ordered_distance_bound`).
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

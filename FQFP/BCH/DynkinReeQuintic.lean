@@ -34,8 +34,6 @@ and `ℤ` computation: 310 raw rows against the 32 words of degree 5. The bridge
 Ported from `Lean-BCH/BCH/SmallSDischarge.lean` (`BCH/SmallSDischarge.lean:81-143`). The source
 states the identity inline as a `let` chain over an arbitrary `RCLike 𝕂`; the statement here is the
 same identity with the pieces named in `DynkinReeToolbox.lean`.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

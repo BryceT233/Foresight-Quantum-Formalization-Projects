@@ -84,8 +84,6 @@ The kernel in Lemma 2.52 is rendered as `kernel.ι X = 0` (the kernel map is the
 morphism). This is the `Prop`-valued form that follows directly from `Effect.Complete`;
 `IsZero (kernel X)` says the same thing but additionally demands
 `Nonempty (Unique (kernel X ⟶ Y))` and so needs a detour through `𝟙 (kernel X) = 0`.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

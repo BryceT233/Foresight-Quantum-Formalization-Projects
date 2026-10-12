@@ -32,8 +32,6 @@ source instead expands each group's difference into one summand per `a`-position
 word-layer API (`WordExpansion.norm_binWord_le` and hence `norm_prod_sub_prod_le`), which is stated
 for products of arbitrary length and so needs `‖1‖ = 1`. Every declaration in the BCH layer carries
 `NormOneClass 𝔸` anyway.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

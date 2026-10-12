@@ -31,8 +31,6 @@ we work with anti-Hermitian generators `K_γ` (`star (K γ) = -(K γ)`) and the 
 * `firstOrder_twoTerm`, `secondOrder_twoTerm`: the two-summand (Γ = 2) tight bounds.
 * `firstOrder_bound`, `secondOrder_bound`: the general-Γ bounds via triangle-inequality
   telescoping (prefactor.tex:45–50 and 105–114).
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

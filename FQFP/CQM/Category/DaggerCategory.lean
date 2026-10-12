@@ -47,8 +47,6 @@ structure, and dagger kernels, where the canonical kernel map is an isometry.
   canonical factorization through `kernel f` is `g ≫ (kernel.ι f)†`.
 * `DaggerCategory.kernelIso_daggerKernel`: any dagger kernel of `f` is unitarily
   isomorphic to the canonical `kernel f`.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

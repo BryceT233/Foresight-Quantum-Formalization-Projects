@@ -21,6 +21,7 @@ public import FQFP.CQM.Category.DaggerRigid
 public import FQFP.CQM.Category.Measurement
 public import FQFP.CQM.QuditCat.Basic
 public import FQFP.CQM.QuditCat.Dagger
+public import FQFP.CQM.QuditCat.Monoidal
 public import FQFP.CQM.HilbCat
 public import FQFP.CQM.RelCat
 public import FQFP.TrotterError.Calculus

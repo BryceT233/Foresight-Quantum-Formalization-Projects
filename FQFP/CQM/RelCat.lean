@@ -44,8 +44,6 @@ the structural membership lemmas are explicit interfaces to the same computation
 
 As in Mathlib's `RelCat` instances, proofs that simplify expressions involving the opaque
 `RelCat := Type u` synonym use `backward.isDefEq.respectTransparency.types false` locally.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section
@@ -67,17 +65,13 @@ variable {A B : Type*}
     p ∈ R.inv ↔ (p.2, p.1) ∈ R := Iff.rfl
 
 /-- Composing a relation with its inverse gives a symmetric relation. -/
-theorem comp_inv_isSymm (R : SetRel A B) : (R.comp R.inv).IsSymm where
-  symm _ _ := by
-    rintro ⟨b, hab, hcb⟩
-    exact ⟨b, hcb, hab⟩
+instance comp_inv_isSymm (R : SetRel A B) : (R.comp R.inv).IsSymm where
+  symm _ _ := by grind
 
 /-- A relation composed with its inverse is the identity exactly when it is left-total
 and left-unique. -/
-theorem comp_inv_eq_id_iff (R : SetRel A B) :
-    R.comp R.inv = SetRel.id ↔
-      Relator.LeftTotal (fun a b ↦ (a, b) ∈ R) ∧
-        Relator.LeftUnique (fun a b ↦ (a, b) ∈ R) := by
+theorem comp_inv_eq_id_iff (R : SetRel A B) : R.comp R.inv = SetRel.id ↔
+    Relator.LeftTotal (fun a b ↦ (a, b) ∈ R) ∧ Relator.LeftUnique (fun a b ↦ (a, b) ∈ R) := by
   constructor
   · intro h
     constructor
@@ -99,9 +93,8 @@ theorem comp_inv_eq_id_iff (R : SetRel A B) :
 
 /-- A partial equivalence relation is idempotent under relational composition. -/
 theorem comp_eq_self_of_isSymm_of_isTrans (R : SetRel A A) [R.IsSymm] [R.IsTrans] :
-    R.comp R = R :=
-  Set.Subset.antisymm comp_subset_self fun ⟨a, _⟩ hab ↦
-    ⟨a, R.trans hab (R.symm hab), hab⟩
+    R.comp R = R := Set.Subset.antisymm comp_subset_self fun ⟨a, _⟩ hab ↦
+  ⟨a, R.trans hab (R.symm hab), hab⟩
 
 end SetRel
 
@@ -153,41 +146,8 @@ instance instMonoidalCategoryStructRelCat : MonoidalCategoryStruct RelCat.{u} wh
 
 @[simp] lemma rel_rightUnitor_inv : (ρ_ X).inv.rel = {p | (p.1, PUnit.unit) = p.2} := rfl
 
-lemma tensorObj_ext_iff (u v : X × Y) : u = v ↔ u.1 = v.1 ∧ u.2 = v.2 :=
-  Prod.ext_iff
-
-@[simp] lemma mem_id (u : X × X) : u ∈ SetRel.id ↔ u.1 = u.2 := Iff.rfl
-
 @[simp] lemma mem_comp (f : X ⟶ Y) (g : Y ⟶ Z) (u : X × Z) :
     u ∈ f.rel.comp g.rel ↔ ∃ y : Y, (u.1, y) ∈ f.rel ∧ (y, u.2) ∈ g.rel := SetRel.mem_comp
-
-lemma mem_whiskerLeft (f : Y ⟶ Z) (u : X × Y) (v : X × Z) :
-    (u, v) ∈ (X ◁ f).rel ↔ u.1 = v.1 ∧ (u.2, v.2) ∈ f.rel := Iff.rfl
-
-lemma mem_whiskerRight (f : X ⟶ Y) (u : X × Z) (v : Y × Z) :
-    (u, v) ∈ (f ▷ Z).rel ↔ (u.1, v.1) ∈ f.rel ∧ u.2 = v.2 := Iff.rfl
-
-lemma mem_tensorHom {X₁ Y₁ X₂ Y₂ : RelCat.{u}} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂)
-    (u : X₁ × X₂) (v : Y₁ × Y₂) : (u, v) ∈ (f ⊗ₘ g).rel ↔
-      (u.1, v.1) ∈ f.rel ∧ (u.2, v.2) ∈ g.rel := Iff.rfl
-
-lemma mem_associator_hom (u : (X × Y) × Z) (v : X × (Y × Z)) :
-    (u, v) ∈ (α_ X Y Z).hom.rel ↔ (u.1.1, u.1.2, u.2) = v := Iff.rfl
-
-lemma mem_associator_inv (u : X × (Y × Z)) (v : (X × Y) × Z) :
-    (u, v) ∈ (α_ X Y Z).inv.rel ↔ ((u.1, u.2.1), u.2.2) = v := Iff.rfl
-
-lemma mem_leftUnitor_hom (u : PUnit.{u + 1} × X) (v : X) :
-    (u, v) ∈ (λ_ X).hom.rel ↔ u.2 = v := Iff.rfl
-
-lemma mem_leftUnitor_inv (u : X) (v : PUnit.{u + 1} × X) :
-    (u, v) ∈ (λ_ X).inv.rel ↔ (PUnit.unit, u) = v := Iff.rfl
-
-lemma mem_rightUnitor_hom (u : X × PUnit.{u + 1}) (v : X) :
-    (u, v) ∈ (ρ_ X).hom.rel ↔ u.1 = v := Iff.rfl
-
-lemma mem_rightUnitor_inv (u : X) (v : X × PUnit.{u + 1}) :
-    (u, v) ∈ (ρ_ X).inv.rel ↔ (u, PUnit.unit) = v := Iff.rfl
 
 set_option backward.isDefEq.respectTransparency.types false in
 /-- `RelCat` is a monoidal category. -/
@@ -202,7 +162,7 @@ instance instMonoidalCategoryRelCat : MonoidalCategory RelCat.{u} where
       exact ⟨h₁ ▸ hf, h₂ ▸ hg⟩
   id_tensorHom_id X Y := by
     ext ⟨u, v⟩
-    simp only [Set.mem_ofPred_eq, rel_tensorHom, Hom.rel_id, mem_id]
+    simp only [tensorObj_def, rel_tensorHom, Hom.rel_id, SetRel.mem_id, Set.mem_ofPred_eq]
     exact Prod.ext_iff.symm
   tensorHom_comp_tensorHom f₁ f₂ g₁ g₂ := by
     ext ⟨u, w⟩
@@ -213,12 +173,12 @@ instance instMonoidalCategoryRelCat : MonoidalCategory RelCat.{u} where
     · rintro ⟨⟨y₁, h₁, h₃⟩, ⟨y₂, h₂, h₄⟩⟩
       exact ⟨(y₁, y₂), ⟨h₁, h₂⟩, ⟨h₃, h₄⟩⟩
   whiskerLeft_id X Y := by
-    ext ⟨u, v⟩
-    simp only [Set.mem_ofPred_eq, rel_whiskerLeft, Hom.rel_id, mem_id]
+    ext
+    simp only [tensorObj_def, rel_whiskerLeft, Hom.rel_id, SetRel.mem_id, Set.mem_ofPred_eq]
     exact Prod.ext_iff.symm
   id_whiskerRight X Y := by
-    ext ⟨u, v⟩
-    simp only [Set.mem_ofPred_eq, rel_whiskerRight, Hom.rel_id, mem_id]
+    ext
+    simp only [tensorObj_def, rel_whiskerRight, Hom.rel_id, SetRel.mem_id, Set.mem_ofPred_eq]
     exact Prod.ext_iff.symm
   associator_naturality f₁ f₂ f₃ := by
     ext ⟨u, v⟩
@@ -286,12 +246,6 @@ instance instBraidedCategoryRelCat : BraidedCategory RelCat.{u} where
     ext ⟨u, v⟩
     simp [Equiv.toIso, Prod.exists, Prod.ext_iff]
 
-lemma mem_braiding_hom (u : X × Y) (v : Y × X) :
-    (u, v) ∈ (β_ X Y).hom.rel ↔ (u.2, u.1) = v := Iff.rfl
-
-lemma mem_braiding_inv (u : Y × X) (v : X × Y) :
-    (u, v) ∈ (β_ X Y).inv.rel ↔ (u.2, u.1) = v := Iff.rfl
-
 @[simp] lemma rel_braiding_hom : (β_ X Y).hom.rel = {p | (p.1.2, p.1.1) = p.2} := rfl
 
 @[simp] lemma rel_braiding_inv : (β_ X Y).inv.rel = {p | (p.1.2, p.1.1) = p.2} := rfl
@@ -335,8 +289,6 @@ theorem isProj_iff_symm_trans (f : End X) : DaggerCategory.IsProj f ↔
     · apply SetRel.isTrans_iff_comp_subset_self.2
       exact (congrArg Hom.rel h.idem : f.rel.comp f.rel = f.rel).le
   · rintro ⟨hsymm, htrans⟩
-    let := hsymm
-    let := htrans
     constructor
     · rw [isIdempotentElem_iff, End.mul_def]
       exact Hom.ext _ _ (SetRel.comp_eq_self_of_isSymm_of_isTrans f.rel)

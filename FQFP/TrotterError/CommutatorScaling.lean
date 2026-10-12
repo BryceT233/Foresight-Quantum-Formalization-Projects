@@ -28,8 +28,6 @@ The ordering-removal estimates bound the multinomial-weighted conjugation scalin
 * `αCommConj_sum_le_αComm`: remove ordering restrictions from the commutator coefficient.
 * `two_mul_commScaling_div_factorial_le`: normalize the coefficient in the error bounds.
 * `additiveKernel_eq_commutatorRemainder_sum`: cancel polynomial terms using the order condition.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

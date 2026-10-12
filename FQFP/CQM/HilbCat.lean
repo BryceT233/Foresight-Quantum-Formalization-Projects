@@ -29,8 +29,6 @@ continuous linear map.
 ## Implementation notes
 
 The universe level of the underlying spaces is fixed to `Type` for simplicity.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

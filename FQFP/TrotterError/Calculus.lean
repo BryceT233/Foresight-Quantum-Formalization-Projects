@@ -28,8 +28,6 @@ imported here to preserve the existing interface.
 * `sum_piAntidiag_univ_equiv`, `multinomial_univ_equiv`: reindexing `piAntidiag` sums and
   multinomial coefficients by an equivalence of the index type.
 * `contDiffAt_exp_smul_const`: `u ↦ exp (u • A)` is `C^m` at every point.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

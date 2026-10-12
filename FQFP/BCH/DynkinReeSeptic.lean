@@ -47,8 +47,6 @@ Ported from `Lean-BCH/BCH/SmallSDischarge.lean` (`BCH/SmallSDischarge.lean:229-4
 states the identity as an inline expansion over an arbitrary `RCLike 𝕂` with
 `set_option maxHeartbeats 64000000`; the statement here is the same identity with the pieces named,
 and no heartbeat budget is raised.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

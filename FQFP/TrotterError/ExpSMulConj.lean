@@ -31,8 +31,6 @@ expansion and norm bounds of the single conjugation `exp (τ • A) * X * exp (-
   and its remainder (theory.tex:151-155).
 * `norm_expSMulConj_eq_of_skewAdjoint`: the conjugation preserves the norm when the
   generator is anti-Hermitian (the exponential factors are unitary).
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

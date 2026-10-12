@@ -40,8 +40,6 @@ corresponding projection. The condition is stated both for an arbitrary finite f
 Mathlib's `biproduct.matrix` is monomorphic in its index types (`J : Type`, not `Type*`),
 so `dagger_biproduct_matrix` is stated at `Type 0`. The intrinsic `dagger_entry` form has no
 such restriction and is the one to use for general statements.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

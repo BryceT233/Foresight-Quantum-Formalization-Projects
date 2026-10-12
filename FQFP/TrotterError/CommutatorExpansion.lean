@@ -31,8 +31,6 @@ of its remainder (theory.tex:184-249).
   general operators (theory.tex:238-241).
 * `norm_commutatorRemainder_le_of_skewAdjoint`: the bound for anti-Hermitian operators
   (theory.tex:242-244).
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

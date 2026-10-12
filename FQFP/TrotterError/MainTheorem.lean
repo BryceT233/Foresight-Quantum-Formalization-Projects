@@ -35,8 +35,6 @@ The explicit multi-step bounds and sufficient step counts are proved below.
 * `trotter_error_bound_comm_scaling_pow`: the error after repeated equal steps.
 * `trotter_error_le_of_comm_scaling_rpow_le`, `trotter_error_le_of_comm_scaling_ceil_le`:
   sufficient real-power and natural-number step counts.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section

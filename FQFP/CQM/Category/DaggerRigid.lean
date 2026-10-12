@@ -99,8 +99,6 @@ combination is not yet available in this project:
   dual is equivalently a maximally entangled state; the reversed duality witnessing that
   self-duality is `exactPairingDagger` above, whose structure maps are the daggers of the
   originals.
-
-**Assisted by Deepseek Harness**
 -/
 
 @[expose] public section
