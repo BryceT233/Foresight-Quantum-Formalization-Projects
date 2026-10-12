@@ -7,7 +7,6 @@ module
 
 public import FQFP.TrotterError.ExpSMulConj
 public import FQFP.TrotterError.ProductFormula
-public import FQFP.TrotterError.Suzuki
 public import FQFP.BCH.RealScalar
 
 import FQFP.TrotterError.TimeOrderedExp
@@ -144,7 +143,7 @@ theorem firstOrder_twoTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ �
             rw [hFTC]
             have hpoint' : ∀ s ∈ Set.Ioc (0 : ℝ) τ, ‖expSMulConj B ⁅B, A⁆ s‖ ≤ ‖⁅B, A⁆‖ := by
               intro s hs
-              exact norm_expSMulConj_le_of_skewAdjoint B ⁅B, A⁆ hB s
+              exact (norm_expSMulConj_eq_of_skewAdjoint B ⁅B, A⁆ hB s).le
             calc
               ‖∫ s in 0..τ, expSMulConj B ⁅B, A⁆ s‖
                   ≤ ∫ s in 0..τ, ‖⁅B, A⁆‖ := by
@@ -207,23 +206,6 @@ lemma upperSum_succ {𝔸 : Type*} [AddCommMonoid 𝔸] {n : ℕ} (K : Fin (n + 
   unfold upperSum
   rw [sum_filter, sum_filter, Fin.sum_univ_succ]
   simp
-
-/-- The Lie-Trotter product of anti-Hermitian factors has norm at most `1` (each factor is
-unitary). -/
-lemma norm_lieTrotter_le_one_of_skew {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
-    [StarModule ℝ 𝔸] {Γ : ℕ} (K : Fin Γ → 𝔸) (h : ∀ γ, star (K γ) = -(K γ)) (t : ℝ) :
-    ‖lieTrotter K t‖ ≤ 1 := by
-  induction Γ with
-  | zero => simp [lieTrotter]
-  | succ n ih =>
-      rw [lieTrotter]
-      calc
-        ‖lieTrotter (fun i : Fin n => K i.succ) t * exp (t • K 0)‖
-            ≤ ‖lieTrotter (fun i : Fin n => K i.succ) t‖ * ‖exp (t • K 0)‖ := norm_mul_le _ _
-        _ ≤ 1 * 1 := mul_le_mul (ih (fun i : Fin n => K i.succ) (fun i => h i.succ))
-            (le_of_eq (norm_exp_smul_of_skewAdjoint (h 0) t)) (norm_nonneg _) (by positivity)
-        _ = 1 := by ring
 
 /-- `prop:pf1_bound` (prefactor.tex:45–50, anti-Hermitian-generator form): the tight first-order
 Lie-Trotter bound for general `Γ`. -/
@@ -324,7 +306,8 @@ lemma secondOrder_sub_eq_integral {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebr
           (exp (s • Aₕ) * exp (s • B)) * (Aₕ * exp (s • Aₕ))) s :=
       (hasDerivAt_exp_smul_const' Aₕ s).mul (hasDerivAt_exp_smul_const' B s) |>.mul
         (hasDerivAt_exp_smul_const' Aₕ s)
-    have hcA : Commute (exp (s • Aₕ)) Aₕ := (exp_smul_comm Aₕ s).symm
+    have hcA : Commute (exp (s • Aₕ)) Aₕ :=
+      ((Commute.refl Aₕ).smul_right s).exp_right.symm
     have hBneg : exp ((-s) • B) * exp (s • B) = 1 := by
       simpa [neg_smul] using (exp_neg_mul_self (s • B) : exp (-(s • B)) * exp (s • B) = 1)
     have hApos : exp (s • Aₕ) * exp ((-s) • Aₕ) = 1 := by
@@ -460,7 +443,7 @@ lemma norm_expSMulConj_taylor_remainder_le_of_skew {𝔸 : Type*} [NormedRing �
           rw [smul_eq_mul_right s (expSMulConj A Y (τ - s))]
       _ = |s| * ‖expSMulConj A Y (τ - s)‖ := by rw [norm_smul, Real.norm_eq_abs]
       _ ≤ |s| * ‖Y‖ := mul_le_mul_of_nonneg_left
-          (norm_expSMulConj_le_of_skewAdjoint A Y hA (τ - s)) (abs_nonneg s)
+          (norm_expSMulConj_eq_of_skewAdjoint A Y hA (τ - s)).le (abs_nonneg s)
       _ = ‖Y‖ * |s| := by ring
   have hcont_g : Continuous (fun s : ℝ => ‖Y‖ * |s|) := by fun_prop
   calc
@@ -597,29 +580,6 @@ theorem secondOrder_twoTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 
         rw [hpow4, hpow8]
 
 /-! ### General-Γ second-order bound -/
-
-/-- The second-order Suzuki product of anti-Hermitian factors has norm at most `1`. -/
-lemma norm_suzuki2_le_one_of_skew {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
-    [StarModule ℝ 𝔸] {Γ : ℕ} (K : Fin Γ → 𝔸) (h : ∀ γ, star (K γ) = -(K γ)) (t : ℝ) :
-    ‖suzuki2 K t‖ ≤ 1 := by
-  induction Γ with
-  | zero => simp [suzuki2]
-  | succ n ih =>
-      rw [suzuki2]
-      calc
-        ‖exp ((t / 2) • K 0) * suzuki2 (fun i : Fin n => K i.succ) t * exp ((t / 2) • K 0)‖
-            ≤ ‖exp ((t / 2) • K 0) * suzuki2 (fun i : Fin n => K i.succ) t‖ *
-                ‖exp ((t / 2) • K 0)‖ :=
-                norm_mul_le _ _
-        _ ≤ ‖exp ((t / 2) • K 0)‖ * ‖suzuki2 (fun i : Fin n => K i.succ) t‖ *
-              ‖exp ((t / 2) • K 0)‖ :=
-                mul_le_mul_of_nonneg_right (norm_mul_le _ _) (norm_nonneg _)
-        _ ≤ 1 * 1 * 1 := mul_le_mul (mul_le_mul
-              (le_of_eq (norm_exp_smul_of_skewAdjoint (h 0) (t / 2)))
-              (ih (fun i : Fin n => K i.succ) (fun i => h i.succ)) (norm_nonneg _) (by positivity))
-            (le_of_eq (norm_exp_smul_of_skewAdjoint (h 0) (t / 2))) (norm_nonneg _) (by positivity)
-        _ = 1 := by ring
 
 /-- `prop:pf2_bound` (prefactor.tex:105–114, anti-Hermitian-generator form): the tight second-order
 Suzuki bound for general `Γ`. -/

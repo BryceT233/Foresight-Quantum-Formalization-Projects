@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Taylor
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import FQFP.TrotterError.Combinatorics
-public import FQFP.TrotterError.ListCalculus
+public import FQFP.TrotterError.ListLemmas
 
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
@@ -437,13 +437,6 @@ lemma exp_mul_neg_self {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
     exp x * exp (-x) = 1 := by
   simpa using (exp_add_of_commute (Commute.refl x).neg_right).symm
 
-/-- `t ↦ exp (t • A)` is continuous (over `ℝ`). -/
-lemma continuous_exp_smul_const {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
-    (A : 𝔸) : Continuous (fun t : ℝ => exp (t • A)) := by
-  rw [continuous_iff_continuousAt]
-  intro t
-  exact (contDiffAt_exp_smul_const A 1 t).continuousAt
-
 /-! ### General scalar / norm / star lemmas -/
 
 /-- In an ℝ-algebra, the scalar action `r • a` equals right multiplication `a * (r : 𝔸)`. -/
@@ -462,13 +455,6 @@ lemma pow_smul_eq_smul_mul {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] (j : �
 lemma smul_mul_cast {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] (r c : ℝ) (a : 𝔸) :
     (r • a) * (c : 𝔸) = (r * c) • a := by
   rw [smul_eq_mul_right r a, smul_eq_mul_right (r * c) a, mul_assoc, ← map_mul (algebraMap ℝ 𝔸) r c]
-
-/-- Combining the scalar factors of the single-layer remainder integrand. -/
-lemma scalar_combine (k j : ℕ) (d τ u : ℝ) (hd : d ≠ 0) :
-    (d⁻¹ * ((τ - u) ^ k / (Nat.factorial k : ℝ))) * τ ^ j =
-      (τ - u) ^ k * τ ^ j / ((Nat.factorial k : ℝ) * d) := by
-  have hk : (Nat.factorial k : ℝ) ≠ 0 := by positivity
-  field_simp [hd, hk]
 
 /-- `|c| ≤ 1` implies `‖c • A‖ ≤ ‖A‖` in any normed algebra. -/
 lemma norm_smul_le_of_abs_le_one {𝔸 : Type*} [NormedRing 𝔸] [NormedSpace ℝ 𝔸]
@@ -495,11 +481,6 @@ lemma norm_smul_exp_arg_le {𝔸 : Type*} [NormedRing 𝔸] [NormedSpace ℝ �
       rw [norm_smul, Real.norm_eq_abs]
       ring
     _ ≤ t * ‖A‖ := mul_le_mul_of_nonneg_right hle (norm_nonneg _)
-
-/-- `(s • A)` commutes with `A`. -/
-lemma commute_smul_self {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] (A : 𝔸) (s : ℝ) :
-    Commute (s • A) A := by
-  rw [commute_iff_eq, smul_mul_assoc, mul_smul_comm]
 
 /-- `star (c • A) = -(c • A)` whenever `star A = -A` and `c` is real. -/
 lemma star_smul_of_skew {𝔸 : Type*} [Star 𝔸] [AddGroup 𝔸] [DistribSMul ℝ 𝔸] [StarModule ℝ 𝔸]

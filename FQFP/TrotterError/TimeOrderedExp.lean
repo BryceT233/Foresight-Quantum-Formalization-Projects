@@ -5,8 +5,9 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.TrotterError.Integrals
 public import Mathlib.Analysis.ODE.ExistUnique
-public import FQFP.TrotterError.IntervalIntegral
+public import Mathlib.Analysis.Normed.Ring.Basic
 
 /-!
 # Time-ordered exponential
@@ -37,7 +38,8 @@ The interval integral carries the orientation, so the definition is automaticall
 * `timeOrderedExp_mem_unitary_of_skewAdjoint`: skew-adjoint generators give unitary evolution.
 * `timeOrderedExp_dist_le`, `timeOrderedExp_dist_le_of_skewAdjoint`: distance bounds between
   two evolutions (`cor:time_ordered_distance_bound`).
-* `ode_solution_unique`: uniqueness of solutions to `U' = H·U`.
+* `ode_solution_unique`, `ode_inhomogeneous_solution_unique`: uniqueness of homogeneous
+  and inhomogeneous linear ODE solutions.
 * `continuous_timeOrderedExp`, `continuous_timeOrderedExp_lower`, `contDiff_timeOrderedExp`:
   continuity/smoothness of the solution in its upper and lower limits.
 * `timeOrderedExp_sub`: the difference identity between two evolutions
@@ -47,6 +49,65 @@ The interval integral carries the orientation, so the definition is automaticall
 -/
 
 @[expose] public section
+
+namespace TrotterError
+
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedSpace ℝ 𝔸]
+
+/-- Uniqueness of solutions to the ODE `U' = H·U`: two functions solving `U' = H·U` pointwise and
+agreeing at one time `t₀` agree everywhere. The continuity of `H` is used only to obtain a uniform
+Lipschitz constant on the compact interval between `t₀` and each target point. -/
+lemma ode_solution_unique (H : ℝ → 𝔸) (hH : Continuous H) {f g : ℝ → 𝔸}
+    (hf : ∀ t, HasDerivAt f (H t * f t) t) (hg : ∀ t, HasDerivAt g (H t * g t) t)
+    (t₀ : ℝ) (heq : f t₀ = g t₀) : f = g := by
+  funext t
+  let a : ℝ := min t t₀ - 1
+  let b : ℝ := max t t₀ + 1
+  have ht₀ : t₀ ∈ Set.Ioo a b := by
+    constructor <;> linarith [min_le_right t t₀, le_max_right t t₀]
+  have ht : t ∈ Set.Ioo a b := by
+    constructor <;> linarith [min_le_left t t₀, le_max_left t t₀]
+  obtain ⟨x, hx, hmax⟩ := isCompact_Icc.exists_isMaxOn
+    ⟨t₀, ⟨le_of_lt ht₀.1, le_of_lt ht₀.2⟩⟩ (hH.norm.continuousOn)
+  let M : NNReal := ⟨‖H x‖, norm_nonneg (H x)⟩
+  have hM : ∀ s ∈ Set.Icc a b, ‖H s‖ ≤ (M : ℝ) := fun s hs => (isMaxOn_iff.mp hmax) s hs
+  have hv : ∀ s ∈ Set.Ioo a b, LipschitzOnWith M (fun y : 𝔸 => H s * y) Set.univ := by
+    intro s hs
+    refine LipschitzOnWith.of_dist_le_mul fun x hx y hy => ?_
+    calc
+      dist (H s * x) (H s * y) = ‖H s * (x - y)‖ := by
+          rw [dist_eq_norm, mul_sub]
+      _ ≤ ‖H s‖ * ‖x - y‖ := norm_mul_le _ _
+      _ ≤ (M : ℝ) * ‖x - y‖ :=
+          mul_le_mul_of_nonneg_right (hM s (Set.Ioo_subset_Icc_self hs)) (norm_nonneg (x - y))
+      _ = M * dist x y := by simp [dist_eq_norm]
+  have hres := ODE_solution_unique_of_mem_Ioo
+    (v := fun s y => H s * y) (s := fun _ => Set.univ) (K := M)
+    (f := f) (g := g) (a := a) (b := b) (t₀ := t₀) hv ht₀
+    (fun s hs => ⟨hf s, trivial⟩) (fun s hs => ⟨hg s, trivial⟩) heq
+  exact hres ht
+
+/-- Two solutions of `U' = H·U + R` with the same forcing term and the same value at
+one time agree everywhere. Only the coefficient `H` needs to be continuous. -/
+lemma ode_inhomogeneous_solution_unique (H R : ℝ → 𝔸) (hH : Continuous H)
+    {f g : ℝ → 𝔸} (hf : ∀ t, HasDerivAt f (H t * f t + R t) t)
+    (hg : ∀ t, HasDerivAt g (H t * g t + R t) t) (t₀ : ℝ) (heq : f t₀ = g t₀) :
+    f = g := by
+  have hd : ∀ t, HasDerivAt (fun s => f s - g s) (H t * (f t - g t)) t := by
+    intro t
+    have hderiv_eq : (H t * f t + R t) - (H t * g t + R t) = H t * (f t - g t) := by
+      rw [mul_sub]
+      abel
+    exact hderiv_eq ▸ ((hf t).sub (hg t))
+  have hzero : ∀ t, HasDerivAt (fun _ : ℝ => (0 : 𝔸)) (H t * (0 : 𝔸)) t := by
+    intro t
+    simpa using (hasDerivAt_const (x := t) (c := (0 : 𝔸)))
+  have hd0 : f t₀ - g t₀ = 0 := by rw [heq, sub_self]
+  have huniq := ode_solution_unique H hH hd hzero t₀ hd0
+  funext t
+  exact sub_eq_zero.mp (congr_fun huniq t)
+
+end TrotterError
 
 namespace TrotterError
 
@@ -126,12 +187,6 @@ lemma summable_dysonTerm_abs (H : ℝ → 𝔸) (hH : Continuous H) (t₁ t₂ :
 
 /-! ### The norm bound -/
 
-/-- `Real.exp x = ∑' n, x^n / n!` (the exponential series), in `HasSum` form. -/
-lemma Real.hasSum_pow_div_factorial (x : ℝ) :
-    HasSum (fun n : ℕ => x ^ n / Nat.factorial n) (Real.exp x) := by
-  rw [Real.exp_eq_exp_ℝ, exp_eq_tsum_div]
-  exact (Real.summable_pow_div_factorial x).hasSum
-
 omit [CompleteSpace 𝔸] in
 /-- `lem:time_ordered_norm_bound`: `‖exp_T H t₁ t₂‖ ≤ Real.exp |∫ τ in t₁..t₂, ‖H τ‖|`
 (the two-sided form, valid for both time orderings). -/
@@ -141,7 +196,8 @@ lemma timeOrderedExp_norm_le [NormOneClass 𝔸] (H : ℝ → 𝔸) (hH : Contin
   refine tsum_of_norm_bounded (f := fun n : ℕ => dysonTerm H t₁ n t₂)
     (g := fun n : ℕ => |∫ τ in t₁..t₂, ‖H τ‖| ^ n / Nat.factorial n)
     (a := Real.exp |∫ τ in t₁..t₂, ‖H τ‖|) ?_ ?_
-  · exact Real.hasSum_pow_div_factorial |∫ τ in t₁..t₂, ‖H τ‖|
+  · simpa only [Real.exp_eq_exp_ℝ] using
+      expSeries_div_hasSum_exp |∫ τ in t₁..t₂, ‖H τ‖|
   · intro n
     simpa using norm_dysonTerm_le_abs H hH t₁ n t₂
 
@@ -222,8 +278,9 @@ lemma timeOrderedExp_eq_integral (H : ℝ → 𝔸) (hH : Continuous H) (t₁ t�
         intro τ
         have hhasSum : HasSum (fun n =>
             (‖H τ‖ * ‖(1 : 𝔸)‖) * (|∫ u in t₁..τ, ‖H u‖| ^ n / Nat.factorial n))
-            ((‖H τ‖ * ‖(1 : 𝔸)‖) * Real.exp |∫ u in t₁..τ, ‖H u‖|) :=
-          (Real.hasSum_pow_div_factorial |(∫ u in t₁..τ, ‖H u‖)|).mul_left (‖H τ‖ * ‖(1 : 𝔸)‖)
+            ((‖H τ‖ * ‖(1 : 𝔸)‖) * Real.exp |∫ u in t₁..τ, ‖H u‖|) := by
+          simpa only [Real.exp_eq_exp_ℝ] using
+            (expSeries_div_hasSum_exp |∫ u in t₁..τ, ‖H u‖|).mul_left (‖H τ‖ * ‖(1 : 𝔸)‖)
         simpa [bound] using hhasSum.tsum_eq
       have hcont : Continuous (fun τ => ‖H τ‖ * ‖(1 : 𝔸)‖ * Real.exp |∫ u in t₁..τ, ‖H u‖|) := by
         fun_prop
@@ -267,42 +324,6 @@ lemma timeOrderedExp_hasDerivAt (H : ℝ → 𝔸) (hH : Continuous H) (t₁ t�
     rw [timeOrderedExp_eq_integral H hH t₁ s]
   rw [heq]
   exact hderiv_integral.const_add 1
-
-/-! ### Uniqueness of solutions to the ODE -/
-
-omit [CompleteSpace 𝔸] in
-/-- Uniqueness of solutions to the ODE `U' = H·U`: two functions solving `U' = H·U` pointwise and
-agreeing at one time `t₀` agree everywhere. The continuity of `H` is used only to obtain a uniform
-Lipschitz constant on the compact interval between `t₀` and each target point. -/
-lemma ode_solution_unique (H : ℝ → 𝔸) (hH : Continuous H) {f g : ℝ → 𝔸}
-    (hf : ∀ t, HasDerivAt f (H t * f t) t) (hg : ∀ t, HasDerivAt g (H t * g t) t)
-    (t₀ : ℝ) (heq : f t₀ = g t₀) : f = g := by
-  funext t
-  let a : ℝ := min t t₀ - 1
-  let b : ℝ := max t t₀ + 1
-  have ht₀ : t₀ ∈ Set.Ioo a b := by
-    constructor <;> linarith [min_le_right t t₀, le_max_right t t₀]
-  have ht : t ∈ Set.Ioo a b := by
-    constructor <;> linarith [min_le_left t t₀, le_max_left t t₀]
-  obtain ⟨x, hx, hmax⟩ := isCompact_Icc.exists_isMaxOn
-    ⟨t₀, ⟨le_of_lt ht₀.1, le_of_lt ht₀.2⟩⟩ (hH.norm.continuousOn)
-  let M : NNReal := ⟨‖H x‖, norm_nonneg (H x)⟩
-  have hM : ∀ s ∈ Set.Icc a b, ‖H s‖ ≤ (M : ℝ) := fun s hs => (isMaxOn_iff.mp hmax) s hs
-  have hv : ∀ s ∈ Set.Ioo a b, LipschitzOnWith M (fun y : 𝔸 => H s * y) Set.univ := by
-    intro s hs
-    refine LipschitzOnWith.of_dist_le_mul fun x hx y hy => ?_
-    calc
-      dist (H s * x) (H s * y) = ‖H s * (x - y)‖ := by
-          rw [dist_eq_norm, mul_sub]
-      _ ≤ ‖H s‖ * ‖x - y‖ := norm_mul_le _ _
-      _ ≤ (M : ℝ) * ‖x - y‖ :=
-          mul_le_mul_of_nonneg_right (hM s (Set.Ioo_subset_Icc_self hs)) (norm_nonneg (x - y))
-      _ = M * dist x y := by simp [dist_eq_norm]
-  have hres := ODE_solution_unique_of_mem_Ioo
-    (v := fun s y => H s * y) (s := fun _ => Set.univ) (K := M)
-    (f := f) (g := g) (a := a) (b := b) (t₀ := t₀) hv ht₀
-    (fun s hs => ⟨hf s, trivial⟩) (fun s hs => ⟨hg s, trivial⟩) heq
-  exact hres ht
 
 /-! ### The multiplicative property -/
 
@@ -503,26 +524,8 @@ lemma timeOrderedExp_duhamel (H R : ℝ → 𝔸) (hH : Continuous H) (hR : Cont
     simpa [F] using timeOrderedExp_duhamel_hasDerivAt H R hH hR U₀ s
   have hF0 : F 0 = U₀ := by
     simpa [F] using timeOrderedExp_duhamel_initial H R U₀
-  let d : ℝ → 𝔸 := fun s => U s - F s
-  have hd : ∀ s, HasDerivAt d (H s * d s) s := by
-    intro s
-    have hsub := (hU s).sub (hF s)
-    have hderiv_eq : (H s * U s + R s) - (H s * F s + R s) = H s * (U s - F s) := by
-      rw [mul_sub]
-      abel
-    simpa [d] using (hderiv_eq ▸ hsub)
-  have hd0 : d 0 = 0 := by
-    dsimp [d]
-    rw [hU0, hF0, sub_self]
-  have hzero : ∀ s, HasDerivAt (fun _ : ℝ => (0 : 𝔸)) (H s * (0 : 𝔸)) s := by
-    intro s
-    simpa using (hasDerivAt_const (x := s) (c := (0 : 𝔸)))
-  have hd_eq_zero : d = fun _ : ℝ => (0 : 𝔸) := ode_solution_unique H hH hd hzero 0 hd0
-  have hU_eq_F : U = F := by
-    funext s
-    have hds : d s = 0 := congr_fun hd_eq_zero s
-    exact sub_eq_zero.mp hds
-  simpa [F] using congr_fun hU_eq_F t
+  simpa [F] using congr_fun
+    (ode_inhomogeneous_solution_unique H R hH hU hF 0 (hU0.trans hF0.symm)) t
 
 /-! ### Interaction picture -/
 
@@ -727,10 +730,9 @@ lemma timeOrderedExp_norm_eq_one_of_skewAdjoint
 /-- `cor:time_ordered_distance_bound` (difference representation): the difference of two
 time-ordered exponentials equals the Duhamel integral
 `∫ τ in t₁..t₂, exp_T(G,τ,t₂) · (H τ − G τ) · exp_T(H,t₁,τ)`.
-The proof runs the `ode_solution_unique` argument on `D − X`, where
-`D t = exp_T H t₁ t − exp_T G t₁ t` and
-`X t = ∫ τ in t₁..t, exp_T G τ t · (H τ − G τ) · exp_T H t₁ τ`
-solve the same inhomogeneous ODE `Y' = G·Y + (H−G)·exp_T H t₁` with the same initial value `0`. -/
+The difference and the integral solve the same inhomogeneous ODE
+`Y' = G·Y + (H−G)·exp_T H t₁` with the same initial value `0`, so
+`ode_inhomogeneous_solution_unique` identifies them. -/
 lemma timeOrderedExp_sub (H G : ℝ → 𝔸) (hH : Continuous H) (hG : Continuous G) (t₁ t₂ : ℝ) :
     timeOrderedExp H t₁ t₂ - timeOrderedExp G t₁ t₂ =
       ∫ τ in t₁..t₂, timeOrderedExp G τ t₂ * (H τ - G τ) * timeOrderedExp H t₁ τ := by
@@ -750,17 +752,8 @@ lemma timeOrderedExp_sub (H G : ℝ → 𝔸) (hH : Continuous H) (hG : Continuo
     simpa [X, add_comm] using duhamelParticular_hasDerivAt G R hG hR t₁ t
   have hD0 : D t₁ = 0 := by simp [D, timeOrderedExp_initial]
   have hX0 : X t₁ = 0 := by simp [X]
-  let d : ℝ → 𝔸 := fun s => D s - X s
-  have hd : ∀ s, HasDerivAt d (G s * d s) s := by
-    intro s
-    have hderiv_eq : (G s * D s + R s) - (G s * X s + R s) = G s * (D s - X s) := by
-      noncomm_ring
-    exact hderiv_eq ▸ ((hD s).sub (hX s))
-  have hd0 : d t₁ = 0 := by simp [d, hD0, hX0]
-  have hzero : ∀ s, HasDerivAt (fun _ : ℝ => (0 : 𝔸)) (G s * (0 : 𝔸)) s := by
-    intro s; simpa using hasDerivAt_const s 0
-  have hd_eq_zero : d = fun _ : ℝ => (0 : 𝔸) := ode_solution_unique G hG hd hzero t₁ hd0
-  have hDt : D t₂ = X t₂ := sub_eq_zero.mp (congr_fun hd_eq_zero t₂)
+  have hDt : D t₂ = X t₂ := congr_fun
+    (ode_inhomogeneous_solution_unique G R hG hD hX t₁ (hD0.trans hX0.symm)) t₂
   calc
     timeOrderedExp H t₁ t₂ - timeOrderedExp G t₁ t₂
         = ∫ τ in t₁..t₂, timeOrderedExp G τ t₂ * R τ := hDt

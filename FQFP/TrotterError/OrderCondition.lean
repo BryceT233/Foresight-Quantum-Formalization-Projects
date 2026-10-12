@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.TrotterError.OrderCondition.Basic
+public import FQFP.TrotterError.ProductFormula
 public import FQFP.TrotterError.Calculus
 public import FQFP.TrotterError.TimeOrderedExp
 public import FQFP.TrotterError.ErrorTypes
@@ -52,7 +52,6 @@ open scoped Topology ContDiff algebraMap
 variable {Υ Γ : ℕ}
 variable {𝔸 : Type*} [NormedRing 𝔸]
 variable (P : ProductFormulaData Υ Γ)
-
 
 /-! ### Auxiliary order estimates -/
 
@@ -478,13 +477,6 @@ lemma orderCond_mul_left {F G : ℝ → 𝔸} (p : ℕ)
     (fun τ => ‖F τ * G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) := by
   simpa using orderCond_mul F G 0 p hF hG
 
-/-- Right-multiplying an `O(τ^p)` function by an `O(1)` function stays `O(τ^p)`. -/
-lemma orderCond_mul_right {F G : ℝ → 𝔸} (p : ℕ)
-    (hF : (fun τ => ‖F τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p))
-    (hG : (fun τ => ‖G τ‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ))) :
-    (fun τ => ‖F τ * G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) := by
-  simpa using orderCond_mul F G p 0 hF hG
-
 /-- Every value of the product formula `𝒮(τ)` is a unit (a product of unit exponentials). -/
 lemma isUnit_eval [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (H : Fin Γ → 𝔸) (τ : ℝ) :
@@ -565,7 +557,8 @@ lemma errorOrderCond_additive_iff [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ �
       inverse_isBigO_one_of_continuous_unit (U := fun τ => P.eval H τ) (continuous_eval P H)
         (by rw [ProductFormulaData.eval_zero]; exact isUnit_one)
     have hexp_pos : (fun τ => ‖exp (τ • ∑ γ, H γ)‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) :=
-      isBigO_norm_one_of_continuous (continuous_exp_smul_const (∑ γ, H γ))
+      isBigO_norm_one_of_continuous
+        (NormedSpace.exp_continuous.comp (continuous_id.smul continuous_const))
     have hL : (fun τ => ‖Ring.inverse (P.eval H τ) * exp (τ • ∑ γ, H γ)‖) =O[𝓝 (0 : ℝ)]
         (fun _ => (1 : ℝ)) :=
       orderCond_mul_left 0 hinv hexp_pos
@@ -601,7 +594,8 @@ lemma errorOrderCond_additive_iff [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ �
     have hIntegral : (fun t => ‖∫ τ in 0..t, K τ‖) =O[𝓝 (0 : ℝ)] (fun t => t ^ (p + 1)) :=
       (orderCond_integral_iff K p hK_contDiff).mp hK
     have hexp : (fun t => ‖exp (t • ∑ γ, H γ)‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) :=
-      isBigO_norm_one_of_continuous (continuous_exp_smul_const (∑ γ, H γ))
+      isBigO_norm_one_of_continuous
+        (NormedSpace.exp_continuous.comp (continuous_id.smul continuous_const))
     have hEmul : (fun t => ‖exp (t • ∑ γ, H γ) * ∫ τ in 0..t, K τ‖) =O[𝓝 (0 : ℝ)]
         (fun t => t ^ (p + 1)) :=
       orderCond_mul_left (p + 1) hexp hIntegral
@@ -677,7 +671,8 @@ lemma errorOrderCond_multiplicative_iff [NormedAlgebra ℝ 𝔸] [NormedAlgebra 
     exact hℳ
   · intro hℳ
     have hexp : (fun t => ‖exp (t • ∑ γ, H γ)‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) :=
-      isBigO_norm_one_of_continuous (continuous_exp_smul_const (∑ γ, H γ))
+      isBigO_norm_one_of_continuous
+        (NormedSpace.exp_continuous.comp (continuous_id.smul continuous_const))
     have hsub : (fun t => ‖exp (t • ∑ γ, H γ) * multiplicativeError P H t‖) =O[𝓝 (0 : ℝ)]
         (fun t => t ^ (p + 1)) :=
       orderCond_mul_left (p + 1) hexp hℳ

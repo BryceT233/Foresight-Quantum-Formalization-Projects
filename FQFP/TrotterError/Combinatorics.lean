@@ -14,6 +14,12 @@ public import Mathlib.Basic.Real.Basic
 Combinatorial identities for ordered-product expansions: splitting and reindexing
 antidiagonals, multinomial coefficients, and products of factorials.
 This module has no dependency on the TrotterError analysis modules.
+
+## Main results
+
+* `sum_finAntidiagonal_succ`, `sum_finAntidiagonal_snoc`: split an antidiagonal by an endpoint.
+* `sum_piAntidiag_univ_equiv`, `multinomial_univ_equiv`: reindex by an equivalence.
+* `sum_range_add_antidiagonal`: reindex the triangular sum in the conjugation expansion.
 -/
 
 @[expose] public section
@@ -225,21 +231,13 @@ lemma sum_finAntidiagonal_filter_last_ne_zero {𝔸 : Type*} [AddCommMonoid 𝔸
     by_cases h : x = 0 <;> simp [h]
   · rw [sum_range_filter_ne_zero]
 
-/-- The product of factorials of a snoc'd multiplicity factors into the outer `j!` and the inner
-product. -/
-lemma factorial_prod_snoc {s : ℕ} (q : Fin s → ℕ) (j : ℕ) :
-    (∏ i : Fin (s + 1), (Nat.factorial ((Fin.snoc q j : Fin (s + 1) → ℕ) i) : ℝ)) =
-      (∏ i : Fin s, (Nat.factorial (q i) : ℝ)) * (Nat.factorial j : ℝ) := by
-  rw [Fin.prod_univ_castSucc (fun i : Fin (s + 1) =>
-    (Nat.factorial ((Fin.snoc q j : Fin (s + 1) → ℕ) i) : ℝ))]
-  simp [Fin.snoc_castSucc, Fin.snoc_last]
-
 /-- The inverse factorial coefficient of a snoc'd multiplicity factors as `j!⁻¹ · ∏qᵢ!⁻¹`. -/
 lemma factorial_inv_snoc {s : ℕ} (q : Fin s → ℕ) (j : ℕ) :
     (Nat.factorial j : ℝ)⁻¹ * (∏ i : Fin s, (Nat.factorial (q i) : ℝ))⁻¹ =
       (∏ i : Fin (s + 1), (Nat.factorial ((Fin.snoc q j : Fin (s + 1) → ℕ) i) : ℝ))⁻¹ := by
   rw [← mul_inv, mul_comm (Nat.factorial j : ℝ) (∏ i : Fin s, (Nat.factorial (q i) : ℝ)),
-    factorial_prod_snoc]
+    Fin.prod_univ_castSucc]
+  simp only [Fin.snoc_castSucc, Fin.snoc_last]
 
 /-- Reindexing the double sum over `{(j, i) | j < p, i < p - j}` (equivalently `i + j < p`)
 to the sum over `{(m, i) | m < p, i ≤ m}` via `m = i + j`. -/

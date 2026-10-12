@@ -21,6 +21,13 @@ corresponding Trotter number.
 Bounds assuming a complete normed `ℚ`-algebra use its canonical real scalar structure
 through `open scoped RealScalar`.
 
+## Main results
+
+* `trotter_error_bound_one_norm_scaling`,
+  `trotter_error_bound_one_norm_scaling_of_skew_adjoint`: pointwise error bounds.
+* `norm_eval_pow_sub_exp_le_of_skewAdjoint`: bound the error after repeated equal steps.
+* `trotter_number_one_norm_scaling`: the asymptotic number of steps.
+
 **Assisted by Deepseek Harness**
 -/
 
@@ -36,14 +43,6 @@ open scoped Topology BigOperators ContDiff
 variable {Υ Γ : ℕ}
 variable {𝔸 : Type*} [NormedRing 𝔸]
 variable (P : ProductFormulaData Υ Γ)
-
-/-! ### Smoothness of the exponential -/
-
-/-- `t ↦ exp (t • Σ_i H_i)` is smooth. -/
-lemma contDiff_exp_sum
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] {ι : Type*} [Fintype ι] (H : ι → 𝔸) :
-    ContDiff ℝ ∞ (fun t : ℝ => exp (t • ∑ i : ι, H i)) :=
-  contDiff_exp_smul_const (∑ i : ι, H i)
 
 /-! ### Norm bounds for the derivatives -/
 
@@ -102,7 +101,7 @@ lemma norm_iteratedDeriv_F_le
       iteratedDeriv (p + 1) (fun s : ℝ => P.eval H s) (u * t) -
         iteratedDeriv (p + 1) (fun s : ℝ => exp (s • ∑ γ : Fin Γ, H γ)) (u * t) :=
         iteratedDeriv_sub ((contDiff_eval P H).of_le (mod_cast le_top)).contDiffAt
-          ((contDiff_exp_sum H).of_le (mod_cast le_top)).contDiffAt
+          ((contDiff_exp_smul_const (∑ i, H i)).of_le (mod_cast le_top)).contDiffAt
   rw [hsub]
   calc
     ‖iteratedDeriv (p + 1) (fun s : ℝ => P.eval H s) (u * t) -
@@ -255,7 +254,8 @@ theorem trotter_error_bound_one_norm_scaling
               Real.exp (t * (Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖) +
             (∑ γ : Fin Γ, ‖H γ‖) ^ (p + 1) * Real.exp (t * ∑ γ : Fin Γ, ‖H γ‖)) := by
   let F : ℝ → 𝔸 := fun t => P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)
-  have hF_smooth : ContDiff ℝ ∞ F := (contDiff_eval P H).sub (contDiff_exp_sum H)
+  have hF_smooth : ContDiff ℝ ∞ F :=
+    (contDiff_eval P H).sub (contDiff_exp_smul_const (∑ i, H i))
   have h0 : ∀ j : ℕ, j ≤ p → iteratedDeriv j F 0 = 0 :=
     (isBigO_norm_iff_iteratedDeriv_eq_zero F p hF_smooth).1 h_order
   have hF_p1 : ContDiff ℝ (p + 1) F := hF_smooth.of_le (mod_cast le_top)
@@ -463,7 +463,7 @@ lemma norm_iteratedDeriv_F_le_skew
       iteratedDeriv (p + 1) (fun s : ℝ => P.eval H s) (u * t) -
         iteratedDeriv (p + 1) (fun s : ℝ => exp (s • ∑ γ : Fin Γ, H γ)) (u * t) :=
     iteratedDeriv_sub ((contDiff_eval P H).of_le (mod_cast le_top)).contDiffAt
-      ((contDiff_exp_sum H).of_le (mod_cast le_top)).contDiffAt
+      ((contDiff_exp_smul_const (∑ i, H i)).of_le (mod_cast le_top)).contDiffAt
   rw [hsub]
   calc
     ‖iteratedDeriv (p + 1) (fun s : ℝ => P.eval H s) (u * t) -
@@ -488,7 +488,8 @@ theorem trotter_error_bound_one_norm_scaling_of_skew_adjoint
           (((Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖) ^ (p + 1) +
             (∑ γ : Fin Γ, ‖H γ‖) ^ (p + 1)) := by
   let F : ℝ → 𝔸 := fun t => P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)
-  have hF_smooth : ContDiff ℝ ∞ F := (contDiff_eval P H).sub (contDiff_exp_sum H)
+  have hF_smooth : ContDiff ℝ ∞ F :=
+    (contDiff_eval P H).sub (contDiff_exp_smul_const (∑ i, H i))
   have h0 : ∀ j : ℕ, j ≤ p → iteratedDeriv j F 0 = 0 :=
     (isBigO_norm_iff_iteratedDeriv_eq_zero F p hF_smooth).1 h_order
   have hF_p1 : ContDiff ℝ (p + 1) F := hF_smooth.of_le (mod_cast le_top)
@@ -600,14 +601,6 @@ lemma exp_smul_eq_pow_of_div [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
   rw [hsmul]
   exact NormedSpace.exp_nsmul r ((t / (r : ℝ)) • x)
 
-/-- In the anti-Hermitian case, every factor of `P.eval H s` is unitary, so `‖P.eval H s‖ ≤ 1`. -/
-lemma norm_eval_le_one_of_skew
-    [NormedAlgebra ℚ 𝔸] [NormedSpace ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]
-    [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
-    (H : Fin Γ → 𝔸) (h_skew : ∀ γ : Fin Γ, star (H γ) = -(H γ)) (s : ℝ) :
-    ‖P.eval H s‖ ≤ 1 :=
-  (P.norm_eval_eq_one_of_skewAdjoint H h_skew s).le
-
 /-- For anti-Hermitian summands, the error after `r > 0` equal steps is at most
 `r` times the single-step error. No order condition or restriction on `t` is needed. -/
 lemma norm_eval_pow_sub_exp_le_of_skewAdjoint
@@ -619,7 +612,7 @@ lemma norm_eval_pow_sub_exp_le_of_skewAdjoint
       (r : ℝ) * ‖P.eval H (t / (r : ℝ)) - exp ((t / (r : ℝ)) • ∑ γ, H γ)‖ := by
   rw [exp_smul_eq_pow_of_div (∑ γ, H γ) t hr]
   exact norm_pow_sub_pow_le_of_norm_le_one _ _ r
-    (norm_eval_le_one_of_skew P H h_skew _)
+    (P.norm_eval_eq_one_of_skewAdjoint H h_skew _).le
     (norm_exp_smul_of_skewAdjoint (sum_skewAdjoint H h_skew) _).le
 
 /-- The real identity `r · (a / r)^(p+1) = a^(p+1) · (r^p)⁻¹`, for `r ≠ 0`. -/

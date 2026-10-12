@@ -86,18 +86,6 @@ noncomputable def invStrictSuffixFactorProd {Υ Γ : ℕ} (P : ProductFormulaDat
 lemma factorProdOver_evalIndexList {𝔸 : Type*} [NormedRing 𝔸] [NormedSpace ℝ 𝔸]
     (H : Fin Γ → 𝔸) (τ : ℝ) : factorProdOver P H τ (evalIndexList Υ Γ) = P.eval H τ := rfl
 
-/-- Any list of product-formula factors with skew-adjoint summands has unitary product.
-This also applies to prefixes, suffixes, and their reversed products at negative time. -/
-lemma factorProdOver_mem_unitary_of_skewAdjoint
-    {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormedSpace ℝ 𝔸] [CompleteSpace 𝔸]
-    [StarRing 𝔸] [ContinuousStar 𝔸] [StarModule ℝ 𝔸]
-    (H : Fin Γ → 𝔸) (hskew : ∀ γ, star (H γ) = -(H γ)) (t : ℝ)
-    (l : List (Fin Υ × Fin Γ)) : factorProdOver P H t l ∈ unitary 𝔸 := by
-  apply (unitary 𝔸).list_prod_mem
-  intro x hx
-  obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
-  exact P.evalFactor_mem_unitary_of_skewAdjoint H hskew i t
-
 /-! ### Bridges between list products and indexed generators -/
 
 /-- Express the strict suffix product using its `Fin`-indexed generators, in the same order. -/
@@ -107,7 +95,8 @@ lemma strictSuffixFactorProd_eq_prod_suffixGenerators
     strictSuffixFactorProd P H i t =
       (List.ofFn (fun k => exp (t • suffixGenerators P H i k))).prod := by
   unfold suffixGenerators
-  rw [ofFn_get_comp ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1))
+  simp only [List.get_eq_getElem]
+  rw [List.ofFn_getElem_eq_map ((evalIndexList Υ Γ).drop ((evalIndexList Υ Γ).idxOf i + 1))
     (fun j => exp (t • P.generator H j))]
   rfl
 
@@ -126,7 +115,8 @@ lemma eval_eq_prefix_mul_evalFactor_mul_strictSuffix
 @[fun_prop]
 lemma continuous_evalFactor (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) :
     Continuous (fun t : ℝ => P.evalFactor H i t) := by
-  simpa [ProductFormulaData.evalFactor] using continuous_exp_smul_const (P.generator H i)
+  simpa [ProductFormulaData.evalFactor] using
+    (contDiff_exp_smul_const (P.generator H i)).continuous
 
 /-- `s ↦ factorProdOver P H s l` is continuous. -/
 @[fun_prop]
@@ -196,7 +186,7 @@ omit [CompleteSpace 𝔸] in
 /-- The factor `e^{t a_i H_i}` commutes with its generator `a_i H_i`. -/
 lemma evalFactor_commute_coeffOp (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) (t : ℝ) :
     P.evalFactor H i t * (P.generator H i) = (P.generator H i) * P.evalFactor H i t :=
-  (commute_smul_self (P.generator H i) t).exp_left
+  ((Commute.refl (P.generator H i)).smul_left t).exp_left
 
 /-! ### The first derivative of the product formula -/
 

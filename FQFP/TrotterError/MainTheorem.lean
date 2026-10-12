@@ -6,10 +6,10 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.TrotterError.OneNormScaling
-public import FQFP.TrotterError.OrderingRemoval
 public import FQFP.TrotterError.CommutatorScaling
-
 import FQFP.TrotterError.ListLemmas
+public import FQFP.BCH.RealScalar
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Main theorem: commutator scaling of Trotter error
@@ -21,11 +21,20 @@ additive kernel `𝒯(τ)` and the commuting-scaling bounds for the Trotter erro
 Real scalars are supplied by the canonical extension of the complete normed `ℚ`-algebra
 (`open scoped RealScalar`), rather than a separate real-algebra hypothesis.
 
-Supporting steps live in dedicated files:
-* `OrderingRemoval.lean` — `αCommConj_sum_le_αComm` (`papers/rep.tex` lines 129–139).
-* `CommutatorScaling.lean` — the `additiveKernel = Σ multiConj − multiConj` bridge and the
-  order-condition cancellation `additiveKernel_eq_commutatorRemainder_sum`
-  (`papers/theory.tex` lines 251–266).
+`CommutatorScaling.lean` supplies `αCommConj_sum_le_αComm` (`papers/rep.tex` lines 129–139),
+the additive-kernel expansion, and the order-condition cancellation
+`additiveKernel_eq_commutatorRemainder_sum` (`papers/theory.tex` lines 251–266).
+The explicit multi-step bounds and sufficient step counts are proved below.
+
+## Main results
+
+* `trotter_error_bound_comm_scaling`, `trotter_error_bound_comm_scaling_of_skewAdjoint`:
+  pointwise additive-error bounds for general and skew-adjoint summands.
+* `multiplicative_error_bound_comm_scaling`,
+  `multiplicative_error_bound_comm_scaling_of_skewAdjoint`: the corresponding multiplicative bounds.
+* `trotter_error_bound_comm_scaling_pow`: the error after repeated equal steps.
+* `trotter_error_le_of_comm_scaling_rpow_le`, `trotter_error_le_of_comm_scaling_ceil_le`:
+  sufficient real-power and natural-number step counts.
 
 **Assisted by Deepseek Harness**
 -/
@@ -411,60 +420,52 @@ theorem trotter_error_bound_comm_scaling
       Real.exp (|τ| * (Υ : ℝ) * N) := by
     intro τ hτ
     simpa [C, sAlpha, N] using norm_additiveResidual_le P H p hp h_order hΥ τ hτ
-  have hintegral (t : ℝ) (ht : 0 ≤ t) :
-      ∫ τ in 0..t, C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (2 * t * (Υ : ℝ) * N) =
-        (C / (Nat.factorial p : ℝ)) * Real.exp (2 * t * (Υ : ℝ) * N) *
-          (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ)) :=
-    intervalIntegral_const_mul_abs_pow_div_factorial_mul C (Real.exp (2 * t * (Υ : ℝ) * N)) p t ht
   intro t ht
   calc
     ‖P.eval H t - exp (t • S)‖
         = ‖∫ τ in 0..t, exp ((t - τ) • S) * additiveResidual P H τ‖ := by
             rw [eval_sub_exp_eq_integral_residual P H t]
-    _ ≤ ∫ τ in 0..t, C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (2 * t * (Υ : ℝ) * N) := by
-            have hpoint : ∀ τ ∈ Set.Ioc (0 : ℝ) t,
-                ‖exp ((t - τ) • S) * additiveResidual P H τ‖ ≤
-                  C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (2 * t * (Υ : ℝ) * N) := by
-              intro τ hτ
-              have hτpos : 0 ≤ τ := le_of_lt hτ.1
-              have hexpS : ‖exp ((t - τ) • S)‖ ≤ Real.exp (|t - τ| * N) := by
-                calc
-                  ‖exp ((t - τ) • S)‖ ≤ Real.exp (‖(t - τ) • S‖) := norm_exp_le _
-                  _ = Real.exp (|t - τ| * ‖S‖) := by rw [norm_smul, Real.norm_eq_abs]
-                  _ ≤ Real.exp (|t - τ| * N) :=
-                      Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hS_le (abs_nonneg _))
-              have hres : ‖additiveResidual P H τ‖ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) *
-                  Real.exp (|τ| * (Υ : ℝ) * N) := hR3 τ hτpos
-              have harg : |t - τ| * N + |τ| * (Υ : ℝ) * N ≤ 2 * t * (Υ : ℝ) * N := by
-                have hN : 0 ≤ N := sum_nonneg (fun γ _ => norm_nonneg _)
-                have hΥR : 1 ≤ (Υ : ℝ) := by exact_mod_cast (Nat.succ_le_of_lt hΥ)
-                have harg' : |t - τ| + |τ| * (Υ : ℝ) ≤ 2 * t * (Υ : ℝ) := by
-                  rw [abs_of_nonneg hτpos, abs_of_nonneg (sub_nonneg.mpr hτ.2)]
-                  nlinarith [hτ.1.le, hτ.2, hΥR, ht]
-                nlinarith [mul_le_mul_of_nonneg_left harg' hN]
-              calc
-                ‖exp ((t - τ) • S) * additiveResidual P H τ‖
-                    ≤ ‖exp ((t - τ) • S)‖ * ‖additiveResidual P H τ‖ := norm_mul_le _ _
-                _ ≤ Real.exp (|t - τ| * N) * (C * |τ| ^ p / (Nat.factorial p : ℝ) *
-                      Real.exp (|τ| * (Υ : ℝ) * N)) :=
-                      mul_le_mul hexpS hres (norm_nonneg _) (Real.exp_pos _).le
-                _ = C * |τ| ^ p / (Nat.factorial p : ℝ) * (Real.exp (|t - τ| * N) *
-                      Real.exp (|τ| * (Υ : ℝ) * N)) := by ring
-                _ = C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (|t - τ| * N +
-                      |τ| * (Υ : ℝ) * N) := by rw [← Real.exp_add]
-                _ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (2 * t * (Υ : ℝ) * N) := by
-                      refine mul_le_mul_of_nonneg_left ?_ ?_
-                      · exact Real.exp_le_exp.mpr harg
-                      · have hC_nonneg : 0 ≤ C := mul_nonneg
-                          (mul_nonneg zero_le_two (Nat.cast_nonneg _))
-                            (sum_nonneg (fun γ _ => αCommConj_nonneg _ _ _))
-                        positivity
-            have hg_cont : Continuous (fun τ : ℝ => C * |τ| ^ p / (Nat.factorial p : ℝ) *
-                Real.exp (2 * t * (Υ : ℝ) * N)) := by fun_prop
-            exact intervalIntegral.norm_integral_le_of_norm_le ht
-              (by filter_upwards with τ hτ; exact hpoint τ hτ) (hg_cont.intervalIntegrable 0 t)
-    _ = (C / (Nat.factorial p : ℝ)) * Real.exp (2 * t * (Υ : ℝ) * N) *
-          (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ)) := hintegral t ht
+    _ ≤ (C / (Nat.factorial p : ℝ)) * Real.exp (2 * t * (Υ : ℝ) * N) *
+          (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ)) := by
+      have hpoint : ∀ τ ∈ Set.Ioc (0 : ℝ) t,
+          ‖exp ((t - τ) • S) * additiveResidual P H τ‖ ≤
+            C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (2 * t * (Υ : ℝ) * N) := by
+        intro τ hτ
+        have hτpos : 0 ≤ τ := le_of_lt hτ.1
+        have hexpS : ‖exp ((t - τ) • S)‖ ≤ Real.exp (|t - τ| * N) := by
+          calc
+            ‖exp ((t - τ) • S)‖ ≤ Real.exp (‖(t - τ) • S‖) := norm_exp_le _
+            _ = Real.exp (|t - τ| * ‖S‖) := by rw [norm_smul, Real.norm_eq_abs]
+            _ ≤ Real.exp (|t - τ| * N) :=
+                Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hS_le (abs_nonneg _))
+        have hres : ‖additiveResidual P H τ‖ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) *
+            Real.exp (|τ| * (Υ : ℝ) * N) := hR3 τ hτpos
+        have harg : |t - τ| * N + |τ| * (Υ : ℝ) * N ≤ 2 * t * (Υ : ℝ) * N := by
+          have hN : 0 ≤ N := sum_nonneg (fun γ _ => norm_nonneg _)
+          have hΥR : 1 ≤ (Υ : ℝ) := by exact_mod_cast (Nat.succ_le_of_lt hΥ)
+          have harg' : |t - τ| + |τ| * (Υ : ℝ) ≤ 2 * t * (Υ : ℝ) := by
+            rw [abs_of_nonneg hτpos, abs_of_nonneg (sub_nonneg.mpr hτ.2)]
+            nlinarith [hτ.1.le, hτ.2, hΥR, ht]
+          nlinarith [mul_le_mul_of_nonneg_left harg' hN]
+        calc
+          ‖exp ((t - τ) • S) * additiveResidual P H τ‖
+              ≤ ‖exp ((t - τ) • S)‖ * ‖additiveResidual P H τ‖ := norm_mul_le _ _
+          _ ≤ Real.exp (|t - τ| * N) * (C * |τ| ^ p / (Nat.factorial p : ℝ) *
+                Real.exp (|τ| * (Υ : ℝ) * N)) :=
+                mul_le_mul hexpS hres (norm_nonneg _) (Real.exp_pos _).le
+          _ = C * |τ| ^ p / (Nat.factorial p : ℝ) * (Real.exp (|t - τ| * N) *
+                Real.exp (|τ| * (Υ : ℝ) * N)) := by ring
+          _ = C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (|t - τ| * N +
+                |τ| * (Υ : ℝ) * N) := by rw [← Real.exp_add]
+          _ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (2 * t * (Υ : ℝ) * N) := by
+                refine mul_le_mul_of_nonneg_left ?_ ?_
+                · exact Real.exp_le_exp.mpr harg
+                · have hC_nonneg : 0 ≤ C := mul_nonneg
+                    (mul_nonneg zero_le_two (Nat.cast_nonneg _))
+                      (sum_nonneg (fun γ _ => αCommConj_nonneg _ _ _))
+                  positivity
+      exact norm_intervalIntegral_le_const_mul_abs_pow_div_factorial_mul _ C
+        (Real.exp (2 * t * (Υ : ℝ) * N)) p t ht hpoint
     _ ≤ 2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1) * αComm p H * t ^ (p + 1) *
           Real.exp (2 * t * (Υ : ℝ) * N) := by
             have hC_le : C / (Nat.factorial p : ℝ) ≤ 2 * (Υ : ℝ) ^ (p + 1) * αComm p H := by
@@ -521,41 +522,27 @@ theorem trotter_error_bound_comm_scaling_of_skewAdjoint
   have hR3 : ∀ τ, ‖additiveKernel P H τ‖ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) := by
     intro τ
     simpa [C, sAlpha] using norm_additiveKernel_le_of_skewAdjoint P H h_skew p hp h_order hΥ τ
-  have hintegral (t : ℝ) (ht : 0 ≤ t) :
-      ∫ τ in 0..t, C * |τ| ^ p / (Nat.factorial p : ℝ) =
-        (C / (Nat.factorial p : ℝ)) * (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ)) :=
-    intervalIntegral_const_mul_abs_pow_div_factorial C p t ht
   intro t ht
   calc
     ‖P.eval H t - exp (t • S)‖
         = ‖exp (t • S) * ∫ τ in 0..t, (exp ((-τ) • S) * P.eval H τ) * additiveKernel P H τ‖ := by
             rw [eval_sub_exp_eq_exp_mul_integral P H t]
-    _ ≤ ‖exp (t • S)‖ * ‖∫ τ in 0..t, (exp ((-τ) • S) * P.eval H τ) * additiveKernel P H τ‖ :=
-            norm_mul_le _ _
-    _ = ‖∫ τ in 0..t, (exp ((-τ) • S) * P.eval H τ) * additiveKernel P H τ‖ := by
-            rw [norm_exp_smul_of_skewAdjoint hS_skew t, one_mul]
-    _ ≤ ∫ τ in 0..t, C * |τ| ^ p / (Nat.factorial p : ℝ) := by
-            have hpoint : ∀ τ ∈ Set.Ioc (0 : ℝ) t,
-                ‖(exp ((-τ) • S) * P.eval H τ) * additiveKernel P H τ‖ ≤
-                  C * |τ| ^ p / (Nat.factorial p : ℝ) := by
-              intro τ hτ
-              have hfac : ‖exp ((-τ) • S) * P.eval H τ‖ ≤ 1 := by
-                calc
-                  ‖exp ((-τ) • S) * P.eval H τ‖ ≤ ‖exp ((-τ) • S)‖ * ‖P.eval H τ‖ := norm_mul_le _ _
-                  _ = 1 * ‖P.eval H τ‖ := by rw [norm_exp_smul_of_skewAdjoint hS_skew (-τ)]
-                  _ = ‖P.eval H τ‖ := one_mul _
-                  _ ≤ 1 := norm_eval_le_one_of_skew P H h_skew τ
-              calc
-                ‖(exp ((-τ) • S) * P.eval H τ) * additiveKernel P H τ‖
-                    ≤ ‖exp ((-τ) • S) * P.eval H τ‖ * ‖additiveKernel P H τ‖ := norm_mul_le _ _
-                _ ≤ 1 * ‖additiveKernel P H τ‖ := mul_le_mul_of_nonneg_right hfac (norm_nonneg _)
-                _ = ‖additiveKernel P H τ‖ := one_mul _
-                _ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) := hR3 τ
-            have hg_cont : Continuous (fun τ : ℝ => C * |τ| ^ p / (Nat.factorial p : ℝ)) := by
-              fun_prop
-            exact intervalIntegral.norm_integral_le_of_norm_le ht
-              (by filter_upwards with τ hτ; exact hpoint τ hτ) (hg_cont.intervalIntegrable 0 t)
-    _ = (C / (Nat.factorial p : ℝ)) * (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ)) := hintegral t ht
+    _ = ‖∫ τ in 0..t, (exp ((-τ) • S) * P.eval H τ) * additiveKernel P H τ‖ :=
+          CStarRing.norm_mem_unitary_mul _ (exp_smul_mem_unitary_of_skewAdjoint hS_skew t)
+    _ ≤ (C / (Nat.factorial p : ℝ)) * (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ)) := by
+      have hpoint : ∀ τ ∈ Set.Ioc (0 : ℝ) t,
+          ‖(exp ((-τ) • S) * P.eval H τ) * additiveKernel P H τ‖ ≤
+            C * |τ| ^ p / (Nat.factorial p : ℝ) := by
+        intro τ _
+        calc
+          ‖(exp ((-τ) • S) * P.eval H τ) * additiveKernel P H τ‖
+              = ‖additiveKernel P H τ‖ := CStarRing.norm_mem_unitary_mul _
+                ((unitary 𝔸).mul_mem (exp_smul_mem_unitary_of_skewAdjoint hS_skew (-τ))
+                  (P.eval_mem_unitary_of_skewAdjoint H h_skew τ))
+          _ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) := hR3 τ
+      simpa only [mul_one] using
+        norm_intervalIntegral_le_const_mul_abs_pow_div_factorial_mul _ C 1 p t ht
+          (by simpa only [mul_one] using hpoint)
     _ ≤ 2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1) * αComm p H * t ^ (p + 1) := by
             have hC_le : C / (Nat.factorial p : ℝ) ≤ 2 * (Υ : ℝ) ^ (p + 1) * αComm p H := by
               simpa [C, sAlpha] using two_mul_commScaling_div_factorial_le P H p
@@ -645,61 +632,53 @@ theorem multiplicative_error_bound_comm_scaling
       Real.exp (|τ| * (Υ : ℝ) * N) := by
     intro τ hτ
     simpa [C, sAlpha, N] using norm_additiveResidual_le P H p hp h_order hΥ τ hτ
-  have hintegral (t : ℝ) (ht : 0 ≤ t) :
-      ∫ τ in 0..t, C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (2 * t * (Υ : ℝ) * N) =
-        (C / (Nat.factorial p : ℝ)) * Real.exp (2 * t * (Υ : ℝ) * N) *
-          (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ)) :=
-    intervalIntegral_const_mul_abs_pow_div_factorial_mul C (Real.exp (2 * t * (Υ : ℝ) * N)) p t ht
   intro t ht
   calc
     ‖multiplicativeError P H t‖
         = ‖∫ τ in 0..t, exp ((-τ) • S) * additiveResidual P H τ‖ := by
             rw [multiplicativeError_eq_integral_residual P H t]
-    _ ≤ ∫ τ in 0..t, C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (2 * t * (Υ : ℝ) * N) := by
-            have hpoint : ∀ τ ∈ Set.Ioc (0 : ℝ) t,
-                ‖exp ((-τ) • S) * additiveResidual P H τ‖ ≤
-                  C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (2 * t * (Υ : ℝ) * N) := by
-              intro τ hτ
-              have hτpos : 0 ≤ τ := le_of_lt hτ.1
-              have hexpS : ‖exp ((-τ) • S)‖ ≤ Real.exp (|τ| * N) := by
-                calc
-                  ‖exp ((-τ) • S)‖ ≤ Real.exp (‖(-τ) • S‖) := norm_exp_le _
-                  _ = Real.exp (|τ| * ‖S‖) := by rw [norm_smul, Real.norm_eq_abs, abs_neg]
-                  _ ≤ Real.exp (|τ| * N) :=
-                      Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hS_le (abs_nonneg _))
-              have hresτ : ‖additiveResidual P H τ‖ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) *
-                  Real.exp (|τ| * (Υ : ℝ) * N) := hres τ hτpos
-              have harg : |τ| * N + |τ| * (Υ : ℝ) * N ≤ 2 * t * (Υ : ℝ) * N := by
-                have hN : 0 ≤ N := sum_nonneg (fun γ _ => norm_nonneg _)
-                have hΥR : 1 ≤ (Υ : ℝ) := mod_cast (Nat.succ_le_of_lt hΥ)
-                have harg' : |τ| + |τ| * (Υ : ℝ) ≤ 2 * t * (Υ : ℝ) := by
-                  rw [abs_of_nonneg hτpos]
-                  nlinarith [hτ.1.le, hτ.2, hΥR, ht]
-                nlinarith [mul_le_mul_of_nonneg_left harg' hN]
-              calc
-                ‖exp ((-τ) • S) * additiveResidual P H τ‖
-                    ≤ ‖exp ((-τ) • S)‖ * ‖additiveResidual P H τ‖ := norm_mul_le _ _
-                _ ≤ Real.exp (|τ| * N) * (C * |τ| ^ p / (Nat.factorial p : ℝ) *
-                      Real.exp (|τ| * (Υ : ℝ) * N)) :=
-                      mul_le_mul hexpS hresτ (norm_nonneg _) (Real.exp_pos _).le
-                _ = C * |τ| ^ p / (Nat.factorial p : ℝ) * (Real.exp (|τ| * N) *
-                      Real.exp (|τ| * (Υ : ℝ) * N)) := by ring
-                _ = C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (|τ| * N +
-                      |τ| * (Υ : ℝ) * N) := by rw [← Real.exp_add]
-                _ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (2 * t * (Υ : ℝ) * N) := by
-                      refine mul_le_mul_of_nonneg_left ?_ ?_
-                      · exact Real.exp_le_exp.mpr harg
-                      · have hC_nonneg : 0 ≤ C := mul_nonneg
-                          (mul_nonneg zero_le_two (Nat.cast_nonneg _))
-                            (sum_nonneg (fun γ _ => αCommConj_nonneg _ _ _))
-                        exact div_nonneg (mul_nonneg hC_nonneg (pow_nonneg (abs_nonneg τ) p))
-                          (Nat.cast_nonneg _)
-            have hg_cont : Continuous (fun τ : ℝ => C * |τ| ^ p / (Nat.factorial p : ℝ) *
-                Real.exp (2 * t * (Υ : ℝ) * N)) := by fun_prop
-            exact intervalIntegral.norm_integral_le_of_norm_le ht
-              (by filter_upwards with τ hτ; exact hpoint τ hτ) (hg_cont.intervalIntegrable 0 t)
-    _ = (C / (Nat.factorial p : ℝ)) * Real.exp (2 * t * (Υ : ℝ) * N) *
-          (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ)) := hintegral t ht
+    _ ≤ (C / (Nat.factorial p : ℝ)) * Real.exp (2 * t * (Υ : ℝ) * N) *
+          (t ^ (p + 1) / ((p + 1 : ℕ) : ℝ)) := by
+      have hpoint : ∀ τ ∈ Set.Ioc (0 : ℝ) t,
+          ‖exp ((-τ) • S) * additiveResidual P H τ‖ ≤
+            C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (2 * t * (Υ : ℝ) * N) := by
+        intro τ hτ
+        have hτpos : 0 ≤ τ := le_of_lt hτ.1
+        have hexpS : ‖exp ((-τ) • S)‖ ≤ Real.exp (|τ| * N) := by
+          calc
+            ‖exp ((-τ) • S)‖ ≤ Real.exp (‖(-τ) • S‖) := norm_exp_le _
+            _ = Real.exp (|τ| * ‖S‖) := by rw [norm_smul, Real.norm_eq_abs, abs_neg]
+            _ ≤ Real.exp (|τ| * N) :=
+                Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hS_le (abs_nonneg _))
+        have hresτ : ‖additiveResidual P H τ‖ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) *
+            Real.exp (|τ| * (Υ : ℝ) * N) := hres τ hτpos
+        have harg : |τ| * N + |τ| * (Υ : ℝ) * N ≤ 2 * t * (Υ : ℝ) * N := by
+          have hN : 0 ≤ N := sum_nonneg (fun γ _ => norm_nonneg _)
+          have hΥR : 1 ≤ (Υ : ℝ) := mod_cast (Nat.succ_le_of_lt hΥ)
+          have harg' : |τ| + |τ| * (Υ : ℝ) ≤ 2 * t * (Υ : ℝ) := by
+            rw [abs_of_nonneg hτpos]
+            nlinarith [hτ.1.le, hτ.2, hΥR, ht]
+          nlinarith [mul_le_mul_of_nonneg_left harg' hN]
+        calc
+          ‖exp ((-τ) • S) * additiveResidual P H τ‖
+              ≤ ‖exp ((-τ) • S)‖ * ‖additiveResidual P H τ‖ := norm_mul_le _ _
+          _ ≤ Real.exp (|τ| * N) * (C * |τ| ^ p / (Nat.factorial p : ℝ) *
+                Real.exp (|τ| * (Υ : ℝ) * N)) :=
+                mul_le_mul hexpS hresτ (norm_nonneg _) (Real.exp_pos _).le
+          _ = C * |τ| ^ p / (Nat.factorial p : ℝ) * (Real.exp (|τ| * N) *
+                Real.exp (|τ| * (Υ : ℝ) * N)) := by ring
+          _ = C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (|τ| * N +
+                |τ| * (Υ : ℝ) * N) := by rw [← Real.exp_add]
+          _ ≤ C * |τ| ^ p / (Nat.factorial p : ℝ) * Real.exp (2 * t * (Υ : ℝ) * N) := by
+                refine mul_le_mul_of_nonneg_left ?_ ?_
+                · exact Real.exp_le_exp.mpr harg
+                · have hC_nonneg : 0 ≤ C := mul_nonneg
+                    (mul_nonneg zero_le_two (Nat.cast_nonneg _))
+                      (sum_nonneg (fun γ _ => αCommConj_nonneg _ _ _))
+                  exact div_nonneg (mul_nonneg hC_nonneg (pow_nonneg (abs_nonneg τ) p))
+                    (Nat.cast_nonneg _)
+      exact norm_intervalIntegral_le_const_mul_abs_pow_div_factorial_mul _ C
+        (Real.exp (2 * t * (Υ : ℝ) * N)) p t ht hpoint
     _ ≤ 2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1) * αComm p H * t ^ (p + 1) *
           Real.exp (2 * t * (Υ : ℝ) * N) := by
             have hC_le : C / (Nat.factorial p : ℝ) ≤ 2 * (Υ : ℝ) ^ (p + 1) * αComm p H := by
@@ -756,15 +735,6 @@ lemma norm_multiplicativeError_eq_norm_sub_of_skewAdjoint
   rw [hrel, ← neg_smul t S]
   exact CStarRing.norm_mem_unitary_mul _ (exp_smul_mem_unitary_of_skewAdjoint hS_skew (-t))
 
-/-- For skew-adjoint summands, the multiplicative-error norm is bounded by the additive-error
-norm. -/
-lemma norm_multiplicativeError_le_norm_sub_of_skewAdjoint
-    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
-    [StarRing 𝔸] [CStarRing 𝔸] [StarModule ℝ 𝔸]
-    (H : Fin Γ → 𝔸) (h_skew : ∀ γ, star (H γ) = -(H γ)) (t : ℝ) :
-    ‖multiplicativeError P H t‖ ≤ ‖P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)‖ :=
-  (norm_multiplicativeError_eq_norm_sub_of_skewAdjoint P H h_skew t).le
-
 /-- `thm:trotter_error_comm_scaling` (anti-Hermitian branch, multiplicative): the multiplicative
 error pointwise commuting-scaling bound, valid for all `t ≥ 0` (no exponential prefactor). -/
 theorem multiplicative_error_bound_comm_scaling_of_skewAdjoint
@@ -776,7 +746,7 @@ theorem multiplicative_error_bound_comm_scaling_of_skewAdjoint
       ‖multiplicativeError P H t‖ ≤
         2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1) * αComm p H * t ^ (p + 1) := by
   intro t ht
-  exact (norm_multiplicativeError_le_norm_sub_of_skewAdjoint P H h_skew t).trans
+  exact (norm_multiplicativeError_eq_norm_sub_of_skewAdjoint P H h_skew t).le.trans
     (trotter_error_bound_comm_scaling_of_skewAdjoint P H h_skew p hp h_order hΥ t ht)
 
 /-- `thm:trotter_error_comm_scaling` (anti-Hermitian branch, multiplicative): the
@@ -798,5 +768,75 @@ theorem multiplicative_error_comm_scaling_of_skewAdjoint
         ≤ 2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1) * αComm p H * t ^ (p + 1) :=
             multiplicative_error_bound_comm_scaling_of_skewAdjoint P H h_skew p hp h_order hΥ t ht
     _ = (2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1)) * (αComm p H * t ^ (p + 1)) := by ring
+
+end TrotterError
+
+/-! ### Repeated steps and sufficient step counts -/
+
+namespace TrotterError
+
+open NormedSpace ProductFormulaData
+open scoped BigOperators RealScalar
+
+variable {Υ Γ : ℕ} {𝔸 : Type*} [NormedRing 𝔸]
+variable [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+variable [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]
+variable (P : ProductFormulaData Υ Γ)
+
+/-- Explicit commutator-scaling error bound after any positive number of equal steps. -/
+theorem trotter_error_bound_comm_scaling_pow
+    (H : Fin Γ → 𝔸) (h_skew : ∀ γ, star (H γ) = -(H γ))
+    (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H) (hΥ : 0 < Υ)
+    (t : ℝ) (ht : 0 ≤ t) {r : ℕ} (hr : 0 < r) :
+    ‖(P.eval H (t / (r : ℝ))) ^ r - exp (t • ∑ γ, H γ)‖ ≤
+      (2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1)) *
+        αComm p H * t ^ (p + 1) / (r : ℝ) ^ p := by
+  let C := 2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1) * αComm p H
+  have hstep := trotter_error_bound_comm_scaling_of_skewAdjoint P H h_skew p hp
+    h_order hΥ (t / (r : ℝ)) (div_nonneg ht (Nat.cast_nonneg r))
+  calc
+    ‖(P.eval H (t / (r : ℝ))) ^ r - exp (t • ∑ γ, H γ)‖
+        ≤ (r : ℝ) * ‖P.eval H (t / (r : ℝ)) - exp ((t / (r : ℝ)) • ∑ γ, H γ)‖ :=
+          norm_eval_pow_sub_exp_le_of_skewAdjoint P H h_skew t hr
+    _ ≤ (r : ℝ) * (C * (t / (r : ℝ)) ^ (p + 1)) :=
+          mul_le_mul_of_nonneg_left hstep (Nat.cast_nonneg r)
+    _ = C * t ^ (p + 1) / (r : ℝ) ^ p := by
+          rw [mul_left_comm (r : ℝ) C, natCast_mul_pow_div_pow_succ t r p (by positivity)]
+          simp only [div_eq_mul_inv, mul_assoc]
+
+/-- A real `p`-th root of the explicit commutator bound gives a sufficient step threshold
+for accuracy `ε`. The dependence on the summands, time, stages, and accuracy is explicit. -/
+theorem trotter_error_le_of_comm_scaling_rpow_le
+    (H : Fin Γ → 𝔸) (h_skew : ∀ γ, star (H γ) = -(H γ))
+    (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H) (hΥ : 0 < Υ)
+    (t : ℝ) (ht : 0 ≤ t) (ε : ℝ) (hε : 0 < ε) {r : ℕ} (hr : 0 < r)
+    (hsteps : ((2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1)) *
+      αComm p H * t ^ (p + 1) / ε) ^ (1 / (p : ℝ)) ≤ (r : ℝ)) :
+    ‖(P.eval H (t / (r : ℝ))) ^ r - exp (t • ∑ γ, H γ)‖ ≤ ε := by
+  let D := (2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1)) * αComm p H * t ^ (p + 1)
+  have hD : 0 ≤ D := mul_nonneg
+    (mul_nonneg (by positivity) (αComm_nonneg p H)) (pow_nonneg ht _)
+  have hp' : 0 < (p : ℝ) := by exact_mod_cast (show 0 < p by lia)
+  have hpow : D / ε ≤ (r : ℝ) ^ p := by
+    rw [← Real.rpow_natCast]
+    exact (Real.rpow_inv_le_iff_of_pos (div_nonneg hD hε.le) (Nat.cast_nonneg r) hp').mp
+      (by simpa only [one_div] using hsteps)
+  refine (trotter_error_bound_comm_scaling_pow P H h_skew p hp h_order hΥ t ht hr).trans ?_
+  change D / (r : ℝ) ^ p ≤ ε
+  apply (div_le_iff₀ (by positivity : 0 < (r : ℝ) ^ p)).mpr
+  simpa only [mul_comm] using (div_le_iff₀ hε).mp hpow
+
+/-- Rounding the real threshold up and taking at least one step ensures accuracy `ε`.
+Every larger integer step count also works, including when `t = 0` or `αComm p H = 0`. -/
+theorem trotter_error_le_of_comm_scaling_ceil_le
+    (H : Fin Γ → 𝔸) (h_skew : ∀ γ, star (H γ) = -(H γ))
+    (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H) (hΥ : 0 < Υ)
+    (t : ℝ) (ht : 0 ≤ t) (ε : ℝ) (hε : 0 < ε) {r : ℕ}
+    (hsteps : max 1 ⌈((2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1)) *
+      αComm p H * t ^ (p + 1) / ε) ^ (1 / (p : ℝ))⌉₊ ≤ r) :
+    ‖(P.eval H (t / (r : ℝ))) ^ r - exp (t • ∑ γ, H γ)‖ ≤ ε := by
+  have hr : 0 < r := lt_of_lt_of_le Nat.zero_lt_one ((le_max_left _ _).trans hsteps)
+  apply trotter_error_le_of_comm_scaling_rpow_le P H h_skew p hp h_order hΥ t ht ε hε hr
+  exact (Nat.le_ceil _).trans (by exact_mod_cast (le_max_right _ _).trans hsteps)
 
 end TrotterError
