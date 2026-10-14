@@ -1,5 +1,8 @@
 module
 
+import FQFP.Carleman.AxiomAudit
+import FQFP.Carleman.Examples
+
 public import FQFP.BCH.BCHElement
 public import FQFP.BCH.BCHCommutator
 public import FQFP.BCH.BCHSymmetric
@@ -15,6 +18,7 @@ public import FQFP.BCH.RealScalar
 public import FQFP.BCH.WordAlgebra
 public import FQFP.BCH.WordNorm
 public import FQFP.BCH.WordExpansion
+public import FQFP.Carleman
 public import FQFP.CQM.Category.DaggerCategory
 public import FQFP.CQM.Category.DaggerBiproduct
 public import FQFP.CQM.Category.DaggerRigid

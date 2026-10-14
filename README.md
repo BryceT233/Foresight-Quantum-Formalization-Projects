@@ -8,6 +8,8 @@ at **Foresight Quantum**. Each company project lives in its own directory under
 
 ## Projects
 
+- **`FQFP/Carleman`** — Polynomial ODE Carleman linearization, finite truncations,
+  matrix evolution, and error bounds. Entry point is `FQFP.Carleman`.
 - **`FQFP/CQM`** — Categorical Quantum Mechanics. Formalizes dagger categories,
   monoidal (and symmetric braided) categories, and category-theoretic
   constructions for quantum mechanics: `Category/DaggerCategory`,

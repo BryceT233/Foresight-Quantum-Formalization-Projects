@@ -1,0 +1,99 @@
+/-
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Foresight Quantum
+-/
+module
+
+import FQFP.Carleman
+
+/-! # Proof dependency audit
+
+These commands should report only the ordinary foundational axioms
+`propext`, `Classical.choice`, and `Quot.sound`, never `sorryAx`.
+-/
+
+#print axioms MvPolynomial.mkDerivation_eq_sum_pderiv
+#print axioms MvPolynomial.IsHomogeneous.mkDerivation
+#print axioms MvPolynomial.totalDegree_mkDerivation_le
+#print axioms MvPolynomial.homogeneousComponent_mkDerivation_eq_zero
+#print axioms MvPolynomial.homogeneousComponent_mkDerivation_quadratic_eq_zero
+#print axioms MvPolynomial.hasDerivAt_aeval_of_hasDerivAt_coordinates
+#print axioms MvPolynomial.hasDerivWithinAt_aeval_of_hasDerivWithinAt_coordinates
+#print axioms MvPolynomial.truncTotal
+#print axioms MvPolynomial.coeff_truncTotal
+#print axioms MvPolynomial.truncTotal_zero
+#print axioms MvPolynomial.truncTotal_monomial
+#print axioms MvPolynomial.truncTotal_X
+#print axioms MvPolynomial.truncTotal_of_isHomogeneous
+#print axioms MvPolynomial.truncTotal_comp
+#print axioms MvPolynomial.truncTotal_idempotent
+#print axioms MvPolynomial.truncTotal_eq_powerSeries_truncTotal
+#print axioms MvPolynomial.truncTotal_eq_self_iff
+#print axioms MvPolynomial.mem_range_truncTotal_iff
+#print axioms MvPolynomial.truncTotal_eq_self_of_mem_range
+#print axioms MvPolynomial.range_truncTotal_eq_restrictSupport
+#print axioms MvPolynomial.basisRangeTruncTotal
+#print axioms MvPolynomial.basisRangeTruncTotal_apply
+#print axioms MvPolynomial.exists_basis_range_truncTotal
+#print axioms MvPolynomial.finite_range_truncTotal
+#print axioms MvPolynomial.compressedDerivation
+#print axioms MvPolynomial.compressedDerivation_apply
+#print axioms MvPolynomial.coeff_eq_basis_repr
+#print axioms MvPolynomial.compressedDerivation_basis_repr
+#print axioms MvPolynomial.mkDerivation_mem_range_truncTotal_of_totalDegree_le_one
+#print axioms MvPolynomial.dualMap_restriction_sub_compressed
+#print axioms MvPolynomial.hasDerivAt_aeval_compressed_with_residual
+#print axioms ContinuousLinearMap.existsUnique_trajectory
+#print axioms LinearMap.existsUnique_dualTrajectory
+#print axioms MvPolynomial.carlemanLiftedApproximant
+#print axioms MvPolynomial.carlemanLiftedApproximant_spec
+#print axioms MvPolynomial.carlemanLiftedApproximant_initial
+#print axioms MvPolynomial.carlemanLiftedApproximant_hasDerivAt
+#print axioms MvPolynomial.eq_carlemanLiftedApproximant
+#print axioms MvPolynomial.carlemanLiftedApproximant_one
+#print axioms MvPolynomial.carlemanApproximant
+#print axioms MvPolynomial.carlemanApproximant_initial
+#print axioms MvPolynomial.carlemanApproximant_zero_order
+#print axioms MvPolynomial.carlemanApproximant_hasDerivAt
+#print axioms MvPolynomial.hasDerivAt_aeval_sub_carlemanLiftedApproximant
+#print axioms MvPolynomial.carlemanLiftedApproximant_error_initial
+#print axioms MvPolynomial.carlemanApproximant_error_eq
+#print axioms MvPolynomial.carlemanLiftedApproximant_eq_aeval_of_invariant_range
+#print axioms MvPolynomial.carlemanApproximant_eq_of_totalDegree_le_one
+#print axioms MvPolynomial.constantCoeff_aeval_translate
+#print axioms MvPolynomial.translated_carlemanApproximant_initial
+#print axioms Matrix.hasDerivAt_exp_smul_mulVec
+#print axioms LinearMap.dualMap_coordinates
+#print axioms LinearMap.dualTrajectory_matrix_exp
+#print axioms MvPolynomial.carlemanLiftedApproximant_matrix_exp
+#print axioms Derivation.mapsTo_ideal_mul
+#print axioms Derivation.mapsTo_ideal_pow
+#print axioms Derivation.existsUnique_quotient
+#print axioms MvPolynomial.mem_idealOfVars_iff_constantCoeff_eq_zero
+#print axioms MvPolynomial.mkDerivation_preserves_idealOfVars_pow
+#print axioms Polynomial.derivative_X_pow_not_mem_span
+#print axioms Carleman.exists_nonzero_zero_initial_coordinate_trajectory
+#print axioms SymmetricAlgebra.existsUnique_derivation
+#print axioms Carleman.ScalarQuadratic.vectorField
+#print axioms Carleman.ScalarQuadratic.solution
+#print axioms Carleman.ScalarQuadratic.carlemanLiftedApproximant_pow_eq
+#print axioms Carleman.ScalarQuadratic.carlemanApproximant_eq_sum
+#print axioms Carleman.ScalarQuadratic.solution_initial
+#print axioms Carleman.ScalarQuadratic.solution_hasDerivAt
+#print axioms Carleman.ScalarQuadratic.solution_sub_carlemanApproximant
+#print axioms Carleman.ScalarQuadratic.one_sub_mul_pos_of_mem_Icc
+#print axioms Carleman.ScalarQuadratic.solution_hasDerivWithinAt_of_mem_Icc
+#print axioms Carleman.ScalarQuadratic.abs_solution_sub_carlemanApproximant_le
+#print axioms Carleman.ScalarQuadratic.tendstoUniformlyOn_carlemanApproximant
+#print axioms Carleman.ScalarQuadratic.tendsto_carlemanApproximant
+#print axioms gronwallBound_zero_le_mul_exp
+#print axioms ContinuousLinearMap.norm_le_gronwallBound_of_forced
+#print axioms ContinuousLinearMap.norm_le_mul_exp_of_forced_zero_initial
+#print axioms LinearMap.abs_apply_le_sum_abs_repr_mul_norm_coordinates
+#print axioms MvPolynomial.hasDerivAt_aeval_sub_carlemanLiftedApproximant_coordinates
+#print axioms MvPolynomial.norm_aeval_sub_carlemanLiftedApproximant_le_gronwallBound
+#print axioms MvPolynomial.norm_aeval_sub_carlemanLiftedApproximant_le_mul_exp
+#print axioms MvPolynomial.abs_sub_carlemanApproximant_le_mul_exp
+#print axioms MvPolynomial.norm_sub_carlemanApproximant_le_mul_exp_of_basis_contains_X
+#print axioms Matrix.norm_mulVec_toContinuousLinearMap_le_of_row_sum_le
