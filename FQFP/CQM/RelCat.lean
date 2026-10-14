@@ -6,6 +6,7 @@ Authors: Bingyu Xia
 module
 
 public import FQFP.CQM.Category.DaggerCategory
+public import FQFP.CQM.Category.Semiadditive
 public import Mathlib.CategoryTheory.Category.RelCat
 public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 
@@ -23,6 +24,7 @@ It also characterizes the dagger-derived morphism classes (`IsUnitary`, `IsIsome
 ## Main definitions
 
 * The monoidal, braided, symmetric, and monoidal dagger category structures on `RelCat`.
+* The semiadditive structure on `RelCat`, with union as addition and the empty relation as zero.
 * Membership lemmas for identities, composition, tensor products, whiskering, the structural
   isomorphisms, and the dagger.
 
@@ -34,16 +36,6 @@ It also characterizes the dagger-derived morphism classes (`IsUnitary`, `IsIsome
 * `isPositive_iff_isSymm_reflOnDom`: positive morphisms are exactly symmetric relations that are
   reflexive on their domain.
 
-## Implementation notes
-
-The tensor product of morphisms is defined directly as the coordinatewise product of relations.
-Its agreement with composition of whiskerings is proved in `tensorHom_def`. The membership API
-computes on arbitrary product elements, so proofs can use projections without unpacking nested
-tuples or unfolding the category instances. The `rel_*` lemmas are registered for `simp`;
-the structural membership lemmas are explicit interfaces to the same computations.
-
-As in Mathlib's `RelCat` instances, proofs that simplify expressions involving the opaque
-`RelCat := Type u` synonym use `backward.isDefEq.respectTransparency.types false` locally.
 -/
 
 @[expose] public section
@@ -59,6 +51,14 @@ universe u
 namespace SetRel
 
 variable {A B : Type*}
+
+/-- Relational composition distributes over union in its first variable. -/
+lemma union_comp {C : Type*} (R S : SetRel A B) (T : SetRel B C) :
+    (R ∪ S).comp T = R.comp T ∪ S.comp T := by grind
+
+/-- Relational composition distributes over union in its second variable. -/
+lemma comp_union {C : Type*} (R : SetRel A B) (S T : SetRel B C) :
+    R.comp (S ∪ T) = R.comp S ∪ R.comp T := by grind
 
 /-- Membership in an inverse relation, expressed for an arbitrary product element. -/
 @[simp] theorem mem_inv_iff (R : SetRel A B) (p : B × A) :
@@ -104,6 +104,35 @@ open scoped MonoidalCategory
 namespace CategoryTheory.RelCat
 
 variable {X Y Z : RelCat.{u}}
+
+/-! ### Superposition of relations -/
+
+/-- The zero morphism in `RelCat` is the empty relation. -/
+instance homZero : Zero (X ⟶ Y) := ⟨.ofRel ∅⟩
+
+/-- Superposition in `RelCat` is union of relations. -/
+instance homAdd : Add (X ⟶ Y) := ⟨fun f g ↦ .ofRel (f.rel ∪ g.rel)⟩
+
+/-- Morphisms of `RelCat` form a commutative monoid under union. -/
+instance homAddCommMonoid : AddCommMonoid (X ⟶ Y) where
+  add_assoc f g h := Hom.ext _ _ (Set.union_assoc f.rel g.rel h.rel)
+  zero_add f := Hom.ext _ _ (Set.empty_union f.rel)
+  add_zero f := Hom.ext _ _ (Set.union_empty f.rel)
+  add_comm f g := Hom.ext _ _ (Set.union_comm f.rel g.rel)
+  nsmul := nsmulRec
+
+/-- The relation underlying a zero morphism is empty. -/
+@[simp] lemma rel_zero : (0 : X ⟶ Y).rel = ∅ := rfl
+
+/-- The relation underlying a sum is the union of the underlying relations. -/
+@[simp] lemma rel_add (f g : X ⟶ Y) : (f + g).rel = f.rel ∪ g.rel := rfl
+
+/-- Union is a superposition rule on `RelCat`, with no additive-inverse assumption. -/
+instance semiadditive : Semiadditive RelCat.{u} where
+  add_comp _ _ _ f g h := Hom.ext _ _ (SetRel.union_comp f.rel g.rel h.rel)
+  comp_add _ _ _ f g h := Hom.ext _ _ (SetRel.comp_union f.rel g.rel h.rel)
+  zero_comp _ _ _ f := Hom.ext _ _ (SetRel.empty_comp f.rel)
+  comp_zero _ _ _ f := Hom.ext _ _ (SetRel.comp_empty f.rel)
 
 /-! ### Monoidal structure and structural membership lemmas -/
 

@@ -6,6 +6,7 @@ Authors: Bingyu Xia
 module
 
 public import FQFP.CQM.Category.DaggerCategory
+public import FQFP.CQM.Category.Semiadditive
 public import Mathlib.CategoryTheory.Limits.Shapes.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
@@ -33,13 +34,10 @@ corresponding projection. The condition is stated both for an arbitrary finite f
 * `DaggerCategory.dagger_entry`: **Lemma 2.41** in intrinsic form — transposing a morphism
   of biproducts daggers every entry.
 * `DaggerCategory.dagger_biproduct_matrix`: **Lemma 2.41** in `biproduct.matrix` form.
+* `DaggerCategory.dagger_biproduct_desc`, `DaggerCategory.dagger_biproduct_lift`: dagger
+  exchanges row and column maps of a dagger biproduct.
 * `DaggerCategory.dagger_add`: **Corollary 2.42** — `(f + g)† = f† + g†`.
 
-## Implementation notes
-
-Mathlib's `biproduct.matrix` is monomorphic in its index types (`J : Type`, not `Type*`),
-so `dagger_biproduct_matrix` is stated at `Type 0`. The intrinsic `dagger_entry` form has no
-such restriction and is the one to use for general statements.
 -/
 
 @[expose] public section
@@ -60,19 +58,37 @@ class IsDaggerBiproduct {ι : Type*} (f : ι → C) [HasBiproduct f] : Prop wher
   /-- Every injection is the dagger of the corresponding projection. -/
   dagger_ι : ∀ i, (biproduct.ι f i)† = biproduct.π f i
 
+attribute [simp] IsDaggerBiproduct.dagger_ι
+
 namespace IsDaggerBiproduct
 
 variable {ι : Type*} {f : ι → C} [HasBiproduct f] [IsDaggerBiproduct f]
 
 /-- The stated condition, read the other way: every projection is the dagger of the
 corresponding injection. -/
+@[simp]
 lemma dagger_π (i : ι) : (biproduct.π f i)† = biproduct.ι f i := by
-  rw [← dagger_ι i]
-  simp
+  simpa only [involutive_dagger] using (congrArg dagger (dagger_ι (f := f) i)).symm
 
 end IsDaggerBiproduct
 
 variable {ι : Type*} {f : ι → C} [HasBiproduct f] [IsDaggerBiproduct f]
+
+/-- Dagger of a row map is the column map of daggers. -/
+@[simp]
+lemma dagger_biproduct_desc {X : C} (x : ∀ i, f i ⟶ X) :
+    (biproduct.desc x)† = biproduct.lift (fun i ↦ (x i)†) := by
+  apply biproduct.hom_ext
+  intro i
+  rw [biproduct.lift_π, ← IsDaggerBiproduct.dagger_ι, ← dagger_comp, biproduct.ι_desc]
+
+/-- Dagger of a column map is the row map of daggers. -/
+@[simp]
+lemma dagger_biproduct_lift {X : C} (x : ∀ i, X ⟶ f i) :
+    (biproduct.lift x)† = biproduct.desc (fun i ↦ (x i)†) := by
+  have h := congrArg dagger (dagger_biproduct_desc (fun i ↦ (x i)†))
+  simpa only [involutive_dagger] using h.symm
+
 variable {κ : Type*} {G : κ → C} [HasBiproduct G] [IsDaggerBiproduct G]
 
 /-- The `(i, j)` entry of a morphism of biproducts. Unlike Mathlib's
@@ -85,9 +101,7 @@ noncomputable def entry (x : ⨁ f ⟶ ⨁ G) (i : ι) (j : κ) : f i ⟶ G j :=
 biproducts daggers every entry. -/
 theorem dagger_entry (x : ⨁ f ⟶ ⨁ G) (i : ι) (j : κ) :
     entry (x†) j i = (entry x i j)† := by
-  rw [entry, entry, ← IsDaggerBiproduct.dagger_π (f := G) j,
-    ← IsDaggerBiproduct.dagger_ι (f := f) i]
-  rw [← dagger_comp, ← dagger_comp, Category.assoc]
+  simp [entry, Category.assoc]
 
 end Family
 
@@ -102,11 +116,11 @@ theorem dagger_biproduct_matrix {ι κ : Type} [Finite ι] [Finite κ]
     [IsDaggerBiproduct F] [IsDaggerBiproduct G]
     (m : ∀ i j, F i ⟶ G j) :
     (biproduct.matrix m)†
-      = biproduct.matrix (f := G) (g := F) (fun (j : κ) (i : ι) => (m i j)†) := by
+      = biproduct.matrix (f := G) (g := F) (fun (j : κ) (i : ι) ↦ (m i j)†) := by
   apply biproduct.matrixEquiv.injective
   funext j i
   change biproduct.components ((biproduct.matrix m)†) j i
-      = biproduct.components (biproduct.matrix fun (j : κ) (i : ι) => (m i j)†) j i
+      = biproduct.components (biproduct.matrix fun (j : κ) (i : ι) ↦ (m i j)†) j i
   rw [biproduct.matrix_components, biproduct.components]
   rw [← IsDaggerBiproduct.dagger_π (f := G) j, ← IsDaggerBiproduct.dagger_ι (f := F) i]
   rw [← dagger_comp, ← dagger_comp]
@@ -114,9 +128,9 @@ theorem dagger_biproduct_matrix {ι κ : Type} [Finite ι] [Finite κ]
 
 end MatrixForm
 
-section Additive
+section Binary
 
-variable {C : Type u} [Category.{v} C] [DaggerCategory C] [Preadditive C]
+variable {C : Type u} [Category.{v} C] [DaggerCategory C] [HasZeroMorphisms C]
 
 /-- Binary form of Definition 2.39, matching Mathlib's `biprod`. -/
 class IsDaggerBinaryBiproduct (X Y : C) [HasBinaryBiproduct X Y] : Prop where
@@ -125,54 +139,56 @@ class IsDaggerBinaryBiproduct (X Y : C) [HasBinaryBiproduct X Y] : Prop where
   /-- The second injection is the dagger of the second projection. -/
   dagger_inr : (biprod.inr : Y ⟶ X ⊞ Y)† = biprod.snd
 
+attribute [simp] IsDaggerBinaryBiproduct.dagger_inl IsDaggerBinaryBiproduct.dagger_inr
+
 section
 
 variable {X Y Z : C} [HasBinaryBiproduct X Y] [IsDaggerBinaryBiproduct X Y]
 
+@[simp]
 lemma IsDaggerBinaryBiproduct.dagger_fst : (biprod.fst : X ⊞ Y ⟶ X)† = biprod.inl := by
-  rw [← IsDaggerBinaryBiproduct.dagger_inl]
-  simp
+  simpa only [involutive_dagger] using
+    (congrArg dagger (IsDaggerBinaryBiproduct.dagger_inl (X := X) (Y := Y))).symm
 
+@[simp]
 lemma IsDaggerBinaryBiproduct.dagger_snd : (biprod.snd : X ⊞ Y ⟶ Y)† = biprod.inr := by
-  rw [← IsDaggerBinaryBiproduct.dagger_inr]
-  simp
+  simpa only [involutive_dagger] using
+    (congrArg dagger (IsDaggerBinaryBiproduct.dagger_inr (X := X) (Y := Y))).symm
 
 /-- Dagger of a row matrix is the column matrix of daggers. -/
+@[simp]
 lemma IsDaggerBinaryBiproduct.dagger_desc (f : X ⟶ Z) (g : Y ⟶ Z) :
     (biprod.desc f g)† = biprod.lift f† g† := by
-  refine (biprod.ext_to_iff (X := X) (Y := Y) (Z := Z)).mpr ⟨?_, ?_⟩
-  · rw [← IsDaggerBinaryBiproduct.dagger_inl, ← dagger_comp]
-    simp [IsDaggerBinaryBiproduct.dagger_inl]
-  · rw [← IsDaggerBinaryBiproduct.dagger_inr, ← dagger_comp]
-    simp [IsDaggerBinaryBiproduct.dagger_inr]
+  apply biprod.hom_ext
+  · rw [biprod.lift_fst, ← IsDaggerBinaryBiproduct.dagger_inl, ← dagger_comp, biprod.inl_desc]
+  · rw [biprod.lift_snd, ← IsDaggerBinaryBiproduct.dagger_inr, ← dagger_comp, biprod.inr_desc]
 
 /-- Dagger of a column matrix is the row matrix of daggers. -/
+@[simp]
 lemma IsDaggerBinaryBiproduct.dagger_lift (f : Z ⟶ X) (g : Z ⟶ Y) :
     (biprod.lift f g)† = biprod.desc f† g† := by
-  refine (biprod.ext_from_iff (X := X) (Y := Y) (Z := Z)).mpr ⟨?_, ?_⟩
-  · rw [← IsDaggerBinaryBiproduct.dagger_fst, ← dagger_comp]
-    simp [IsDaggerBinaryBiproduct.dagger_fst]
-  · rw [← IsDaggerBinaryBiproduct.dagger_snd, ← dagger_comp]
-    simp [IsDaggerBinaryBiproduct.dagger_snd]
+  have h := congrArg dagger (IsDaggerBinaryBiproduct.dagger_desc f† g†)
+  simpa only [involutive_dagger] using h.symm
 
 end
 
-/-- **Corollary 2.42**: in a dagger category with dagger biproducts, daggers distribute
-over addition. The book's equation (2.20), `f + g = (f g) ∘ (id_A; id_A)`, is Mathlib's
-`biprod.add_eq_lift_id_desc`.
+end Binary
 
-Note that `Preadditive C` must be the *only* route to `HasZeroMorphisms C` in scope:
-`biprod.ext_to_iff` is elaborated against `Preadditive.preadditiveHasZeroMorphisms`, so an
-additional explicit `[HasZeroMorphisms C]` builds `HasBinaryBiproduct` from the wrong
-instance and instance synthesis fails. -/
+section Additive
+
+variable {C : Type u} [Category.{v} C] [DaggerCategory C] [Semiadditive C]
+
+/-- **Corollary 2.42**: in a dagger category with dagger biproducts, daggers distribute
+over addition. The superposition rule need not have additive inverses; addition is determined
+by the given binary biproduct, as in equation (2.20). -/
 theorem dagger_add {X Y : C} [HasBinaryBiproduct X X]
     [IsDaggerBinaryBiproduct X X] (f g : X ⟶ Y) :
     (f + g)† = f† + g† := by
-  rw [biprod.add_eq_lift_id_desc f g, dagger_comp,
+  rw [Semiadditive.add_eq_lift_id_desc f g, dagger_comp,
     IsDaggerBinaryBiproduct.dagger_desc (X := X) (Y := X) (Z := Y),
     IsDaggerBinaryBiproduct.dagger_lift (X := X) (Y := X) (Z := X)]
   simp only [dagger_id]
-  exact (biprod.add_eq_lift_desc_id f† g†).symm
+  exact (Semiadditive.add_eq_lift_desc_id f† g†).symm
 
 end Additive
 
