@@ -299,7 +299,7 @@ theorem isIsometry_iff_leftTotal_leftUnique (f : X ⟶ Y) : DaggerCategory.IsIso
 
 /-- In `RelCat`, a projection is exactly a symmetric and transitive relation, i.e. a partial
 equivalence relation. -/
-theorem isProj_iff_symm_trans (f : End X) : DaggerCategory.IsProj f ↔
+theorem isProj_iff_symm_trans (f : X ⟶ X) : DaggerCategory.IsProj f ↔
     f.rel.IsSymm ∧ f.rel.IsTrans := by
   constructor
   · intro h
@@ -309,13 +309,12 @@ theorem isProj_iff_symm_trans (f : End X) : DaggerCategory.IsProj f ↔
       exact (congrArg Hom.rel h.idem : f.rel.comp f.rel = f.rel).le
   · rintro ⟨hsymm, htrans⟩
     constructor
-    · rw [isIdempotentElem_iff, End.mul_def]
-      exact Hom.ext _ _ (SetRel.comp_eq_self_of_isSymm_of_isTrans f.rel)
+    · exact Hom.ext _ _ (SetRel.comp_eq_self_of_isSymm_of_isTrans f.rel)
     · exact Hom.ext _ _ (SetRel.inv_eq_self f.rel)
 
 /-- In `RelCat`, a positive morphism is exactly a symmetric relation that is reflexive on its
 domain. -/
-theorem isPositive_iff_isSymm_reflOnDom (f : End X) : DaggerCategory.IsPositive f ↔
+theorem isPositive_iff_isSymm_reflOnDom (f : X ⟶ X) : DaggerCategory.IsPositive f ↔
     f.rel.IsSymm ∧ ∀ x : X, (∃ x' : X, (x, x') ∈ f.rel) → (x, x) ∈ f.rel := by
   constructor
   · intro h

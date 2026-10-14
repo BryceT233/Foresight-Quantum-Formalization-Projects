@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.Analysis.Calculus.SmoothSeries
+public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 
 import FQFP.BCH.RealScalar
@@ -29,11 +30,10 @@ Following `exp`, the *definition* needs no norm — `IsTopologicalRing` suffices
 The series is the one for `log (1 + t)` at `t = x - 1`, and its constant term vanishes, since
 `((-1) : 𝕂) / 0 = 0`; that is what distinguishes it from `expSeries`, where `(0 !)⁻¹ = 1` there.
 
-This mirrors `NormedSpace.log` from
-[mathlib4#43670](https://github.com/leanprover-community/mathlib4/pull/43670), with proofs written
-independently. The algebraic half here (`logSeries`, `log`, `log_one`, `log_op`, `star_log`,
-`log_mem`, `Commute.log_right` and friends) is what that PR provides, so it is expected to become
-redundant when the pin moves past it. The analytic half — the radius of convergence, summability,
+`log` is a compatibility abbreviation for Mathlib's `NormedSpace.log`, introduced in
+[mathlib4#43670](https://github.com/leanprover-community/mathlib4/pull/43670). The local series
+and algebraic lemmas retain the project's API; the `Commute.log` lemmas come from Mathlib.
+The analytic half — the radius of convergence, summability,
 `HasFPowerSeriesOnBall`, the derivative at `1`, analyticity — is what that PR leaves to later files,
 and is the reason this file exists.
 
@@ -162,22 +162,15 @@ section Log
 
 variable {𝔸 : Type*} [Ring 𝔸] [TopologicalSpace 𝔸] [IsTopologicalRing 𝔸]
 
-open scoped Classical in
 /-- `log : 𝔸 → 𝔸` is the logarithm `log x = ∑' n, (-1)^(n+1)/n • (x - 1)^n`, defined as the sum of
 the `FormalMultilinearSeries` `logSeries ℚ 𝔸` at `x - 1`, following `NormedSpace.exp`.
 
 If `𝔸` can't be equipped with a `ℚ`-algebra structure, we use the junk value `0`. -/
-noncomputable irreducible_def log (x : 𝔸) : 𝔸 :=
-  if h : Nonempty (Algebra ℚ 𝔸) then
-    letI _ := h.some
-    (logSeries ℚ 𝔸).sum (x - 1)
-  else
-    0
+noncomputable abbrev log (x : 𝔸) : 𝔸 := NormedSpace.log x
 
 /-- The junk value. Counterpart of `NormedSpace.exp_of_isEmpty_algebra_rat`. -/
-@[simp]
-theorem log_of_isEmpty_algebra_rat [IsEmpty (Algebra ℚ 𝔸)] (x : 𝔸) : log x = 0 := by
-  rw [log, dite_eq_right (not_nonempty_iff.mpr ‹IsEmpty (Algebra ℚ 𝔸)›)]
+theorem log_of_isEmpty_algebra_rat [IsEmpty (Algebra ℚ 𝔸)] (x : 𝔸) : log x = 0 :=
+  NormedSpace.log_of_isEmpty_algebra_rat x
 
 section General
 
@@ -186,9 +179,8 @@ variable {𝕂 : Type*} [Field 𝕂] [Algebra 𝕂 𝔸]
 variable (𝕂) in
 /-- **`log` as the sum of its series.** Counterpart of `NormedSpace.exp_eq_expSeries_sum`. -/
 theorem log_eq_logSeries_sum [CharZero 𝕂] :
-    log = fun x : 𝔸 => (logSeries 𝕂 𝔸).sum (x - 1) := by
-  ext x
-  rw [log, dite_eq_left ⟨RestrictScalars.algebra ℚ 𝕂 𝔸⟩, ← @logSeries_sum_eq_rat (𝕂 := 𝕂)]
+    log = fun x : 𝔸 => (logSeries 𝕂 𝔸).sum (x - 1) :=
+  NormedSpace.log_eq_logSeries_sum 𝕂
 
 variable (𝕂) in
 /-- **`log` as an explicit `tsum`.** Counterpart of `NormedSpace.exp_eq_tsum`. -/
@@ -201,35 +193,15 @@ end General
 /-- **`log 1 = 0`.** The constant term of the log series vanishes, so the sum at the center is `0`.
 Counterpart of `NormedSpace.exp_zero`; this is the center condition `HasFPowerSeriesAt.comp` needs
 when composing with `exp`. -/
-@[simp]
-theorem log_one : log (1 : 𝔸) = 0 := by
-  rw [log]
-  split_ifs with h
-  · let inst : Algebra ℚ 𝔸 := h.some
-    change (logSeries ℚ 𝔸).sum (1 - 1) = 0
-    rw [sub_self, logSeries_sum_eq]
-    rw [show (fun n : ℕ => ((-1 : ℚ) ^ (n + 1) / n) • (0 : 𝔸) ^ n) = fun _ => 0 from
-      funext fun n => by rw [← logSeries_apply_eq]; exact logSeries_apply_zero n]
-    exact tsum_zero
-  · rfl
+theorem log_one : log (1 : 𝔸) = 0 := NormedSpace.log_one
 
 /-- **`log` commutes with the opposite ring.** Counterpart of `NormedSpace.exp_op`. -/
-@[simp]
 theorem log_op [T2Space 𝔸] (x : 𝔸) :
-    log (MulOpposite.op x) = MulOpposite.op (log x) := by
-  obtain h | ⟨⟨_⟩⟩ := isEmpty_or_nonempty (Algebra ℚ 𝔸)
-  · have : IsEmpty (Algebra ℚ 𝔸ᵐᵒᵖ) := ⟨fun _ => h.elim <| (RingEquiv.opOp 𝔸).algebra ℚ⟩
-    simp
-  · rw [log_eq_tsum ℚ, log_eq_tsum ℚ]
-    simp_rw [← MulOpposite.op_one, ← MulOpposite.op_sub, ← MulOpposite.op_pow,
-      ← MulOpposite.op_smul, tsum_op]
+    log (MulOpposite.op x) = MulOpposite.op (log x) := NormedSpace.log_op x
 
 /-- **`log` commutes with `star`.** Counterpart of `NormedSpace.star_exp`. -/
 theorem star_log [T2Space 𝔸] [StarRing 𝔸] [ContinuousStar 𝔸] (x : 𝔸) :
-    star (log x) = log (star x) := by
-  obtain _ | ⟨⟨_⟩⟩ := isEmpty_or_nonempty (Algebra ℚ 𝔸)
-  · simp
-  · simp [log_eq_tsum ℚ, tsum_star]
+    star (log x) = log (star x) := NormedSpace.star_log x
 
 /-- A subring of `𝔸` that is closed topologically and under `ℚ`-scaling is closed under `log`.
 Counterpart of `NormedSpace.exp_mem`, which needs only a `SubsemiringClass`; `log` subtracts `1`,
@@ -237,40 +209,10 @@ so closure under negation is required here. -/
 theorem log_mem
     {R S : Type*} [Monoid R] [SMul ℚ R] [MulAction R 𝔸] [Algebra ℚ 𝔸] [IsScalarTower ℚ R 𝔸]
     [SetLike S 𝔸] [SubringClass S 𝔸] [SMulMemClass S R 𝔸] {s : S}
-    (h_closed : IsClosed (s : Set 𝔸)) {x : 𝔸} (h : x ∈ s) : log x ∈ s := by
-  have := SMulMemClass.ofIsScalarTower S ℚ R 𝔸
-  rw [log_eq_tsum ℚ]
-  exact tsum_mem h_closed fun i => SMulMemClass.smul_mem _ <| pow_mem (sub_mem h (one_mem s)) _
+    (h_closed : IsClosed (s : Set 𝔸)) {x : 𝔸} (h : x ∈ s) : log x ∈ s :=
+  NormedSpace.log_mem h_closed h
 
 end Log
-
-/-! ### `Commute`
-
-These mirror `Commute.exp_right` and friends. They live in the root `Commute` namespace because
-that is where dot notation for `h.log_right` resolves, matching `NormedSpace`'s treatment of `exp`
-and upstream's treatment of `log` in mathlib4#43670. -/
-
-section Commute
-
-variable {𝔸 : Type*} [Ring 𝔸] [TopologicalSpace 𝔸] [IsTopologicalRing 𝔸]
-
-theorem _root_.Commute.log_right [T2Space 𝔸] {x y : 𝔸} (h : Commute x y) :
-    Commute x (log y) := by
-  obtain _ | ⟨⟨_⟩⟩ := isEmpty_or_nonempty (Algebra ℚ 𝔸)
-  · simp
-  · rw [log_eq_tsum ℚ]
-    exact Commute.tsum_right x fun n =>
-      ((h.sub_right (Commute.one_right x)).pow_right n).smul_right _
-
-theorem _root_.Commute.log_left [T2Space 𝔸] {x y : 𝔸} (h : Commute x y) :
-    Commute (log x) y :=
-  h.symm.log_right.symm
-
-theorem _root_.Commute.log [T2Space 𝔸] {x y : 𝔸} (h : Commute x y) :
-    Commute (log x) (log y) :=
-  h.log_left.log_right
-
-end Commute
 
 /-! ### The radius of convergence
 

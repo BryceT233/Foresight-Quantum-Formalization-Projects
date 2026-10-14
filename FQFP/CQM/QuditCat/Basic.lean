@@ -290,29 +290,29 @@ lemma isUnitary_isoMk_coe_LIEquiv {H₁ H₂ : QuditCat} (e : H₁.state ≃ₗ�
   exact e.adjoint_toLinearMap_eq_symm
 
 /-- A projection `f` has a self-adjoint underlying linear map. -/
-lemma hom_adjoint_of_isProj {H : QuditCat} (f : End H) [IsProj f] :
+lemma hom_adjoint_of_isProj {H : QuditCat} (f : H ⟶ H) [IsProj f] :
     LinearMap.adjoint f.hom = f.hom :=
-  congrArg (fun g : End H ↦ g.hom) (IsProj.selfAdjoint f)
+  congrArg (fun g : H ⟶ H ↦ g.hom) (IsProj.selfAdjoint f)
 
 /-- A projection `f` has an idempotent underlying linear map. -/
-lemma hom_idem_of_isProj {H : QuditCat} (f : End H) [IsProj f] :
+lemma hom_idem_of_isProj {H : QuditCat} (f : H ⟶ H) [IsProj f] :
     f.hom ∘ₗ f.hom = f.hom :=
-  congrArg (fun g : End H ↦ g.hom) (IsProj.comp_self f)
+  congrArg (fun g : H ⟶ H ↦ g.hom) (IsProj.comp_self f)
 
 /-- The underlying linear map of a positive morphism is positive, in the sense of
 `LinearMap.IsPositive`. -/
-lemma hom_isPositive_of_isPositive {H : QuditCat} (f : End H) [IsPositive f] :
+lemma hom_isPositive_of_isPositive {H : QuditCat} (f : H ⟶ H) [IsPositive f] :
     LinearMap.IsPositive f.hom := by
   rcases IsPositive.out f with ⟨H', g, rfl⟩
   simpa using LinearMap.isPositive_adjoint_comp_self g.hom
 
 /-- A positive morphism `f` has a self-adjoint underlying linear map. -/
-lemma hom_adjoint_of_isPositive {H : QuditCat} (f : End H) [IsPositive f] :
+lemma hom_adjoint_of_isPositive {H : QuditCat} (f : H ⟶ H) [IsPositive f] :
     LinearMap.adjoint f.hom = f.hom :=
-  congrArg (fun g : End H ↦ g.hom) (selfAdjoint_of_isPositive f)
+  congrArg (fun g : H ⟶ H ↦ g.hom) (selfAdjoint_of_isPositive f)
 
 /-- A positive morphism `f` is positive semidefinite. -/
-lemma inner_self_nonneg_of_isPositive {H : QuditCat} (f : End H) [IsPositive f] (x : H.state) :
+lemma inner_self_nonneg_of_isPositive {H : QuditCat} (f : H ⟶ H) [IsPositive f] (x : H.state) :
     0 ≤ RCLike.re (inner ℂ (f.hom x) x) :=
   (hom_isPositive_of_isPositive f).re_inner_nonneg_left x
 
@@ -383,13 +383,13 @@ lemma ithKet_eq_ket_ZBasis {n : ℕ} (i : Fin n) : ithKet i = |ZBasis n i⟩ 1 :
 /-- Converts an `n × n` complex matrix into an endomorphism on the standard `n`-dimensional
 Hilbert space. The transformation is defined with respect to the computational basis. -/
 abbrev matrixToEnd {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) : End (std n) :=
-  ofHom (M.toLin (ZBasis n).toBasis (ZBasis n).toBasis)
+  .of (ofHom (M.toLin (ZBasis n).toBasis (ZBasis n).toBasis))
 
 lemma hom_matrixToEnd {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) :
-    (matrixToEnd M).hom = M.toLin (ZBasis n).toBasis (ZBasis n).toBasis := rfl
+    (matrixToEnd M).asHom.hom = M.toLin (ZBasis n).toBasis (ZBasis n).toBasis := rfl
 
 theorem isUnitary_matrixToEnd_iff {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) :
-    DaggerCategory.IsUnitary (matrixToEnd M) ↔ M * star M = 1 := by
+    DaggerCategory.IsUnitary (matrixToEnd M).asHom ↔ M * star M = 1 := by
   constructor
   · intro hU
     apply (Matrix.toLin (ZBasis n).toBasis (ZBasis n).toBasis).injective
@@ -415,11 +415,12 @@ theorem isUnitary_matrixToEnd_iff {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) :
 open ComplexConjugate Complex
 
 theorem isUnitary_matrixToEnd_of_iff_fin_two {a b c d : ℂ} :
-    DaggerCategory.IsUnitary (matrixToEnd !![a, b; c, d]) ↔
+    DaggerCategory.IsUnitary (matrixToEnd !![a, b; c, d]).asHom ↔
       ‖a‖ ^ 2 + ‖b‖ ^ 2 = 1 ∧ ‖c‖ ^ 2 + ‖d‖ ^ 2 = 1 ∧ conj a * c + conj b * d = 0 := by
   trans ((‖a‖ : ℂ) ^ 2 + ‖b‖ ^ 2 = 1 ∧ a * conj c + b * conj d = 0) ∧
     c * conj a + d * conj b = 0 ∧ (‖c‖ : ℂ) ^ 2 + ‖d‖ ^ 2 = 1
-  · simp [isUnitary_matrixToEnd_iff, ← Matrix.ext_iff, Fin.forall_fin_succ,
+  · rw [isUnitary_matrixToEnd_iff]
+    simp [← Matrix.ext_iff, Fin.forall_fin_succ,
       Matrix.vecMul_apply_eq_sum, Complex.mul_conj']
   norm_cast
   refine ⟨fun h ↦ ⟨h.1.1, h.2.2, by rw [← h.2.1]; ring⟩, fun h ↦ ⟨⟨h.1, ?_⟩, ?_, h.2.1⟩⟩
@@ -427,7 +428,7 @@ theorem isUnitary_matrixToEnd_of_iff_fin_two {a b c d : ℂ} :
   · rw [← h.2.2]; ring
 
 theorem isUnitary_matrixToEnd_iff_fin_two (M : Matrix (Fin 2) (Fin 2) ℂ) :
-    DaggerCategory.IsUnitary (matrixToEnd M) ↔
+    DaggerCategory.IsUnitary (matrixToEnd M).asHom ↔
       ‖M 0 0‖ ^ 2 + ‖M 0 1‖ ^ 2 = 1 ∧ ‖M 1 0‖ ^ 2 + ‖M 1 1‖ ^ 2 = 1 ∧
         conj (M 0 0) * (M 1 0) + conj (M 0 1) * (M 1 1) = 0 := by
   rw [← Matrix.etaExpand_eq M]
@@ -448,16 +449,19 @@ def pauliY : End Qubit := matrixToEnd !![0, -I; I, 0]
 def pauliZ : End Qubit := matrixToEnd !![1, 0; 0, -1]
 
 /-- The Pauli-X gate is unitary. -/
-instance isUnitary_pauliX : IsUnitary pauliX := by
-  simp [pauliX, isUnitary_matrixToEnd_iff_fin_two]
+instance isUnitary_pauliX : IsUnitary pauliX.asHom := by
+  rw [pauliX, isUnitary_matrixToEnd_iff_fin_two]
+  simp
 
 /-- The Pauli-Y gate is unitary. -/
-instance isUnitary_pauliY : IsUnitary pauliY := by
-  simp [pauliY, isUnitary_matrixToEnd_iff_fin_two]
+instance isUnitary_pauliY : IsUnitary pauliY.asHom := by
+  rw [pauliY, isUnitary_matrixToEnd_iff_fin_two]
+  simp
 
 /-- The Pauli-Z gate is unitary. -/
-instance isUnitary_pauliZ : IsUnitary pauliZ := by
-  simp [pauliZ, isUnitary_matrixToEnd_iff_fin_two]
+instance isUnitary_pauliZ : IsUnitary pauliZ.asHom := by
+  rw [pauliZ, isUnitary_matrixToEnd_iff_fin_two]
+  simp
 
 /-- Phase shift gate as an endomorphism of `Qubit`. -/
 def phaseShift (ϕ : ℝ) : End Qubit := matrixToEnd !![1, 0; 0, exp (ϕ * I)]
@@ -465,7 +469,7 @@ def phaseShift (ϕ : ℝ) : End Qubit := matrixToEnd !![1, 0; 0, exp (ϕ * I)]
 /-- Hadamard gate as an endomorphism of `Qubit`. -/
 def H : End Qubit := matrixToEnd (((√2)⁻¹ : ℂ) • !![1, 1; 1, -1])
 
-instance isUnitary_H : IsUnitary H := by
+instance isUnitary_H : IsUnitary H.asHom := by
   rw [H, isUnitary_matrixToEnd_iff_fin_two]
   suffices (2⁻¹ : ℝ) + 2⁻¹ = 1 by simpa
   linarith

@@ -99,18 +99,18 @@ def daggerEquiv (c c' : C) : (c ⟶ c') ≃ (c' ⟶ c) where
   right_inv _ := by simp
 
 /-- An idempotent self-adjoint endomorphism, i.e. a projection. -/
-class IsProj [DaggerCategory C] {c : C} (f : End c) where
-  idem (f) : IsIdempotentElem f
+class IsProj [DaggerCategory C] {c : C} (f : c ⟶ c) where
+  idem (f) : f ≫ f = f
   selfAdjoint (f) : f† = f
 
 attribute [simp] IsProj.selfAdjoint
 
 @[simp]
-lemma IsProj.comp_self {c : C} (f : End c) [IsProj f] : f ≫ f = f := IsProj.idem f
+lemma IsProj.comp_self {c : C} (f : c ⟶ c) [IsProj f] : f ≫ f = f := IsProj.idem f
 
-theorem IsProj.id (c : C) : IsProj (𝟙 c) := ⟨by simp [isIdempotentElem_iff], by simp⟩
+theorem IsProj.id (c : C) : IsProj (𝟙 c) := ⟨by simp, by simp⟩
 
-instance IsProj.dagger {c : C} (f : End c) [IsProj f] : IsProj f† := by simpa
+instance IsProj.dagger {c : C} (f : c ⟶ c) [IsProj f] : IsProj f† := by simpa
 
 /-- A morphism satisfying `f ≫ f† = 𝟙`, i.e. an isometry. -/
 class IsIsometry [DaggerCategory C] {c₁ c₂ : C} (f : c₁ ⟶ c₂) where
@@ -134,7 +134,7 @@ instance IsIsometry.isSplitMono {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsIsometry 
 instance IsIsometry.isProj_dagger_comp {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsIsometry f] :
     IsProj (f† ≫ f) where
   idem := by
-    simp only [isIdempotentElem_iff, End.mul_def, Category.assoc,
+    simp only [Category.assoc,
       IsIsometry.comp_dagger_eq_id_assoc]
   selfAdjoint := by simp
 
@@ -165,7 +165,7 @@ instance IsUnitary.isIso {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsUnitary f] : IsI
   ⟨f†, by simp, by simp⟩
 
 lemma IsUnitary.inv_self_eq_dagger {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsUnitary f] : inv f = f† := by
-  rw [← Category.comp_id (inv f), ← IsIsometry.comp_dagger_eq_id f, Category.assoc']
+  rw [← Category.comp_id (inv f), ← IsIsometry.comp_dagger_eq_id f, ← Category.assoc]
   simp
 
 lemma IsUnitary.inv_dagger_eq_self {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsUnitary f] : inv f† = f := by
@@ -178,7 +178,7 @@ theorem isUnitary_of_dagger_eq_inv {c₁ c₂ : C} (e : c₁ ≅ c₂) (hdag : e
   dagger_comp_eq_id := hdag ▸ e.inv_hom_id
 
 /-- An endomorphism of the form `g ≫ g†` for some morphism `g`, i.e. a positive morphism. -/
-class IsPositive {c : C} (f : End c) where
+class IsPositive {c : C} (f : c ⟶ c) where
   out (f) : ∃ (c' : C) (g : c ⟶ c'), f = g ≫ g†
 
 instance IsPositive.id (c : C) : IsPositive (𝟙 c) := ⟨c, 𝟙 c, by simp⟩
@@ -189,12 +189,12 @@ instance IsPositive.comp_dagger {c₁ c₂ : C} (f : c₁ ⟶ c₂) : IsPositive
 instance IsPositive.dagger_comp {c₁ c₂ : C} (f : c₁ ⟶ c₂) : IsPositive (f† ≫ f) :=
   ⟨c₁, f†, by simp⟩
 
-instance IsPositive.dagger {c : C} (f : End c) [IsPositive f] : IsPositive f† := by
+instance IsPositive.dagger {c : C} (f : c ⟶ c) [IsPositive f] : IsPositive f† := by
   rcases IsPositive.out f with ⟨c', g, rfl⟩
   simpa
 
 /-- A positive endomorphism is self-adjoint. -/
-lemma selfAdjoint_of_isPositive {c : C} (f : End c) [IsPositive f] : f† = f := by
+lemma selfAdjoint_of_isPositive {c : C} (f : c ⟶ c) [IsPositive f] : f† = f := by
   rcases IsPositive.out f with ⟨c', g, rfl⟩
   simp
 

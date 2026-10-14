@@ -91,67 +91,46 @@ open CategoryTheory.DaggerCategory
 
 universe u v
 
-section Scalars
-
 variable {C : Type u} [Category.{v} C] [MonoidalCategory.{v} C]
+
+section Scalars
 
 /-- The scalars of a monoidal category `C`, i.e. the endomorphisms of its monoidal unit
 `𝟙_ C`. They form a commutative monoid (see `Scalar.commMonoid`) and act on every hom-set by
 scalar multiplication (see the `SMul` instance below). -/
 abbrev Scalar (C : Type u) [Category.{v} C] [MonoidalCategory.{v} C] : Type _ := End (𝟙_ C)
 
-@[reassoc]
-private lemma whiskerRight_leftUnitor (s : Scalar C) :
-    (s ▷ 𝟙_ C) ≫ (λ_ (𝟙_ C)).hom = (λ_ (𝟙_ C)).hom ≫ s :=
-  unitors_equal (C := C) ▸ rightUnitor_naturality s
-
-private lemma scalar_tensor_eq_comp (s t : Scalar C) :
-    (λ_ (𝟙_ C)).inv ≫ (s ⊗ₘ t) ≫ (λ_ (𝟙_ C)).hom = s ≫ t := by
-  rw [tensorHom_def, Category.assoc, leftUnitor_naturality, whiskerRight_leftUnitor_assoc]
-  simp
-
-private lemma scalar_tensor_eq_comp_rev (s t : Scalar C) :
-    (λ_ (𝟙_ C)).inv ≫ (s ⊗ₘ t) ≫ (λ_ (𝟙_ C)).hom = t ≫ s := by
-  have : s ⊗ₘ t = (𝟙_ C ◁ t) ≫ (s ▷ 𝟙_ C) := by
-    rw [← id_tensorHom, ← tensorHom_id, tensorHom_comp_tensorHom, Category.id_comp,
-      Category.comp_id]
-  rw [this, Category.assoc, whiskerRight_leftUnitor, leftUnitor_naturality_assoc]
-  simp
-
-/-- Endomorphisms of the monoidal unit commute under composition. -/
-@[reassoc]
-lemma comp_comm {s t : End (𝟙_ C)} : s ≫ t = t ≫ s := by
-  rw [← scalar_tensor_eq_comp, scalar_tensor_eq_comp_rev]
-
 /-- Scalar endomorphisms of the monoidal unit commute. -/
-instance Scalar.commMonoid : CommMonoid (Scalar C) where
-  mul_comm _ _ := by rw [End.mul_def, End.mul_def, comp_comm]
+instance : CommMonoid (Scalar C) where
+  mul_comm s t := by
+    ext
+    simpa [unitors_equal, unitors_inv_equal] using
+      congrArg (fun f => (ρ_ (𝟙_ C)).inv ≫ f ≫ (ρ_ (𝟙_ C)).hom)
+        (whisker_exchange s.asHom t.asHom)
 
 instance {c₁ c₂ : C} : SMul (Scalar C) (c₁ ⟶ c₂) where
-  smul s f := (λ_ c₁).inv ≫ (s ⊗ₘ f) ≫ (λ_ c₂).hom
+  smul s f := (λ_ c₁).inv ≫ (s.asHom ⊗ₘ f) ≫ (λ_ c₂).hom
 
 /-- The scalar action of `s : Scalar C` on a morphism `f : c₁ ⟶ c₂` is given by tensoring
 with `s` and transporting across the left unitors. -/
 lemma smul_def {c₁ c₂ : C} {s : Scalar C} {f : c₁ ⟶ c₂} :
-    s • f = (λ_ c₁).inv ≫ (s ⊗ₘ f) ≫ (λ_ c₂).hom := rfl
+    s • f = (λ_ c₁).inv ≫ (s.asHom ⊗ₘ f) ≫ (λ_ c₂).hom := rfl
 
 /-- Scalar multiplication is associative: acting on a morphism by `s` then `t` agrees with
 acting by the scalar product `t * s`. -/
 lemma smul_assoc {c₁ c₂ : C} {s t : Scalar C} {f : c₁ ⟶ c₂} : s • t • f = (t * s) • f := by
-  rw [smul_def, smul_def, smul_def, End.mul_def, ← scalar_tensor_eq_comp]
-  simp [tensorHom_def]
+  simp [smul_def, tensorHom_def, End.mul_asHom]
 
 /-- Scalar multiplication satisfies the interchange law with composition:
 `(s • f) ≫ (t • g) = (s * t) • (f ≫ g)`. -/
 lemma smul_comp_smul {c₁ c₂ c₃ : C} {s t : Scalar C} {f : c₁ ⟶ c₂} {g : c₂ ⟶ c₃} :
     (s • f) ≫ (t • g) = (s * t) • (f ≫ g) := by
-  simp [comp_comm, smul_def]
+  rw [mul_comm s t]
+  simp [smul_def, End.mul_asHom]
 
 end Scalars
 
 section States
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory.{v} C]
 
 /-- A state of an object `c` is a morphism from the monoidal unit `𝟙_ C` into `c`. -/
 abbrev State (c : C) : Type _ := 𝟙_ C ⟶ c
@@ -174,9 +153,9 @@ lemma JointState.not_entangled_iff {c₁ c₂ : C} (f : JointState c₁ c₂) :
 
 end States
 
-section Effects
+variable [DaggerCategory C] {ι : Type} [Fintype ι] {c : C}
 
-variable {C : Type u} [Category.{v} C] [MonoidalCategory.{v} C]
+section Effects
 
 /-- An effect on an object `c` is a morphism from `c` into the monoidal unit `𝟙_ C`. -/
 abbrev Effect (c : C) : Type _ := c ⟶ 𝟙_ C
@@ -186,8 +165,6 @@ effect, i.e. if a morphism `f : c' ⟶ c` vanishes after postcomposition with ev
 `f = 0`. -/
 def Effect.Complete [HasZeroMorphisms C] {ι : Type*} {c : C} (x : ι → Effect c) : Prop :=
   ∀ {c' : C} (f : c' ⟶ c), (∀ (i : ι), f ≫ x i = 0) → f = 0
-
-variable [DaggerCategory C]
 
 /-- A family of effects is disjoint if each dagger effect is an isometry and distinct effects
 are orthogonal: `(x j)† ≫ x i = 0` whenever `i ≠ j`. -/
@@ -210,10 +187,7 @@ end Effects
 
 section EffectsBiproduct
 
-variable {C : Type u} [Category.{v} C] [DaggerCategory C] [MonoidalCategory.{v} C]
-  [HasZeroMorphisms C]
-variable {ι : Type} [Fintype ι] {c : C}
-variable (x : ι → Effect c) [HasBiproduct (fun _ : ι ↦ 𝟙_ C)]
+variable [HasZeroMorphisms C] (x : ι → Effect c) [HasBiproduct (fun _ : ι ↦ 𝟙_ C)]
   [IsDaggerBiproduct (fun _ : ι ↦ 𝟙_ C)]
 
 omit [Fintype ι] in
@@ -292,10 +266,7 @@ end EffectsBiproduct
 
 section EffectsUnitary
 
-variable {C : Type u} [Category.{v} C] [DaggerCategory C] [MonoidalCategory.{v} C]
-  [Preadditive C]
-variable {ι : Type} [Fintype ι] {c : C}
-variable (x : ι → Effect c) [HasBiproduct (fun _ : ι ↦ 𝟙_ C)]
+variable [Preadditive C] (x : ι → Effect c) [HasBiproduct (fun _ : ι ↦ 𝟙_ C)]
   [IsDaggerBiproduct (fun _ : ι ↦ 𝟙_ C)]
 
 omit [Fintype ι] in
@@ -327,29 +298,28 @@ end EffectsUnitary
 
 section Probability
 
-variable {C : Type u} [Category.{v} C] [MonoidalCategory.{v} C]
-variable [DaggerCategory C]
-
 /-- The probability associated to a state and an effect of an object in a monoidal dagger category,
 given by the scalar `a ≫ x ≫ x† ≫ a†`. -/
-abbrev probability {c : C} (a : State c) (x : Effect c) : Scalar C := a ≫ x ≫ x† ≫ a†
+abbrev probability {c : C} (a : State c) (x : Effect c) : Scalar C :=
+  .of (a ≫ x ≫ x† ≫ a†)
 
 end Probability
 
 section ProbabilityAdditive
 
-variable {C : Type u} [Category.{v} C] [DaggerCategory C] [MonoidalCategory.{v} C]
-  [Semiadditive C]
+variable [Semiadditive C]
 
 /-- The **Born rule** for a finite family of effects resolving the identity and an isometric
 state. This only needs commutative-monoid superposition, not additive inverses or biproducts. -/
 theorem Effect.sum_probability_eq_one_of_sum_comp_dagger_eq_id
     {ι : Type*} [Fintype ι] {c : C} (x : ι → Effect c)
     (hx : ∑ i, x i ≫ (x i)† = 𝟙 c) (a : State c) (ha : IsIsometry a) :
-    ∑ i, probability a (x i) = 𝟙 (𝟙_ C) := by
-  calc ∑ i, probability a (x i)
+    ∑ i, probability a (x i) = 1 := by
+  apply End.ext
+  rw [Semiadditive.end_sum_asHom]
+  calc ∑ i, (probability a (x i)).asHom
       = a ≫ (∑ i, x i ≫ (x i)†) ≫ a† := by
-        simp only [probability, Semiadditive.comp_sum, Semiadditive.sum_comp, Category.assoc]
+        simp only [Semiadditive.comp_sum, Semiadditive.sum_comp, Category.assoc]
     _ = a ≫ a† := by rw [hx, Category.id_comp]
     _ = 𝟙 (𝟙_ C) := ha.comp_dagger_eq_id
 
@@ -357,10 +327,7 @@ end ProbabilityAdditive
 
 section BornRule
 
-variable {C : Type u} [Category.{v} C] [DaggerCategory C] [MonoidalCategory.{v} C]
-  [Preadditive C]
-variable {ι : Type} [Fintype ι] {c : C}
-variable (x : ι → Effect c) [HasBiproduct (fun _ : ι ↦ 𝟙_ C)]
+variable [Preadditive C] (x : ι → Effect c) [HasBiproduct (fun _ : ι ↦ 𝟙_ C)]
   [IsDaggerBiproduct (fun _ : ι ↦ 𝟙_ C)]
 
 /-- `x ≫ x†` is the sum of the rank-one pieces `xᵢ ≫ xᵢ†` — the diagonal part of the
@@ -383,8 +350,7 @@ sum to `1`.
 The printed statement omits both `Disjoint` and the invertible superposition assumption.
 The latter is used by Lemma 2.53; see the file header for the scope of this correction. -/
 theorem Effect.sum_probability_eq_one (hx : Effect.Complete x) (hxd : Effect.Disjoint x)
-    (a : State c) (ha : IsIsometry a) :
-    (∑ i, probability a (x i)) = 𝟙 (𝟙_ C) := by
+    (a : State c) (ha : IsIsometry a) : (∑ i, probability a (x i)) = 1 := by
   have hunit : IsUnitary (biproduct.lift x) :=
     Effect.isUnitary_lift_of_complete_disjoint x hx hxd
   exact Effect.sum_probability_eq_one_of_sum_comp_dagger_eq_id x (by

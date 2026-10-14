@@ -90,14 +90,31 @@ instance (priority := 90) hasZeroMorphisms : HasZeroMorphisms C where
 attribute [reassoc, simp] add_comp
 attribute [simp] comp_add
 
+/-- Endomorphisms inherit the commutative-monoid superposition rule of their hom-set. -/
+@[simps!]
+instance (priority := 100) endAddCommMonoid {X : C} : AddCommMonoid (End X) :=
+  End.homEquiv.addCommMonoid
+
+/-- The additive bijection between endomorphisms and their underlying morphisms. -/
+@[simps!]
+def endAddEquiv {X : C} : End X ≃+ (X ⟶ X) where
+  toEquiv := End.homEquiv
+  map_add' _ _ := rfl
+
+/-- Taking the underlying morphism preserves finite sums of endomorphisms. -/
+@[simp]
+lemma end_sum_asHom {X : C} {ι : Type*} (s : Finset ι) (f : ι → End X) :
+    (∑ i ∈ s, f i).asHom = ∑ i ∈ s, (f i).asHom :=
+  map_sum endAddEquiv _ _
+
 /-- Endomorphisms in a semiadditive category form a semiring. Its addition is the given
 superposition rule, and its multiplication is reversed categorical composition. -/
 instance (priority := 100) endSemiring {X : C} : Semiring (End X) :=
-  { End.monoid, (homMonoid X X : AddCommMonoid (End X)) with
-    zero_mul := fun _ ↦ Limits.comp_zero
-    mul_zero := fun _ ↦ Limits.zero_comp
-    left_distrib := fun f g h ↦ Semiadditive.add_comp X X X g h f
-    right_distrib := fun f g h ↦ Semiadditive.comp_add X X X h f g }
+  { End.monoid, (inferInstance : AddCommMonoid (End X)) with
+    zero_mul := fun f ↦ End.ext (Limits.comp_zero (f := f.asHom))
+    mul_zero := fun f ↦ End.ext (Limits.zero_comp (f := f.asHom))
+    left_distrib := fun f g h ↦ End.ext (Semiadditive.add_comp X X X g.asHom h.asHom f.asHom)
+    right_distrib := fun f g h ↦ End.ext (Semiadditive.comp_add X X X h.asHom f.asHom g.asHom) }
 
 /-- Precomposition with a morphism as a homomorphism of commutative monoids. -/
 def leftComp {X Y : C} (Z : C) (f : X ⟶ Y) : (Y ⟶ Z) →+ (X ⟶ Z) where
