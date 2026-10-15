@@ -1,7 +1,5 @@
 # Foresight Quantum Formalization Projects (FQFP)
 
-**Assisted by Deepseek Harness**
-
 This repository collects Lean 4 formalization projects developed at
 **Foresight Quantum** using Mathlib. The projects live under `FQFP/`;
 `FQFP.lean` is the umbrella import.
@@ -19,9 +17,8 @@ This repository collects Lean 4 formalization projects developed at
   the finite truncations requires further analytic estimates.
 - **`FQFP/CQM`** — Categorical quantum mechanics: dagger and monoidal dagger
   categories, dagger kernels and biproducts, states, effects and measurement,
-  with concrete `QuditCat`, `HilbCat`, and `RelCat` models. The recent changes
-  simplify the projection, isometry, unitary, and positivity APIs in
-  `Category/DaggerCategory.lean`.
+  with concrete `QuditCat`, `HilbCat`, and `RelCat` models. Its dagger-category
+  API includes projections, isometries, unitaries, and positive morphisms.
 - **`FQFP/TrotterError`** — Trotter/Suzuki product-formula error bounds based on
   *A Theory of Trotter Error* (Childs–Su–Tran–Wiebe–Zhu). The main results are
   in `FQFP.TrotterError.MainTheorem`. See the
@@ -31,19 +28,5 @@ To use one project without importing the whole library, import its relevant
 module directly. New projects can be added under `FQFP/` and imported from
 `FQFP.lean`.
 
-## Build & Lint
-
-Always run these steps in order before committing:
-
-```bash
-lake exe cache get        # fetch Mathlib cached oleans (skip if already cached)
-lake build FQFP           # build only this project, not all of Mathlib
-lake exe runLinter        # Mathlib declaration linter
-lake exe lint-style       # Mathlib style checker
-```
-
-Never run bare `lake build` — it rebuilds Mathlib from source (~30+ min).
-After `lake update`, re-run `lake exe cache get`.
-
-See `AGENTS.md` for the full development conventions (tactic selection,
-heartbeat diagnostics, naming, lint cleanup).
+Build the umbrella library with `lake build FQFP`. See [AGENTS.md](AGENTS.md)
+for the full development and lint workflow.
