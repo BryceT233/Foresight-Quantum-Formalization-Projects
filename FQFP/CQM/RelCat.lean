@@ -234,7 +234,7 @@ lemma mem_dagger {X Y : RelCat.{u}} (f : X ⟶ Y) (x : X) (y : Y) :
 /-- The graph of a bijection is a unitary morphism in `RelCat`. -/
 theorem isUnitary_graphFunctor_mapIso {X Y : Type u} (e : X ≅ Y) :
     DaggerCategory.IsUnitary (graphFunctor.mapIso e).hom :=
-  DaggerCategory.isUnitary_of_dagger_eq_inv (graphFunctor.mapIso e) <| by
+  (DaggerCategory.isUnitary_hom_iff_dagger_hom_eq_inv (graphFunctor.mapIso e)).mpr <| by
     apply Hom.ext
     exact (Equiv.graph_inv e.toEquiv).symm
 

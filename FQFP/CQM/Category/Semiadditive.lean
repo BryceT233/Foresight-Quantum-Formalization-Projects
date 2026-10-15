@@ -105,7 +105,7 @@ def endAddEquiv {X : C} : End X ≃+ (X ⟶ X) where
 @[simp]
 lemma end_sum_asHom {X : C} {ι : Type*} (s : Finset ι) (f : ι → End X) :
     (∑ i ∈ s, f i).asHom = ∑ i ∈ s, (f i).asHom :=
-  map_sum endAddEquiv _ _
+  map_sum endAddEquiv ..
 
 /-- Endomorphisms in a semiadditive category form a semiring. Its addition is the given
 superposition rule, and its multiplication is reversed categorical composition. -/
@@ -120,13 +120,13 @@ instance (priority := 100) endSemiring {X : C} : Semiring (End X) :=
 def leftComp {X Y : C} (Z : C) (f : X ⟶ Y) : (Y ⟶ Z) →+ (X ⟶ Z) where
   toFun g := f ≫ g
   map_zero' := Limits.comp_zero
-  map_add' _ _ := Semiadditive.comp_add _ _ _ _ _ _
+  map_add' _ _ := Semiadditive.comp_add ..
 
 /-- Postcomposition with a morphism as a homomorphism of commutative monoids. -/
 def rightComp (X : C) {Y Z : C} (g : Y ⟶ Z) : (X ⟶ Y) →+ (X ⟶ Z) where
   toFun f := f ≫ g
   map_zero' := Limits.zero_comp
-  map_add' _ _ := Semiadditive.add_comp _ _ _ _ _ _
+  map_add' _ _ := Semiadditive.add_comp ..
 
 /-- Composition distributes over a finite sum in its second variable. -/
 @[reassoc]

@@ -285,7 +285,7 @@ lemma LIEquivOfIsUnitary_toLinearIsometry {H₁ H₂ : QuditCat} (f : H₁ ⟶ H
 
 lemma isUnitary_isoMk_coe_LIEquiv {H₁ H₂ : QuditCat} (e : H₁.state ≃ₗᵢ[ℂ] H₂.state) :
     IsUnitary (c₁ := H₁) (c₂ := H₂) (isoMk e.toLinearEquiv).hom := by
-  apply isUnitary_of_dagger_eq_inv
+  rw [isUnitary_hom_iff_dagger_hom_eq_inv]
   apply hom_ext
   exact e.adjoint_toLinearMap_eq_symm
 
@@ -309,7 +309,7 @@ lemma hom_isPositive_of_isPositive {H : QuditCat} (f : H ⟶ H) [IsPositive f] :
 /-- A positive morphism `f` has a self-adjoint underlying linear map. -/
 lemma hom_adjoint_of_isPositive {H : QuditCat} (f : H ⟶ H) [IsPositive f] :
     LinearMap.adjoint f.hom = f.hom :=
-  congrArg (fun g : H ⟶ H ↦ g.hom) (selfAdjoint_of_isPositive f)
+  congrArg (fun g : H ⟶ H ↦ g.hom) ‹IsPositive f›.selfAdjoint
 
 /-- A positive morphism `f` is positive semidefinite. -/
 lemma inner_self_nonneg_of_isPositive {H : QuditCat} (f : H ⟶ H) [IsPositive f] (x : H.state) :

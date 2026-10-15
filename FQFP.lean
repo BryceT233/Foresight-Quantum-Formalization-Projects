@@ -1,8 +1,5 @@
 module
 
-import FQFP.Carleman.AxiomAudit
-import FQFP.Carleman.Examples
-
 public import FQFP.BCH.BCHElement
 public import FQFP.BCH.BCHCommutator
 public import FQFP.BCH.BCHSymmetric

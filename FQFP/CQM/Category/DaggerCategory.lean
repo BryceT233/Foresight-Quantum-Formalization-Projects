@@ -56,8 +56,8 @@ structure, and dagger kernels, represented by limiting kernel forks with isometr
   when that kernel's inclusion is also an isometry.
 * `DaggerCategory.eq_zero_of_comp_dagger_eq_zero`: **Lemma 2.49**, nondegeneracy, requiring only
   a dagger kernel of the dagger of the given morphism.
-* `dagger_inv_eq_hom_of_isUnitary`, `dagger_hom_eq_inv_of_isUnitary`: the dagger of either
-  direction of a unitary isomorphism is the other direction.
+* `DaggerCategory.IsUnitary.dagger_inv_eq_hom`, `DaggerCategory.IsUnitary.dagger_hom_eq_inv`:
+  the dagger of either direction of a unitary isomorphism is the other direction.
 * `dagger_whiskerLeft`, `dagger_whiskerRight`: the dagger commutes with whiskering.
 
 -/
@@ -99,7 +99,8 @@ def daggerEquiv (c c' : C) : (c ⟶ c') ≃ (c' ⟶ c) where
   right_inv _ := by simp
 
 /-- An idempotent self-adjoint endomorphism, i.e. a projection. -/
-class IsProj [DaggerCategory C] {c : C} (f : c ⟶ c) where
+@[mk_iff]
+class IsProj {c : C} (f : c ⟶ c) where
   idem (f) : f ≫ f = f
   selfAdjoint (f) : f† = f
 
@@ -113,7 +114,8 @@ theorem IsProj.id (c : C) : IsProj (𝟙 c) := ⟨by simp, by simp⟩
 instance IsProj.dagger {c : C} (f : c ⟶ c) [IsProj f] : IsProj f† := by simpa
 
 /-- A morphism satisfying `f ≫ f† = 𝟙`, i.e. an isometry. -/
-class IsIsometry [DaggerCategory C] {c₁ c₂ : C} (f : c₁ ⟶ c₂) where
+@[mk_iff]
+class IsIsometry {c₁ c₂ : C} (f : c₁ ⟶ c₂) where
   comp_dagger_eq_id (f) : f ≫ f† = 𝟙 c₁
 
 attribute [reassoc (attr := simp)] IsIsometry.comp_dagger_eq_id
@@ -121,10 +123,7 @@ attribute [reassoc (attr := simp)] IsIsometry.comp_dagger_eq_id
 instance (c : C) : IsIsometry (𝟙 c) := ⟨by simp⟩
 
 instance IsIsometry.comp {c₁ c₂ c₃ : C} (f : c₁ ⟶ c₂) (g : c₂ ⟶ c₃) [IsIsometry f]
-    [IsIsometry g] : IsIsometry (f ≫ g) where
-  comp_dagger_eq_id := by
-    simp only [dagger_comp, Category.assoc, IsIsometry.comp_dagger_eq_id_assoc,
-      IsIsometry.comp_dagger_eq_id]
+    [IsIsometry g] : IsIsometry (f ≫ g) := by simp [isIsometry_iff]
 
 /-- An isometry is a split monomorphism with retraction its dagger. -/
 instance IsIsometry.isSplitMono {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsIsometry f] : IsSplitMono f :=
@@ -132,11 +131,7 @@ instance IsIsometry.isSplitMono {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsIsometry 
 
 /-- The composite `f† ≫ f` of an isometry is a projection (onto its image). -/
 instance IsIsometry.isProj_dagger_comp {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsIsometry f] :
-    IsProj (f† ≫ f) where
-  idem := by
-    simp only [Category.assoc,
-      IsIsometry.comp_dagger_eq_id_assoc]
-  selfAdjoint := by simp
+    IsProj (f† ≫ f) := by simp [isProj_iff]
 
 /-- If `f` is an isometry, a factorization `m ≫ f = x` determines `m` uniquely: `m = x ≫ f†`. -/
 lemma IsIsometry.eq_dagger_comp_of_comp_eq {c₁ c₂ c₃ : C} (f : c₁ ⟶ c₂) [IsIsometry f]
@@ -144,10 +139,16 @@ lemma IsIsometry.eq_dagger_comp_of_comp_eq {c₁ c₂ c₃ : C} (f : c₁ ⟶ c�
   rw [(Category.comp_id m).symm, ← IsIsometry.comp_dagger_eq_id f, ← Category.assoc, h]
 
 /-- An isometry that also satisfies `f† ≫ f = 𝟙`, i.e. a unitary morphism. -/
-class IsUnitary [DaggerCategory C] {c₁ c₂ : C} (f : c₁ ⟶ c₂) extends IsIsometry f where
+class IsUnitary {c₁ c₂ : C} (f : c₁ ⟶ c₂) extends IsIsometry f where
   dagger_comp_eq_id (f) : f† ≫ f = 𝟙 c₂
 
 attribute [reassoc (attr := simp)] IsUnitary.dagger_comp_eq_id
+
+lemma isUnitary_iff {c₁ c₂ : C} (f : c₁ ⟶ c₂) :
+    IsUnitary f ↔ f ≫ f† = 𝟙 c₁ ∧ f† ≫ f = 𝟙 c₂ := by
+  refine ⟨fun _ ↦ by simp, fun ⟨h, h'⟩ ↦ ?_⟩
+  rw [← isIsometry_iff] at h
+  exact IsUnitary.mk h'
 
 instance (c : C) : IsUnitary (𝟙 c) := ⟨by simp⟩
 
@@ -164,20 +165,33 @@ instance IsUnitary.dagger {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsUnitary f] : Is
 instance IsUnitary.isIso {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsUnitary f] : IsIso f :=
   ⟨f†, by simp, by simp⟩
 
-lemma IsUnitary.inv_self_eq_dagger {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsUnitary f] : inv f = f† := by
+lemma IsUnitary.inv_eq_dagger {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsUnitary f] : inv f = f† := by
   rw [← Category.comp_id (inv f), ← IsIsometry.comp_dagger_eq_id f, ← Category.assoc]
   simp
 
 lemma IsUnitary.inv_dagger_eq_self {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsUnitary f] : inv f† = f := by
-  simp [inv_self_eq_dagger f†]
+  simp [inv_eq_dagger f†]
 
-/-- An isomorphism whose dagger is its inverse has a unitary forward map. -/
-theorem isUnitary_of_dagger_eq_inv {c₁ c₂ : C} (e : c₁ ≅ c₂) (hdag : e.hom† = e.inv) :
-    DaggerCategory.IsUnitary e.hom where
-  comp_dagger_eq_id := hdag ▸ e.hom_inv_id
-  dagger_comp_eq_id := hdag ▸ e.inv_hom_id
+/-- An isomorphism whose forward map is unitary if and only if its dagger is its inverse. -/
+theorem isUnitary_hom_iff_dagger_hom_eq_inv {c₁ c₂ : C} (e : c₁ ≅ c₂) :
+    IsUnitary e.hom ↔ e.hom† = e.inv := by
+  refine ⟨fun _ ↦ ?_, fun h ↦ ?_⟩
+  · simp [← IsUnitary.inv_eq_dagger]
+  · simp [isUnitary_iff, h]
+
+/-- For a unitary isomorphism, the dagger of the forward map is the inverse. -/
+@[simp]
+lemma IsUnitary.dagger_hom_eq_inv {c₁ c₂ : C} (e : c₁ ≅ c₂) [IsUnitary e.hom] :
+    e.hom† = e.inv := (isUnitary_hom_iff_dagger_hom_eq_inv e).mp inferInstance
+
+/-- For a unitary isomorphism, the dagger of the inverse is the forward map. -/
+@[simp]
+lemma IsUnitary.dagger_inv_eq_hom {c₁ c₂ : C} (e : c₁ ≅ c₂) [IsUnitary e.hom] :
+    e.inv† = e.hom := by
+  rw [← ‹IsUnitary e.hom›.dagger_hom_eq_inv, involutive_dagger]
 
 /-- An endomorphism of the form `g ≫ g†` for some morphism `g`, i.e. a positive morphism. -/
+@[mk_iff]
 class IsPositive {c : C} (f : c ⟶ c) where
   out (f) : ∃ (c' : C) (g : c ⟶ c'), f = g ≫ g†
 
@@ -194,7 +208,8 @@ instance IsPositive.dagger {c : C} (f : c ⟶ c) [IsPositive f] : IsPositive f�
   simpa
 
 /-- A positive endomorphism is self-adjoint. -/
-lemma selfAdjoint_of_isPositive {c : C} (f : c ⟶ c) [IsPositive f] : f† = f := by
+@[simp low]
+lemma IsPositive.selfAdjoint {c : C} (f : c ⟶ c) [IsPositive f] : f† = f := by
   rcases IsPositive.out f with ⟨c', g, rfl⟩
   simp
 
@@ -262,16 +277,13 @@ noncomputable def iso (k l : DaggerKernel f) : k.obj ≅ l.obj :=
 
 /-- The canonical isomorphism between dagger kernels is unitary. -/
 instance isUnitary_iso (k l : DaggerKernel f) : IsUnitary (k.iso l).hom := by
-  apply isUnitary_of_dagger_eq_inv (k.iso l)
+  rw [isUnitary_hom_iff_dagger_hom_eq_inv]
   have hi_hom : (k.iso l).hom ≫ l.ι = k.ι :=
     IsLimit.conePointUniqueUpToIso_hom_comp k.isLimit l.isLimit WalkingParallelPair.zero
   have hi_inv : (k.iso l).inv ≫ k.ι = l.ι :=
     IsLimit.conePointUniqueUpToIso_inv_comp k.isLimit l.isLimit WalkingParallelPair.zero
-  calc
-    _ = (k.ι ≫ l.ι†)† := by
-      rw [IsIsometry.eq_dagger_comp_of_comp_eq l.ι hi_hom]
-    _ = l.ι ≫ k.ι† := by simp
-    _ = (k.iso l).inv := (IsIsometry.eq_dagger_comp_of_comp_eq k.ι hi_inv).symm
+  rw [IsIsometry.eq_dagger_comp_of_comp_eq l.ι hi_hom]
+  simpa using (IsIsometry.eq_dagger_comp_of_comp_eq k.ι hi_inv).symm
 
 end DaggerKernel
 
@@ -350,25 +362,6 @@ lemma eq_zero_of_comp_dagger_eq_zero [HasZeroMorphisms C]
 end kernel
 
 end CategoryTheory.DaggerCategory
-
-namespace CategoryTheory
-
-open DaggerCategory
-
-variable [DaggerCategory C]
-
-/-- For a unitary isomorphism, the dagger of the forward map is the inverse. -/
-lemma dagger_hom_eq_inv_of_isUnitary {X Y : C} (e : X ≅ Y) [IsUnitary e.hom] :
-    e.hom† = e.inv :=
-  (IsUnitary.inv_self_eq_dagger e.hom).symm.trans
-    (IsIso.inv_eq_of_hom_inv_id e.hom_inv_id)
-
-/-- For a unitary isomorphism, the dagger of the inverse is the forward map. -/
-lemma dagger_inv_eq_hom_of_isUnitary {X Y : C} (e : X ≅ Y) [IsUnitary e.hom] :
-    e.inv† = e.hom := by
-  rw [← dagger_hom_eq_inv_of_isUnitary e, involutive_dagger]
-
-end CategoryTheory
 
 open DaggerCategory MonoidalCategory
 

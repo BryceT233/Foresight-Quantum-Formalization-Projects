@@ -2,24 +2,34 @@
 
 **Assisted by Deepseek Harness**
 
-This repository is the umbrella for the Lean 4 formalization projects developed
-at **Foresight Quantum**. Each company project lives in its own directory under
-`FQFP/`, and the top-level `FQFP.lean` module imports everything.
+This repository collects Lean 4 formalization projects developed at
+**Foresight Quantum** using Mathlib. The projects live under `FQFP/`;
+`FQFP.lean` is the umbrella import.
 
 ## Projects
 
-- **`FQFP/Carleman`** — Polynomial ODE Carleman linearization, finite truncations,
-  matrix evolution, and error bounds. Entry point is `FQFP.Carleman`.
-- **`FQFP/CQM`** — Categorical Quantum Mechanics. Formalizes dagger categories,
-  monoidal (and symmetric braided) categories, and category-theoretic
-  constructions for quantum mechanics: `Category/DaggerCategory`,
-  `Category/MonoidalCategory`, `QuditCat/Basic`, `HilbCat`, `RelCat`.
-- **`FQFP/TrotterError`** — Trotter/Suzuki product-formula error bounds
-  (Childs–Su–Tran–Wiebe–Zhu). Entry point is `FQFP/TrotterError/MainTheorem`.
-  See the [formalization site](https://brycet233.github.io/TrotterError/).
+- **`FQFP/BCH`** — Baker–Campbell–Hausdorff word expansions, commutator
+  identities, and norm estimates for the quintic term and its Taylor remainder.
+- **`FQFP/Carleman`** — Polynomial ODE Carleman linearization, finite
+  truncations, matrix evolution, and conditional error bounds. `PDE/` develops
+  multipoint fields, their infinite linear hierarchy, and the exact residual
+  of a finite-level truncation. `TwoModeBurgers/` proves monomial and energy
+  iterate results, polynomial closure obstructions, and the energy Krylov
+  dichotomy. Import `FQFP.Carleman` for this project. General convergence of
+  the finite truncations requires further analytic estimates.
+- **`FQFP/CQM`** — Categorical quantum mechanics: dagger and monoidal dagger
+  categories, dagger kernels and biproducts, states, effects and measurement,
+  with concrete `QuditCat`, `HilbCat`, and `RelCat` models. The recent changes
+  simplify the projection, isometry, unitary, and positivity APIs in
+  `Category/DaggerCategory.lean`.
+- **`FQFP/TrotterError`** — Trotter/Suzuki product-formula error bounds based on
+  *A Theory of Trotter Error* (Childs–Su–Tran–Wiebe–Zhu). The main results are
+  in `FQFP.TrotterError.MainTheorem`. See the
+  [formalization site](https://brycet233.github.io/TrotterError/).
 
-New projects are added as further top-level directories under `FQFP/` and
-imported from `FQFP.lean`.
+To use one project without importing the whole library, import its relevant
+module directly. New projects can be added under `FQFP/` and imported from
+`FQFP.lean`.
 
 ## Build & Lint
 

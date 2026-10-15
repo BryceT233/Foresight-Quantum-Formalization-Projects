@@ -73,11 +73,11 @@ def exactPairingDagger (X Y : C) (p : ExactPairing X Y) : ExactPairing Y X :=
     coevaluation_evaluation' := by
       have h := congrArg dagger (ExactPairing.evaluation_coevaluation X Y)
       simpa only [Category.assoc, dagger_comp, dagger_whiskerLeft, dagger_whiskerRight,
-        dagger_hom_eq_inv_of_isUnitary, dagger_inv_eq_hom_of_isUnitary] using h
+        IsUnitary.dagger_hom_eq_inv, IsUnitary.dagger_inv_eq_hom] using h
     evaluation_coevaluation' := by
       have h := congrArg dagger (ExactPairing.coevaluation_evaluation X Y)
       simpa only [Category.assoc, dagger_comp, dagger_whiskerLeft, dagger_whiskerRight,
-        dagger_hom_eq_inv_of_isUnitary, dagger_inv_eq_hom_of_isUnitary] using h }
+        IsUnitary.dagger_hom_eq_inv, IsUnitary.dagger_inv_eq_hom] using h }
 
 /-- The reversed coevaluation is the dagger of the evaluation. -/
 lemma exactPairingDagger_coevaluation (X Y : C) (p : ExactPairing X Y) :
