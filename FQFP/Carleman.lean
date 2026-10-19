@@ -19,6 +19,7 @@ public import FQFP.Carleman.TwoModeBurgers.Closure
 public import FQFP.Carleman.TwoModeBurgers.EnergyLeading
 public import FQFP.Carleman.TwoModeBurgers.Encoding
 public import FQFP.Carleman.TwoModeBurgers.EnergyPolynomial
+public import FQFP.Carleman.TwoModeBurgers.DictionaryCounts
 
 /-!
 # Polynomial ODE Carleman linearization
@@ -52,6 +53,9 @@ dichotomy by equality of damping rates, including arbitrary nonconstant
 polynomials of energy. The coordinate obstruction also
 excludes polynomial encoders with polynomial decoders and affine latent
 dynamics on a nonempty open set.
+At each fixed total-degree truncation, the model has explicit inclusion-minimal
+monomial dictionaries for the first coordinate, second coordinate, and energy,
+with their exact cardinalities.
 
 The scalar quadratic example `x' = x²` has an explicit finite geometric-series
 approximant, exact truncation error, and uniform convergence on `[-T,T]` when

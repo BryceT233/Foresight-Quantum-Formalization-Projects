@@ -50,10 +50,16 @@ disjoint family under an invertible superposition rule as a corrected form of Pr
 * `Effect.complete_iff_kernel_iota_eq_zero`: **Lemma 2.52**, completeness half — a family is
   complete iff its biproduct map has zero kernel.
 * `Effect.isUnitary_lift_of_complete_disjoint`: **Lemma 2.53**.
+* `Effect.disjoint_iff_isIsometry_dagger_lift`,
+  `Effect.complete_iff_bicone_kernel_iota_eq_zero`,
+  `Effect.isUnitary_bicone_lift_of_complete_disjoint`: the explicit-witness versions of
+  **Lemmas 2.52 and 2.53**. The chosen-biproduct declarations are their specializations.
 * `Effect.sum_probability_eq_one_of_sum_comp_dagger_eq_id`: the Born rule for effects resolving
   the identity, without an additive-inverse or biproduct assumption.
 * `Effect.sum_probability_eq_one`: a corrected form of **Proposition 2.55** under an invertible
   superposition rule.
+* `Effect.sum_probability_eq_one_of_complete_disjoint_bicone`: the same corrected Born rule
+  for an explicitly supplied dagger-biproduct witness.
 
 ## Implementation notes
 
@@ -185,6 +191,102 @@ lemma Effect.Disjoint.dagger_comp_eq_zero [HasZeroMorphisms C] {ι : Type*} {c :
 
 end Effects
 
+section EffectsBicone
+
+variable [HasZeroMorphisms C] {κ : Type*}
+  (b : Bicone (fun _ : κ ↦ 𝟙_ C)) (hb : b.IsBilimit) [b.IsDagger]
+  (x : κ → Effect c)
+
+/-- Each component of the daggered lift to an explicit dagger bicone is a dagger effect. -/
+@[reassoc]
+lemma Effect.iota_bicone_lift_dagger (i : κ) :
+    b.ι i ≫ (b.lift hb x)† = (x i)† := by
+  rw [b.dagger_lift hb x, b.ι_desc]
+
+/-- **Lemma 2.52**, disjointness half, for an explicit dagger-biproduct witness. -/
+theorem Effect.disjoint_iff_isIsometry_dagger_lift :
+    Effect.Disjoint x ↔ IsIsometry (b.lift hb x)† := by
+  constructor
+  · intro h
+    refine ⟨?_⟩
+    simp only [involutive_dagger]
+    apply hb.isLimit.hom_ext
+    rintro ⟨j⟩
+    change ((b.lift hb x)† ≫ b.lift hb x) ≫ b.π j = 𝟙 b.pt ≫ b.π j
+    rw [Category.assoc, b.lift_π hb x, Category.id_comp]
+    apply hb.isColimit.hom_ext
+    rintro ⟨i⟩
+    change b.ι i ≫ ((b.lift hb x)† ≫ x j) = b.ι i ≫ b.π j
+    rw [← Category.assoc, Effect.iota_bicone_lift_dagger]
+    by_cases hij : i = j
+    · subst j
+      rw [bicone_ι_π_self, h.1 i]
+    · rw [bicone_ι_π_ne b hij]
+      exact h.2 (Ne.symm hij)
+  · intro h
+    have hh : (b.lift hb x)† ≫ b.lift hb x = 𝟙 b.pt := by
+      simpa only [involutive_dagger] using h.comp_dagger_eq_id
+    have key (i j : κ) : (x i)† ≫ x j = b.ι i ≫ b.π j := by
+      calc
+        (x i)† ≫ x j = (b.ι i ≫ (b.lift hb x)†) ≫ (b.lift hb x ≫ b.π j) := by
+          rw [b.lift_π hb x, Effect.iota_bicone_lift_dagger b hb x]
+        _ = b.ι i ≫ ((b.lift hb x)† ≫ b.lift hb x) ≫ b.π j := by
+          simp only [Category.assoc]
+        _ = b.ι i ≫ b.π j := by rw [hh, Category.id_comp]
+    constructor
+    · intro i
+      rw [key i i, bicone_ι_π_self]
+    · intro i j hij
+      rw [key j i, bicone_ι_π_ne b (Ne.symm hij)]
+
+omit [DaggerCategory C] [b.IsDagger] in
+/-- **Lemma 2.52**, completeness half, for an explicit bilimit bicone. -/
+theorem Effect.complete_iff_bicone_kernel_iota_eq_zero [HasKernel (b.lift hb x)] :
+    Effect.Complete x ↔ kernel.ι (b.lift hb x) = 0 := by
+  constructor
+  · intro h
+    exact h (kernel.ι (b.lift hb x)) fun i ↦ by
+      rw [← b.lift_π hb x i, ← Category.assoc, kernel.condition, zero_comp]
+  · intro h Y f hf
+    have hX : f ≫ b.lift hb x = 0 := by
+      apply hb.isLimit.hom_ext
+      rintro ⟨i⟩
+      change (f ≫ b.lift hb x) ≫ b.π i = 0 ≫ b.π i
+      rw [Category.assoc, b.lift_π, zero_comp]
+      exact hf i
+    calc
+      f = kernel.lift (b.lift hb x) f hX ≫ kernel.ι (b.lift hb x) :=
+        (kernel.lift_ι (b.lift hb x) f hX).symm
+      _ = 0 := by rw [h, comp_zero]
+
+end EffectsBicone
+
+section EffectsBiconeUnitary
+
+variable [Preadditive C] {κ : Type*}
+  (b : Bicone (fun _ : κ ↦ 𝟙_ C)) (hb : b.IsBilimit) [b.IsDagger]
+  (x : κ → Effect c)
+
+/-- **Lemma 2.53** for an explicit dagger-biproduct witness. -/
+theorem Effect.isUnitary_bicone_lift_of_complete_disjoint
+    (hx : Effect.Complete x) (hxd : Effect.Disjoint x) :
+    IsUnitary (b.lift hb x) := by
+  have hXX : (b.lift hb x)† ≫ b.lift hb x = 𝟙 b.pt := by
+    have h := (Effect.disjoint_iff_isIsometry_dagger_lift b hb x).mp hxd
+    simpa only [involutive_dagger] using h.comp_dagger_eq_id
+  have hy : b.lift hb x ≫ (b.lift hb x)† - 𝟙 c = 0 := by
+    refine hx (b.lift hb x ≫ (b.lift hb x)† - 𝟙 c) ?_
+    have hyX : (b.lift hb x ≫ (b.lift hb x)† - 𝟙 c) ≫ b.lift hb x = 0 := by
+      rw [Preadditive.sub_comp, Category.id_comp, Category.assoc, hXX, Category.comp_id,
+        sub_self]
+    intro i
+    have hi := congrArg (fun m ↦ m ≫ b.π i) hyX
+    simpa only [Category.assoc, Bicone.lift_π, zero_comp] using hi
+  let : IsIsometry (b.lift hb x) := ⟨sub_eq_zero.mp hy⟩
+  exact ⟨hXX⟩
+
+end EffectsBiconeUnitary
+
 section EffectsBiproduct
 
 variable [HasZeroMorphisms C] (x : ι → Effect c) [HasBiproduct (fun _ : ι ↦ 𝟙_ C)]
@@ -200,67 +302,20 @@ omit [Fintype ι] in
 /-- **Lemma 2.52**, disjointness half: a family of effects is disjoint precisely when the
 dagger of its associated biproduct map is an isometry. -/
 theorem Effect.disjoint_iff_isIsometry_dagger :
-    Effect.Disjoint x ↔ IsIsometry (biproduct.lift x)† := by
-  constructor
-  · intro h
-    refine ⟨?_⟩
-    simp only [involutive_dagger]
-    apply biproduct.hom_ext
-    intro j
-    rw [Category.assoc, Category.id_comp, biproduct.lift_π]
-    apply biproduct.hom_ext'
-    intro i
-    rw [← Category.assoc, Effect.iota_lift_dagger x i]
-    by_cases hij : i = j
-    · subst hij
-      rw [biproduct.ι_π_self, h.1 i]
-    · rw [biproduct.ι_π_ne _ hij]
-      exact h.2 (fun h ↦ hij h.symm)
-  · intro h
-    have hh : (biproduct.lift x)† ≫ biproduct.lift x = 𝟙 (⨁ fun _ : ι ↦ 𝟙_ C) := by
-      simpa only [involutive_dagger] using h.comp_dagger_eq_id
-    have key : ∀ i j : ι, (x i)† ≫ x j
-        = biproduct.ι (fun _ : ι ↦ 𝟙_ C) i ≫ biproduct.π (fun _ : ι ↦ 𝟙_ C) j := by
-      intro i j
-      calc (x i)† ≫ x j
-          = biproduct.ι (fun _ : ι ↦ 𝟙_ C) i ≫ (biproduct.lift x)†
-              ≫ biproduct.lift x ≫ biproduct.π (fun _ : ι ↦ 𝟙_ C) j := by
-            rw [← Category.assoc, Effect.iota_lift_dagger x i, biproduct.lift_π]
-        _ = biproduct.ι (fun _ : ι ↦ 𝟙_ C) i
-              ≫ ((biproduct.lift x)† ≫ biproduct.lift x)
-              ≫ biproduct.π (fun _ : ι ↦ 𝟙_ C) j := by
-            simp only [Category.assoc]
-        _ = biproduct.ι (fun _ : ι ↦ 𝟙_ C) i ≫ 𝟙 (⨁ fun _ : ι ↦ 𝟙_ C)
-              ≫ biproduct.π (fun _ : ι ↦ 𝟙_ C) j := by
-            rw [hh]
-        _ = biproduct.ι (fun _ : ι ↦ 𝟙_ C) i
-              ≫ biproduct.π (fun _ : ι ↦ 𝟙_ C) j := by
-            rw [Category.id_comp]
-    constructor
-    · intro i
-      rw [key i i, biproduct.ι_π_self]
-    · intro i j hij
-      rw [key j i, biproduct.ι_π_ne _ (fun h ↦ hij h.symm)]
+    Effect.Disjoint x ↔ IsIsometry (biproduct.lift x)† :=
+  Effect.disjoint_iff_isIsometry_dagger_lift
+    (biproduct.bicone (fun _ : ι ↦ 𝟙_ C)) (biproduct.isBilimit _) x
 
 omit [DaggerCategory C] [Fintype ι] [IsDaggerBiproduct (fun _ : ι ↦ 𝟙_ C)] in
 /-- **Lemma 2.52**, completeness half: a family of effects is complete precisely when its
 associated biproduct map has zero kernel. -/
 theorem Effect.complete_iff_kernel_iota_eq_zero [HasKernel (biproduct.lift x)] :
     Effect.Complete x ↔ kernel.ι (biproduct.lift x) = 0 := by
-  constructor
-  · intro h
-    exact h (kernel.ι (biproduct.lift x)) fun i ↦ by
-      rw [← biproduct.lift_π x i, ← Category.assoc, kernel.condition, zero_comp]
-  · intro h c' f hf
-    have hX : f ≫ biproduct.lift x = 0 := by
-      apply biproduct.hom_ext
-      intro i
-      rw [Category.assoc, biproduct.lift_π, zero_comp]
-      exact hf i
-    calc f = kernel.lift (biproduct.lift x) f hX ≫ kernel.ι (biproduct.lift x) :=
-          (kernel.lift_ι (biproduct.lift x) f hX).symm
-      _ = kernel.lift (biproduct.lift x) f hX ≫ 0 := by rw [h]
-      _ = 0 := comp_zero
+  let : HasKernel ((biproduct.bicone (fun _ : ι ↦ 𝟙_ C)).lift (biproduct.isBilimit _) x) := by
+    change HasKernel (biproduct.lift x)
+    infer_instance
+  exact Effect.complete_iff_bicone_kernel_iota_eq_zero
+    (biproduct.bicone (fun _ : ι ↦ 𝟙_ C)) (biproduct.isBilimit _) x
 
 end EffectsBiproduct
 
@@ -279,20 +334,9 @@ all `i` implies `y = 0`) already concludes `y = 0`, so the statement is strictly
 than the printed one. The notes' "invertible superposition rule" is `Preadditive C`. -/
 theorem Effect.isUnitary_lift_of_complete_disjoint
     (hx : Effect.Complete x) (hxd : Effect.Disjoint x) :
-    IsUnitary (biproduct.lift x) := by
-  have hXX : (biproduct.lift x)† ≫ biproduct.lift x = 𝟙 (⨁ fun _ : ι ↦ 𝟙_ C) := by
-    have h := (Effect.disjoint_iff_isIsometry_dagger x).mp hxd
-    simpa only [involutive_dagger] using h.comp_dagger_eq_id
-  have hy : biproduct.lift x ≫ (biproduct.lift x)† - 𝟙 c = 0 := by
-    refine hx (biproduct.lift x ≫ (biproduct.lift x)† - 𝟙 c) ?_
-    have hyX : (biproduct.lift x ≫ (biproduct.lift x)† - 𝟙 c) ≫ biproduct.lift x = 0 := by
-      rw [Preadditive.sub_comp, Category.id_comp, Category.assoc, hXX, Category.comp_id,
-        sub_self]
-    intro i
-    have := congrArg (fun m ↦ m ≫ biproduct.π (fun _ : ι ↦ 𝟙_ C) i) hyX
-    simpa [Category.assoc, biproduct.lift_π] using this
-  let : IsIsometry (biproduct.lift x) := ⟨sub_eq_zero.mp hy⟩
-  exact ⟨hXX⟩
+    IsUnitary (biproduct.lift x) :=
+  Effect.isUnitary_bicone_lift_of_complete_disjoint
+    (biproduct.bicone (fun _ : ι ↦ 𝟙_ C)) (biproduct.isBilimit _) x hx hxd
 
 end EffectsUnitary
 
@@ -313,7 +357,7 @@ variable [Semiadditive C]
 state. This only needs commutative-monoid superposition, not additive inverses or biproducts. -/
 theorem Effect.sum_probability_eq_one_of_sum_comp_dagger_eq_id
     {ι : Type*} [Fintype ι] {c : C} (x : ι → Effect c)
-    (hx : ∑ i, x i ≫ (x i)† = 𝟙 c) (a : State c) (ha : IsIsometry a) :
+    (hx : ∑ i, x i ≫ (x i)† = 𝟙 c) (a : State c) [IsIsometry a] :
     ∑ i, probability a (x i) = 1 := by
   apply End.ext
   rw [Semiadditive.end_sum_asHom]
@@ -321,9 +365,50 @@ theorem Effect.sum_probability_eq_one_of_sum_comp_dagger_eq_id
       = a ≫ (∑ i, x i ≫ (x i)†) ≫ a† := by
         simp only [Semiadditive.comp_sum, Semiadditive.sum_comp, Category.assoc]
     _ = a ≫ a† := by rw [hx, Category.id_comp]
-    _ = 𝟙 (𝟙_ C) := ha.comp_dagger_eq_id
+    _ = 𝟙 (𝟙_ C) := ‹IsIsometry a›.comp_dagger_eq_id
 
 end ProbabilityAdditive
+
+section ProbabilityBicone
+
+variable [Semiadditive C] {κ : Type*} [Fintype κ]
+  (b : Bicone (fun _ : κ ↦ 𝟙_ C)) (hb : b.IsBilimit) [b.IsDagger]
+  (x : κ → Effect c)
+
+/-- A finite explicit dagger-biproduct lift is the sum of its rank-one pieces.
+This identity only requires commutative-monoid superposition. -/
+theorem Effect.bicone_lift_comp_dagger_eq_sum :
+    b.lift hb x ≫ (b.lift hb x)† = ∑ i, x i ≫ (x i)† := by
+  calc
+    b.lift hb x ≫ (b.lift hb x)† =
+        b.lift hb x ≫ (∑ i, b.π i ≫ b.ι i) ≫ (b.lift hb x)† := by
+      rw [b.total hb, Category.id_comp]
+    _ = ∑ i, x i ≫ (x i)† := by
+      rw [← Category.assoc, Semiadditive.comp_sum, Semiadditive.sum_comp]
+      apply Finset.sum_congr rfl
+      intro i _
+      rw [← Category.assoc, b.lift_π hb x, Category.assoc,
+        Effect.iota_bicone_lift_dagger b hb x]
+
+end ProbabilityBicone
+
+section BornRuleBicone
+
+variable [Preadditive C] {κ : Type*} [Fintype κ]
+  (b : Bicone (fun _ : κ ↦ 𝟙_ C)) (hb : b.IsBilimit) [b.IsDagger]
+  (x : κ → Effect c)
+
+include b hb in
+/-- The corrected **Born rule** for complete disjoint effects with an explicit witness. -/
+theorem Effect.sum_probability_eq_one_of_complete_disjoint_bicone
+    (hx : Effect.Complete x) (hxd : Effect.Disjoint x)
+    (a : State c) [IsIsometry a] : ∑ i, probability a (x i) = 1 := by
+  have hu := Effect.isUnitary_bicone_lift_of_complete_disjoint b hb x hx hxd
+  apply Effect.sum_probability_eq_one_of_sum_comp_dagger_eq_id x _ a
+  rw [← Effect.bicone_lift_comp_dagger_eq_sum b hb x]
+  exact hu.comp_dagger_eq_id
+
+end BornRuleBicone
 
 section BornRule
 
@@ -331,17 +416,11 @@ variable [Preadditive C] (x : ι → Effect c) [HasBiproduct (fun _ : ι ↦ �
   [IsDaggerBiproduct (fun _ : ι ↦ 𝟙_ C)]
 
 /-- `x ≫ x†` is the sum of the rank-one pieces `xᵢ ≫ xᵢ†` — the diagonal part of the
-matrix computation in Lemma 2.52. Uses `biproduct.total` and Definition 2.39. -/
+matrix computation in Lemma 2.52. Uses finite bilimit identity resolution and Definition 2.39. -/
 theorem Effect.lift_comp_dagger_eq_sum :
-    biproduct.lift x ≫ (biproduct.lift x)† = ∑ i, x i ≫ (x i)† := by
-  calc biproduct.lift x ≫ (biproduct.lift x)†
-      = biproduct.lift x ≫ (∑ i, biproduct.π (fun _ : ι ↦ 𝟙_ C) i
-            ≫ biproduct.ι (fun _ : ι ↦ 𝟙_ C) i) ≫ (biproduct.lift x)† := by
-        rw [biproduct.total, Category.id_comp]
-    _ = ∑ i, x i ≫ (x i)† := by
-        rw [← Category.assoc, Preadditive.comp_sum, Preadditive.sum_comp]
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [← Category.assoc, biproduct.lift_π, Category.assoc, Effect.iota_lift_dagger]
+    biproduct.lift x ≫ (biproduct.lift x)† = ∑ i, x i ≫ (x i)† :=
+  Effect.bicone_lift_comp_dagger_eq_sum
+    (biproduct.bicone (fun _ : ι ↦ 𝟙_ C)) (biproduct.isBilimit _) x
 
 /-- A corrected form of **Proposition 2.55 (the Born rule)**: for a finite complete disjoint
 family of effects with an invertible superposition rule and an isometric state, probabilities
@@ -350,12 +429,9 @@ sum to `1`.
 The printed statement omits both `Disjoint` and the invertible superposition assumption.
 The latter is used by Lemma 2.53; see the file header for the scope of this correction. -/
 theorem Effect.sum_probability_eq_one (hx : Effect.Complete x) (hxd : Effect.Disjoint x)
-    (a : State c) (ha : IsIsometry a) : (∑ i, probability a (x i)) = 1 := by
-  have hunit : IsUnitary (biproduct.lift x) :=
-    Effect.isUnitary_lift_of_complete_disjoint x hx hxd
-  exact Effect.sum_probability_eq_one_of_sum_comp_dagger_eq_id x (by
-    rw [← Effect.lift_comp_dagger_eq_sum x]
-    exact IsIsometry.comp_dagger_eq_id (biproduct.lift x)) a ha
+    (a : State c) [IsIsometry a] : (∑ i, probability a (x i)) = 1 :=
+  Effect.sum_probability_eq_one_of_complete_disjoint_bicone
+    (biproduct.bicone (fun _ : ι ↦ 𝟙_ C)) (biproduct.isBilimit _) x hx hxd a
 
 end BornRule
 

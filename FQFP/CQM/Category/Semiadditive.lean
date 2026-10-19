@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
 public import Mathlib.CategoryTheory.Preadditive.Basic
 public import Mathlib.CategoryTheory.Preadditive.OfBiproducts
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 
 /-!
 # Semiadditive categories
@@ -28,6 +29,7 @@ of relations as well as the sum of linear maps.
 
 * `Semiadditive.add_eq_lift_id_desc`, `Semiadditive.add_eq_lift_desc_id`: addition is determined
   by binary biproducts, without requiring additive inverses or changing the given addition.
+* `Limits.Bicone.total`: a finite bilimit bicone resolves its identity using the given addition.
 -/
 
 @[expose] public section
@@ -165,5 +167,26 @@ lemma add_eq_lift_desc_id {X Y : C} [HasBinaryBiproduct Y Y] (f g : X ⟶ Y) :
   simp [lift_eq_add, Category.assoc]
 
 end Semiadditive
+
+namespace Limits.Bicone
+
+variable {C : Type u} [Category.{v} C] [Semiadditive C]
+  {ι : Type*} [Fintype ι] {F : ι → C} (b : Bicone F)
+
+/-- The coordinate projections and injections of a finite bilimit resolve its identity.
+Additive inverses are unnecessary. -/
+theorem total (hb : b.IsBilimit) : ∑ i, b.π i ≫ b.ι i = 𝟙 b.pt := by
+  apply hb.isLimit.hom_ext
+  rintro ⟨j⟩
+  classical
+  change (∑ i, b.π i ≫ b.ι i) ≫ b.π j = 𝟙 b.pt ≫ b.π j
+  rw [Semiadditive.sum_comp, Finset.sum_eq_single j]
+  · simp only [Category.assoc, bicone_ι_π_self, Category.comp_id, Category.id_comp]
+  · intro i _ hij
+    rw [Category.assoc, bicone_ι_π_ne b hij, comp_zero]
+  · intro h
+    exact (h (Finset.mem_univ j)).elim
+
+end Limits.Bicone
 
 end CategoryTheory

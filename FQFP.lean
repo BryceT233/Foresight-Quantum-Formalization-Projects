@@ -23,8 +23,12 @@ public import FQFP.CQM.Category.Measurement
 public import FQFP.CQM.QuditCat.Basic
 public import FQFP.CQM.QuditCat.Dagger
 public import FQFP.CQM.QuditCat.Monoidal
+public import FQFP.CQM.QuditCat.Biproducts
+public import FQFP.CQM.QuditCat.Measurement
 public import FQFP.CQM.HilbCat
 public import FQFP.CQM.RelCat
+public import FQFP.CQM.RelCat.Biproducts
+public import FQFP.CQM.RelCat.Measurement
 public import FQFP.TrotterError.Calculus
 public import FQFP.TrotterError.Combinatorics
 public import FQFP.TrotterError.Commutator

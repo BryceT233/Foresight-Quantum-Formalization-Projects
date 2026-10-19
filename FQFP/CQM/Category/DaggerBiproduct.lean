@@ -17,20 +17,29 @@ This file develops Definition 2.39 of the source notes — dagger biproducts —
 the two results the notes draw from it: Lemma 2.41 (the adjoint of a matrix is its conjugate
 transpose) and Corollary 2.42 (daggers distribute over addition).
 
-A biproduct `⨁ f` is a *dagger biproduct* when every injection is the dagger of the
-corresponding projection. The condition is stated both for an arbitrary finite family
-(`IsDaggerBiproduct`) and in the binary form matching Mathlib's `biprod`
-(`IsDaggerBinaryBiproduct`).
+A biproduct is a *dagger biproduct* when every injection is the dagger of the corresponding
+projection. The core condition is attached to a concrete bicone; the existing conditions on
+Mathlib's chosen biproducts are convenient special cases. Existence of a normalized bicone
+does not imply that an independently chosen ordinary biproduct is normalized.
 
 ## Main definitions
 
 * `DaggerCategory.IsDaggerBiproduct`: a biproduct whose injections are the daggers of its
   projections.
 * `DaggerCategory.IsDaggerBinaryBiproduct`: the binary form of the same condition.
+* `Limits.Bicone.IsDagger` and `Limits.BinaryBicone.IsDagger`: the conditions on explicit
+  biproduct bicones.
+* `DaggerCategory.DaggerBiproductData` and `DaggerCategory.HasDaggerBiproduct`: normalized
+  bicone data and its existence, independently of Mathlib's chosen ordinary biproduct.
+* `DaggerCategory.DaggerBinaryBiproductData` and `DaggerCategory.HasDaggerBinaryBiproduct`:
+  the corresponding binary witnesses.
 * `DaggerCategory.entry`: the `(i, j)` entry of a morphism of biproducts.
 
 ## Main results
 
+* `Limits.Bicone.dagger_desc`, `Limits.Bicone.dagger_matrix`, and
+  `Limits.Bicone.isUnitary_iso`: dagger calculus for explicit normalized bicones.
+* `Limits.BinaryBicone.dagger_desc` and `Limits.BinaryBicone.isUnitary_iso`: the binary form.
 * `DaggerCategory.dagger_entry`: **Lemma 2.41** in intrinsic form — transposing a morphism
   of biproducts daggers every entry.
 * `DaggerCategory.dagger_biproduct_matrix`: **Lemma 2.41** in `biproduct.matrix` form.
@@ -44,6 +53,284 @@ corresponding projection. The condition is stated both for an arbitrary finite f
 
 open CategoryTheory Limits
 
+namespace CategoryTheory.Limits.Bicone
+
+open DaggerCategory
+
+universe u v
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+
+variable {ι : Type*} {F : ι → C} (b : Bicone F)
+
+section Dagger
+
+variable [DaggerCategory C]
+
+/-- A bicone is a dagger bicone when each injection is the dagger of its projection. -/
+class IsDagger {ι : Type*} {F : ι → C} (b : Bicone F) : Prop where
+  /-- The injection and projection at each index are adjoints. -/
+  dagger_ι (i : ι) : (b.ι i)† = b.π i
+
+variable [b.IsDagger]
+
+/-- The projection of a dagger bicone is the dagger of its injection. -/
+@[simp]
+lemma IsDagger.dagger_π (i : ι) : (b.π i)† = b.ι i := by
+  simpa only [involutive_dagger] using (congrArg dagger (IsDagger.dagger_ι (b := b) i)).symm
+
+end Dagger
+
+variable (hb : b.IsBilimit)
+
+/-- The factorization into an explicit bilimit bicone. -/
+def lift {X : C} (x : ∀ i, X ⟶ F i) : X ⟶ b.pt :=
+  hb.isLimit.lift (Fan.mk X x)
+
+/-- The factorization out of an explicit bilimit bicone. -/
+def desc {X : C} (x : ∀ i, F i ⟶ X) : b.pt ⟶ X :=
+  hb.isColimit.desc (Cofan.mk X x)
+
+/-- A factorization into an explicit bicone recovers each component. -/
+@[reassoc (attr := simp)]
+lemma lift_π {X : C} (x : ∀ i, X ⟶ F i) (i : ι) :
+    b.lift hb x ≫ b.π i = x i := hb.isLimit.fac _ ⟨i⟩
+
+/-- A factorization out of an explicit bicone recovers each component. -/
+@[reassoc (attr := simp)]
+lemma ι_desc {X : C} (x : ∀ i, F i ⟶ X) (i : ι) :
+    b.ι i ≫ b.desc hb x = x i := hb.isColimit.fac _ ⟨i⟩
+
+section Dagger
+
+variable [DaggerCategory C]
+variable [b.IsDagger]
+
+/-- Dagger exchanges the row and column maps of an explicit dagger biproduct. -/
+theorem dagger_desc {X : C} (x : ∀ i, F i ⟶ X) :
+    (b.desc hb x)† = b.lift hb (fun i ↦ (x i)†) := by
+  apply hb.isLimit.hom_ext
+  intro i
+  change (b.desc hb x)† ≫ b.π i.as = b.lift hb (fun i ↦ (x i)†) ≫ b.π i.as
+  rw [lift_π, ← IsDagger.dagger_ι (b := b) i.as, ← dagger_comp, ι_desc]
+
+/-- Dagger exchanges the column and row maps of an explicit dagger biproduct. -/
+theorem dagger_lift {X : C} (x : ∀ i, X ⟶ F i) :
+    (b.lift hb x)† = b.desc hb (fun i ↦ (x i)†) := by
+  have h := congrArg dagger (b.dagger_desc hb (fun i ↦ (x i)†))
+  simpa only [involutive_dagger] using h.symm
+
+end Dagger
+
+section Matrix
+
+variable {κ : Type*} {G : κ → C} (c : Bicone G) (hc : c.IsBilimit)
+
+/-- The `(i, j)` entry of a map between two explicit bicones. -/
+def entry (x : b.pt ⟶ c.pt) (i : ι) (j : κ) : F i ⟶ G j :=
+  b.ι i ≫ x ≫ c.π j
+
+/-- Assemble a matrix into a map between two explicit bilimit bicones. -/
+def matrix (m : ∀ i j, F i ⟶ G j) : b.pt ⟶ c.pt :=
+  b.desc hb (fun i ↦ c.lift hc (m i))
+
+/-- The entries of an assembled matrix are its components. -/
+@[simp]
+lemma entry_matrix (m : ∀ i j, F i ⟶ G j) (i : ι) (j : κ) :
+    b.entry c (b.matrix hb c hc m) i j = m i j := by
+  simp [entry, matrix]
+
+section Dagger
+
+variable [DaggerCategory C] [b.IsDagger] [c.IsDagger]
+
+/-- The dagger of a map of dagger bicones transposes and daggers its entries. -/
+theorem dagger_entry (x : b.pt ⟶ c.pt) (i : ι) (j : κ) :
+    c.entry b x† j i = (b.entry c x i j)† := by
+  simp only [entry, dagger_comp, IsDagger.dagger_ι, IsDagger.dagger_π, Category.assoc]
+
+/-- The matrix assembled from daggered entries is the dagger of the original matrix. -/
+theorem dagger_matrix (m : ∀ i j, F i ⟶ G j) :
+    (b.matrix hb c hc m)† =
+      c.matrix hc b hb (fun j i ↦ (m i j)†) := by
+  apply hb.isLimit.hom_ext
+  intro i
+  apply hc.isColimit.hom_ext
+  intro j
+  change c.entry b (b.matrix hb c hc m)† j.as i.as =
+    c.entry b (c.matrix hc b hb (fun j i ↦ (m i j)†)) j.as i.as
+  rw [b.dagger_entry c, b.entry_matrix hb c hc, c.entry_matrix hc b hb]
+
+end Dagger
+
+end Matrix
+
+section Comparison
+
+variable (c : Bicone F) (hc : c.IsBilimit)
+
+/-- The canonical isomorphism between two explicit bilimit bicones. -/
+def iso : b.pt ≅ c.pt where
+  hom := b.desc hb c.ι
+  inv := c.desc hc b.ι
+  hom_inv_id := by
+    apply hb.isColimit.hom_ext
+    intro i
+    change b.ι i.as ≫ b.desc hb c.ι ≫ c.desc hc b.ι = b.ι i.as ≫ 𝟙 b.pt
+    simp only [← Category.assoc, ι_desc, Category.comp_id]
+  inv_hom_id := by
+    apply hc.isColimit.hom_ext
+    intro i
+    change c.ι i.as ≫ c.desc hc b.ι ≫ b.desc hb c.ι = c.ι i.as ≫ 𝟙 c.pt
+    simp only [← Category.assoc, ι_desc, Category.comp_id]
+
+/-- The comparison isomorphism preserves the projections. -/
+lemma iso_hom_π (i : ι) : (b.iso hb c hc).hom ≫ c.π i = b.π i := by
+  apply hb.isColimit.hom_ext
+  intro j
+  change b.ι j.as ≫ (b.iso hb c hc).hom ≫ c.π i = b.ι j.as ≫ b.π i
+  rw [← Category.assoc, show (b.iso hb c hc).hom = b.desc hb c.ι from rfl, ι_desc]
+  classical
+  simp only [c.ι_π, b.ι_π]
+
+section Dagger
+
+variable [DaggerCategory C] [b.IsDagger] [c.IsDagger]
+
+/-- The canonical comparison of two dagger biproducts is unitary. -/
+theorem isUnitary_iso : IsUnitary (b.iso hb c hc).hom := by
+  rw [isUnitary_hom_iff_dagger_hom_eq_inv]
+  apply hc.isColimit.hom_ext
+  intro i
+  change c.ι i.as ≫ (b.iso hb c hc).hom† = c.ι i.as ≫ (b.iso hb c hc).inv
+  calc
+    c.ι i.as ≫ (b.iso hb c hc).hom†
+        = ((b.iso hb c hc).hom ≫ c.π i.as)† := by
+            rw [dagger_comp, IsDagger.dagger_π]
+    _ = (b.π i.as)† := by rw [b.iso_hom_π hb c hc i.as]
+    _ = b.ι i.as := IsDagger.dagger_π b i.as
+    _ = c.ι i.as ≫ (b.iso hb c hc).inv := by
+      change b.ι i.as = c.ι i.as ≫ c.desc hc b.ι
+      rw [ι_desc]
+
+end Dagger
+
+end Comparison
+
+end CategoryTheory.Limits.Bicone
+
+namespace CategoryTheory.Limits.BinaryBicone
+
+open DaggerCategory
+
+universe u v
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+  {X Y : C} (b : BinaryBicone X Y)
+
+section Dagger
+
+variable [DaggerCategory C]
+
+/-- A binary bicone whose injections are adjoint to its projections. -/
+class IsDagger : Prop where
+  /-- The first injection and projection are adjoints. -/
+  dagger_inl : b.inl† = b.fst
+  /-- The second injection and projection are adjoints. -/
+  dagger_inr : b.inr† = b.snd
+
+variable [b.IsDagger]
+
+/-- The first projection is the dagger of the first injection. -/
+@[simp]
+lemma IsDagger.dagger_fst : b.fst† = b.inl := by
+  simpa only [involutive_dagger] using (congrArg dagger (IsDagger.dagger_inl (b := b))).symm
+
+/-- The second projection is the dagger of the second injection. -/
+@[simp]
+lemma IsDagger.dagger_snd : b.snd† = b.inr := by
+  simpa only [involutive_dagger] using (congrArg dagger (IsDagger.dagger_inr (b := b))).symm
+
+end Dagger
+
+variable (hb : b.IsBilimit)
+
+/-- Factor a pair of maps into an explicit binary bilimit bicone. -/
+def lift {Z : C} (f : Z ⟶ X) (g : Z ⟶ Y) : Z ⟶ b.pt :=
+  BinaryFan.IsLimit.lift hb.isLimit f g
+
+/-- Factor a pair of maps out of an explicit binary bilimit bicone. -/
+def desc {Z : C} (f : X ⟶ Z) (g : Y ⟶ Z) : b.pt ⟶ Z :=
+  BinaryCofan.IsColimit.desc hb.isColimit f g
+
+/-- The first component of a binary bilimit lift. -/
+@[reassoc (attr := simp)]
+lemma lift_fst {Z : C} (f : Z ⟶ X) (g : Z ⟶ Y) : b.lift hb f g ≫ b.fst = f :=
+  hb.isLimit.fac _ ⟨WalkingPair.left⟩
+
+/-- The second component of a binary bilimit lift. -/
+@[reassoc (attr := simp)]
+lemma lift_snd {Z : C} (f : Z ⟶ X) (g : Z ⟶ Y) : b.lift hb f g ≫ b.snd = g :=
+  hb.isLimit.fac _ ⟨WalkingPair.right⟩
+
+/-- The first component of a binary bilimit descent. -/
+@[reassoc (attr := simp)]
+lemma inl_desc {Z : C} (f : X ⟶ Z) (g : Y ⟶ Z) : b.inl ≫ b.desc hb f g = f :=
+  hb.isColimit.fac _ ⟨WalkingPair.left⟩
+
+/-- The second component of a binary bilimit descent. -/
+@[reassoc (attr := simp)]
+lemma inr_desc {Z : C} (f : X ⟶ Z) (g : Y ⟶ Z) : b.inr ≫ b.desc hb f g = g :=
+  hb.isColimit.fac _ ⟨WalkingPair.right⟩
+
+section Dagger
+
+variable [DaggerCategory C] [b.IsDagger]
+
+/-- Dagger exchanges the row and column maps of a binary dagger biproduct. -/
+theorem dagger_desc {Z : C} (f : X ⟶ Z) (g : Y ⟶ Z) :
+    (b.desc hb f g)† = b.lift hb f† g† := by
+  apply BinaryFan.IsLimit.hom_ext hb.isLimit
+  · change (b.desc hb f g)† ≫ b.fst = b.lift hb f† g† ≫ b.fst
+    rw [lift_fst, ← IsDagger.dagger_inl (b := b), ← dagger_comp, inl_desc]
+  · change (b.desc hb f g)† ≫ b.snd = b.lift hb f† g† ≫ b.snd
+    rw [lift_snd, ← IsDagger.dagger_inr (b := b), ← dagger_comp, inr_desc]
+
+/-- Dagger exchanges the column and row maps of a binary dagger biproduct. -/
+theorem dagger_lift {Z : C} (f : Z ⟶ X) (g : Z ⟶ Y) :
+    (b.lift hb f g)† = b.desc hb f† g† := by
+  have h := congrArg dagger (b.dagger_desc hb f† g†)
+  simpa only [involutive_dagger] using h.symm
+
+end Dagger
+
+section Comparison
+
+variable [DaggerCategory C] [b.IsDagger]
+
+/-- The family view of a binary dagger bicone is still a dagger bicone. -/
+instance toBiconeIsDagger : b.toBicone.IsDagger where
+  dagger_ι i := by
+    cases i with
+    | left => exact IsDagger.dagger_inl (b := b)
+    | right => exact IsDagger.dagger_inr (b := b)
+
+variable (c : BinaryBicone X Y) (hc : c.IsBilimit) [c.IsDagger]
+
+/-- The canonical comparison of two binary dagger biproducts. -/
+def iso : b.pt ≅ c.pt :=
+  b.toBicone.iso ((b.toBiconeIsBilimit).symm hb) c.toBicone
+    ((c.toBiconeIsBilimit).symm hc)
+
+/-- The canonical comparison of two binary dagger biproducts is unitary. -/
+theorem isUnitary_iso : IsUnitary (b.iso hb c hc).hom :=
+  b.toBicone.isUnitary_iso ((b.toBiconeIsBilimit).symm hb) c.toBicone
+    ((c.toBiconeIsBilimit).symm hc)
+
+end Comparison
+
+end CategoryTheory.Limits.BinaryBicone
+
 namespace CategoryTheory.DaggerCategory
 
 universe u v
@@ -51,6 +338,38 @@ universe u v
 section Family
 
 variable {C : Type u} [Category.{v} C] [DaggerCategory C] [HasZeroMorphisms C]
+
+/-- A specific dagger biproduct, with its bilimit and dagger witnesses. -/
+structure DaggerBiproductData {ι : Type*} (F : ι → C) where
+  /-- The bicone carrying the orthogonal direct sum. -/
+  bicone : Bicone F
+  /-- The bicone is both a limit and a colimit. -/
+  isBilimit : bicone.IsBilimit
+  /-- Its injections are adjoint to its projections. -/
+  isDagger : bicone.IsDagger
+
+/-- Existence of a dagger biproduct without normalizing Mathlib's chosen biproduct. -/
+class HasDaggerBiproduct {ι : Type*} (F : ι → C) : Prop where
+  /-- A normalized bilimit bicone exists. -/
+  exists_daggerBiproduct : Nonempty (DaggerBiproductData F)
+
+/-- A chosen dagger biproduct, selected together with its normalization. -/
+noncomputable def daggerBiproduct {ι : Type*} (F : ι → C)
+    [HasDaggerBiproduct F] : DaggerBiproductData F :=
+  Classical.choice HasDaggerBiproduct.exists_daggerBiproduct
+
+/-- A dagger biproduct supplies an ordinary biproduct, without normalizing its choice. -/
+instance {ι : Type*} (F : ι → C) [HasDaggerBiproduct F] : HasBiproduct F where
+  exists_biproduct := ⟨⟨(daggerBiproduct F).bicone, (daggerBiproduct F).isBilimit⟩⟩
+
+namespace DaggerBiproductData
+
+variable {ι : Type*} {F : ι → C} (d : DaggerBiproductData F)
+
+/-- The chosen dagger bicone carries its dagger property. -/
+instance : d.bicone.IsDagger := d.isDagger
+
+end DaggerBiproductData
 
 /-- A biproduct `⨁ f` is a **dagger biproduct** when every injection is the dagger of the
 corresponding projection. -/
@@ -60,13 +379,17 @@ class IsDaggerBiproduct {ι : Type*} (f : ι → C) [HasBiproduct f] : Prop wher
 
 attribute [simp] IsDaggerBiproduct.dagger_ι
 
+/-- The chosen ordinary bicone inherits an explicitly assumed dagger condition. -/
+instance chosenBiconeIsDagger {ι : Type*} {F : ι → C} [HasBiproduct F]
+    [IsDaggerBiproduct F] : (biproduct.bicone F).IsDagger where
+  dagger_ι := IsDaggerBiproduct.dagger_ι
+
 namespace IsDaggerBiproduct
 
 variable {ι : Type*} {f : ι → C} [HasBiproduct f] [IsDaggerBiproduct f]
 
 /-- The stated condition, read the other way: every projection is the dagger of the
-corresponding injection. -/
-@[simp]
+corresponding injection. The explicit-bicone lemma supplies the simp rule. -/
 lemma dagger_π (i : ι) : (biproduct.π f i)† = biproduct.ι f i := by
   simpa only [involutive_dagger] using (congrArg dagger (dagger_ι (f := f) i)).symm
 
@@ -77,17 +400,14 @@ variable {ι : Type*} {f : ι → C} [HasBiproduct f] [IsDaggerBiproduct f]
 /-- Dagger of a row map is the column map of daggers. -/
 @[simp]
 lemma dagger_biproduct_desc {X : C} (x : ∀ i, f i ⟶ X) :
-    (biproduct.desc x)† = biproduct.lift (fun i ↦ (x i)†) := by
-  apply biproduct.hom_ext
-  intro i
-  rw [biproduct.lift_π, ← IsDaggerBiproduct.dagger_ι, ← dagger_comp, biproduct.ι_desc]
+    (biproduct.desc x)† = biproduct.lift (fun i ↦ (x i)†) :=
+  (biproduct.bicone f).dagger_desc (biproduct.isBilimit f) x
 
 /-- Dagger of a column map is the row map of daggers. -/
 @[simp]
 lemma dagger_biproduct_lift {X : C} (x : ∀ i, X ⟶ f i) :
-    (biproduct.lift x)† = biproduct.desc (fun i ↦ (x i)†) := by
-  have h := congrArg dagger (dagger_biproduct_desc (fun i ↦ (x i)†))
-  simpa only [involutive_dagger] using h.symm
+    (biproduct.lift x)† = biproduct.desc (fun i ↦ (x i)†) :=
+  (biproduct.bicone f).dagger_lift (biproduct.isBilimit f) x
 
 variable {κ : Type*} {G : κ → C} [HasBiproduct G] [IsDaggerBiproduct G]
 
@@ -100,8 +420,8 @@ noncomputable def entry (x : ⨁ f ⟶ ⨁ G) (i : ι) (j : κ) : f i ⟶ G j :=
 /-- **Lemma 2.41**, intrinsic (universe-polymorphic) form: transposing a morphism of
 biproducts daggers every entry. -/
 theorem dagger_entry (x : ⨁ f ⟶ ⨁ G) (i : ι) (j : κ) :
-    entry (x†) j i = (entry x i j)† := by
-  simp [entry, Category.assoc]
+    entry (x†) j i = (entry x i j)† :=
+  (biproduct.bicone f).dagger_entry (biproduct.bicone G) x i j
 
 end Family
 
@@ -116,21 +436,48 @@ theorem dagger_biproduct_matrix {ι κ : Type} [Finite ι] [Finite κ]
     [IsDaggerBiproduct F] [IsDaggerBiproduct G]
     (m : ∀ i j, F i ⟶ G j) :
     (biproduct.matrix m)†
-      = biproduct.matrix (f := G) (g := F) (fun (j : κ) (i : ι) ↦ (m i j)†) := by
-  apply biproduct.matrixEquiv.injective
-  funext j i
-  change biproduct.components ((biproduct.matrix m)†) j i
-      = biproduct.components (biproduct.matrix fun (j : κ) (i : ι) ↦ (m i j)†) j i
-  rw [biproduct.matrix_components, biproduct.components]
-  rw [← IsDaggerBiproduct.dagger_π (f := G) j, ← IsDaggerBiproduct.dagger_ι (f := F) i]
-  rw [← dagger_comp, ← dagger_comp]
-  rw [Category.assoc, ← biproduct.components, biproduct.matrix_components]
+      = biproduct.matrix (f := G) (g := F) (fun (j : κ) (i : ι) ↦ (m i j)†) :=
+  (biproduct.bicone F).dagger_matrix (biproduct.isBilimit F)
+    (biproduct.bicone G) (biproduct.isBilimit G) m
 
 end MatrixForm
 
 section Binary
 
 variable {C : Type u} [Category.{v} C] [DaggerCategory C] [HasZeroMorphisms C]
+
+/-- A specific binary dagger biproduct with its bilimit and dagger witnesses. -/
+structure DaggerBinaryBiproductData (X Y : C) where
+  /-- The bicone carrying the orthogonal binary sum. -/
+  bicone : BinaryBicone X Y
+  /-- The bicone is both a limit and a colimit. -/
+  isBilimit : bicone.IsBilimit
+  /-- Its injections are adjoint to its projections. -/
+  isDagger : bicone.IsDagger
+
+/-- Existence of a binary dagger biproduct without normalizing the ordinary choice. -/
+class HasDaggerBinaryBiproduct (X Y : C) : Prop where
+  /-- A normalized binary bilimit bicone exists. -/
+  exists_daggerBinaryBiproduct : Nonempty (DaggerBinaryBiproductData X Y)
+
+/-- A chosen binary dagger biproduct together with its normalization. -/
+noncomputable def daggerBinaryBiproduct (X Y : C) [HasDaggerBinaryBiproduct X Y] :
+    DaggerBinaryBiproductData X Y :=
+  Classical.choice HasDaggerBinaryBiproduct.exists_daggerBinaryBiproduct
+
+/-- A binary dagger biproduct supplies an ordinary binary biproduct. -/
+instance (X Y : C) [HasDaggerBinaryBiproduct X Y] : HasBinaryBiproduct X Y where
+  exists_binary_biproduct :=
+    ⟨⟨(daggerBinaryBiproduct X Y).bicone, (daggerBinaryBiproduct X Y).isBilimit⟩⟩
+
+namespace DaggerBinaryBiproductData
+
+variable {X Y : C} (d : DaggerBinaryBiproductData X Y)
+
+/-- The chosen binary dagger bicone carries its dagger property. -/
+instance : d.bicone.IsDagger := d.isDagger
+
+end DaggerBinaryBiproductData
 
 /-- Binary form of Definition 2.39, matching Mathlib's `biprod`. -/
 class IsDaggerBinaryBiproduct (X Y : C) [HasBinaryBiproduct X Y] : Prop where
@@ -141,16 +488,22 @@ class IsDaggerBinaryBiproduct (X Y : C) [HasBinaryBiproduct X Y] : Prop where
 
 attribute [simp] IsDaggerBinaryBiproduct.dagger_inl IsDaggerBinaryBiproduct.dagger_inr
 
+/-- The chosen ordinary binary bicone inherits an explicitly assumed dagger condition. -/
+instance chosenBinaryBiconeIsDagger {X Y : C} [HasBinaryBiproduct X Y]
+    [IsDaggerBinaryBiproduct X Y] : (BinaryBiproduct.bicone X Y).IsDagger where
+  dagger_inl := IsDaggerBinaryBiproduct.dagger_inl
+  dagger_inr := IsDaggerBinaryBiproduct.dagger_inr
+
 section
 
 variable {X Y Z : C} [HasBinaryBiproduct X Y] [IsDaggerBinaryBiproduct X Y]
 
-@[simp]
+/-- The explicit binary-bicone lemma supplies the simp rule for this equality. -/
 lemma IsDaggerBinaryBiproduct.dagger_fst : (biprod.fst : X ⊞ Y ⟶ X)† = biprod.inl := by
   simpa only [involutive_dagger] using
     (congrArg dagger (IsDaggerBinaryBiproduct.dagger_inl (X := X) (Y := Y))).symm
 
-@[simp]
+/-- The explicit binary-bicone lemma supplies the simp rule for this equality. -/
 lemma IsDaggerBinaryBiproduct.dagger_snd : (biprod.snd : X ⊞ Y ⟶ Y)† = biprod.inr := by
   simpa only [involutive_dagger] using
     (congrArg dagger (IsDaggerBinaryBiproduct.dagger_inr (X := X) (Y := Y))).symm
@@ -158,17 +511,14 @@ lemma IsDaggerBinaryBiproduct.dagger_snd : (biprod.snd : X ⊞ Y ⟶ Y)† = bip
 /-- Dagger of a row matrix is the column matrix of daggers. -/
 @[simp]
 lemma IsDaggerBinaryBiproduct.dagger_desc (f : X ⟶ Z) (g : Y ⟶ Z) :
-    (biprod.desc f g)† = biprod.lift f† g† := by
-  apply biprod.hom_ext
-  · rw [biprod.lift_fst, ← IsDaggerBinaryBiproduct.dagger_inl, ← dagger_comp, biprod.inl_desc]
-  · rw [biprod.lift_snd, ← IsDaggerBinaryBiproduct.dagger_inr, ← dagger_comp, biprod.inr_desc]
+    (biprod.desc f g)† = biprod.lift f† g† :=
+  (BinaryBiproduct.bicone X Y).dagger_desc (BinaryBiproduct.isBilimit X Y) f g
 
 /-- Dagger of a column matrix is the row matrix of daggers. -/
 @[simp]
 lemma IsDaggerBinaryBiproduct.dagger_lift (f : Z ⟶ X) (g : Z ⟶ Y) :
-    (biprod.lift f g)† = biprod.desc f† g† := by
-  have h := congrArg dagger (IsDaggerBinaryBiproduct.dagger_desc f† g†)
-  simpa only [involutive_dagger] using h.symm
+    (biprod.lift f g)† = biprod.desc f† g† :=
+  (BinaryBiproduct.bicone X Y).dagger_lift (BinaryBiproduct.isBilimit X Y) f g
 
 end
 
