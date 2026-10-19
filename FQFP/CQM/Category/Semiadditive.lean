@@ -145,16 +145,12 @@ lemma sum_comp {X Y Z : C} {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y)) (
 /-- A binary biproduct's row map is the sum of its two components. -/
 lemma desc_eq_add {X Y Z : C} [HasBinaryBiproduct X Y] (f : X ⟶ Z) (g : Y ⟶ Z) :
     biprod.desc f g = biprod.fst ≫ f + biprod.snd ≫ g := by
-  apply biprod.hom_ext'
-  · simp
-  · simp
+  ext <;> simp
 
 /-- A binary biproduct's column map is the sum of its two components. -/
 lemma lift_eq_add {X Y Z : C} [HasBinaryBiproduct X Y] (f : Z ⟶ X) (g : Z ⟶ Y) :
     biprod.lift f g = f ≫ biprod.inl + g ≫ biprod.inr := by
-  apply biprod.hom_ext
-  · simp [Category.assoc]
-  · simp [Category.assoc]
+  ext <;> simp
 
 /-- Addition is the diagonal followed by the row map of a binary biproduct. -/
 lemma add_eq_lift_id_desc {X Y : C} [HasBinaryBiproduct X X] (f g : X ⟶ Y) :
@@ -178,7 +174,6 @@ Additive inverses are unnecessary. -/
 theorem total (hb : b.IsBilimit) : ∑ i, b.π i ≫ b.ι i = 𝟙 b.pt := by
   apply hb.isLimit.hom_ext
   rintro ⟨j⟩
-  classical
   change (∑ i, b.π i ≫ b.ι i) ≫ b.π j = 𝟙 b.pt ≫ b.π j
   rw [Semiadditive.sum_comp, Finset.sum_eq_single j]
   · simp only [Category.assoc, bicone_ι_π_self, Category.comp_id, Category.id_comp]

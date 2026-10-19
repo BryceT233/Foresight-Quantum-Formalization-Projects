@@ -26,7 +26,12 @@ public import FQFP.CQM.QuditCat.Monoidal
 public import FQFP.CQM.QuditCat.Biproducts
 public import FQFP.CQM.QuditCat.Measurement
 public import FQFP.CQM.HilbCat
-public import FQFP.CQM.RelCat
+public import FQFP.CQM.RelCat.SetRel
+public import FQFP.CQM.RelCat.Semiadditive
+public import FQFP.CQM.RelCat.Monoidal
+public import FQFP.CQM.RelCat.Dagger
+public import FQFP.CQM.RelCat.Braided
+public import FQFP.CQM.RelCat.Morphism
 public import FQFP.CQM.RelCat.Biproducts
 public import FQFP.CQM.RelCat.Measurement
 public import FQFP.TrotterError.Calculus

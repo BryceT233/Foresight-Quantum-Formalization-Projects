@@ -5,7 +5,8 @@ Authors: Bingyu Xia
 -/
 module
 
-public import FQFP.CQM.RelCat
+public import FQFP.CQM.RelCat.Semiadditive
+public import FQFP.CQM.RelCat.Dagger
 public import FQFP.CQM.Category.DaggerBiproduct
 public import Mathlib.Basic.UnivLE
 

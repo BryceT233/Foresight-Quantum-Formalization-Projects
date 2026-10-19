@@ -119,7 +119,7 @@ theorem hom_basisMeasurement {H : QuditCat} {ι : Type} [Fintype ι]
   exact basisMeasurement_apply b v i
 
 /-- **Example 2.54**: a basis measurement is unitary by the abstract complete/disjoint theorem. -/
-theorem isUnitary_basisMeasurement {H : QuditCat} {ι : Type} [Fintype ι]
+instance isUnitary_basisMeasurement {H : QuditCat} {ι : Type} [Fintype ι]
     (b : OrthonormalBasis ι ℂ H.state) : IsUnitary (basisMeasurement b) :=
   Effect.isUnitary_bicone_lift_of_complete_disjoint
     (sumBicone (fun _ : ι ↦ of ℂ)) (sumBiconeIsBilimit _)

@@ -6,6 +6,7 @@ Authors: Bingyu Xia
 module
 
 public import FQFP.CQM.QuditCat.Basic
+public import FQFP.CQM.Category.DaggerRigid
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 
 /-!
@@ -214,6 +215,13 @@ instance symmetricCategory : SymmetricCategory QuditCat where
   symmetry H₁ H₂ := hom_ext <| by
     rw [hom_comp, hom_id]
     exact TensorProduct.comm_comp_comm ..
+
+/-- The braiding of `QuditCat` is unitary: it is the linear isometry `TensorProduct.comm`
+forgetting to a linear equivalence. This is Definition 2.37 for the tensor product of
+Hilbert spaces. -/
+instance symmetricMonoidalDaggerCategory : SymmetricMonoidalDaggerCategory QuditCat where
+  isUnitary_braiding H₁ H₂ := isUnitary_isoMk_coe_LIEquiv (H₁ := H₁ ⊗ H₂) (H₂ := H₂ ⊗ H₁)
+      (TensorProduct.commIsometry ℂ H₁.state H₂.state)
 
 end
 
