@@ -29,8 +29,9 @@ correction is the Lie bracket — is in `FQFP/BCH/BCHCommutator.lean`.
 
 ## The scalar interface
 
-Everything is stated over `[NormedAlgebra ℚ 𝔸]` alone, because `NormedSpace.exp` and `FQFP.log`
-carry no scalar field: both are `ℚ`-series with a junk value when no `ℚ`-algebra structure exists.
+Everything is stated over `[NormedAlgebra ℚ 𝔸]` alone, because `NormedSpace.exp` and
+`NormedSpace.log` carry no scalar field: both are `ℚ`-series with a junk value when no `ℚ`-algebra
+structure exists.
 The `ℝ`-algebra structure that `Logarithm.lean`'s ODE argument needs is therefore *not* a
 hypothesis but a local instance, obtained inside the proofs from `normedAlgebraReal`
 (`RealScalar.lean`), which supplies it from `ℚ` plus completeness and proves it unique.
