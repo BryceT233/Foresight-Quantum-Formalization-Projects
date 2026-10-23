@@ -81,6 +81,47 @@ instance instMonoidalCategoryStructRelCat : MonoidalCategoryStruct RelCat.{u} wh
 
 @[simp] lemma rel_rightUnitor_inv : (ρ_ X).inv.rel = {p | (p.1, PUnit.unit) = p.2} := rfl
 
+/-! ### Membership form of the structural relations
+
+The `rel_*` lemmas above describe structural morphisms as sets of pairs. These companions
+restate them as membership rules, which is the form `simp` matches on a goal: the lemmas above
+produce a set-builder that `simp` cannot beta-reduce under a binder.
+-/
+
+@[simp] lemma mem_tensorHom {X₁ Y₁ X₂ Y₂ : RelCat.{u}} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂)
+    (a : (X₁ ⊗ X₂ : RelCat.{u})) (b : (Y₁ ⊗ Y₂ : RelCat.{u})) :
+    (a, b) ∈ (f ⊗ₘ g).rel ↔ (a.1, b.1) ∈ f.rel ∧ (a.2, b.2) ∈ g.rel := Iff.rfl
+
+@[simp] lemma mem_whiskerLeft (f : Y ⟶ Z) (a : (X ⊗ Y : RelCat.{u})) (b : (X ⊗ Z : RelCat.{u})) :
+    (a, b) ∈ (X ◁ f).rel ↔ a.1 = b.1 ∧ (a.2, b.2) ∈ f.rel := Iff.rfl
+
+@[simp] lemma mem_whiskerRight (f : X ⟶ Y) (a : (X ⊗ Z : RelCat.{u})) (b : (Y ⊗ Z : RelCat.{u})) :
+    (a, b) ∈ (f ▷ Z).rel ↔ (a.1, b.1) ∈ f.rel ∧ a.2 = b.2 := Iff.rfl
+
+@[simp] lemma mem_associator_hom (a : ((X ⊗ Y) ⊗ Z : RelCat.{u}))
+    (b : (X ⊗ (Y ⊗ Z) : RelCat.{u})) :
+    (a, b) ∈ (α_ X Y Z).hom.rel ↔ (a.1.1, a.1.2, a.2) = b := Iff.rfl
+
+@[simp] lemma mem_associator_inv (a : (X ⊗ (Y ⊗ Z) : RelCat.{u}))
+    (b : ((X ⊗ Y) ⊗ Z : RelCat.{u})) :
+    (a, b) ∈ (α_ X Y Z).inv.rel ↔ ((a.1, a.2.1), a.2.2) = b := Iff.rfl
+
+@[simp] lemma mem_leftUnitor_hom (a : (𝟙_ RelCat.{u} ⊗ X : RelCat.{u})) (b : X) :
+    (a, b) ∈ (λ_ X).hom.rel ↔ a.2 = b := Iff.rfl
+
+/-- Membership in the inverse left unitor, with the unit component forgotten. -/
+lemma mem_leftUnitor_inv (a : X) (b : (𝟙_ RelCat.{u} ⊗ X : RelCat.{u})) :
+    (a, b) ∈ (λ_ X).inv.rel ↔ a = b.2 :=
+  ⟨fun h ↦ (Prod.ext_iff.1 h).2, fun h ↦ Prod.ext (Subsingleton.elim _ _) h⟩
+
+@[simp] lemma mem_rightUnitor_hom (a : (X ⊗ 𝟙_ RelCat.{u} : RelCat.{u})) (b : X) :
+    (a, b) ∈ (ρ_ X).hom.rel ↔ a.1 = b := Iff.rfl
+
+/-- Membership in the inverse right unitor, with the unit component forgotten. -/
+lemma mem_rightUnitor_inv (a : X) (b : (X ⊗ 𝟙_ RelCat.{u} : RelCat.{u})) :
+    (a, b) ∈ (ρ_ X).inv.rel ↔ a = b.1 :=
+  ⟨fun h ↦ (Prod.ext_iff.1 h).1, fun h ↦ Prod.ext h (Subsingleton.elim _ _)⟩
+
 set_option backward.isDefEq.respectTransparency.types false in
 /-- `RelCat` is a monoidal category. -/
 instance instMonoidalCategoryRelCat : MonoidalCategory RelCat.{u} where

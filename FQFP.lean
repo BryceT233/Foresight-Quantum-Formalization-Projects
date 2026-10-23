@@ -20,11 +20,14 @@ public import FQFP.CQM.Category.DaggerCategory
 public import FQFP.CQM.Category.DaggerBiproduct
 public import FQFP.CQM.Category.DaggerRigid
 public import FQFP.CQM.Category.Measurement
+public import FQFP.CQM.Category.Teleportation
 public import FQFP.CQM.QuditCat.Basic
 public import FQFP.CQM.QuditCat.Dagger
 public import FQFP.CQM.QuditCat.Monoidal
 public import FQFP.CQM.QuditCat.Biproducts
 public import FQFP.CQM.QuditCat.Measurement
+public import FQFP.CQM.QuditCat.Rigid
+public import FQFP.CQM.QuditCat.Teleportation
 public import FQFP.CQM.HilbCat
 public import FQFP.CQM.RelCat.SetRel
 public import FQFP.CQM.RelCat.Semiadditive
@@ -34,6 +37,8 @@ public import FQFP.CQM.RelCat.Braided
 public import FQFP.CQM.RelCat.Morphism
 public import FQFP.CQM.RelCat.Biproducts
 public import FQFP.CQM.RelCat.Measurement
+public import FQFP.CQM.RelCat.Rigid
+public import FQFP.CQM.RelCat.Teleportation
 public import FQFP.TrotterError.Calculus
 public import FQFP.TrotterError.Combinatorics
 public import FQFP.TrotterError.Commutator
