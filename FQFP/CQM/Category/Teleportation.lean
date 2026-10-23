@@ -34,8 +34,8 @@ here.
 ## Single branches are not yet a measurement
 
 The theorems here are per branch: they say what a given outcome does *if it occurs*.
-Completeness and disjointness of the branch effects are separate requirements. They are proved
-for `RelCat.bitBellEffects`; the corresponding qubit Bell measurement remains to be formalized.
+Completeness and disjointness of the branch effects are separate requirements, proved in the
+models for `RelCat.bitBellEffects` and the normalized `QuditCat.qubitBellEffects`.
 
 ## Normalization boundary
 

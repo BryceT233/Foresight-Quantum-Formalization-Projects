@@ -42,7 +42,7 @@ and no heartbeat budget is raised.
 
 namespace FQFP.BCH
 
-open WordAlgebra
+open WordTable
 
 variable {𝔸 : Type*}
 
@@ -76,95 +76,95 @@ def bchY56 {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸
 /-! ### The degree-6 tables
 
 Every piece is written in the same order and with the same shape as its ring-level counterpart
-above, so its bridge is a `simp only` that pushes `evalKTab` through the table operations,
-discharges the `K ^ 6` factors with `norm_num`, and reorders with `abel`. -/
+above, so its bridge is a `simp only` that pushes `eval` through the table operations,
+discharges the `coefficientScale ^ 6` factors with `norm_num`, and reorders with `abel`. -/
 
 /-- The degree-6 `W6` table, mirroring `bchW6`. -/
-def w6Tab : KTab :=
-  smulKTab 2 (bchTTable 6) ++ smulKTab (-1) (mulKTab (bchTTable 1) (bchTTable 5)) ++
-    smulKTab (-1) (mulKTab (bchTTable 2) (bchTTable 4)) ++
-    smulKTab (-1) (mulKTab (bchTTable 3) (bchTTable 3)) ++
-    smulKTab (-1) (mulKTab (bchTTable 4) (bchTTable 2)) ++
-    smulKTab (-1) (mulKTab (bchTTable 5) (bchTTable 1))
+def w6Tab : WordTable.Table (Fin 2) :=
+  smul 2 (bchTTable 6) ++ smul (-1) (mul (bchTTable 1) (bchTTable 5)) ++
+    smul (-1) (mul (bchTTable 2) (bchTTable 4)) ++
+    smul (-1) (mul (bchTTable 3) (bchTTable 3)) ++
+    smul (-1) (mul (bchTTable 4) (bchTTable 2)) ++
+    smul (-1) (mul (bchTTable 5) (bchTTable 1))
 
-/-- **`W6` as a table**: `evalKTab a b w6Tab = bchW6 a b`. -/
-lemma evalKTab_w6Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b w6Tab = bchW6 a b := by
-  simp only [w6Tab, bchW6, bchZ, evalKTab_append, evalKTab_smulKTab, evalKTab_mulKTab]
-  simp only [evalKTab_bchTTable_one, evalKTab_bchTTable_two, evalKTab_bchTTable_three,
-    evalKTab_bchTTable_four, evalKTab_bchTTable_five, evalKTab_bchTTable_six, bchZ]
+/-- **`W6` as a table**: `eval coefficientScale ![a, b] w6Tab = bchW6 a b`. -/
+lemma eval_w6Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] w6Tab = bchW6 a b := by
+  simp only [w6Tab, bchW6, bchZ, eval_append, eval_smul, eval_mul]
+  simp only [eval_bchTTable_one, eval_bchTTable_two, eval_bchTTable_three,
+    eval_bchTTable_four, eval_bchTTable_five, eval_bchTTable_six, bchZ]
   norm_cast; norm_num
   abel
 
 /-- The degree-6 `(y³)_d6` table, mirroring `bchY36`. -/
-def y36Tab : KTab :=
-  mulKTab (powKTab (bchTTable 1) 2) (bchTTable 4) ++
-    mulKTab (mulKTab (bchTTable 1) (bchTTable 4)) (bchTTable 1) ++
-    mulKTab (bchTTable 4) (powKTab (bchTTable 1) 2) ++
-    mulKTab (mulKTab (bchTTable 1) (bchTTable 2)) (bchTTable 3) ++
-    mulKTab (mulKTab (bchTTable 1) (bchTTable 3)) (bchTTable 2) ++
-    mulKTab (mulKTab (bchTTable 2) (bchTTable 1)) (bchTTable 3) ++
-    mulKTab (mulKTab (bchTTable 2) (bchTTable 3)) (bchTTable 1) ++
-    mulKTab (mulKTab (bchTTable 3) (bchTTable 1)) (bchTTable 2) ++
-    mulKTab (mulKTab (bchTTable 3) (bchTTable 2)) (bchTTable 1) ++
-    powKTab (bchTTable 2) 3
+def y36Tab : WordTable.Table (Fin 2) :=
+  mul (pow (bchTTable 1) 2) (bchTTable 4) ++
+    mul (mul (bchTTable 1) (bchTTable 4)) (bchTTable 1) ++
+    mul (bchTTable 4) (pow (bchTTable 1) 2) ++
+    mul (mul (bchTTable 1) (bchTTable 2)) (bchTTable 3) ++
+    mul (mul (bchTTable 1) (bchTTable 3)) (bchTTable 2) ++
+    mul (mul (bchTTable 2) (bchTTable 1)) (bchTTable 3) ++
+    mul (mul (bchTTable 2) (bchTTable 3)) (bchTTable 1) ++
+    mul (mul (bchTTable 3) (bchTTable 1)) (bchTTable 2) ++
+    mul (mul (bchTTable 3) (bchTTable 2)) (bchTTable 1) ++
+    pow (bchTTable 2) 3
 
-/-- **`(y³)_d6` as a table**: `evalKTab a b y36Tab = bchY36 a b`. -/
-lemma evalKTab_y36Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b y36Tab = bchY36 a b := by
-  simp only [y36Tab, bchY36, bchZ, evalKTab_append, evalKTab_mulKTab, evalKTab_powKTab]
-  simp only [evalKTab_bchTTable_one, evalKTab_bchTTable_two, evalKTab_bchTTable_three,
-    evalKTab_bchTTable_four, bchZ]
+/-- **`(y³)_d6` as a table**: `eval coefficientScale ![a, b] y36Tab = bchY36 a b`. -/
+lemma eval_y36Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] y36Tab = bchY36 a b := by
+  simp only [y36Tab, bchY36, bchZ, eval_append, eval_mul, eval_pow]
+  simp only [eval_bchTTable_one, eval_bchTTable_two, eval_bchTTable_three,
+    eval_bchTTable_four, bchZ]
 
 /-- The degree-6 `(y⁴)_d6` table, mirroring `bchY46`. -/
-def y46Tab : KTab :=
-  mulKTab (powKTab (bchTTable 1) 3) (bchTTable 3) ++
-    mulKTab (mulKTab (powKTab (bchTTable 1) 2) (bchTTable 3)) (bchTTable 1) ++
-    mulKTab (mulKTab (bchTTable 1) (bchTTable 3)) (powKTab (bchTTable 1) 2) ++
-    mulKTab (bchTTable 3) (powKTab (bchTTable 1) 3) ++
-    mulKTab (powKTab (bchTTable 1) 2) (powKTab (bchTTable 2) 2) ++
-    mulKTab (mulKTab (mulKTab (bchTTable 1) (bchTTable 2)) (bchTTable 1)) (bchTTable 2) ++
-    mulKTab (mulKTab (bchTTable 1) (powKTab (bchTTable 2) 2)) (bchTTable 1) ++
-    mulKTab (mulKTab (bchTTable 2) (powKTab (bchTTable 1) 2)) (bchTTable 2) ++
-    mulKTab (mulKTab (mulKTab (bchTTable 2) (bchTTable 1)) (bchTTable 2)) (bchTTable 1) ++
-    mulKTab (powKTab (bchTTable 2) 2) (powKTab (bchTTable 1) 2)
+def y46Tab : WordTable.Table (Fin 2) :=
+  mul (pow (bchTTable 1) 3) (bchTTable 3) ++
+    mul (mul (pow (bchTTable 1) 2) (bchTTable 3)) (bchTTable 1) ++
+    mul (mul (bchTTable 1) (bchTTable 3)) (pow (bchTTable 1) 2) ++
+    mul (bchTTable 3) (pow (bchTTable 1) 3) ++
+    mul (pow (bchTTable 1) 2) (pow (bchTTable 2) 2) ++
+    mul (mul (mul (bchTTable 1) (bchTTable 2)) (bchTTable 1)) (bchTTable 2) ++
+    mul (mul (bchTTable 1) (pow (bchTTable 2) 2)) (bchTTable 1) ++
+    mul (mul (bchTTable 2) (pow (bchTTable 1) 2)) (bchTTable 2) ++
+    mul (mul (mul (bchTTable 2) (bchTTable 1)) (bchTTable 2)) (bchTTable 1) ++
+    mul (pow (bchTTable 2) 2) (pow (bchTTable 1) 2)
 
-/-- **`(y⁴)_d6` as a table**: `evalKTab a b y46Tab = bchY46 a b`. -/
-lemma evalKTab_y46Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b y46Tab = bchY46 a b := by
-  simp only [y46Tab, bchY46, bchZ, evalKTab_append, evalKTab_mulKTab, evalKTab_powKTab]
-  simp only [evalKTab_bchTTable_one, evalKTab_bchTTable_two, evalKTab_bchTTable_three, bchZ]
+/-- **`(y⁴)_d6` as a table**: `eval coefficientScale ![a, b] y46Tab = bchY46 a b`. -/
+lemma eval_y46Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] y46Tab = bchY46 a b := by
+  simp only [y46Tab, bchY46, bchZ, eval_append, eval_mul, eval_pow]
+  simp only [eval_bchTTable_one, eval_bchTTable_two, eval_bchTTable_three, bchZ]
 
 /-- The degree-6 `(y⁵)_d6` table, mirroring `bchY56`. -/
-def y56Tab : KTab :=
-  mulKTab (powKTab (bchTTable 1) 4) (bchTTable 2) ++
-    mulKTab (mulKTab (powKTab (bchTTable 1) 3) (bchTTable 2)) (bchTTable 1) ++
-    mulKTab (mulKTab (powKTab (bchTTable 1) 2) (bchTTable 2)) (powKTab (bchTTable 1) 2) ++
-    mulKTab (mulKTab (bchTTable 1) (bchTTable 2)) (powKTab (bchTTable 1) 3) ++
-    mulKTab (bchTTable 2) (powKTab (bchTTable 1) 4)
+def y56Tab : WordTable.Table (Fin 2) :=
+  mul (pow (bchTTable 1) 4) (bchTTable 2) ++
+    mul (mul (pow (bchTTable 1) 3) (bchTTable 2)) (bchTTable 1) ++
+    mul (mul (pow (bchTTable 1) 2) (bchTTable 2)) (pow (bchTTable 1) 2) ++
+    mul (mul (bchTTable 1) (bchTTable 2)) (pow (bchTTable 1) 3) ++
+    mul (bchTTable 2) (pow (bchTTable 1) 4)
 
-/-- **`(y⁵)_d6` as a table**: `evalKTab a b y56Tab = bchY56 a b`. -/
-lemma evalKTab_y56Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b y56Tab = bchY56 a b := by
-  simp only [y56Tab, bchY56, bchZ, evalKTab_append, evalKTab_mulKTab, evalKTab_powKTab]
-  simp only [evalKTab_bchTTable_one, evalKTab_bchTTable_two, bchZ]
+/-- **`(y⁵)_d6` as a table**: `eval coefficientScale ![a, b] y56Tab = bchY56 a b`. -/
+lemma eval_y56Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] y56Tab = bchY56 a b := by
+  simp only [y56Tab, bchY56, bchZ, eval_append, eval_mul, eval_pow]
+  simp only [eval_bchTTable_one, eval_bchTTable_two, bchZ]
 
 /-- The degree-6 `z⁶` table, mirroring `(bchZ a b) ^ 6`. -/
-def z6Tab : KTab := powKTab (bchTTable 1) 6
+def z6Tab : WordTable.Table (Fin 2) := pow (bchTTable 1) 6
 
 /-- **The `z⁶` table's evaluation**: `z = a + b` raised to the sixth. -/
-lemma evalKTab_z6Tab {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b z6Tab = bchZ a b ^ 6 := by
-  rw [z6Tab, evalKTab_powKTab, evalKTab_bchTTable_one]
+lemma eval_z6Tab {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] z6Tab = bchZ a b ^ 6 := by
+  rw [z6Tab, eval_pow, eval_bchTTable_one]
 
 /-- **`bchSexticTerm`'s table**: `bchSexticTerm` is *defined* by evaluating
 `bchSexticTermTable`, so this is the table itself, not a copy of it. -/
-def sexticTab : KTab := bchSexticTermTable
+def sexticTab : WordTable.Table (Fin 2) := bchSexticTermTable
 
 /-- **The evaluation of the sextic table is `bchSexticTerm` itself**: with `sexticTab` being
 `bchSexticTermTable` this is `rfl`-level, which is the point of defining the term from its table. -/
-theorem evalKTab_sexticTab {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b sexticTab = bchSexticTerm a b :=
+theorem eval_sexticTab {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] sexticTab = bchSexticTerm a b :=
   rfl
 
 /-- **The degree-6 Dynkin side as a table**: the left-hand side of `septic_pure_identity`,
@@ -173,22 +173,22 @@ multiplied through by `lcm(1, …, 6) = 60` so that the multipliers are integers
 Unlike the table of the rational version of this proof, this one is deliberately *not*
 `irreducible`: it is unfolded exactly once, by the `decide` below, and nothing else compares goals
 whose type mentions it. -/
-def dynkin6Tab : KTab :=
-  smulKTab 30 w6Tab ++ smulKTab 20 y36Tab ++ smulKTab (-15) y46Tab ++
-    smulKTab 12 y56Tab ++ smulKTab (-10) z6Tab ++ smulKTab (-60) sexticTab
+def dynkin6Tab : WordTable.Table (Fin 2) :=
+  smul 30 w6Tab ++ smul 20 y36Tab ++ smul (-15) y46Tab ++
+    smul 12 y56Tab ++ smul (-10) z6Tab ++ smul (-60) sexticTab
 
 /-- **The degree-6 left-hand side, evaluated in an arbitrary `ℚ`-algebra**: `60` times the
 Dynkin/Ree expression of `septic_pure_identity`. The factor `60` is what clears the rational
-scalars `½ … ⅙` before the `K`-scaling. -/
-theorem evalKTab_dynkin6Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b dynkin6Tab
+scalars `½ … ⅙` before the `coefficientScale`-scaling. -/
+theorem eval_dynkin6Tab {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] dynkin6Tab
       = (60 : ℚ) • ((2 : ℚ)⁻¹ • bchW6 a b + (3 : ℚ)⁻¹ • bchY36 a b -
           (4 : ℚ)⁻¹ • bchY46 a b + (5 : ℚ)⁻¹ • bchY56 a b - (6 : ℚ)⁻¹ • bchZ a b ^ 6 -
           bchSexticTerm a b) := by
   rw [dynkin6Tab]
-  simp only [evalKTab_append, evalKTab_smulKTab]
-  rw [evalKTab_w6Tab, evalKTab_y36Tab, evalKTab_y46Tab, evalKTab_y56Tab, evalKTab_z6Tab,
-    evalKTab_sexticTab]
+  simp only [eval_append, eval_smul]
+  rw [eval_w6Tab, eval_y36Tab, eval_y46Tab, eval_y56Tab, eval_z6Tab,
+    eval_sexticTab]
   rw [show (60 : ℚ) • ((2 : ℚ)⁻¹ • bchW6 a b + (3 : ℚ)⁻¹ • bchY36 a b -
         (4 : ℚ)⁻¹ • bchY46 a b + (5 : ℚ)⁻¹ • bchY56 a b - (6 : ℚ)⁻¹ • bchZ a b ^ 6 -
         bchSexticTerm a b)
@@ -205,16 +205,16 @@ coefficient. This single `decide` is the whole computation.
 The unfolding genuinely has ~1000 nested `List.cons` cells, which is what the `maxRecDepth` is for:
 a *tactic recursion depth* limit on walking that term, not a search budget. No heartbeat budget is
 raised. -/
-theorem collapseK_dynkin6Tab_all_zero :
-    (collapseK dynkin6Tab).all (fun p => p.2 == 0) = true := by
+theorem collapse_dynkin6Tab_all_zero :
+    (collapse dynkin6Tab).all (fun p => p.2 == 0) = true := by
   decide
 
 /-- **The degree-6 cancellation, as a table identity**: the collapsed left-hand side evaluates to
 zero in any `ℚ`-algebra. -/
-theorem evalKTab_dynkin6Tab_eq_zero {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b dynkin6Tab = 0 := by
-  rw [← evalKTab_collapseK]
-  exact evalKTab_eq_zero_of_all_beq a b _ collapseK_dynkin6Tab_all_zero
+theorem eval_dynkin6Tab_eq_zero {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] dynkin6Tab = 0 := by
+  rw [← eval_collapse]
+  exact eval_eq_zero_of_all_beq coefficientScale ![a, b] _ collapse_dynkin6Tab_all_zero
 
 /-- **The degree-6 pure identity**: the degree-6 part of `½W6 + ⅓y3₆ - ¼y4₆ + ⅕y5₆ - ⅙z⁶`,
 written in `z = a + b` and the degree-2/3/4/5 parts `T₂`…`T₅` of `y = exp a * exp b - 1`, minus
@@ -223,11 +223,11 @@ written in `z = a + b` and the degree-2/3/4/5 parts `T₂`…`T₅` of `y = exp 
 This is the degree-6 cancellation behind `pieceB_septic_decomp`. The name is the source's and is one
 ahead of the degree; the companion at degree 5 is `sextic_pure_identity` in
 `DynkinReeQuintic.lean`. -/
-theorem septic_pure_identity {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) :
+theorem septic_pure_identity {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
     (2 : ℚ)⁻¹ • bchW6 a b + (3 : ℚ)⁻¹ • bchY36 a b - (4 : ℚ)⁻¹ • bchY46 a b +
       (5 : ℚ)⁻¹ • bchY56 a b - (6 : ℚ)⁻¹ • bchZ a b ^ 6 - bchSexticTerm a b = 0 := by
-  have h := evalKTab_dynkin6Tab (𝔸 := 𝔸) a b
-  rw [evalKTab_dynkin6Tab_eq_zero] at h
+  have h := eval_dynkin6Tab (𝔸 := 𝔸) a b
+  rw [eval_dynkin6Tab_eq_zero] at h
   rcases smul_eq_zero.mp h.symm with h60 | hX
   · exact absurd h60 (by norm_num)
   · exact hX

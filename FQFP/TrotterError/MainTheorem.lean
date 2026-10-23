@@ -8,7 +8,7 @@ module
 public import FQFP.TrotterError.OneNormScaling
 public import FQFP.TrotterError.CommutatorScaling
 import FQFP.TrotterError.ListLemmas
-public import FQFP.BCH.RealScalar
+public import FQFP.BCH.Analysis.RealScalar
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -432,7 +432,7 @@ theorem trotter_error_bound_comm_scaling
         have hτpos : 0 ≤ τ := le_of_lt hτ.1
         have hexpS : ‖exp ((t - τ) • S)‖ ≤ Real.exp (|t - τ| * N) := by
           calc
-            ‖exp ((t - τ) • S)‖ ≤ Real.exp (‖(t - τ) • S‖) := norm_exp_le _
+            ‖exp ((t - τ) • S)‖ ≤ Real.exp (‖(t - τ) • S‖) := FQFP.norm_exp_le _
             _ = Real.exp (|t - τ| * ‖S‖) := by rw [norm_smul, Real.norm_eq_abs]
             _ ≤ Real.exp (|t - τ| * N) :=
                 Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hS_le (abs_nonneg _))
@@ -644,7 +644,7 @@ theorem multiplicative_error_bound_comm_scaling
         have hτpos : 0 ≤ τ := le_of_lt hτ.1
         have hexpS : ‖exp ((-τ) • S)‖ ≤ Real.exp (|τ| * N) := by
           calc
-            ‖exp ((-τ) • S)‖ ≤ Real.exp (‖(-τ) • S‖) := norm_exp_le _
+            ‖exp ((-τ) • S)‖ ≤ Real.exp (‖(-τ) • S‖) := FQFP.norm_exp_le _
             _ = Real.exp (|τ| * ‖S‖) := by rw [norm_smul, Real.norm_eq_abs, abs_neg]
             _ ≤ Real.exp (|τ| * N) :=
                 Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hS_le (abs_nonneg _))

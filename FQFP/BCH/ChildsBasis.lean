@@ -67,7 +67,9 @@ open TrotterError
 -- lemmas are available. `TrotterError` sets this up the same way (`Commutator.lean:58`).
 attribute [local instance] LieRing.ofAssociativeRing
 
-variable {𝔸 : Type*} [NormedRing 𝔸]
+section Algebra
+
+variable {𝔸 : Type*} [Ring 𝔸]
 
 /-! ### The eight commutators -/
 
@@ -96,6 +98,10 @@ to the bracket form; the match is stuck for a symbolic `i`, so the rules cannot 
 @[simp] lemma childsComm_five (A B : 𝔸) : childsComm A B 5 = ⁅B, ⁅A, ⁅B, ⁅B, A⁆⁆⁆⁆ := rfl
 @[simp] lemma childsComm_six (A B : 𝔸) : childsComm A B 6 = ⁅B, ⁅B, ⁅A, ⁅B, A⁆⁆⁆⁆ := rfl
 @[simp] lemma childsComm_seven (A B : 𝔸) : childsComm A B 7 = ⁅B, ⁅B, ⁅B, ⁅B, A⁆⁆⁆⁆ := rfl
+
+end Algebra
+
+variable {𝔸 : Type*} [NormedRing 𝔸]
 
 /-! ### The prefactors and the unit-coefficient sum
 

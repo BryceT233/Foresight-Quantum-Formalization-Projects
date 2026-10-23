@@ -5,7 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.BCH.BCHTerms
+public import FQFP.BCH.Algebra.Terms
+public import FQFP.BCH.WordExpansion
 
 /-!
 # Lipschitz bounds for the degree-5 term
@@ -28,10 +29,8 @@ source instead expands each group's difference into one summand per `a`-position
 
 ## Implementation notes
 
-`NormOneClass 𝔸` is required, where the source's statements do not need it: it comes from the
-word-layer API (`WordExpansion.norm_binWord_le` and hence `norm_prod_sub_prod_le`), which is stated
-for products of arbitrary length and so needs `‖1‖ = 1`. Every declaration in the BCH layer carries
-`NormOneClass 𝔸` anyway.
+Every word has positive length. The bounds therefore use `List.norm_prod_le'` through
+`norm_prod_sub_prod_le`, and require no normalization of the norm of the identity.
 -/
 
 @[expose] public section
@@ -42,7 +41,7 @@ noncomputable section
 
 section Groups
 
-variable {𝔸 : Type*} [NormedRing 𝔸] [NormOneClass 𝔸]
+variable {𝔸 : Type*} [NormedRing 𝔸]
 
 /-! ### The number of `a`-positions -/
 
@@ -157,7 +156,7 @@ end Groups
 
 section Term
 
-variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormOneClass 𝔸]
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
 
 /-- **Lipschitz bound for `bchQuinticTerm`**: `‖C₅(z,y) - C₅(x,y)‖ ≤ M⁴ ‖z - x‖` with
 `M = ‖z‖ + ‖x‖ + ‖y‖`.

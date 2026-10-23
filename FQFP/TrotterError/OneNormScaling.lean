@@ -8,7 +8,7 @@ module
 public import FQFP.TrotterError.Integrals
 public import FQFP.TrotterError.ProductFormula
 public import FQFP.TrotterError.OrderCondition
-public import FQFP.BCH.RealScalar
+public import FQFP.BCH.Analysis.RealScalar
 
 /-!
 # Trotter error with `1`-norm scaling
@@ -59,7 +59,7 @@ lemma norm_iteratedDeriv_exp_sum_le [NormedAlgebra ℚ 𝔸]
     ‖(∑ i : ι, H i) ^ (p + 1) * exp (s • ∑ i : ι, H i)‖
         ≤ ‖(∑ i : ι, H i) ^ (p + 1)‖ * ‖exp (s • ∑ i : ι, H i)‖ := norm_mul_le _ _
     _ ≤ ‖∑ i : ι, H i‖ ^ (p + 1) * Real.exp ‖s • ∑ i : ι, H i‖ := mul_le_mul (norm_pow_le _ _)
-          (norm_exp_le (s • ∑ i : ι, H i)) (norm_nonneg _) (pow_nonneg (norm_nonneg _) (p + 1))
+          (FQFP.norm_exp_le (s • ∑ i : ι, H i)) (norm_nonneg _) (pow_nonneg (norm_nonneg _) (p + 1))
     _ = ‖∑ i : ι, H i‖ ^ (p + 1) * Real.exp (|s| * ‖∑ i : ι, H i‖) := by
         rw [norm_smul, Real.norm_eq_abs]
     _ ≤ (∑ i : ι, ‖H i‖) ^ (p + 1) * Real.exp (|s| * ∑ i : ι, ‖H i‖) := by

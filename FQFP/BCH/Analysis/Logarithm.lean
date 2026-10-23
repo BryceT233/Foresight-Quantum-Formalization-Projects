@@ -5,12 +5,14 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.BCH.Analysis.Exponential
+public import Mathlib.Topology.Connected.Clopen
 public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.Analysis.Calculus.SmoothSeries
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 
-import FQFP.BCH.RealScalar
+import FQFP.BCH.Analysis.RealScalar
 
 /-!
 # Analysis of the Banach-algebra logarithm
@@ -29,6 +31,7 @@ The definitions and elementary algebraic properties come from Mathlib.
 * `logSeries_radius_eq_one` — the series has radius of convergence `1`.
 * `log_hasFPowerSeriesOnBall` — `log` is the sum of its series on the open unit ball around `1`.
 * `hasStrictFDerivAt_log_one` — `log` is strictly differentiable at `1`, derivative the identity.
+* `log_exp_of_norm_lt` — `log (exp a) = a` for `‖a‖ < Real.log 2`.
 * `exp_log_one_add`, `exp_log` — `exp (log (1 + x)) = 1 + x` for `‖x‖ < 1`, and `exp (log y) = y`
   for `‖y - 1‖ < 1`, by the ODE route.
 -/
@@ -95,8 +98,8 @@ Unlike `expSeries`, whose radius is infinite (`expSeries_radius_eq_top`), the lo
 
 The coefficient norms and the ratio tests mention only `ℚ` and `ℝ`, so they carry no algebra
 variables at all. The radius itself is then computed separately over the two scalar fields, since
-`logSeries ℚ 𝔸` and `logSeries ℝ 𝔸` are different series: the ODE route below differentiates along a
-real parameter and so needs the `ℝ` one, while `log` itself is defined through the `ℚ` one. -/
+`logSeries ℚ 𝔸` and `logSeries ℝ 𝔸` are different series: the ODE route below uses a real
+parameter and needs the `ℝ` one, while `log` itself is defined through the `ℚ` one. -/
 
 /-- **The coefficients of the log series have norm `1/n`.** -/
 theorem norm_logSeries_coeff (n : ℕ) : ‖((-1 : ℚ) ^ (n + 1) / n)‖ = (n : ℝ)⁻¹ := by
@@ -307,8 +310,8 @@ The logarithm is `x ↦ log (1 + x) = ∑ₙ cₙ • xⁿ` with `cₙ = (-1)^(n
 the partial sum through `x^(n-1)` is the tail of that series and is bounded by the corresponding
 geometric tail. The statements here are parametrized by `n`: the nine arity-indexed lemmas of
 `Lean-BCH/BCH/LogSeries.lean` (`norm_logOnePlus_le` and the `norm_logOnePlus_sub_…_le` chain
-through order nine) are the cases `n = 0, 2, 3, …, 9` of `norm_log_one_add_sub_logPartialSum_le`
-(there is no source lemma for `n = 1`, whose constant coefficient vanishes).
+through order nine) are the cases `n = 1, 2, 3, …, 9` of `norm_log_one_add_sub_logPartialSum_le`.
+The full logarithm bound is also proved without completeness, directly from the defining sum.
 
 Following `exp`'s treatment in `Mathlib/Analysis/Normed/Algebra/Exponential.lean`, the *truncated*
 form `1 + x` is the one used: there is deliberately no separate `logOnePlus` name. -/
@@ -329,8 +332,9 @@ def logCoeff (i : ℕ) : ℚ := (-1 : ℚ) ^ (i + 1) / i
 
 /-- The partial sum `∑_{i<n} logCoeff i • xⁱ` of the log series. The subscript `n` is the degree of
 the *first omitted* term, which is what makes it line up with the split point of
-`Summable.sum_add_tsum_nat_add`: `logPartialSum 𝔸 0 x = 0`, `logPartialSum 𝔸 1 x = 0` (the constant
-coefficient is `(-1)/0 = 0`), `logPartialSum 𝔸 2 x = x`, `logPartialSum 𝔸 3 x = x - x²/2`. -/
+`Summable.sum_add_tsum_nat_add`: both `logPartialSum 𝔸 0 x` and `logPartialSum 𝔸 1 x` are zero
+(the constant coefficient is `(-1)/0 = 0`), while `logPartialSum 𝔸 2 x = x` and
+`logPartialSum 𝔸 3 x = x - x²/2`. -/
 def logPartialSum (𝔸 : Type*) [Ring 𝔸] [Algebra ℚ 𝔸] (n : ℕ)
     (x : 𝔸) : 𝔸 :=
   ∑ i ∈ Finset.range n, logCoeff i • x ^ i
@@ -403,6 +407,19 @@ private lemma norm_logSeries_tail_le (x : 𝔸) {n : ℕ} (hx : ‖x‖ < 1) :
     (f := fun k : ℕ => logCoeff (k + n) • x ^ (k + n))
     ((hasSum_geometric_of_lt_one (norm_nonneg x) hx).mul_left (‖x‖ ^ n)) hterm
 
+/-- **`log (1 + x)` is bounded by `‖x‖ / (1 - ‖x‖)` on the unit ball.**
+Completeness is unnecessary: a nonsummable logarithm series has sum zero. -/
+theorem norm_log_one_add_le (x : 𝔸) (hx : ‖x‖ < 1) :
+    ‖log (1 + x)‖ ≤ ‖x‖ / (1 - ‖x‖) := by
+  rw [congrFun (log_eq_tsum ℚ) (1 + x), add_sub_cancel_left]
+  change ‖∑' i : ℕ, logCoeff i • x ^ i‖ ≤ ‖x‖ / (1 - ‖x‖)
+  by_cases hs : Summable fun i : ℕ => logCoeff i • x ^ i
+  · rw [hs.tsum_eq_zero_add]
+    simpa only [logCoeff_zero, zero_smul, zero_add, pow_one, div_eq_mul_inv] using
+      norm_logSeries_tail_le x (n := 1) hx
+  · rw [tsum_eq_zero_of_not_summable hs, norm_zero]
+    exact div_nonneg (norm_nonneg x) (sub_nonneg.mpr hx.le)
+
 variable [CompleteSpace 𝔸]
 
 /-- The log series is summable on the unit ball: each term is dominated by the geometric series.
@@ -422,8 +439,8 @@ theorem log_one_add_eq_logPartialSum_add_tsum (x : 𝔸) (n : ℕ) (hx : ‖x‖
 
 /-- **The `n`-th remainder of `log (1 + ·)` is bounded by `‖x‖ ^ n · (1 - ‖x‖)⁻¹`.**
 Each term satisfies `‖logCoeff i • x ^ i‖ ≤ ‖x‖ ^ i`, including the vanishing constant term.
-Summing these bounds gives the geometric tail. At `n = 0`, the statement bounds the norm of
-`log (1 + x)` itself.
+Summing these bounds gives the geometric tail. At `n = 1`, the vanishing constant coefficient
+gives the strong bound on the norm of `log (1 + x)` itself.
 
 This is the parametrized form of the nine arity-indexed lemmas of
 `Lean-BCH/BCH/LogSeries.lean` (`norm_logOnePlus_le` and the `norm_logOnePlus_sub_…_le` chain
@@ -434,12 +451,15 @@ theorem norm_log_one_add_sub_logPartialSum_le (x : 𝔸) (n : ℕ) (hx : ‖x‖
   rw [log_one_add_eq_logPartialSum_add_tsum x n hx, add_sub_cancel_left]
   exact norm_logSeries_tail_le x hx
 
-/-- **`log (1 + x)` is bounded by `1 / (1 - ‖x‖)` on the unit ball.** -/
-theorem norm_log_one_add_le (x : 𝔸) (hx : ‖x‖ < 1) :
-    ‖log (1 + x)‖ ≤ 1 / (1 - ‖x‖) := by
-  have h := norm_log_one_add_sub_logPartialSum_le (𝔸 := 𝔸) x 0 hx
-  rw [logPartialSum_zero, sub_zero, pow_zero, one_mul] at h
-  simpa only [one_div] using h
+/-- A bound on the argument gives a common scalar majorant for every logarithmic remainder. -/
+theorem norm_log_one_add_sub_logPartialSum_le_of_norm_le (x : 𝔸) (n : ℕ) {r : ℝ}
+    (hx : ‖x‖ ≤ r) (hr : r < 1) :
+    ‖log (1 + x) - logPartialSum 𝔸 n x‖ ≤ r ^ n * (1 - r)⁻¹ := by
+  refine (norm_log_one_add_sub_logPartialSum_le x n (hx.trans_lt hr)).trans ?_
+  exact mul_le_mul (pow_le_pow_left₀ (norm_nonneg x) hx n)
+    (inv_anti₀ (sub_pos.mpr hr) (sub_le_sub_left hx 1))
+    (inv_nonneg.mpr (sub_nonneg.mpr (hx.trans hr.le)))
+    (pow_nonneg ((norm_nonneg x).trans hx) n)
 
 /-- `‖log (1 + x) - x‖ ≤ ‖x‖ ^ 2 * (1 - ‖x‖)⁻¹` for `‖x‖ < 1`. -/
 theorem norm_log_one_add_sub_le (x : 𝔸) (hx : ‖x‖ < 1) :
@@ -729,6 +749,143 @@ theorem exp_log_one_add (x : 𝔸) (hx : ‖x‖ < 1) : exp (log (1 + x)) = 1 + 
 /-- **`exp (log y) = y` for `‖y - 1‖ < 1`.** The form of `exp_log_one_add` at center `1`. -/
 theorem exp_log {y : 𝔸} (hy : ‖y - 1‖ < 1) : exp (log y) = y := by
   simpa only [← add_sub_assoc, add_sub_cancel_left] using exp_log_one_add (y - 1) hy
+
+/-! ### The quadratic remainder of `exp`
+
+`exp_eq_one_of_norm_lt` below needs the second-order remainder `‖exp z - 1 - z‖`, which is
+`norm_exp_sub_one_sub_id_le`. -/
+
+/-- **If `exp z = 1` and `‖z‖ < log 2` then `z = 0`.** This is what upgrades the
+connectedness argument for `log_exp_of_norm_lt` from `exp (h t) = 1` to `h t = 0`. -/
+theorem exp_eq_one_of_norm_lt (z : 𝔸) (hz : exp z = 1) (hn : ‖z‖ < Real.log 2) : z = 0 := by
+  have hkey : z = -(exp z - 1 - z) := by rw [hz]; simp
+  have hbound : ‖z‖ ≤ Real.exp ‖z‖ - 1 - ‖z‖ := by
+    calc ‖z‖ = ‖-(exp z - 1 - z)‖ := by conv_lhs => rw [hkey]
+      _ = ‖exp z - 1 - z‖ := norm_neg _
+      _ ≤ Real.exp ‖z‖ - 1 - ‖z‖ := norm_exp_sub_one_sub_id_le z
+  by_contra h
+  have hzpos : 0 < ‖z‖ := norm_pos_iff.mpr h
+  have hexp_lt : Real.exp ‖z‖ < 2 := by
+    calc Real.exp ‖z‖ < Real.exp (Real.log 2) := Real.exp_strictMono hn
+      _ = 2 := Real.exp_log (by norm_num)
+  have h_half : ‖z‖ < 1 / 2 := by linarith
+  have h_exp_bound : Real.exp ‖z‖ * (1 - ‖z‖) ≤ 1 := by
+    have h_exp := hasSum_real_exp ‖z‖
+    have h_geom := hasSum_geometric_of_lt_one (norm_nonneg z) (by linarith)
+    have hle : Real.exp ‖z‖ ≤ (1 - ‖z‖)⁻¹ := by
+      calc Real.exp ‖z‖ = ∑' n : ℕ, (Nat.factorial n : ℝ)⁻¹ * ‖z‖ ^ n := h_exp.tsum_eq.symm
+        _ ≤ ∑' n : ℕ, ‖z‖ ^ n := by
+            refine h_exp.summable.tsum_le_tsum (fun n => ?_) h_geom.summable
+            have hfac : (Nat.factorial n : ℝ)⁻¹ ≤ 1 := by
+              rw [inv_le_one₀ (by positivity)]
+              exact_mod_cast Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero n)
+            calc (Nat.factorial n : ℝ)⁻¹ * ‖z‖ ^ n ≤ 1 * ‖z‖ ^ n :=
+                  mul_le_mul_of_nonneg_right hfac (pow_nonneg (norm_nonneg z) n)
+              _ = ‖z‖ ^ n := one_mul _
+        _ = (1 - ‖z‖)⁻¹ := h_geom.tsum_eq
+    calc Real.exp ‖z‖ * (1 - ‖z‖) ≤ (1 - ‖z‖)⁻¹ * (1 - ‖z‖) :=
+          mul_le_mul_of_nonneg_right hle (by linarith)
+      _ = 1 := inv_mul_cancel₀ (by linarith)
+  nlinarith [norm_nonneg z, pow_nonneg (norm_nonneg z) 2]
+
+/-! ### Continuity of `log (1 + ·)` on a closed ball
+
+The source proved this by term-by-term continuity of the log series. Here it follows from
+`continuousOn_log`: `closedBall 0 r` with `r < 1` maps into the open unit ball around `1` under
+`y ↦ 1 + y`, and that ball is the open ball of convergence of `log`. -/
+
+/-- `log (1 + ·)` is continuous on `closedBall 0 r` for `r < 1`. -/
+theorem continuousOn_log_one_add {r : ℝ} (hr : r < 1) :
+    ContinuousOn (fun y : 𝔸 => log (1 + y)) (Metric.closedBall (0 : 𝔸) r) := by
+  refine continuousOn_log.comp (continuousOn_const.add continuousOn_id) fun y hy => ?_
+  rw [Metric.mem_closedBall, dist_zero_right] at hy
+  have h1 : dist (1 + y) (1 : 𝔸) = ‖y‖ := by
+    rw [dist_eq_norm, show (1 : 𝔸) + y - 1 = y by abel]
+  rw [Metric.mem_eball, logSeries_radius_eq_one, edist_dist, h1, ENNReal.ofReal_lt_one]
+  exact lt_of_le_of_lt hy hr
+
+/-! ### The `log ∘ exp` identity
+
+`log (exp a) = a` for `‖a‖ < log 2`. The connectedness argument: put
+`h t = log (1 + (exp (t • a) - 1)) - t • a`; then `h 0 = 0`, `exp (h t) = 1` throughout, and `h`
+is continuous on the connected interval `[0, 1]`. Its zero set is closed by continuity and open
+because `0` is isolated in the exponential kernel; hence it contains the whole interval.
+Only two inputs are used: the
+`exp ∘ log` identity `exp_log`, and `exp_eq_one_of_norm_lt` to convert `exp (h t) = 1` into
+`h t = 0`. -/
+
+/-- **`log (exp a) = a` for `‖a‖ < log 2`**: the logarithm inverts the exponential on the ball
+where the BCH series converges. -/
+theorem log_exp_of_norm_lt (a : 𝔸) (ha : ‖a‖ < Real.log 2) : log (exp a) = a := by
+  have : NormedAlgebra ℝ 𝔸 := normedAlgebraReal 𝔸
+  set h : ℝ → 𝔸 := fun t => log (1 + (exp (t • a) - 1)) - t • a with hh_def
+  suffices h1 : h 1 = 0 by
+    simp only [hh_def] at h1
+    rw [one_smul, show (1 : 𝔸) + (exp a - 1) = exp a from by abel, sub_eq_zero] at h1
+    exact h1
+  have h0 : h 0 = 0 := by rw [hh_def]; simp
+  have hexp_ht : ∀ t : ℝ, t * ‖a‖ < Real.log 2 → 0 ≤ t → exp (h t) = 1 := by
+    intro t ht ht_nn
+    have harg : (1 : 𝔸) + (exp (t • a) - 1) = exp (t • a) := by abel
+    have hnorm : ‖exp (t • a) - 1‖ < 1 := by
+      refine norm_exp_sub_one_lt_one (t • a) ?_
+      calc ‖t • a‖ ≤ |t| * ‖a‖ := norm_smul_le t a
+        _ = t * ‖a‖ := by rw [abs_of_nonneg ht_nn]
+        _ < Real.log 2 := ht
+    have hexp_log : exp (log (1 + (exp (t • a) - 1))) = exp (t • a) := by
+      rw [harg]; exact exp_log hnorm
+    -- `exp (t • a)` commutes with `t • a`, hence so does its logarithm
+    have hcomm : Commute (log (1 + (exp (t • a) - 1))) (t • a) := by
+      rw [harg]
+      exact (((Commute.refl a).smul_left t).exp_left).smul_right t |>.log_left
+    rw [hh_def]
+    simp only
+    rw [sub_eq_add_neg, exp_add_of_commute hcomm.neg_right, hexp_log,
+      ← exp_add_of_commute ((Commute.refl (t • a)).neg_right), add_neg_cancel, exp_zero]
+  have hcont : ContinuousOn h (Set.Icc 0 1) := by
+    have hρ_lt : Real.exp ‖a‖ - 1 < 1 := by
+      have h2 : Real.exp ‖a‖ < 2 := by
+        calc Real.exp ‖a‖ < Real.exp (Real.log 2) := Real.exp_strictMono ha
+          _ = 2 := Real.exp_log (by norm_num)
+      linarith
+    rw [hh_def]
+    refine ContinuousOn.sub ?_ (continuous_id.smul continuous_const).continuousOn
+    refine (continuousOn_log_one_add hρ_lt).comp ?_ ?_
+    · exact ContinuousOn.sub
+        (NormedSpace.exp_continuous.continuousOn.comp
+          ((continuous_id.smul continuous_const).continuousOn) (Set.mapsTo_univ _ _))
+        continuousOn_const
+    · intro t ht
+      rw [Metric.mem_closedBall, dist_zero_right]
+      calc ‖exp (t • a) - 1‖ ≤ Real.exp ‖t • a‖ - 1 := norm_exp_sub_one_le (t • a)
+        _ ≤ Real.exp (t * ‖a‖) - 1 := by
+            gcongr
+            calc ‖t • a‖ ≤ |t| * ‖a‖ := norm_smul_le t a
+              _ = t * ‖a‖ := by rw [abs_of_nonneg ht.1]
+        _ ≤ Real.exp (1 * ‖a‖) - 1 := by gcongr; exact ht.2
+        _ = Real.exp ‖a‖ - 1 := by rw [one_mul]
+  let g : Set.Icc (0 : ℝ) 1 → 𝔸 := fun t ↦ h t
+  have hg : Continuous g := hcont.domRestrict
+  have hclosed : IsClosed {t | g t = 0} := isClosed_eq hg continuous_const
+  have hopen : IsOpen {t | g t = 0} := by
+    have heq : {t | g t = 0} = {t | ‖g t‖ < Real.log 2} := by
+      ext t
+      constructor
+      · intro ht
+        change g t = 0 at ht
+        change ‖g t‖ < Real.log 2
+        rw [ht, norm_zero]
+        exact Real.log_pos (by norm_num : (1 : ℝ) < 2)
+      · intro ht
+        apply exp_eq_one_of_norm_lt (g t) ?_ ht
+        apply hexp_ht _ _ t.property.1
+        exact (mul_le_of_le_one_left (norm_nonneg a) t.property.2).trans_lt ha
+    rw [heq]
+    exact isOpen_lt hg.norm continuous_const
+  have hz : ({t | g t = 0} : Set (Set.Icc (0 : ℝ) 1)) = Set.univ :=
+    (show IsClopen {t | g t = 0} from ⟨hclosed, hopen⟩).eq_univ
+      ⟨⟨0, by simp⟩, h0⟩
+  exact Set.eq_univ_iff_forall.mp hz ⟨1, by simp⟩
 
 end ExpLogMain
 

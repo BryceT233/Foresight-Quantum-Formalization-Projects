@@ -8,19 +8,17 @@ module
 public import FQFP.BCH.BCHElement
 public import Mathlib.Algebra.Lie.OfAssociative
 
-import FQFP.BCH.RealScalar
-
 /-!
 # The commutator expansion of the BCH element
 
 How far `bch a b` is from `a + b`, and what the leading correction is. Two estimates, both for
-`s = ‖a‖ + ‖b‖ < log 2` (the radius of convergence of the BCH series, where both diverge):
+`s = ‖a‖ + ‖b‖ < log 2` (a sufficient convergence range for the logarithm):
 
 * `norm_bch_sub_add_le` — **quadratic**: `‖bch a b - (a + b)‖ ≤ 3 s² / (2 - eˢ)`, i.e. the linear
   part of `bch a b` is `a + b`.
 * `norm_bch_sub_add_sub_bracket_le` — **cubic (commutator extraction)**:
   `‖bch a b - (a + b) - ½(a * b - b * a)‖ ≤ 10 s³ / (2 - eˢ)`, which identifies the leading
-  non-commutative correction as the Lie bracket `½[a, b]`. `lie_eq_commutator` records
+  non-commutative correction as the Lie bracket `½[a, b]`. Mathlib identifies
   `⁅a, b⁆ = a * b - b * a` and `norm_bch_sub_add_sub_lie_le` is the same bound in `⁅·,·⁆` notation.
 
 The symmetric (Strang) refinement of the cubic bound — where `½[a, b]` cancels — is in
@@ -29,7 +27,7 @@ The symmetric (Strang) refinement of the cubic bound — where `½[a, b]` cancel
 ## Provenance and design
 
 Ported from `Lean-BCH/BCH/Basic.lean` (`norm_bch_sub_add_le`,
-`norm_bch_sub_add_sub_bracket_le`, `lie_eq_commutator`, `norm_bch_sub_add_sub_lie_le`). The
+`norm_bch_sub_add_sub_bracket_le`, `norm_bch_sub_add_sub_lie_le`). The
 real-arithmetic bookkeeping of the cubic bound is isolated in `bch_cubic_real_core`, whose estimates
 are explicit chains of order-theoretic steps rather than one large `linarith`.
 
@@ -39,7 +37,7 @@ under a second name.
 
 @[expose] public section
 
-open NormedSpace TrotterError
+open NormedSpace
 
 namespace FQFP.BCH
 
@@ -52,7 +50,7 @@ variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpac
 `bch a b - (a + b)` into the logarithm's remainder at `exp a * exp b - 1` and the exponential's own
 remainder `exp a * exp b - 1 - (a + b)`, bounds each, and uses `eˢ ≤ 1 + s + s²` (for `s < 1`,
 where `1 + s ≤ eˢ < 2`) to absorb the result into `3 s² / (2 - eˢ)`. The bound diverges at
-`s = log 2`, the radius of convergence. -/
+`s = log 2`, the boundary of this sufficient convergence range. -/
 
 /-- **The quadratic BCH bound**: `‖bch a b - (a + b)‖ ≤ 3 s² / (2 - eˢ)` for
 `s = ‖a‖ + ‖b‖ < log 2`, with the leading non-commutative correction `⁅a, b⁆/2` left inside the
@@ -67,47 +65,15 @@ theorem norm_bch_sub_add_le (a b : 𝔸) (hab : ‖a‖ + ‖b‖ < Real.log 2) 
     calc Real.exp s < Real.exp (Real.log 2) := Real.exp_strictMono hs_lt
       _ = 2 := Real.exp_log (by norm_num)
   have hdenom : 0 < 2 - Real.exp s := by linarith
-  have hy_lt : ‖y‖ < 1 := norm_exp_mul_exp_sub_one_lt_one a b hab
-  have hy_le : ‖y‖ ≤ Real.exp s - 1 := by
-    have hfac : y = (exp a - 1) * exp b + (exp b - 1) := by
-      rw [hy_def, sub_mul, one_mul]; abel
-    calc ‖y‖ = ‖(exp a - 1) * exp b + (exp b - 1)‖ := by rw [hfac]
-      _ ≤ ‖exp a - 1‖ * ‖exp b‖ + ‖exp b - 1‖ :=
-          (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
-      _ ≤ (Real.exp ‖a‖ - 1) * Real.exp ‖b‖ + (Real.exp ‖b‖ - 1) :=
-          add_le_add
-            (mul_le_mul (norm_exp_sub_one_le a) (norm_exp_le b) (norm_nonneg _)
-              (by linarith [Real.add_one_le_exp ‖a‖, norm_nonneg a]))
-            (norm_exp_sub_one_le b)
-      _ = Real.exp s - 1 := by rw [hs_def, Real.exp_add]; ring
+  have hy_le : ‖y‖ ≤ Real.exp s - 1 := norm_exp_mul_exp_sub_one_le a b
   -- part 1: the logarithm's remainder at `y`
   have hpart1 : ‖log (1 + y) - y‖ ≤ (Real.exp s - 1) ^ 2 / (2 - Real.exp s) := by
-    have h1pos : 0 < 1 - ‖y‖ := by linarith
-    have h2pos : 0 < 2 - Real.exp s := hdenom
-    calc ‖log (1 + y) - y‖ ≤ ‖y‖ ^ 2 * (1 - ‖y‖)⁻¹ := norm_log_one_add_sub_le y hy_lt
-      _ ≤ (Real.exp s - 1) ^ 2 * (2 - Real.exp s)⁻¹ := by
-          refine mul_le_mul (pow_le_pow_left₀ (norm_nonneg y) hy_le 2) ?_
-            (inv_nonneg.mpr h1pos.le) (sq_nonneg _)
-          rw [inv_le_inv₀ h1pos h2pos]
-          linarith
-      _ = (Real.exp s - 1) ^ 2 / (2 - Real.exp s) := by rw [div_eq_mul_inv]
+    simpa only [logPartialSum_two, div_eq_mul_inv,
+      show 1 - (Real.exp s - 1) = 2 - Real.exp s by ring] using
+      norm_log_one_add_sub_logPartialSum_le_of_norm_le y 2 hy_le (by linarith)
   -- part 2: the exponential's remainder
-  have hpart2 : ‖y - (a + b)‖ ≤ Real.exp s - 1 - s := by
-    have hident : y - (a + b) =
-        (exp a - 1) * (exp b - 1) + (exp a - 1 - a) + (exp b - 1 - b) := by
-      rw [hy_def]; noncomm_ring
-    rw [hident]
-    calc ‖(exp a - 1) * (exp b - 1) + (exp a - 1 - a) + (exp b - 1 - b)‖
-        ≤ (Real.exp ‖a‖ - 1) * (Real.exp ‖b‖ - 1) +
-          (Real.exp ‖a‖ - 1 - ‖a‖) + (Real.exp ‖b‖ - 1 - ‖b‖) := by
-          refine ((norm_add_le _ _).trans ?_).trans
-            (add_le_add le_rfl (norm_exp_sub_one_sub_id_le b))
-          refine (add_le_add (norm_add_le _ _) le_rfl).trans ?_
-          refine add_le_add (add_le_add ?_ (norm_exp_sub_one_sub_id_le a)) le_rfl
-          exact (norm_mul_le _ _).trans (mul_le_mul (norm_exp_sub_one_le a)
-            (norm_exp_sub_one_le b) (norm_nonneg _)
-            (by linarith [Real.add_one_le_exp ‖a‖, norm_nonneg a]))
-      _ = Real.exp s - 1 - s := by rw [hs_def, Real.exp_add]; ring
+  have hpart2 : ‖y - (a + b)‖ ≤ Real.exp s - 1 - s :=
+    norm_exp_mul_exp_sub_one_sub_add_le a b
   have hY : (1 : 𝔸) + y = exp a * exp b := by rw [hy_def]; abel
   have hbch : bch a b = log (1 + y) := by rw [bch, ← hY]
   rw [show bch a b - (a + b) = (log (1 + y) - y) + (y - (a + b)) by rw [hbch]; abel]
@@ -138,7 +104,7 @@ The proof decomposes
 `bch a b - (a + b) - ½(ab - ba)`
 
 into the logarithm's own cubic remainder at `y = exp a * exp b - 1` — bounded by
-`norm_log_one_add_sub_add_sq_le`, with the geometric factor `(1 - ‖y‖)⁻¹` replaced by
+`norm_log_one_add_sub_logPartialSum_le_of_norm_le`, with the geometric factor bounded by
 `(2 - eˢ)⁻¹` — and the exponential's cubic remainder
 `y - (a + b) - ½(ab - ba) - ½y²`. The algebraic identity `bch_cubic_pieceB_eq` rewrites the latter
 as `½ • bchCubicW`, whose norm is then estimated by the triangle inequality against the second-
@@ -354,7 +320,6 @@ theorem norm_bch_sub_add_sub_bracket_le (a b : 𝔸) (hab : ‖a‖ + ‖b‖ < 
     calc Real.exp s < Real.exp (Real.log 2) := Real.exp_strictMono hs_lt
       _ = 2 := Real.exp_log (by norm_num)
   have hdenom : 0 < 2 - Real.exp s := by linarith
-  have hy_lt : ‖y‖ < 1 := norm_exp_mul_exp_sub_one_lt_one a b hab
   set D₁ : 𝔸 := exp a - 1 - a with hD₁_def
   set D₂ : 𝔸 := exp b - 1 - b with hD₂_def
   set E₁ : 𝔸 := exp a - 1 - a - (2 : ℚ)⁻¹ • a ^ 2 with hE₁_def
@@ -370,50 +335,17 @@ theorem norm_bch_sub_add_sub_bracket_le (a b : 𝔸) (hab : ‖a‖ + ‖b‖ < 
     rw [hD₁_def, hα_def]; exact norm_exp_sub_one_sub_id_le a
   have hD₂_le : ‖D₂‖ ≤ Real.exp β - 1 - β := by
     rw [hD₂_def, hβ_def]; exact norm_exp_sub_one_sub_id_le b
-  have hexpαβ : Real.exp α * Real.exp β = Real.exp s := by rw [← Real.exp_add, hαβ]
-  have hy_le : ‖y‖ ≤ Real.exp s - 1 := by
-    have hfac : y = (exp a - 1) * exp b + (exp b - 1) := by
-      rw [hy_def, sub_mul, one_mul]; abel
-    calc ‖y‖ = ‖(exp a - 1) * exp b + (exp b - 1)‖ := by rw [hfac]
-      _ ≤ ‖exp a - 1‖ * ‖exp b‖ + ‖exp b - 1‖ :=
-          (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
-      _ ≤ (Real.exp α - 1) * Real.exp β + (Real.exp β - 1) := by
-          rw [hα_def, hβ_def]
-          exact add_le_add
-            (mul_le_mul (norm_exp_sub_one_le a) (norm_exp_le b) (norm_nonneg _)
-              (by linarith [Real.add_one_le_exp ‖a‖, norm_nonneg a]))
-            (norm_exp_sub_one_le b)
-      _ = Real.exp s - 1 := by
-          rw [show (Real.exp α - 1) * Real.exp β + (Real.exp β - 1)
-              = Real.exp α * Real.exp β - 1 by ring, hexpαβ]
-  have hP_factor : P = (exp a - 1) * (exp b - 1) + D₁ + D₂ := by
-    rw [hP_def, hy_def, hD₁_def, hD₂_def]; noncomm_ring
-  have hP_le : ‖P‖ ≤ Real.exp s - 1 - s := by
-    rw [hP_factor]
-    calc ‖(exp a - 1) * (exp b - 1) + D₁ + D₂‖
-        ≤ ‖(exp a - 1) * (exp b - 1)‖ + ‖D₁‖ + ‖D₂‖ :=
-          (norm_add_le _ _).trans (add_le_add (norm_add_le _ _) le_rfl)
-      _ ≤ (Real.exp α - 1) * (Real.exp β - 1) + (Real.exp α - 1 - α) + (Real.exp β - 1 - β) := by
-          refine add_le_add (add_le_add ?_ hD₁_le) hD₂_le
-          rw [hα_def, hβ_def]
-          exact (norm_mul_le _ _).trans
-            (mul_le_mul (norm_exp_sub_one_le a) (norm_exp_sub_one_le b) (norm_nonneg _)
-              (by linarith [Real.add_one_le_exp ‖a‖, norm_nonneg a]))
-      _ = Real.exp s - 1 - s := by
-          rw [show (Real.exp α - 1) * (Real.exp β - 1) + (Real.exp α - 1 - α) + (Real.exp β - 1 - β)
-              = Real.exp α * Real.exp β - 1 - (α + β) by ring, hexpαβ, hαβ]
+  have hy_le : ‖y‖ ≤ Real.exp s - 1 := norm_exp_mul_exp_sub_one_le a b
+  have hP_le : ‖P‖ ≤ Real.exp s - 1 - s :=
+    norm_exp_mul_exp_sub_one_sub_add_le a b
   -- **piece A**: the logarithm's cubic remainder
   have hpieceA : ‖log (1 + y) - y + (2 : ℚ)⁻¹ • y ^ 2‖ ≤
       (Real.exp s - 1) ^ 3 / (2 - Real.exp s) := by
-    have h1pos : (0 : ℝ) < 1 - ‖y‖ := by linarith
-    calc ‖log (1 + y) - y + (2 : ℚ)⁻¹ • y ^ 2‖ ≤ ‖y‖ ^ 3 * (1 - ‖y‖)⁻¹ :=
-          norm_log_one_add_sub_add_sq_le y hy_lt
-      _ ≤ (Real.exp s - 1) ^ 3 * (2 - Real.exp s)⁻¹ := by
-          refine mul_le_mul (pow_le_pow_left₀ (norm_nonneg y) hy_le 3) ?_ (inv_nonneg.mpr h1pos.le)
-            (pow_nonneg (by linarith [Real.add_one_le_exp s]) 3)
-          rw [inv_le_inv₀ h1pos hdenom]
-          linarith
-      _ = (Real.exp s - 1) ^ 3 / (2 - Real.exp s) := by rw [div_eq_mul_inv]
+    have htail := norm_log_one_add_sub_logPartialSum_le_of_norm_le y 3 hy_le
+      (by linarith : Real.exp s - 1 < 1)
+    rw [show 1 - (Real.exp s - 1) = 2 - Real.exp s by ring] at htail
+    simpa only [logPartialSum_three, sub_eq_add_neg, neg_add, neg_neg, add_assoc,
+      div_eq_mul_inv] using htail
   -- **piece B**: the exponential's cubic remainder, as `½ • W`
   have hpieceB_eq : y - (a + b) - (2 : ℚ)⁻¹ • (a * b - b * a) - (2 : ℚ)⁻¹ • y ^ 2 =
       (2 : ℚ)⁻¹ • W := by
@@ -536,23 +468,9 @@ instance is installed locally, as in `ChildsBasis.lean` and `NestedCommNorm.lean
 restatements of the BCH bounds (`norm_bch_sub_add_sub_lie_le`, `norm_symmetric_bch_sub_add_lie_le`)
 belong next to those bounds.
 
-The statement needs only `[Ring 𝔸]`, so it sits outside the normed section. -/
+The bracket identity is `Ring.lie_def`; no project-specific conversion is needed. -/
 
 end
-
-section LieBracket
-
-variable {𝔸 : Type*} [Ring 𝔸]
-
-attribute [local instance] LieRing.ofAssociativeRing
-
-/-- In an associative ring the Lie bracket is the ring commutator, `⁅a, b⁆ = a * b - b * a`.
-This is the project alias of Mathlib's `LieRing.of_associative_ring_bracket` (equivalently
-`Ring.lie_def`), kept under the source's name. -/
-theorem lie_eq_commutator (a b : 𝔸) : ⁅a, b⁆ = a * b - b * a :=
-  LieRing.of_associative_ring_bracket a b
-
-end LieBracket
 
 section CubicBoundLie
 
@@ -565,7 +483,7 @@ main statement of H1 in Mathlib's Lie-bracket notation. -/
 theorem norm_bch_sub_add_sub_lie_le (a b : 𝔸) (hab : ‖a‖ + ‖b‖ < Real.log 2) :
     ‖bch a b - (a + b) - (2 : ℚ)⁻¹ • ⁅a, b⁆‖ ≤
       10 * (‖a‖ + ‖b‖) ^ 3 / (2 - Real.exp (‖a‖ + ‖b‖)) := by
-  rw [lie_eq_commutator]
+  rw [Ring.lie_def]
   exact norm_bch_sub_add_sub_bracket_le a b hab
 
 end CubicBoundLie

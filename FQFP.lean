@@ -1,20 +1,6 @@
 module
 
-public import FQFP.BCH.BCHElement
-public import FQFP.BCH.BCHCommutator
-public import FQFP.BCH.BCHSymmetric
-public import FQFP.BCH.BCHTerms
-public import FQFP.BCH.ChildsBasis
-public import FQFP.BCH.ExpNorm
-public import FQFP.BCH.FreeMonoidInstances
-public import FQFP.BCH.Logarithm
-public import FQFP.BCH.NestedCommNorm
-public import FQFP.BCH.QuinticRemainder
-public import FQFP.BCH.QuinticTaylor2
-public import FQFP.BCH.RealScalar
-public import FQFP.BCH.WordAlgebra
-public import FQFP.BCH.WordNorm
-public import FQFP.BCH.WordExpansion
+public import FQFP.BCH
 public import FQFP.Carleman
 public import FQFP.CQM.Category.DaggerCategory
 public import FQFP.CQM.Category.DaggerBiproduct
@@ -25,6 +11,7 @@ public import FQFP.CQM.QuditCat.Basic
 public import FQFP.CQM.QuditCat.Dagger
 public import FQFP.CQM.QuditCat.Monoidal
 public import FQFP.CQM.QuditCat.Biproducts
+public import FQFP.CQM.QuditCat.Kernels
 public import FQFP.CQM.QuditCat.Measurement
 public import FQFP.CQM.QuditCat.Rigid
 public import FQFP.CQM.QuditCat.Teleportation
@@ -36,6 +23,7 @@ public import FQFP.CQM.RelCat.Dagger
 public import FQFP.CQM.RelCat.Braided
 public import FQFP.CQM.RelCat.Morphism
 public import FQFP.CQM.RelCat.Biproducts
+public import FQFP.CQM.RelCat.Kernels
 public import FQFP.CQM.RelCat.Measurement
 public import FQFP.CQM.RelCat.Rigid
 public import FQFP.CQM.RelCat.Teleportation

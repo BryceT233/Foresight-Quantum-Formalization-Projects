@@ -5,56 +5,54 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.TrotterError.Calculus
+public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecificLimits.Basic
 public import Mathlib.Analysis.SpecialFunctions.Exponential
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
-# Norm bounds for the exponential
+# Exponential bounds in a normed algebra
 
-Norm bounds for `NormedSpace.exp` in a complete normed algebra, stated over the shared
-scalar interface used throughout the Foresight Quantum formalizations: results that only
-need the rational structure are proved over `ℚ`, while `𝕂` is carried along so callers may
-instantiate at `ℝ`, `ℂ`, or a general `RCLike` field.
+Bounds for `NormedSpace.exp`, its finite Taylor remainders, and products of exponentials.
+These estimates form a common analytic foundation for BCH and product-formula errors.
 
 ## Main results
 
-* `hasSum_real_exp`, `hasSum_real_exp_tail`: the real exponential series and its tails.
-* `norm_exp_sub_one_le`: `‖exp x - 1‖ ≤ Real.exp ‖x‖ - 1`.
-* `norm_exp_sub_sum_le`: the parametrized remainder bound
-  `‖exp x - ∑ i ∈ range n, (i!)⁻¹ • x^i‖ ≤ Real.exp ‖x‖ - ∑ i ∈ range n, ‖x‖^i / i!`.
-
-## Implementation notes
-
-Mathlib states these bounds for `ℂ` and `ℝ` only (`Complex.norm_exp_sub_one_le`,
-`Complex.norm_exp_sub_sum_le_exp_norm_sub_sum`); the statements below hold in an arbitrary
-complete normed algebra and are strictly more general.
-
-**No overlap with `TrotterError`.** The two exponential bounds that `TrotterError` also has —
-`norm_exp_term_le` and `norm_exp_le` (`TrotterError/Calculus.lean:508,516`) — are deliberately
-*not* restated here: their statements are identical to `TrotterError`'s, so callers should use
-`TrotterError.norm_exp_le` / `TrotterError.norm_exp_term_le`. Only the bounds `TrotterError`
-does not have live in this file. (`Polyrith`-free proofs are used throughout.)
-
-`[NormOneClass 𝔸]` is an explicit hypothesis of the bounds below, because the term estimate
-goes through `norm_pow_le`. It is deliberately not a section variable, so that a caller needing
-the weaker statement can see exactly which hypothesis to drop.
-
-`norm_exp_sub_sum_le` replaces the eight hand-unrolled tail bounds of `Lean-BCH`
-(`norm_exp_sub_one_le`, `norm_exp_sub_one_sub_le`, … up to order nine), each of which was
-the same proof at a different `n`.
+* `norm_exp_le`: the exponential norm is bounded by the real exponential of the norm.
+* `norm_exp_sub_sum_le`: the Taylor remainder is bounded by the scalar exponential tail.
+* `norm_exp_mul_exp_sub_one_le`: a product estimate independent of convergence thresholds.
 -/
 
 @[expose] public section
 
 open Finset NormedSpace
 
-namespace FQFP.BCH
+namespace FQFP
 
 noncomputable section
 
-variable {𝕂 : Type*} [RCLike 𝕂]
-variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormedAlgebra 𝕂 𝔸] [CompleteSpace 𝔸]
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+
+/-- Each term of the exponential series is bounded by `‖a‖^n / n!`. -/
+lemma norm_exp_term_le [NormOneClass 𝔸] (a : 𝔸) (n : ℕ) :
+    ‖(Nat.factorial n : ℚ)⁻¹ • a ^ n‖ ≤ ‖a‖ ^ n / Nat.factorial n := by
+  rw [norm_smul, norm_inv, ← Rat.norm_cast_real, Real.norm_eq_abs, inv_mul_eq_div]
+  norm_cast; gcongr
+  exact norm_pow_le ..
+
+/-- The exponential norm is bounded by the real exponential of the norm. -/
+lemma norm_exp_le [NormOneClass 𝔸] (a : 𝔸) : ‖exp a‖ ≤ Real.exp ‖a‖ := by
+  rw [NormedSpace.exp_eq_tsum ℚ, Real.exp_eq_exp_ℝ,
+    ← (NormedSpace.expSeries_div_hasSum_exp _).tsum_eq]
+  have hnsumm : Summable fun n ↦ ‖(Nat.factorial n : ℚ)⁻¹ • a ^ n‖ :=
+    (Real.summable_pow_div_factorial ‖a‖).of_nonneg_of_le (fun _ ↦ norm_nonneg _)
+      (norm_exp_term_le a)
+  calc
+    _ ≤ ∑' n, ‖(Nat.factorial n : ℚ)⁻¹ • a ^ n‖ := norm_tsum_le_tsum_norm hnsumm
+    _ ≤ ∑' n, ‖a‖ ^ n / Nat.factorial n :=
+      hnsumm.tsum_le_tsum (norm_exp_term_le a) (Real.summable_pow_div_factorial ‖a‖)
+
+variable [CompleteSpace 𝔸]
 
 /-! ### The real exponential series and its tails -/
 
@@ -77,13 +75,7 @@ lemma hasSum_real_exp_tail (r : ℝ) (k : ℕ) :
   rw [h.tsum_eq] at hsplit
   linarith
 
-/-! ### Bounds for the exponential series
-
-The term bound and `‖exp x‖ ≤ Real.exp ‖x‖` are **not** restated here: `TrotterError` already
-has them, with identical statements, as `TrotterError.norm_exp_term_le` and
-`TrotterError.norm_exp_le` (`TrotterError/Calculus.lean:508,516`). The bounds below are the
-ones `TrotterError` does not have, so a caller wanting a tail estimate can reach for these
-without duplicating the exponential bound itself. -/
+/-! ### Bounds for the exponential series -/
 
 /-- `‖exp x - 1‖ ≤ Real.exp ‖x‖ - 1` in any complete normed algebra. -/
 theorem norm_exp_sub_one_le [NormOneClass 𝔸] (x : 𝔸) :
@@ -95,10 +87,42 @@ theorem norm_exp_sub_one_le [NormOneClass 𝔸] (x : 𝔸) :
     beta_reduce
     rw [hsumm.tsum_eq_zero_add, h0, add_sub_cancel_left]
   rw [hsub]
-  refine tsum_of_norm_bounded ?_ fun n => TrotterError.norm_exp_term_le x (n + 1)
+  refine tsum_of_norm_bounded ?_ fun n => norm_exp_term_le x (n + 1)
   convert hasSum_real_exp_tail ‖x‖ 1 using 2
   · rw [inv_mul_eq_div]
   · simp
+
+/-- The distance from a product of exponentials to `1` is bounded by the scalar exponential
+at the sum of the norms, minus `1`. -/
+theorem norm_exp_mul_exp_sub_one_le [NormOneClass 𝔸] (a b : 𝔸) :
+    ‖exp a * exp b - 1‖ ≤ Real.exp (‖a‖ + ‖b‖) - 1 := by
+  rw [show exp a * exp b - 1 = (exp a - 1) * exp b + (exp b - 1) by
+    noncomm_ring]
+  calc
+    _ ≤ ‖exp a - 1‖ * ‖exp b‖ + ‖exp b - 1‖ :=
+      (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
+    _ ≤ (Real.exp ‖a‖ - 1) * Real.exp ‖b‖ + (Real.exp ‖b‖ - 1) :=
+      add_le_add
+        (mul_le_mul (norm_exp_sub_one_le a) (norm_exp_le b) (norm_nonneg _)
+          (sub_nonneg.mpr (Real.one_le_exp (norm_nonneg a))))
+        (norm_exp_sub_one_le b)
+    _ = Real.exp (‖a‖ + ‖b‖) - 1 := by rw [Real.exp_add]; ring
+
+/-- **The BCH smallness condition**: `‖exp a * exp b - 1‖ < 1` when `‖a‖ + ‖b‖ < log 2`, which is
+what puts `exp a * exp b` inside the ball where the log series converges. -/
+theorem norm_exp_mul_exp_sub_one_lt_one [NormOneClass 𝔸] (a b : 𝔸)
+    (hab : ‖a‖ + ‖b‖ < Real.log 2) :
+    ‖exp a * exp b - 1‖ < 1 := by
+  refine (norm_exp_mul_exp_sub_one_le a b).trans_lt ?_
+  have h := Real.exp_strictMono hab
+  rw [Real.exp_log (by norm_num : (0 : ℝ) < 2)] at h
+  linarith
+
+/-- **The BCH smallness condition, one-sided form**: `‖exp a - 1‖ < 1` when `‖a‖ < log 2`. -/
+theorem norm_exp_sub_one_lt_one [NormOneClass 𝔸] (a : 𝔸) (ha : ‖a‖ < Real.log 2) :
+    ‖exp a - 1‖ < 1 := by
+  have h := norm_exp_mul_exp_sub_one_lt_one a (0 : 𝔸) (by simpa using ha)
+  simpa [exp_zero] using h
 
 /-- The parametrized exponential remainder bound: the tail of the exponential series after
 the first `n` terms is bounded by the corresponding tail of the real exponential series. -/
@@ -113,7 +137,7 @@ theorem norm_exp_sub_sum_le [NormOneClass 𝔸] (x : 𝔸) (n : ℕ) :
     rw [← hsumm.sum_add_tsum_nat_add n]
     abel
   rw [hsub]
-  refine tsum_of_norm_bounded ?_ fun k => TrotterError.norm_exp_term_le x (k + n)
+  refine tsum_of_norm_bounded ?_ fun k => norm_exp_term_le x (k + n)
   have hfin : ∑ i ∈ range n, ‖x‖ ^ i / Nat.factorial i
       = ∑ i ∈ range n, (Nat.factorial i : ℝ)⁻¹ * ‖x‖ ^ i :=
     sum_congr rfl fun i _ => by rw [div_eq_inv_mul]
@@ -184,9 +208,7 @@ the BCH estimates in `BCHElement.lean` and `BCHCommutator.lean`. -/
 
 section ExpRemainder
 
-variable {𝕂 : Type*} [RCLike 𝕂]
-variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormedAlgebra 𝕂 𝔸] [CompleteSpace 𝔸]
-  [NormOneClass 𝔸]
+variable [NormOneClass 𝔸]
 
 /-- **Second-order Taylor remainder of `exp`**:
 `‖exp x - 1 - x‖ ≤ Real.exp ‖x‖ - 1 - ‖x‖`. -/
@@ -203,6 +225,25 @@ theorem norm_exp_sub_one_sub_id_le (x : 𝔸) :
   rw [show exp x - (1 + x) = exp x - 1 - x by abel] at h
   refine h.trans_eq ?_
   ring
+
+/-- The error after the linear part of a product of two exponentials is bounded by the
+quadratic scalar exponential remainder at the sum of the norms. -/
+theorem norm_exp_mul_exp_sub_one_sub_add_le (a b : 𝔸) :
+    ‖exp a * exp b - 1 - (a + b)‖ ≤
+      Real.exp (‖a‖ + ‖b‖) - 1 - (‖a‖ + ‖b‖) := by
+  rw [show exp a * exp b - 1 - (a + b) =
+    (exp a - 1) * (exp b - 1) + (exp a - 1 - a) + (exp b - 1 - b) by
+      noncomm_ring]
+  calc
+    _ ≤ ‖exp a - 1‖ * ‖exp b - 1‖ + ‖exp a - 1 - a‖ + ‖exp b - 1 - b‖ := by
+      grw [norm_add_le, norm_add_le, norm_mul_le]
+    _ ≤ (Real.exp ‖a‖ - 1) * (Real.exp ‖b‖ - 1) +
+        (Real.exp ‖a‖ - 1 - ‖a‖) + (Real.exp ‖b‖ - 1 - ‖b‖) :=
+      add_le_add (add_le_add
+        (mul_le_mul (norm_exp_sub_one_le a) (norm_exp_sub_one_le b) (norm_nonneg _)
+          (sub_nonneg.mpr (Real.one_le_exp (norm_nonneg a))))
+        (norm_exp_sub_one_sub_id_le a)) (norm_exp_sub_one_sub_id_le b)
+    _ = Real.exp (‖a‖ + ‖b‖) - 1 - (‖a‖ + ‖b‖) := by rw [Real.exp_add]; ring
 
 /-- **Third-order Taylor remainder of `exp`**:
 `‖exp x - 1 - x - x²/2‖ ≤ Real.exp ‖x‖ - 1 - ‖x‖ - ‖x‖²/2`. -/
@@ -227,4 +268,4 @@ end ExpRemainder
 
 end
 
-end FQFP.BCH
+end FQFP

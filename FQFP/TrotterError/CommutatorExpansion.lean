@@ -704,11 +704,11 @@ lemma norm_exp_mul_expSMulConj_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebr
   have h1 : ‖exp ((τ + u) • A)‖ ≤ Real.exp ((τ + u) * ‖A‖) := by
     have hnorm : ‖(τ + u) • A‖ = (τ + u) * ‖A‖ := by
       rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hτu]
-    simpa [hnorm] using norm_exp_le ((τ + u) • A)
+    simpa [hnorm] using FQFP.norm_exp_le ((τ + u) • A)
   have h2 : ‖exp (-u • A)‖ ≤ Real.exp ((-u) * ‖A‖) := by
     have hnorm : ‖u • A‖ = (-u) * ‖A‖ := by
       rw [norm_smul, Real.norm_eq_abs, abs_of_nonpos hle0]
-    simpa [hnorm] using norm_exp_le (-u • A)
+    simpa [hnorm] using FQFP.norm_exp_le (-u • A)
   calc
     ‖exp (τ • A) * expSMulConj A X u‖
         = ‖exp ((τ + u) • A) * X * exp (-u • A)‖ := by rw [h_prod]
@@ -855,7 +855,7 @@ lemma norm_prod_exp_smul_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 
         ≤ (l.map (fun i => Real.exp (|t i| * ‖A i‖))).prod := by
             have hle : ∀ i ∈ l, ‖exp (t i • A i)‖ ≤ Real.exp (|t i| * ‖A i‖) := by
               intro i _
-              simpa [norm_smul] using norm_exp_le (t i • A i)
+              simpa [norm_smul] using FQFP.norm_exp_le (t i • A i)
             have hnonneg : ∀ i ∈ l, 0 ≤ ‖exp (t i • A i)‖ := by
               intro i _
               exact norm_nonneg (exp (t i • A i))

@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.BCH.BCHTerms
+public import FQFP.BCH.Algebra.Terms
 
 /-!
 # The Dynkin/Ree toolbox: the graded pieces of `y = exp a * exp b - 1`
@@ -17,13 +17,10 @@ the *pure identity* of degree `k` says that this expression agrees with the expl
 
     ½·W_k + ⅓·(y³)_k - ¼·(y⁴)_k + … ± (1/k)·z^k - bch⟨k⟩Term = 0.
 
-This file is the toolbox every degree shares: the `z` and `T₂, …, T₇` of the ring level, their table
+This file is the toolbox every degree shares: the `z` and `T₂, …, T₈` of the ring level, their table
 form `bchTTable`, and the bridge saying the table evaluates to the ring expression. The identities
-themselves live one degree to a file (`DynkinReeQuintic.lean` … `DynkinReeSeptic.lean`), because
+themselves live one degree to a file (`DynkinReeQuintic.lean` … `DynkinReeOctic.lean`), because
 each is a self-contained computation whose only shared input is what is below.
-
-Degree 8 shares the same shape but is deferred, so `T₈` is not here: it would be used by nothing
-else. See `artifacts/abstractions/deg8-split.md`.
 
 ## Why the pieces are `def`s and not `let`s
 
@@ -36,9 +33,10 @@ degree uses that definition.
 
 The Dynkin/Ree expression has rational coefficients `1/2, 1/3, …`, and `ℚ` has no kernel reduction,
 so a coefficient comparison over `ℚ` can only be driven by `norm_num`, one small expression at a
-time. `WordAlgebra.lean` replaces the coefficients by integers: a degree-`d` table stores `K ^ d`
-times its rational coefficients, with `K = 210`, and integer arithmetic *is* kernel-reducible.
-`bchTTable` is the degree-`k` part of `y` in that form, and `evalKTab_bchTTable_*` below say what it
+time. `FQFP.BCH.Algebra.WordTable` uses integer certificates: a degree-`d` table stores
+`coefficientScale ^ d` times its rational coefficients, with `coefficientScale = 210`.
+Integer arithmetic is kernel-reducible.
+`bchTTable` is the degree-`k` part of `y` in that form, and `eval_bchTTable_*` below say what it
 evaluates to.
 
 ## Provenance
@@ -46,19 +44,17 @@ evaluates to.
 Ported from `Lean-BCH/BCH/SmallSDischarge.lean` (`BCH/SmallSDischarge.lean:37-786`): the source
 states each identity inline as a `let` chain over an arbitrary `RCLike 𝕂`. The statements here are
 the same identities with the pieces named and the scalar interface narrowed to `ℚ`. The range covers
-degrees 4–8; degree 8 is deferred (`artifacts/abstractions/deg8-split.md`), so `T₈` is absent and
-the degrees built on this file are 4–7.
-`quintic_pure_identity` is the degree-4 cancellation, and it is the one identity of the family that
-is *not* proved through a table: it is stated over a bare `Ring` (its scalars are `Nat`-valued),
-while `evalKTab` needs `[Algebra ℚ 𝔸]`. Its companion `quintic_pure_identity_cleared` is the same
-identity multiplied through by `24`.
+degrees 4–8; the degree-eight identity is proved in `DynkinReeOctic.lean`.
+`quintic_pure_identity_cleared` is the degree-4 cancellation multiplied through by `24`.
+It is proved directly over a bare `Ring` using natural-number scalars, whereas `eval` requires
+`[Algebra ℚ 𝔸]`. Its rationally scaled companion is `quintic_pure_identity`.
 -/
 
 @[expose] public section
 
 namespace FQFP.BCH
 
-open WordAlgebra
+open WordTable
 
 variable {𝔸 : Type*}
 
@@ -104,16 +100,26 @@ def bchT7 {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸 
     (144 : ℚ)⁻¹ • (a ^ 4 * b ^ 3) + (144 : ℚ)⁻¹ • (a ^ 3 * b ^ 4) + (240 : ℚ)⁻¹ • (a ^ 2 * b ^ 5) +
     (720 : ℚ)⁻¹ • (a * b ^ 6) + (5040 : ℚ)⁻¹ • (b ^ 7)
 
+/-- The degree-8 part `T₈` of `y = exp a * exp b - 1`. -/
+def bchT8 {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸 :=
+  (40320 : ℚ)⁻¹ • a ^ 8 + (5040 : ℚ)⁻¹ • (a ^ 7 * b) +
+    (1440 : ℚ)⁻¹ • (a ^ 6 * b ^ 2) + (720 : ℚ)⁻¹ • (a ^ 5 * b ^ 3) +
+    (576 : ℚ)⁻¹ • (a ^ 4 * b ^ 4) + (720 : ℚ)⁻¹ • (a ^ 3 * b ^ 5) +
+    (1440 : ℚ)⁻¹ • (a ^ 2 * b ^ 6) + (5040 : ℚ)⁻¹ • (a * b ^ 7) +
+    (40320 : ℚ)⁻¹ • b ^ 8
+
 /-! ### The table of `y`
 
-A table stores the paper's rational coefficients cleared by `K ^ k` (`K = 210`), so only integer
-scalars are available in it; the rational coefficients `1/2, 1/3, …` of the Dynkin/Ree form are
-cleared first, by multiplying the identity through by `lcm(1, …, d)`. The bridge lemmas below say
-what the table evaluates to, and they are the only place the `K`-factors are discharged. -/
+A table stores the paper's rational coefficients cleared by `coefficientScale ^ k`,
+where `coefficientScale = 210`, so its coefficients are integers. The rational coefficients
+`1/2, 1/3, …` of the Dynkin/Ree form are cleared by multiplying the identity by `lcm(1, …, d)`.
+The evaluation lemmas below discharge the powers of `coefficientScale`. -/
 
 /-- **The degree-`k` part of `y = exp a * exp b - 1`**, as a table: the words `aⁿb^(k−n)` with
-coefficient `K ^ k / (n! (k−n)!)`, i.e. the paper's `1/(n!(k−n)!)` cleared by `K ^ k`. -/
-def bchTTable : (k : ℕ) → KTab
+coefficient `coefficientScale ^ k / (n! (k−n)!)`, i.e. the paper's `1/(n!(k−n)!)`
+cleared by `coefficientScale ^ k`. The stored degrees are `1` through `8`;
+the table is empty outside that range. -/
+def bchTTable : (k : ℕ) → WordTable.Table (Fin 2)
   | 0 => []
   | 1 => [([0], 210), ([1], 210)]
   | 2 => [([0, 0], 22050), ([0, 1], 44100), ([1, 1], 22050)]
@@ -132,67 +138,92 @@ def bchTTable : (k : ℕ) → KTab
           ([0, 0, 0, 0, 0, 1, 1], 75045355875000), ([0, 0, 0, 0, 1, 1, 1], 125075593125000),
           ([0, 0, 0, 1, 1, 1, 1], 125075593125000), ([0, 0, 1, 1, 1, 1, 1], 75045355875000),
           ([0, 1, 1, 1, 1, 1, 1], 25015118625000), ([1, 1, 1, 1, 1, 1, 1], 3573588375000)]
+  | 8 => [([0, 0, 0, 0, 0, 0, 0, 0], 93806694843750),
+          ([0, 0, 0, 0, 0, 0, 0, 1], 750453558750000),
+          ([0, 0, 0, 0, 0, 0, 1, 1], 2626587455625000),
+          ([0, 0, 0, 0, 0, 1, 1, 1], 5253174911250000),
+          ([0, 0, 0, 0, 1, 1, 1, 1], 6566468639062500),
+          ([0, 0, 0, 1, 1, 1, 1, 1], 5253174911250000),
+          ([0, 0, 1, 1, 1, 1, 1, 1], 2626587455625000),
+          ([0, 1, 1, 1, 1, 1, 1, 1], 750453558750000),
+          ([1, 1, 1, 1, 1, 1, 1, 1], 93806694843750)]
   | _ => []
 
 /-- **The degree-1 table evaluates to `z = a + b`.** -/
-lemma evalKTab_bchTTable_one {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b (bchTTable 1) = bchZ a b := by
+lemma eval_bchTTable_one {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] (bchTTable 1) = bchZ a b := by
   rw [bchTTable, bchZ]
-  simp only [evalKTab, K, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, add_zero,
+  simp only [eval, coefficientScale, List.map_cons, List.map_nil, List.sum_cons,
+    List.sum_nil, add_zero,
     List.prod_cons, List.prod_nil, mul_one]
   norm_num
 
 /-- **The degree-2 table evaluates to `T₂`.** -/
-lemma evalKTab_bchTTable_two {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b (bchTTable 2) = bchT2 a b := by
+lemma eval_bchTTable_two {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] (bchTTable 2) = bchT2 a b := by
   rw [bchTTable, bchT2]
-  simp only [evalKTab, K, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, add_zero,
+  simp only [eval, coefficientScale, List.map_cons, List.map_nil, List.sum_cons,
+    List.sum_nil, add_zero,
     List.prod_cons, List.prod_nil, mul_one, pow_succ, mul_assoc]
   norm_num
   abel
 
 /-- **The degree-3 table evaluates to `T₃`.** -/
-lemma evalKTab_bchTTable_three {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b (bchTTable 3) = bchT3 a b := by
+lemma eval_bchTTable_three {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] (bchTTable 3) = bchT3 a b := by
   rw [bchTTable, bchT3]
-  simp only [evalKTab, K, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, add_zero,
+  simp only [eval, coefficientScale, List.map_cons, List.map_nil, List.sum_cons,
+    List.sum_nil, add_zero,
     List.prod_cons, List.prod_nil, mul_one, pow_succ, mul_assoc]
   norm_num
   abel
 
 /-- **The degree-4 table evaluates to `T₄`.** -/
-lemma evalKTab_bchTTable_four {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b (bchTTable 4) = bchT4 a b := by
+lemma eval_bchTTable_four {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] (bchTTable 4) = bchT4 a b := by
   rw [bchTTable, bchT4]
-  simp only [evalKTab, K, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, add_zero,
+  simp only [eval, coefficientScale, List.map_cons, List.map_nil, List.sum_cons,
+    List.sum_nil, add_zero,
     List.prod_cons, List.prod_nil, mul_one, pow_succ, mul_assoc]
   norm_num
   abel
 
 /-- **The degree-5 table evaluates to `T₅`.** -/
-lemma evalKTab_bchTTable_five {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b (bchTTable 5) = bchT5 a b := by
+lemma eval_bchTTable_five {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] (bchTTable 5) = bchT5 a b := by
   rw [bchTTable, bchT5]
-  simp only [evalKTab, K, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, add_zero,
+  simp only [eval, coefficientScale, List.map_cons, List.map_nil, List.sum_cons,
+    List.sum_nil, add_zero,
     List.prod_cons, List.prod_nil, mul_one, pow_succ, mul_assoc]
   norm_num
   abel
 
 /-- **The degree-6 table evaluates to `T₆`.** -/
-lemma evalKTab_bchTTable_six {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b (bchTTable 6) = bchT6 a b := by
+lemma eval_bchTTable_six {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] (bchTTable 6) = bchT6 a b := by
   rw [bchTTable, bchT6]
-  simp only [evalKTab, K, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, add_zero,
+  simp only [eval, coefficientScale, List.map_cons, List.map_nil, List.sum_cons,
+    List.sum_nil, add_zero,
     List.prod_cons, List.prod_nil, mul_one, pow_succ, mul_assoc]
   norm_num
   abel
 
 /-- **The degree-7 table evaluates to `T₇`.** -/
-lemma evalKTab_bchTTable_seven {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    evalKTab a b (bchTTable 7) = bchT7 a b := by
+lemma eval_bchTTable_seven {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] (bchTTable 7) = bchT7 a b := by
   rw [bchTTable, bchT7]
-  simp only [evalKTab, K, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, add_zero,
+  simp only [eval, coefficientScale, List.map_cons, List.map_nil, List.sum_cons,
+    List.sum_nil, add_zero,
     List.prod_cons, List.prod_nil, mul_one, pow_succ, mul_assoc]
+  norm_num
+  abel
+
+/-- The degree-8 table evaluates to `T₈`. -/
+lemma eval_bchTTable_eight {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
+    eval coefficientScale ![a, b] (bchTTable 8) = bchT8 a b := by
+  rw [bchTTable, bchT8]
+  simp only [eval, coefficientScale, List.map_cons, List.map_nil, List.sum_cons,
+    List.sum_nil, add_zero, List.prod_cons, List.prod_nil, mul_one, pow_succ, mul_assoc]
   norm_num
   abel
 
@@ -200,7 +231,7 @@ lemma evalKTab_bchTTable_seven {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸]
 
 The degree-4 identity is the one member of the family that is **not** proved through a table. It is
 stated over a bare `Ring` — its scalar multipliers are `Nat`-valued after multiplication by `24`, so
-no `ℚ` is needed — while `evalKTab` requires `[Algebra ℚ 𝔸]`. It therefore lives here, next to the
+no `ℚ` is needed — while `eval` requires `[Algebra ℚ 𝔸]`. It therefore lives here, next to the
 pieces it is stated in terms of, and is settled by `noncomm_ring`. -/
 
 /-- **The degree-4 pure identity, with the denominators cleared**: 24 times
@@ -226,7 +257,7 @@ theorem quintic_pure_identity_cleared [Ring 𝔸] (a b : 𝔸) :
 of `½y² - ⅓y³ + ¼y⁴` written out in `z` and `T₂`, `T₃`, `T₄`, minus `bchQuarticTerm a b`, is zero.
 
 This is the `ℚ`-scaled companion of `quintic_pure_identity_cleared` (multiply by `24`). -/
-theorem quintic_pure_identity [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (a b : 𝔸) :
+theorem quintic_pure_identity [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
     (24 : ℚ)⁻¹ • a ^ 4 + (24 : ℚ)⁻¹ • b ^ 4 +
     (6 : ℚ)⁻¹ • (a * b ^ 3) + (6 : ℚ)⁻¹ • (a ^ 3 * b) +
     (4 : ℚ)⁻¹ • (a ^ 2 * b ^ 2) -

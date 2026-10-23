@@ -7,8 +7,6 @@ module
 
 public import FQFP.BCH.BCHCommutator
 
-import FQFP.BCH.RealScalar
-
 /-!
 # Symmetric BCH: the Strang splitting has cubic error
 
@@ -40,7 +38,7 @@ verbatim under a second name.
 
 @[expose] public section
 
-open NormedSpace TrotterError
+open NormedSpace
 
 namespace FQFP.BCH
 

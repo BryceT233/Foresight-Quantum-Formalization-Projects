@@ -202,9 +202,9 @@ theorem norm_expSMulConj_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 
               (mul_le_mul_of_nonneg_right (norm_mul_le (exp (t • A)) Y) (norm_nonneg _))
     _ ≤ Real.exp (|t| * ‖A‖) * ‖Y‖ * Real.exp (|t| * ‖A‖) := by
             have h1 : ‖exp (t • A)‖ ≤ Real.exp (|t| * ‖A‖) := by
-              simpa [norm_smul] using norm_exp_le (t • A)
+              simpa [norm_smul] using FQFP.norm_exp_le (t • A)
             have h2 : ‖exp ((-t) • A)‖ ≤ Real.exp (|t| * ‖A‖) := by
-              simpa [norm_smul] using norm_exp_le ((-t) • A)
+              simpa [norm_smul] using FQFP.norm_exp_le ((-t) • A)
             exact mul_le_mul (mul_le_mul h1 (le_refl ‖Y‖) (norm_nonneg _) (by positivity)) h2
               (norm_nonneg _) (by positivity)
     _ = ‖Y‖ * Real.exp (2 * |t| * ‖A‖) := by

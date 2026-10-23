@@ -42,6 +42,7 @@ in `FQFP.CQM.QuditCat.Monoidal`.
 
 * `QuditCat` is a dagger category.
 * `isUnitary_matrixToEnd_iff` characterizes unitary matrices by `M * star M = 1`.
+* `matrixToEnd_apply_basis` and `dagger_matrixToEnd` compute matrix columns and daggers.
 
 ## Implementation notes
 
@@ -387,6 +388,18 @@ abbrev matrixToEnd {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) : End (std n) :=
 
 lemma hom_matrixToEnd {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) :
     (matrixToEnd M).asHom.hom = M.toLin (ZBasis n).toBasis (ZBasis n).toBasis := rfl
+
+/-- A matrix endomorphism acts on a computational basis vector by its corresponding column. -/
+lemma matrixToEnd_apply_basis {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) (j : Fin n) :
+    (matrixToEnd M).asHom (ZBasis n j) = ∑ i, M i j • ZBasis n i :=
+  Matrix.toLin_self (ZBasis n).toBasis (ZBasis n).toBasis M j
+
+/-- The dagger of a matrix endomorphism is represented by the conjugate transpose. -/
+lemma dagger_matrixToEnd {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) :
+    (matrixToEnd M).asHom† = (matrixToEnd M.conjTranspose).asHom := by
+  apply hom_ext
+  rw [hom_dagger, hom_matrixToEnd, hom_matrixToEnd,
+    Matrix.toLin_conjTranspose (ZBasis n) (ZBasis n)]
 
 theorem isUnitary_matrixToEnd_iff {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) :
     DaggerCategory.IsUnitary (matrixToEnd M).asHom ↔ M * star M = 1 := by

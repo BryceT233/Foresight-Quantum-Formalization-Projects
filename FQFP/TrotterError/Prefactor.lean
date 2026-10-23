@@ -7,7 +7,7 @@ module
 
 public import FQFP.TrotterError.ExpSMulConj
 public import FQFP.TrotterError.ProductFormula
-public import FQFP.BCH.RealScalar
+public import FQFP.BCH.Analysis.RealScalar
 
 import FQFP.TrotterError.TimeOrderedExp
 

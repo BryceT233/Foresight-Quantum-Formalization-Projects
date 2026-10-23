@@ -409,7 +409,7 @@ lemma norm_evalFactor_le [NormedAlgebra ℚ 𝔸] [NormedSpace ℝ 𝔸] [NormOn
     ‖P.evalFactor H i s‖ ≤ Real.exp (|s| * ‖H (P.perm i.1 i.2)‖) := by
   calc
     ‖P.evalFactor H i s‖ = ‖exp (s • P.generator H i)‖ := rfl
-    _ ≤ Real.exp (‖s • P.generator H i‖) := norm_exp_le _
+    _ ≤ Real.exp (‖s • P.generator H i‖) := FQFP.norm_exp_le _
     _ = Real.exp (|s| * ‖P.generator H i‖) := by rw [norm_smul, Real.norm_eq_abs]
     _ ≤ Real.exp (|s| * ‖H (P.perm i.1 i.2)‖) :=
         Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left (P.norm_generator_le H i) (abs_nonneg s))

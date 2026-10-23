@@ -101,3 +101,10 @@ smell — they mean the synthesizer cannot find the instance, which means
 Include actual declarations and proposed text in audits — not just file paths
 and line numbers. For Bridgeland theorem statements, prefer paper-faithful
 quotation over paraphrase. Write audit notes to `artifacts/`.
+
+`artifacts/` holds conclusions, plus the evidence those conclusions cite
+(`logs/`, `probes/`, `data/`) and the page images in `sources/`. A note goes in
+the campaign folder for its topic, not in the `artifacts/` root; run logs and
+scratch probes go to `scratch/`. Before adding a file, ask which it is: if it
+states a conclusion that stands on its own it is a note, and if it only records
+that a command exited 0 it is evidence. See `artifacts/README.md`.

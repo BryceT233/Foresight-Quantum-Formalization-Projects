@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Taylor
 public import Mathlib.Analysis.SpecialFunctions.Exponential
+public import FQFP.BCH.Analysis.Exponential
 public import FQFP.TrotterError.Combinatorics
 public import FQFP.TrotterError.ListLemmas
 
@@ -364,34 +365,6 @@ theorem taylor_integral_remainder_iteratedDeriv_zero_paper
           simp only [smul_smul]
           exact congrArg₂ (fun r y => r • y) (taylor_paper_scalar_eq p t u) rfl
 
-/-! ### Norm bounds for the exponential -/
-
-section NormExpBounds
-
-variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-
-/-- Each term of the exponential series is bounded by `‖a‖^n / n!`. -/
-lemma norm_exp_term_le [NormOneClass 𝔸] (a : 𝔸) (n : ℕ) :
-    ‖(Nat.factorial n : ℚ)⁻¹ • a ^ n‖ ≤ ‖a‖ ^ n / Nat.factorial n := by
-  rw [norm_smul, norm_inv, ← Rat.norm_cast_real, Real.norm_eq_abs, inv_mul_eq_div]
-  norm_cast; gcongr
-  exact norm_pow_le ..
-
-/-- The norm of the exponential is bounded by the exponential of the norm:
-`‖exp a‖ ≤ Real.exp ‖a‖` for a general normed algebra. -/
-lemma norm_exp_le [NormOneClass 𝔸] (a : 𝔸) : ‖exp a‖ ≤ Real.exp ‖a‖ := by
-  rw [NormedSpace.exp_eq_tsum ℚ, Real.exp_eq_exp_ℝ,
-    ← (NormedSpace.expSeries_div_hasSum_exp _).tsum_eq]
-  have hnsumm : Summable fun n ↦ ‖(Nat.factorial n : ℚ)⁻¹ • a ^ n‖ :=
-    (Real.summable_pow_div_factorial ‖a‖).of_nonneg_of_le (fun _ ↦ norm_nonneg _)
-      (norm_exp_term_le a)
-  calc
-    _ ≤ ∑' n, ‖(Nat.factorial n : ℚ)⁻¹ • a ^ n‖ := norm_tsum_le_tsum_norm hnsumm
-    _ ≤ ∑' n, ‖a‖ ^ n / Nat.factorial n :=
-      hnsumm.tsum_le_tsum (norm_exp_term_le a) (Real.summable_pow_div_factorial ‖a‖)
-
-end NormExpBounds
-
 /-- The exponential of a real multiple of a skew-adjoint element is unitary. -/
 lemma exp_smul_mem_unitary_of_skewAdjoint {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
     [NormedSpace ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸] [ContinuousStar 𝔸]
@@ -417,7 +390,7 @@ theorem norm_pow_mul_exp_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 
     ‖H ^ k * exp (s • H)‖ ≤ ‖H‖ ^ k * Real.exp (s * ‖H‖) := by
   calc
     ‖H ^ k * exp (s • H)‖ ≤ ‖H ^ k‖ * ‖exp (s • H)‖ := norm_mul_le _ _
-    _ ≤ ‖H‖ ^ k * Real.exp ‖s • H‖ := mul_le_mul (norm_pow_le H k) (norm_exp_le (s • H))
+    _ ≤ ‖H‖ ^ k * Real.exp ‖s • H‖ := mul_le_mul (norm_pow_le H k) (FQFP.norm_exp_le (s • H))
           (norm_nonneg _) (pow_nonneg (norm_nonneg H) k)
     _ = ‖H‖ ^ k * Real.exp (s * ‖H‖) := by
         congr 1

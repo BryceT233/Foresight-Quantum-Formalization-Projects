@@ -1,6 +1,9 @@
 /.lake
 
 # Scratch space for probes, one-off generators and intermediate files. Nothing here is part of the
-# build; conclusions drawn from it belong in `artifacts/`.
+# build; conclusions drawn from it belong in `artifacts/`. Run logs go here too (`scratch/logs/`).
 /scratch/
 __pycache__/
+
+# Local audit notes, sources, and evidence are not part of the repository.
+/artifacts/
