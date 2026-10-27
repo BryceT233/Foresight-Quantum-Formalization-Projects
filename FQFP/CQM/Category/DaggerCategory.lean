@@ -95,8 +95,8 @@ variable [DaggerCategory C]
 def daggerEquiv (c c' : C) : (c ⟶ c') ≃ (c' ⟶ c) where
   toFun := dagger
   invFun := dagger
-  left_inv _ := by simp
-  right_inv _ := by simp
+  left_inv _ := involutive_dagger _
+  right_inv _ := involutive_dagger _
 
 /-- An idempotent self-adjoint endomorphism, i.e. a projection. -/
 @[mk_iff]
@@ -109,9 +109,9 @@ attribute [simp] IsProj.selfAdjoint
 @[simp]
 lemma IsProj.comp_self {c : C} (f : c ⟶ c) [IsProj f] : f ≫ f = f := IsProj.idem f
 
-theorem IsProj.id (c : C) : IsProj (𝟙 c) := ⟨by simp, by simp⟩
+lemma IsProj.id (c : C) : IsProj (𝟙 c) := ⟨by simp, by simp⟩
 
-instance IsProj.dagger {c : C} (f : c ⟶ c) [IsProj f] : IsProj f† := by simpa
+instance IsProj.dagger {c : C} (f : c ⟶ c) [IsProj f] : IsProj f† := by cat_disch
 
 /-- A morphism satisfying `f ≫ f† = 𝟙`, i.e. an isometry. -/
 @[mk_iff]
@@ -135,8 +135,7 @@ instance IsIsometry.isProj_dagger_comp {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsIs
 
 /-- If `f` is an isometry, a factorization `m ≫ f = x` determines `m` uniquely: `m = x ≫ f†`. -/
 lemma IsIsometry.eq_dagger_comp_of_comp_eq {c₁ c₂ c₃ : C} (f : c₁ ⟶ c₂) [IsIsometry f]
-    {m : c₃ ⟶ c₁} {x : c₃ ⟶ c₂} (h : m ≫ f = x) : m = x ≫ f† := by
-  rw [(Category.comp_id m).symm, ← IsIsometry.comp_dagger_eq_id f, ← Category.assoc, h]
+    {m : c₃ ⟶ c₁} {x : c₃ ⟶ c₂} (h : m ≫ f = x) : m = x ≫ f† := by cat_disch
 
 /-- An isometry that also satisfies `f† ≫ f = 𝟙`, i.e. a unitary morphism. -/
 class IsUnitary {c₁ c₂ : C} (f : c₁ ⟶ c₂) extends IsIsometry f where
@@ -154,9 +153,7 @@ instance (c : C) : IsUnitary (𝟙 c) := ⟨by simp⟩
 
 instance IsUnitary.comp {c₁ c₂ c₃ : C} (f : c₁ ⟶ c₂) (g : c₂ ⟶ c₃) [IsUnitary f]
     [IsUnitary g] : IsUnitary (f ≫ g) where
-  dagger_comp_eq_id := by
-    simp only [dagger_comp, Category.assoc, IsUnitary.dagger_comp_eq_id_assoc,
-      IsUnitary.dagger_comp_eq_id]
+  dagger_comp_eq_id := by cat_disch
 
 instance IsUnitary.dagger {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsUnitary f] : IsUnitary f† where
   comp_dagger_eq_id := by simp

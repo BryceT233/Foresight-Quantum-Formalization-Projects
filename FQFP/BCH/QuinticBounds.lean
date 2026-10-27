@@ -7,27 +7,146 @@ module
 
 public import FQFP.BCH.Algebra.QuinticTaylor
 public import FQFP.BCH.Analysis.Word
+public import FQFP.BCH.WordExpansion
 
 /-!
-# Norm bounds for the quintic Taylor remainder
+# Difference and Taylor bounds for the quintic BCH term
 
-The subset expansion and exact algebraic decomposition live in
-`FQFP.BCH.Algebra.QuinticTaylor`. This file estimates each piece using the number
-of substituted positions and Mathlib's norm bound for ordered products.
+This file estimates changes in the homogeneous quintic BCH polynomial. The first-order
+Lipschitz estimates and the second-order Taylor remainder use the same binary word groups
+and the same weighted bracket norm bound. Algebraic Taylor decompositions are defined in
+`FQFP.BCH.Algebra.QuinticTaylor`.
 
 ## Main results
 
+* `norm_bchQuinticGroup1_diff_le` and the other three group estimates.
+* `norm_bchQuinticTerm_diff_le`: Lipschitz bound with constant `1`.
 * `norm_bchQuinticTermTaylor2Remainder2V_le` and its `3V` and `4V` counterparts.
 * `norm_bchQuinticTermTaylor2Remainder_le`: the bound `(2430/720) M³ ‖V‖²`.
+
+The norm estimates use positive-length products and require no normalization of the norm
+of the identity. The Taylor estimates retain the source constants `1680/720`, `720/720`
+and `30/720`, though the word counts give the sharper constants `384/720`, `136/720`
+and `16/720`.
 -/
 
-@[expose] public section
+@[expose] public noncomputable section
 
 open Finset
 
 namespace FQFP.BCH
 
-noncomputable section
+/-- **The bracket bound**: the four groups at their coefficients `-1`, `4`, `-6`, `24`. -/
+lemma norm_bchQuinticBracket_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+    (v1 v4 v6 v24 : 𝔸) :
+    ‖bchQuinticBracket v1 v4 v6 v24‖ ≤ ‖v1‖ + 4 * ‖v4‖ + 6 * ‖v6‖ + 24 * ‖v24‖ := by
+  have h4 : ‖(4 : ℚ) • v4‖ ≤ 4 * ‖v4‖ := by
+    calc ‖(4 : ℚ) • v4‖ ≤ ‖(4 : ℚ)‖ * ‖v4‖ := norm_smul_le _ _
+      _ = 4 * ‖v4‖ := by simp [← Rat.norm_cast_real]
+  have h6 : ‖(6 : ℚ) • v6‖ ≤ 6 * ‖v6‖ := by
+    calc ‖(6 : ℚ) • v6‖ ≤ ‖(6 : ℚ)‖ * ‖v6‖ := norm_smul_le _ _
+      _ = 6 * ‖v6‖ := by simp [← Rat.norm_cast_real]
+  have h24 : ‖(24 : ℚ) • v24‖ ≤ 24 * ‖v24‖ := by
+    calc ‖(24 : ℚ) • v24‖ ≤ ‖(24 : ℚ)‖ * ‖v24‖ := norm_smul_le _ _
+      _ = 24 * ‖v24‖ := by simp [← Rat.norm_cast_real]
+  simpa only [bchQuinticBracket, norm_neg] using
+    norm_add_le_of_le
+      (norm_sub_le_of_le (norm_add_le_of_le (le_refl ‖-v1‖) h4) h6) h24
+
+/-- The Lipschitz constant of a quintic word group counts its `a`-positions. -/
+private lemma norm_quintic_group_diff_le {𝔸 : Type*} [NormedRing 𝔸] {m : ℕ}
+    (words : Fin m → Fin 5 → Fin 2) (N : ℕ)
+    (hN : (∑ i, (Finset.univ.filter fun j ↦ words i j = 0).card) = N)
+    (z x y : 𝔸) :
+    ‖∑ i, ((List.ofFn (words i)).map ![z, y]).prod -
+      ∑ i, ((List.ofFn (words i)).map ![x, y]).prod‖ ≤
+      N * (‖z‖ + ‖x‖ + ‖y‖) ^ 4 * ‖z - x‖ := by
+  have hz : ‖z‖ ≤ ‖z‖ + ‖x‖ + ‖y‖ := by
+    linarith [norm_nonneg x, norm_nonneg y]
+  have hx : ‖x‖ ≤ ‖z‖ + ‖x‖ + ‖y‖ := by
+    linarith [norm_nonneg z, norm_nonneg y]
+  have hy : ‖y‖ ≤ ‖z‖ + ‖x‖ + ‖y‖ := by
+    linarith [norm_nonneg z, norm_nonneg x]
+  simpa only [List.map_ofFn, Function.comp_def, ← Nat.cast_sum, hN] using
+    norm_sum_binWord_diff_le words z x y hz hx hy (by positivity)
+
+section Groups
+
+variable {𝔸 : Type*} [NormedRing 𝔸]
+
+/-! ### The four groups -/
+
+/-- **Lipschitz bound for `bchQuinticGroup1` in its first argument**:
+`‖G₁(z,y) - G₁(x,y)‖ ≤ 10 M⁴ ‖z - x‖` with `M = ‖z‖ + ‖x‖ + ‖y‖`. -/
+theorem norm_bchQuinticGroup1_diff_le (z x y : 𝔸) :
+    ‖bchQuinticGroup1 z y - bchQuinticGroup1 x y‖ ≤ 10 * (‖z‖ + ‖x‖ + ‖y‖) ^ 4 * ‖z - x‖ :=
+  norm_quintic_group_diff_le bchQuinticGroup1Words 10
+    (by decide) z x y
+
+/-- **Lipschitz bound for `bchQuinticGroup4` in its first argument**: `≤ 25 M⁴ ‖z - x‖`. -/
+theorem norm_bchQuinticGroup4_diff_le (z x y : 𝔸) :
+    ‖bchQuinticGroup4 z y - bchQuinticGroup4 x y‖ ≤ 25 * (‖z‖ + ‖x‖ + ‖y‖) ^ 4 * ‖z - x‖ :=
+  norm_quintic_group_diff_le bchQuinticGroup4Words 25
+    (by decide) z x y
+
+/-- **Lipschitz bound for `bchQuinticGroup6` in its first argument**: `≤ 35 M⁴ ‖z - x‖`. -/
+theorem norm_bchQuinticGroup6_diff_le (z x y : 𝔸) :
+    ‖bchQuinticGroup6 z y - bchQuinticGroup6 x y‖ ≤ 35 * (‖z‖ + ‖x‖ + ‖y‖) ^ 4 * ‖z - x‖ :=
+  norm_quintic_group_diff_le bchQuinticGroup6Words 35
+    (by decide) z x y
+
+/-- **Lipschitz bound for `bchQuinticGroup24` in its first argument**: `≤ 5 M⁴ ‖z - x‖`. -/
+theorem norm_bchQuinticGroup24_diff_le (z x y : 𝔸) :
+    ‖bchQuinticGroup24 z y - bchQuinticGroup24 x y‖ ≤ 5 * (‖z‖ + ‖x‖ + ‖y‖) ^ 4 * ‖z - x‖ :=
+  norm_quintic_group_diff_le bchQuinticGroup24Words 5
+    (by decide) z x y
+
+end Groups
+
+section Term
+
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+
+/-- **Lipschitz bound for `bchQuinticTerm`**: `‖C₅(z,y) - C₅(x,y)‖ ≤ M⁴ ‖z - x‖` with
+`M = ‖z‖ + ‖x‖ + ‖y‖`.
+
+The four group constants enter with the weights of `bchQuinticTerm`:
+`(1/720)·(1·10 + 4·25 + 6·35 + 24·5) = 440/720 ≤ 1`, which is why the constant of the assembled term
+is `1` while the group constants are larger. -/
+theorem norm_bchQuinticTerm_diff_le (z x y : 𝔸) :
+    ‖bchQuinticTerm z y - bchQuinticTerm x y‖ ≤ (‖z‖ + ‖x‖ + ‖y‖) ^ 4 * ‖z - x‖ := by
+  let M := ‖z‖ + ‖x‖ + ‖y‖
+  let d := ‖z - x‖
+  have hinner : ‖bchQuinticBracket
+      (bchQuinticGroup1 z y - bchQuinticGroup1 x y)
+      (bchQuinticGroup4 z y - bchQuinticGroup4 x y)
+      (bchQuinticGroup6 z y - bchQuinticGroup6 x y)
+      (bchQuinticGroup24 z y - bchQuinticGroup24 x y)‖ ≤ 440 * M ^ 4 * d := by
+    apply (norm_bchQuinticBracket_le _ _ _ _).trans
+    have h1 := norm_bchQuinticGroup1_diff_le z x y
+    have h4 := norm_bchQuinticGroup4_diff_le z x y
+    have h6 := norm_bchQuinticGroup6_diff_le z x y
+    have h24 := norm_bchQuinticGroup24_diff_le z x y
+    dsimp only [M, d]
+    linarith only [h1, h4, h6, h24]
+  have htel : bchQuinticTerm z y - bchQuinticTerm x y = (720 : ℚ)⁻¹ •
+      bchQuinticBracket (bchQuinticGroup1 z y - bchQuinticGroup1 x y)
+        (bchQuinticGroup4 z y - bchQuinticGroup4 x y)
+        (bchQuinticGroup6 z y - bchQuinticGroup6 x y)
+        (bchQuinticGroup24 z y - bchQuinticGroup24 x y) := by
+    unfold bchQuinticTerm bchQuinticBracket
+    module
+  rw [htel]
+  calc
+    _ ≤ ‖(720 : ℚ)⁻¹‖ * (440 * M ^ 4 * d) :=
+      (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left hinner (norm_nonneg _))
+    _ = (440 / 720) * (M ^ 4 * d) := by
+      rw [← Rat.norm_cast_real]
+      norm_num
+      ring
+    _ ≤ M ^ 4 * d := mul_le_of_le_one_left (by positivity) (by norm_num)
+
+end Term
 
 /-! ### The norm bounds
 
@@ -70,31 +189,6 @@ private lemma norm_bchQuinticGroupSubsets_le {𝔸 : Type*} [NormedRing 𝔸] {m
         rw [Finset.sum_mul]
         refine Finset.sum_congr rfl fun i _ => ?_
         rw [Finset.sum_const, Finset.card_powersetCard, nsmul_eq_mul]
-
-/-- **The bracket bound**: the four groups at their coefficients `-1`, `4`, `-6`, `24`. -/
-private lemma norm_bchQuinticBracket_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    (v1 v4 v6 v24 : 𝔸) :
-    ‖bchQuinticBracket v1 v4 v6 v24‖ ≤ ‖v1‖ + 4 * ‖v4‖ + 6 * ‖v6‖ + 24 * ‖v24‖ := by
-  have h4 : ‖(4 : ℚ) • v4‖ ≤ 4 * ‖v4‖ := by
-    calc ‖(4 : ℚ) • v4‖ ≤ ‖(4 : ℚ)‖ * ‖v4‖ := norm_smul_le _ _
-      _ = 4 * ‖v4‖ := by simp [← Rat.norm_cast_real]
-  have h6 : ‖(6 : ℚ) • v6‖ ≤ 6 * ‖v6‖ := by
-    calc ‖(6 : ℚ) • v6‖ ≤ ‖(6 : ℚ)‖ * ‖v6‖ := norm_smul_le _ _
-      _ = 6 * ‖v6‖ := by simp [← Rat.norm_cast_real]
-  have h24 : ‖(24 : ℚ) • v24‖ ≤ 24 * ‖v24‖ := by
-    calc ‖(24 : ℚ) • v24‖ ≤ ‖(24 : ℚ)‖ * ‖v24‖ := norm_smul_le _ _
-      _ = 24 * ‖v24‖ := by simp [← Rat.norm_cast_real]
-  have hA : ‖-v1 + (4 : ℚ) • v4‖ ≤ ‖v1‖ + 4 * ‖v4‖ := by
-    calc ‖-v1 + (4 : ℚ) • v4‖ ≤ ‖-v1‖ + ‖(4 : ℚ) • v4‖ := norm_add_le _ _
-      _ ≤ ‖v1‖ + 4 * ‖v4‖ := by rw [norm_neg]; linarith
-  simp only [bchQuinticBracket]
-  calc ‖-v1 + (4 : ℚ) • v4 - (6 : ℚ) • v6 + (24 : ℚ) • v24‖
-      ≤ ‖-v1 + (4 : ℚ) • v4 - (6 : ℚ) • v6‖ + ‖(24 : ℚ) • v24‖ := norm_add_le _ _
-    _ ≤ (‖-v1 + (4 : ℚ) • v4‖ + ‖(6 : ℚ) • v6‖) + ‖(24 : ℚ) • v24‖ := by
-        have := norm_sub_le (-v1 + (4 : ℚ) • v4) ((6 : ℚ) • v6)
-        linarith
-    _ ≤ (‖v1‖ + 4 * ‖v4‖ + 6 * ‖v6‖) + 24 * ‖v24‖ := by linarith
-    _ = ‖v1‖ + 4 * ‖v4‖ + 6 * ‖v6‖ + 24 * ‖v24‖ := by ring
 
 /-- The relaxation `M ^ (5 - k) * Vn ^ k ≤ M ^ 3 * Vn ^ 2` for `2 ≤ k ≤ 5`. -/
 private lemma profile_le (M Vn : ℝ) (hM0 : 0 ≤ M) (hVn0 : 0 ≤ Vn) (hVnM : Vn ≤ M) {k : ℕ}
@@ -301,7 +395,5 @@ theorem norm_bchQuinticTermTaylor2Remainder_le {𝔸 : Type*}
   unfold bchQuinticTermTaylor2Remainder
   rw [hsum]
   linarith only [s1, s2, h2, h3, h4]
-
-end
 
 end FQFP.BCH

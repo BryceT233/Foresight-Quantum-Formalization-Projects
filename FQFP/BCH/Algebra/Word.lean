@@ -6,7 +6,9 @@ Authors: Foresight Quantum
 module
 
 public import Mathlib.LinearAlgebra.Multilinear.Basic
+public import Mathlib.Algebra.BigOperators.Group.Finset.Powerset
 public import Mathlib.Data.Fin.VecNotation
+public import Mathlib.Data.Fintype.Fin
 
 /-!
 # Ordered word products and substitution
@@ -24,7 +26,9 @@ expansion at any finite set of positions follow from the multilinear API.
 
 * `smul_prod`, `sum_prod_map_smul`: homogeneity of products and word sums.
 * `prod_piecewise_add`: expansion at an arbitrary set of positions.
+* `prod_piecewise_add_eq_sum`: expansion of two inputs with the other positions fixed.
 * `prod_word_update_add`: expansion after adding to a specified letter.
+* `Finset.sum_powerset_eq_sum_powersetCard_of_card_le`: grouping subsets by cardinality.
 -/
 
 @[expose] public section
@@ -67,12 +71,32 @@ lemma mem_wordPositions {κ : Type*} [DecidableEq κ] {n : ℕ}
     (w : Fin n → κ) (a : κ) (i : Fin n) : i ∈ wordPositions w a ↔ w i = a := by
   simp [wordPositions]
 
+/-- The positions of a letter in a list are counted by `List.count`. -/
+@[simp]
+lemma card_wordPositions_get {κ : Type*} [DecidableEq κ] (w : List κ) (a : κ) :
+    (wordPositions w.get a).card = w.count a := by
+  convert (Fin.card_filter_univ_eq_vector_get_eq_count a (⟨w, rfl⟩ : List.Vector κ w.length))
+    using 1
+  · congr 1
+  · rfl
+
+/-- Expand the sum of two inputs on a selected set, keeping the other positions fixed. -/
+theorem prod_piecewise_add_eq_sum {A : Type*} [Semiring A] {n : ℕ}
+    (u v w : Fin n → A) (s : Finset (Fin n)) :
+    (List.ofFn (s.piecewise (u + v) w)).prod =
+      ∑ t ∈ s.powerset, (List.ofFn (t.piecewise u (s.piecewise v w))).prod := by
+  have h : s.piecewise (u + v) w = s.piecewise (u + s.piecewise v w) (s.piecewise v w) := by
+    funext i
+    by_cases hi : i ∈ s <;> simp [Finset.piecewise, hi]
+  rw [h]
+  exact (MultilinearMap.mkPiAlgebraFin ℕ n A).map_piecewise_add u (s.piecewise v w) s
+
 /-- Expand a product at selected positions without changing the order of its factors. -/
 theorem prod_piecewise_add {A : Type*} [Semiring A] {n : ℕ}
     (u v : Fin n → A) (s : Finset (Fin n)) :
     (List.ofFn (s.piecewise (u + v) v)).prod =
-      ∑ t ∈ s.powerset, (List.ofFn (t.piecewise u v)).prod :=
-  (MultilinearMap.mkPiAlgebraFin ℕ n A).map_piecewise_add u v s
+      ∑ t ∈ s.powerset, (List.ofFn (t.piecewise u v)).prod := by
+  simpa only [Finset.piecewise_same] using prod_piecewise_add_eq_sum u v v s
 
 /-- Add to one letter of an arbitrary alphabet and expand over its positions in a word. -/
 theorem prod_word_update_add {κ A : Type*} [DecidableEq κ] [Semiring A] {n : ℕ}
@@ -84,5 +108,18 @@ theorem prod_word_update_add {κ A : Type*} [DecidableEq κ] [Semiring A] {n : �
   congr 2
   funext i
   by_cases h : w i = a <;> simp [h, Finset.piecewise, add_comm]
+
+/-- Sum subsets by cardinality up to any upper bound for the size of the ambient set. -/
+theorem _root_.Finset.sum_powerset_eq_sum_powersetCard_of_card_le
+    {α β : Type*} [AddCommMonoid β] {s : Finset α} {n : ℕ} (h : s.card ≤ n)
+    (f : Finset α → β) :
+    ∑ t ∈ s.powerset, f t = ∑ k ∈ Finset.range (n + 1), ∑ t ∈ s.powersetCard k, f t := by
+  rw [Finset.sum_powerset]
+  apply Finset.sum_subset (Finset.range_mono (Nat.add_le_add_right h 1))
+  intro k hk hnot
+  have hsk : s.card < k := by
+    simp only [Finset.mem_range] at hk hnot
+    lia
+  rw [Finset.powersetCard_eq_empty.mpr hsk, Finset.sum_empty]
 
 end FQFP

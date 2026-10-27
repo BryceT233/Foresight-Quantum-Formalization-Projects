@@ -20,6 +20,7 @@ These estimates form a common analytic foundation for BCH and product-formula er
 
 * `norm_exp_le`: the exponential norm is bounded by the real exponential of the norm.
 * `norm_exp_sub_sum_le`: the Taylor remainder is bounded by the scalar exponential tail.
+* `real_exp_sub_sum_le_geometric`: a factorial-geometric bound for every scalar tail.
 * `norm_exp_mul_exp_sub_one_le`: a product estimate independent of convergence thresholds.
 -/
 
@@ -37,7 +38,8 @@ variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
 lemma norm_exp_term_le [NormOneClass 𝔸] (a : 𝔸) (n : ℕ) :
     ‖(Nat.factorial n : ℚ)⁻¹ • a ^ n‖ ≤ ‖a‖ ^ n / Nat.factorial n := by
   rw [norm_smul, norm_inv, ← Rat.norm_cast_real, Real.norm_eq_abs, inv_mul_eq_div]
-  norm_cast; gcongr
+  norm_cast
+  gcongr
   exact norm_pow_le ..
 
 /-- The exponential norm is bounded by the real exponential of the norm. -/
@@ -106,7 +108,9 @@ theorem norm_exp_mul_exp_sub_one_le [NormOneClass 𝔸] (a b : 𝔸) :
         (mul_le_mul (norm_exp_sub_one_le a) (norm_exp_le b) (norm_nonneg _)
           (sub_nonneg.mpr (Real.one_le_exp (norm_nonneg a))))
         (norm_exp_sub_one_le b)
-    _ = Real.exp (‖a‖ + ‖b‖) - 1 := by rw [Real.exp_add]; ring
+    _ = Real.exp (‖a‖ + ‖b‖) - 1 := by
+      rw [Real.exp_add]
+      ring
 
 /-- **The BCH smallness condition**: `‖exp a * exp b - 1‖ < 1` when `‖a‖ + ‖b‖ < log 2`, which is
 what puts `exp a * exp b` inside the ball where the log series converges. -/
@@ -154,40 +158,55 @@ bound `1/k! ≤ 1/6` for `k ≥ 3`.
 
 These are statements about `Real.exp` alone, so they carry no algebra variables. -/
 
+/-- A factorial-geometric majorant for the real exponential tail. -/
+theorem real_exp_sub_sum_le_geometric {s : ℝ} (hs : 0 ≤ s) (hs1 : s < 1) (n : ℕ) :
+    Real.exp s - ∑ i ∈ range n, (Nat.factorial i : ℝ)⁻¹ * s ^ i ≤
+      s ^ n / ((Nat.factorial n : ℝ) * (1 - s)) := by
+  have ht := hasSum_real_exp_tail s n
+  have hg := ((hasSum_geometric_of_lt_one hs hs1).mul_left (s ^ n)).mul_right
+    (Nat.factorial n : ℝ)⁻¹
+  have hc : ∀ k : ℕ, (Nat.factorial (k + n) : ℝ)⁻¹ * s ^ (k + n) ≤
+      s ^ n * s ^ k * (Nat.factorial n : ℝ)⁻¹ := by
+    intro k
+    have hf : (Nat.factorial n : ℝ) ≤ Nat.factorial (k + n) := by
+      exact_mod_cast Nat.factorial_le (show n ≤ k + n by lia)
+    have hi := inv_anti₀ (by positivity : (0 : ℝ) < Nat.factorial n) hf
+    calc _ ≤ (Nat.factorial n : ℝ)⁻¹ * s ^ (k + n) :=
+            mul_le_mul_of_nonneg_right hi (pow_nonneg hs _)
+         _ = _ := by
+           ring
+  calc
+    _ ≤ s ^ n * (1 - s)⁻¹ * (Nat.factorial n : ℝ)⁻¹ := by
+      rw [← ht.tsum_eq, ← hg.tsum_eq]
+      exact ht.summable.tsum_le_tsum hc hg.summable
+    _ = _ := by
+      rw [div_eq_mul_inv, mul_inv_rev]
+      ring
+
+/-- Every exponential tail of order at least two is bounded by its first omitted power
+on the nonnegative half-radius ball. -/
+lemma real_exp_sub_sum_le_pow {s : ℝ} (hs : 0 ≤ s) (hs_half : s < 1 / 2)
+    (n : ℕ) (hn : 2 ≤ n) :
+    Real.exp s - ∑ i ∈ range n, s ^ i / Nat.factorial i ≤ s ^ n := by
+  have hf : (2 : ℝ) ≤ Nat.factorial n := by
+    exact_mod_cast (show 2 ≤ Nat.factorial n from Nat.factorial_le hn)
+  have hd : 1 ≤ (Nat.factorial n : ℝ) * (1 - s) := by
+    have h := mul_le_mul_of_nonneg_right hf (show 0 ≤ 1 - s by linarith only [hs_half])
+    linarith only [h, hs_half]
+  calc
+    _ ≤ s ^ n / ((Nat.factorial n : ℝ) * (1 - s)) := by
+      simpa only [div_eq_inv_mul] using
+        real_exp_sub_sum_le_geometric hs (show s < 1 by linarith only [hs_half]) n
+    _ ≤ s ^ n := by
+      rw [div_le_iff₀ (lt_of_lt_of_le zero_lt_one hd)]
+      exact le_mul_of_one_le_right (pow_nonneg hs n) hd
+
 /-- **Third-order Taylor remainder of `Real.exp`, `1/(1 - r)` form**:
 `exp r - 1 - r - r²/2 ≤ r³ / (6 (1 - r))` for `0 ≤ r < 1`. -/
 theorem real_exp_third_order_le_div {r : ℝ} (hr : 0 ≤ r) (hr1 : r < 1) :
     Real.exp r - 1 - r - r ^ 2 / 2 ≤ r ^ 3 / (6 * (1 - r)) := by
-  have h3 : (∑ i ∈ Finset.range 3, (Nat.factorial i : ℝ)⁻¹ * r ^ i) = 1 + r + r ^ 2 / 2 := by
-    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
-    norm_num
-    ring
-  have hval : HasSum (fun n : ℕ => (Nat.factorial (n + 3) : ℝ)⁻¹ * r ^ (n + 3))
-      (Real.exp r - 1 - r - r ^ 2 / 2) := by
-    have h := hasSum_real_exp_tail r 3
-    rw [h3] at h
-    convert h using 1
-    ring
-  have hgeom : HasSum (fun n : ℕ => r ^ (n + 3) * (6 : ℝ)⁻¹)
-      (r ^ 3 * (1 - r)⁻¹ * (6 : ℝ)⁻¹) := by
-    have hg := (hasSum_geometric_of_lt_one hr hr1).mul_left (r ^ 3)
-    rw [show (fun n : ℕ => r ^ 3 * r ^ n) = (fun n : ℕ => r ^ (n + 3)) from
-      funext fun n => by ring] at hg
-    exact hg.mul_right (6 : ℝ)⁻¹
-  have hterm : ∀ n : ℕ,
-      (Nat.factorial (n + 3) : ℝ)⁻¹ * r ^ (n + 3) ≤ r ^ (n + 3) * (6 : ℝ)⁻¹ := by
-    intro n
-    rw [mul_comm]
-    refine mul_le_mul_of_nonneg_left ?_ (pow_nonneg hr _)
-    rw [inv_le_inv₀ (by positivity) (by norm_num : (0 : ℝ) < 6)]
-    exact_mod_cast Nat.factorial_le (by lia : 3 ≤ n + 3)
-  have hsumm : Summable fun n : ℕ => (Nat.factorial (n + 3) : ℝ)⁻¹ * r ^ (n + 3) :=
-    (summable_nat_add_iff 3).mpr (hasSum_real_exp r).summable
-  calc Real.exp r - 1 - r - r ^ 2 / 2
-      = ∑' n : ℕ, (Nat.factorial (n + 3) : ℝ)⁻¹ * r ^ (n + 3) := hval.tsum_eq.symm
-    _ ≤ ∑' n : ℕ, r ^ (n + 3) * (6 : ℝ)⁻¹ := hsumm.tsum_le_tsum hterm hgeom.summable
-    _ = r ^ 3 * (1 - r)⁻¹ * (6 : ℝ)⁻¹ := hgeom.tsum_eq
-    _ = r ^ 3 / (6 * (1 - r)) := by rw [div_eq_mul_inv, mul_inv_rev]; ring
+  simpa [sum_range_succ, Nat.factorial, sub_eq_add_neg, div_eq_mul_inv,
+    add_comm, add_left_comm, add_assoc, mul_comm] using real_exp_sub_sum_le_geometric hr hr1 3
 
 /-- **Third-order Taylor remainder of `Real.exp`, cubic form**:
 `exp r - 1 - r - r²/2 ≤ r³` for `0 ≤ r < 5/6`. -/
@@ -199,6 +218,49 @@ theorem real_exp_third_order_le_cube {r : ℝ} (hr : 0 ≤ r) (hr1 : r < 5 / 6) 
     _ ≤ r ^ 3 := by
         rw [div_le_iff₀ (by linarith : (0 : ℝ) < 6 * (1 - r))]
         nlinarith [sq_nonneg r, pow_nonneg hr 3]
+
+/-- The real exponential tail is bounded by the first omitted power on `[0, 3/4)`. -/
+lemma real_exp_fourth_order_le_quartic {s : ℝ} (hs : 0 ≤ s) (hs1 : s < 3 / 4) :
+    Real.exp s - 1 - s - s ^ 2 / 2 - s ^ 3 / 6 ≤ s ^ 4 := by
+  have ht := real_exp_sub_sum_le_geometric hs (show s < 1 by linarith only [hs1]) 4
+  norm_num [sum_range_succ, Nat.factorial] at ht
+  calc _ ≤ s ^ 4 / (24 * (1 - s)) := by linarith only [ht]
+       _ ≤ s ^ 4 := by
+         rw [div_le_iff₀ (by linarith only [hs1] : (0 : ℝ) < 24 * (1 - s))]
+         nlinarith only [mul_nonneg (pow_nonneg hs 4)
+           (show 0 ≤ 24 * (1 - s) - 1 by linarith only [hs1])]
+
+/-- The real exponential tail is bounded by the first omitted power on `[0, 3/4)`. -/
+lemma real_exp_fifth_order_le_quintic {s : ℝ} (hs : 0 ≤ s) (hs1 : s < 3 / 4) :
+    Real.exp s - 1 - s - s ^ 2 / 2 - s ^ 3 / 6 - s ^ 4 / 24 ≤ s ^ 5 := by
+  have ht := real_exp_sub_sum_le_geometric hs (show s < 1 by linarith only [hs1]) 5
+  norm_num [sum_range_succ, Nat.factorial] at ht
+  calc _ ≤ s ^ 5 / (120 * (1 - s)) := by linarith only [ht]
+       _ ≤ s ^ 5 := by
+         rw [div_le_iff₀ (by linarith only [hs1] : (0 : ℝ) < 120 * (1 - s))]
+         nlinarith only [mul_nonneg (pow_nonneg hs 5)
+           (show 0 ≤ 120 * (1 - s) - 1 by linarith only [hs1])]
+
+/-- The quadratic real exponential error on `[0, 1]`. -/
+lemma real_exp_sub_one_sub_id_le_sq {s : ℝ} (hs : 0 ≤ s) (hs1 : s ≤ 1) :
+    Real.exp s - 1 - s ≤ s ^ 2 := by
+  have h := Real.norm_exp_sub_one_sub_id_le
+    (show ‖s‖ ≤ 1 by simpa [Real.norm_eq_abs, abs_of_nonneg hs] using hs1)
+  have he : 0 ≤ Real.exp s - 1 - s := by
+    linarith only [Real.add_one_le_exp s]
+  simpa [Real.norm_eq_abs, abs_of_nonneg he, abs_of_nonneg hs] using h
+
+/-- A radius bound controls every power of the scalar exponential increment. -/
+lemma real_exp_sub_one_pow_le_of_le {s t : ℝ} (hs : 0 ≤ s) (hst : s ≤ t)
+    (ht : t ≤ 1) (n : ℕ) : (Real.exp s - 1) ^ n ≤ (1 + t) ^ n * s ^ n := by
+  have htail := real_exp_sub_one_sub_id_le_sq hs (hst.trans ht)
+  have he0 : 0 ≤ Real.exp s - 1 := by linarith only [Real.add_one_le_exp s, hs]
+  calc
+    _ ≤ (s + s ^ 2) ^ n := pow_le_pow_left₀ he0 (by linarith only [htail]) n
+    _ = (1 + s) ^ n * s ^ n := by rw [show s + s ^ 2 = (1 + s) * s by ring, mul_pow]
+    _ ≤ _ := mul_le_mul_of_nonneg_right
+      (pow_le_pow_left₀ (by positivity) (add_le_add (le_refl (1 : ℝ)) hst) n)
+      (pow_nonneg hs n)
 
 /-! ### Taylor remainders in a normed algebra
 
@@ -243,7 +305,9 @@ theorem norm_exp_mul_exp_sub_one_sub_add_le (a b : 𝔸) :
         (mul_le_mul (norm_exp_sub_one_le a) (norm_exp_sub_one_le b) (norm_nonneg _)
           (sub_nonneg.mpr (Real.one_le_exp (norm_nonneg a))))
         (norm_exp_sub_one_sub_id_le a)) (norm_exp_sub_one_sub_id_le b)
-    _ = Real.exp (‖a‖ + ‖b‖) - 1 - (‖a‖ + ‖b‖) := by rw [Real.exp_add]; ring
+    _ = Real.exp (‖a‖ + ‖b‖) - 1 - (‖a‖ + ‖b‖) := by
+      rw [Real.exp_add]
+      ring
 
 /-- **Third-order Taylor remainder of `exp`**:
 `‖exp x - 1 - x - x²/2‖ ≤ Real.exp ‖x‖ - 1 - ‖x‖ - ‖x‖²/2`. -/
@@ -263,6 +327,24 @@ theorem norm_exp_sub_one_sub_id_sub_sq_le (x : 𝔸) :
     abel] at h
   refine h.trans_eq ?_
   ring
+
+/-- The exponential Taylor error is bounded by the corresponding real tail. -/
+lemma norm_exp_sub_cubic_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+    [CompleteSpace 𝔸] [NormOneClass 𝔸] (x : 𝔸) :
+    ‖exp x - 1 - x - (2 : ℚ)⁻¹ • x ^ 2 - (6 : ℚ)⁻¹ • x ^ 3‖ ≤ Real.exp ‖x‖ - 1 - ‖x‖ - ‖x‖ ^ 2 / 2
+      - ‖x‖ ^ 3 / 6 := by
+  simpa [sum_range_succ, Nat.factorial, sub_eq_add_neg, div_eq_mul_inv,
+    add_smul, smul_add, add_comm, add_left_comm, add_assoc, neg_smul, neg_one_smul] using
+      FQFP.norm_exp_sub_sum_le x 4
+
+/-- The exponential Taylor error is bounded by the corresponding real tail. -/
+lemma norm_exp_sub_quartic_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+    [CompleteSpace 𝔸] [NormOneClass 𝔸] (x : 𝔸) :
+    ‖exp x - 1 - x - (2 : ℚ)⁻¹ • x ^ 2 - (6 : ℚ)⁻¹ • x ^ 3 - (24 : ℚ)⁻¹ • x ^ 4‖ ≤ Real.exp ‖x‖ -
+      1 - ‖x‖ - ‖x‖ ^ 2 / 2 - ‖x‖ ^ 3 / 6 - ‖x‖ ^ 4 / 24 := by
+  simpa [sum_range_succ, Nat.factorial, sub_eq_add_neg, div_eq_mul_inv,
+    add_smul, smul_add, add_comm, add_left_comm, add_assoc, neg_smul, neg_one_smul] using
+      FQFP.norm_exp_sub_sum_le x 5
 
 end ExpRemainder
 

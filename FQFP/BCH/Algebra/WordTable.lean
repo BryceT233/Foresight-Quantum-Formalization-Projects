@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Tactic
+public import FQFP.BCH.Algebra.Word
 
 /-!
 # Integer certificates for noncommutative polynomial identities
@@ -30,6 +31,8 @@ on representatives, and their evaluation laws supply their mathematical semantic
 ## Main results
 
 * `eval_mul`, `eval_smul`, `eval_pow`: evaluation respects the table operations.
+* `eval_of_length`: a homogeneous table has one common scaling denominator.
+* `eval_smul_of_length`: homogeneous tables scale by their common word length.
 * `eval_collapse`: collecting coefficients preserves evaluation.
 * `eval_eq_zero_of_all_beq`: a checked zero coefficient table evaluates to zero.
 -/
@@ -112,6 +115,29 @@ lemma eval_ofFn (scale : ℚ) (letters : α → 𝔸) {m n : ℕ}
       ((c : ℚ) / scale ^ n) • ∑ i, ((List.ofFn (words i)).map letters).prod := by
   simp only [eval, List.map_ofFn, List.sum_ofFn, List.length_ofFn,
     Finset.smul_sum, Function.comp_def]
+
+/-- At a common word length, the table scale is one common scalar factor. -/
+lemma eval_of_length {κ A : Type*} [Semiring A] [Algebra ℚ A]
+    (scale : ℚ) (letters : κ → A) (t : Table κ) (n : ℕ)
+    (hlen : ∀ p ∈ t, p.1.length = n) :
+    eval scale letters t = (scale ^ n)⁻¹ • eval 1 letters t := by
+  induction t with
+  | nil => simp [eval_nil]
+  | cons p t ih =>
+    rw [eval_cons, eval_cons, hlen p List.mem_cons_self,
+      ih (fun q hq ↦ hlen q (List.mem_cons_of_mem p hq)), smul_add, smul_smul]
+    simp [div_eq_mul_inv, mul_comm]
+
+/-- Evaluating a homogeneous table on scaled letters scales by the common word length. -/
+lemma eval_smul_of_length {R κ A : Type*} [CommSemiring R] [Semiring A]
+    [Algebra ℚ A] [Algebra R A] (scale : ℚ) (letters : κ → A) (t : Table κ)
+    (n : ℕ) (hlen : ∀ p ∈ t, p.1.length = n) (c : R) :
+    eval scale (fun k ↦ c • letters k) t = c ^ n • eval scale letters t := by
+  induction t with
+  | nil => simp [eval]
+  | cons p t ih =>
+    rw [eval_cons, eval_cons, ih (fun q hq ↦ hlen q (List.mem_cons_of_mem p hq)), smul_add,
+      prod_map_smul, hlen p List.mem_cons_self, smul_comm]
 
 /-- **A product of two weighted monomials is one weighted monomial**: the words concatenate and
 the integer coefficients multiply, at the table's scaling. -/
@@ -222,7 +248,6 @@ lemma eval_eq_zero_of_all_beq (scale : ℚ) (letters : α → 𝔸) (t : Table �
     (h : t.all (fun p => p.2 == 0) = true) :
     eval scale letters t = 0 :=
   eval_eq_zero_of_rows scale letters t fun p hp => by
-    have := (List.all_eq_true.mp h) p hp
-    simpa [beq_iff_eq] using this
+    simpa only [beq_iff_eq] using (List.all_eq_true.mp h) p hp
 
 end FQFP.WordTable

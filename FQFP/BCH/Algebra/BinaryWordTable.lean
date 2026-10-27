@@ -13,6 +13,12 @@ public import FQFP.BCH.Algebra.Word
 
 Insertion follows a word's letters rather than searching a list of previously seen words.
 The evaluation theorem connects this computational representation to `WordTable.eval`.
+Converting a tree back to its nonzero rows gives a coefficient collection operation.
+
+## Main results
+
+* `eval_collapse`: prefix collection preserves scaled ordered-word evaluation.
+* `eval_table_eq_zero`: a zero tree certifies a polynomial identity.
 -/
 
 @[expose] public section
@@ -44,6 +50,14 @@ def collect : WordTable.Table (Fin 2) → Tree
 def isZero : Tree → Bool
   | .zero => true
   | .node c l r => c == 0 && isZero l && isZero r
+
+/-- Return the nonzero rows of a binary coefficient tree. -/
+def toTable : Tree → WordTable.Table (Fin 2)
+  | .zero => []
+  | .node c l r =>
+    (if c = 0 then [] else [([], c)]) ++
+      (toTable l).map (fun p ↦ (0 :: p.1, p.2)) ++
+      (toTable r).map (fun p ↦ (1 :: p.1, p.2))
 
 variable {A : Type*} [Ring A] [Algebra ℚ A]
 
@@ -90,5 +104,31 @@ theorem eval_table_eq_zero (s : ℚ) (f : Fin 2 → A) (t : WordTable.Table (Fin
     (h : isZero (collect t) = true) : WordTable.eval s f t = 0 := by
   rw [eval_scale, ← eval_collect]
   exact eval_eq_zero _ _ h
+
+private theorem eval_map_cons (f : Fin 2 → A) (a : Fin 2) (t : WordTable.Table (Fin 2)) :
+    WordTable.eval 1 f (t.map fun p ↦ (a :: p.1, p.2)) = f a * WordTable.eval 1 f t := by
+  induction t with
+  | nil => simp [WordTable.eval_nil]
+  | cons p t ih =>
+    rw [List.map_cons, WordTable.eval_cons, WordTable.eval_cons, ih, mul_add]
+    simp [List.map_cons, List.prod_cons]
+
+/-- Converting a coefficient tree to rows preserves its ordered polynomial. -/
+theorem eval_toTable (f : Fin 2 → A) (t : Tree) :
+    WordTable.eval 1 f (toTable t) = eval f t := by
+  induction t with
+  | zero => rfl
+  | node c l r hl hr =>
+    rw [toTable, WordTable.eval_append, WordTable.eval_append,
+      eval_map_cons, eval_map_cons, hl, hr, eval]
+    by_cases hc : c = 0 <;> simp [hc, WordTable.eval_nil, WordTable.eval_singleton]
+
+/-- Collect a binary table by its word prefixes, discarding zero rows. -/
+def collapse (t : WordTable.Table (Fin 2)) : WordTable.Table (Fin 2) := toTable (collect t)
+
+/-- Prefix collection preserves the original table's scaled evaluation. -/
+theorem eval_collapse (s : ℚ) (f : Fin 2 → A) (t : WordTable.Table (Fin 2)) :
+    WordTable.eval s f (collapse t) = WordTable.eval s f t := by
+  rw [eval_scale, collapse, eval_toTable, eval_collect, ← eval_scale]
 
 end FQFP.BinaryWordTable

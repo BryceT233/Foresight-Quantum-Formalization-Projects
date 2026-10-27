@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.BCH.Algebra.Series
 public import FQFP.BCH.Analysis.Exponential
 public import Mathlib.Topology.Connected.Clopen
 public import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -21,7 +22,9 @@ This file extends Mathlib's `NormedSpace.log` and `NormedSpace.logSeries` with c
 analyticity, remainder bounds, and the identity `exp (log x) = x` on the open unit ball around `1`.
 The definitions and elementary algebraic properties come from Mathlib.
 
-## Main definitions
+## Algebraic definitions
+
+Imported from `FQFP.BCH.Algebra.Series`.
 
 * `logCoeff n` — the rational coefficient `(-1)^(n+1)/n`.
 * `logPartialSum 𝔸 n x` — the log series summed over degrees strictly smaller than `n`.
@@ -315,70 +318,18 @@ The full logarithm bound is also proved without completeness, directly from the 
 
 Following `exp`'s treatment in `Mathlib/Analysis/Normed/Algebra/Exponential.lean`, the *truncated*
 form `1 + x` is the one used: there is deliberately no separate `logOnePlus` name. -/
-
-section PartialSum
-
-variable [Ring 𝔸] [Algebra ℚ 𝔸]
-
-/-- The coefficients of the log series: `logCoeff i = (-1)^(i+1)/i`, so that
-`log (1 + x) = ∑ᵢ logCoeff i • xⁱ`. Naming them keeps the coercions out of the statements below,
-where `logCoeff` is only ever applied to a *natural-number* index. -/
-def logCoeff (i : ℕ) : ℚ := (-1 : ℚ) ^ (i + 1) / i
-
-@[simp] theorem logCoeff_zero : logCoeff 0 = 0 := by norm_num [logCoeff]
-@[simp] theorem logCoeff_one : logCoeff 1 = 1 := by norm_num [logCoeff]
-@[simp] theorem logCoeff_two : logCoeff 2 = -(2 : ℚ)⁻¹ := by norm_num [logCoeff]
-@[simp] theorem logCoeff_three : logCoeff 3 = (3 : ℚ)⁻¹ := by norm_num [logCoeff]
-
-/-- The partial sum `∑_{i<n} logCoeff i • xⁱ` of the log series. The subscript `n` is the degree of
-the *first omitted* term, which is what makes it line up with the split point of
-`Summable.sum_add_tsum_nat_add`: both `logPartialSum 𝔸 0 x` and `logPartialSum 𝔸 1 x` are zero
-(the constant coefficient is `(-1)/0 = 0`), while `logPartialSum 𝔸 2 x = x` and
-`logPartialSum 𝔸 3 x = x - x²/2`. -/
-def logPartialSum (𝔸 : Type*) [Ring 𝔸] [Algebra ℚ 𝔸] (n : ℕ)
-    (x : 𝔸) : 𝔸 :=
-  ∑ i ∈ Finset.range n, logCoeff i • x ^ i
-
-@[simp]
-theorem logPartialSum_zero (x : 𝔸) : logPartialSum 𝔸 0 x = 0 :=
-  Finset.sum_range_zero _
-
-/-- **The next partial sum adds the term of degree `n`.** -/
-theorem logPartialSum_succ (n : ℕ) (x : 𝔸) :
-    logPartialSum 𝔸 (n + 1) x = logPartialSum 𝔸 n x + logCoeff n • x ^ n :=
-  Finset.sum_range_succ _ _
-
-/-- The first partial sum of the log series vanishes: its constant coefficient is `(-1)/0 = 0`. -/
-@[simp]
-theorem logPartialSum_one (x : 𝔸) : logPartialSum 𝔸 1 x = 0 := by
-  simp only [logPartialSum_succ, logPartialSum_zero, logCoeff_zero, zero_smul, add_zero]
-
-/-- The second partial sum of the log series is the linear term `x`. -/
-@[simp]
-theorem logPartialSum_two (x : 𝔸) : logPartialSum 𝔸 2 x = x := by
-  rw [logPartialSum_succ, logPartialSum_one, logCoeff_one, one_smul, pow_one, zero_add]
-
-/-- The third partial sum of the log series is `x - x²/2`. -/
-@[simp]
-theorem logPartialSum_three (x : 𝔸) :
-    logPartialSum 𝔸 3 x = x - (2 : ℚ)⁻¹ • x ^ 2 := by
-  rw [logPartialSum_succ, logPartialSum_two, logCoeff_two, neg_smul, sub_eq_add_neg]
-
-/-- The fourth partial sum of the log series is `x - x²/2 + x³/3`. -/
-@[simp]
-theorem logPartialSum_four (x : 𝔸) :
-    logPartialSum 𝔸 4 x = x - (2 : ℚ)⁻¹ • x ^ 2 + (3 : ℚ)⁻¹ • x ^ 3 := by
-  rw [logPartialSum_succ, logPartialSum_three, logCoeff_three]
-
-end PartialSum
-
 section PartialSumNorm
 
 variable [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
 
+/-- The norm of a rational logarithm coefficient is the reciprocal of its index. -/
+@[simp]
+theorem norm_logCoeff (i : ℕ) : ‖logCoeff i‖ = (i : ℝ)⁻¹ :=
+  norm_logSeries_coeff i
+
 /-- **The log coefficients have norm at most `1`.** -/
 theorem norm_logCoeff_le_one (i : ℕ) : ‖logCoeff i‖ ≤ 1 := by
-  rw [logCoeff, norm_logSeries_coeff]
+  rw [norm_logCoeff]
   rcases Nat.eq_zero_or_pos i with h | h
   · rw [h]
     norm_num
@@ -479,6 +430,15 @@ theorem norm_log_one_add_sub_add_sq_sub_cube_le (x : 𝔸) (hx : ‖x‖ < 1) :
       ≤ ‖x‖ ^ 4 * (1 - ‖x‖)⁻¹ := by
   simpa only [logPartialSum_four, sub_eq_add_neg, neg_add, neg_neg, add_assoc] using
     norm_log_one_add_sub_logPartialSum_le x 4 hx
+
+/-- The logarithm Taylor error is bounded by a geometric tail. -/
+lemma norm_log_one_add_sub_quartic_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+    [CompleteSpace 𝔸] (y : 𝔸) (hy : ‖y‖ < 1) :
+    ‖log (1 + y) - y + (2 : ℚ)⁻¹ • y ^ 2 - (3 : ℚ)⁻¹ • y ^ 3 + (4 : ℚ)⁻¹ • y ^ 4‖ ≤ ‖y‖ ^ 5 / (1 -
+      ‖y‖) := by
+  have h := FQFP.norm_log_one_add_sub_logPartialSum_le y 5 hy
+  norm_num [logPartialSum, logCoeff, Finset.sum_range_succ] at h
+  simpa [sub_eq_add_neg, div_eq_mul_inv, add_comm, add_left_comm, add_assoc] using h
 
 end PartialSumNorm
 
@@ -758,7 +718,9 @@ theorem exp_log {y : 𝔸} (hy : ‖y - 1‖ < 1) : exp (log y) = y := by
 /-- **If `exp z = 1` and `‖z‖ < log 2` then `z = 0`.** This is what upgrades the
 connectedness argument for `log_exp_of_norm_lt` from `exp (h t) = 1` to `h t = 0`. -/
 theorem exp_eq_one_of_norm_lt (z : 𝔸) (hz : exp z = 1) (hn : ‖z‖ < Real.log 2) : z = 0 := by
-  have hkey : z = -(exp z - 1 - z) := by rw [hz]; simp
+  have hkey : z = -(exp z - 1 - z) := by
+    rw [hz]
+    simp
   have hbound : ‖z‖ ≤ Real.exp ‖z‖ - 1 - ‖z‖ := by
     calc ‖z‖ = ‖-(exp z - 1 - z)‖ := by conv_lhs => rw [hkey]
       _ = ‖exp z - 1 - z‖ := norm_neg _
@@ -823,7 +785,9 @@ theorem log_exp_of_norm_lt (a : 𝔸) (ha : ‖a‖ < Real.log 2) : log (exp a) 
     simp only [hh_def] at h1
     rw [one_smul, show (1 : 𝔸) + (exp a - 1) = exp a from by abel, sub_eq_zero] at h1
     exact h1
-  have h0 : h 0 = 0 := by rw [hh_def]; simp
+  have h0 : h 0 = 0 := by
+    rw [hh_def]
+    simp
   have hexp_ht : ∀ t : ℝ, t * ‖a‖ < Real.log 2 → 0 ≤ t → exp (h t) = 1 := by
     intro t ht ht_nn
     have harg : (1 : 𝔸) + (exp (t • a) - 1) = exp (t • a) := by abel
@@ -833,7 +797,8 @@ theorem log_exp_of_norm_lt (a : 𝔸) (ha : ‖a‖ < Real.log 2) : log (exp a) 
         _ = t * ‖a‖ := by rw [abs_of_nonneg ht_nn]
         _ < Real.log 2 := ht
     have hexp_log : exp (log (1 + (exp (t • a) - 1))) = exp (t • a) := by
-      rw [harg]; exact exp_log hnorm
+      rw [harg]
+      exact exp_log hnorm
     -- `exp (t • a)` commutes with `t • a`, hence so does its logarithm
     have hcomm : Commute (log (1 + (exp (t • a) - 1))) (t • a) := by
       rw [harg]
@@ -862,7 +827,9 @@ theorem log_exp_of_norm_lt (a : 𝔸) (ha : ‖a‖ < Real.log 2) : log (exp a) 
             gcongr
             calc ‖t • a‖ ≤ |t| * ‖a‖ := norm_smul_le t a
               _ = t * ‖a‖ := by rw [abs_of_nonneg ht.1]
-        _ ≤ Real.exp (1 * ‖a‖) - 1 := by gcongr; exact ht.2
+        _ ≤ Real.exp (1 * ‖a‖) - 1 := by
+          gcongr
+          exact ht.2
         _ = Real.exp ‖a‖ - 1 := by rw [one_mul]
   let g : Set.Icc (0 : ℝ) 1 → 𝔸 := fun t ↦ h t
   have hg : Continuous g := hcont.domRestrict

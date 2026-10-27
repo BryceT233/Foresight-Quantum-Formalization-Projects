@@ -6,6 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.BCH.Algebra.Terms
+public import FQFP.BCH.Algebra.WordTaylor
 
 /-!
 # The Taylor expansion of the degree-5 term
@@ -104,21 +105,6 @@ def bchQuinticTermTaylor2Remainder [Ring 𝔸] [Algebra ℚ 𝔸] (x V y : 𝔸)
 
 /-! ### The combinatorial bookkeeping -/
 
-/-- **Splitting a powerset by cardinality**: when every subset has at most four elements, the sum
-over the powerset is the sum of the sums over the subsets of size `0`, `1`, `2`, `3`, `4`. -/
-private lemma sum_powerset_eq_sum_powersetCard {α β : Type*} [AddCommMonoid β]
-    {s : Finset α} (h : s.card ≤ 4) (f : Finset α → β) :
-    ∑ t ∈ s.powerset, f t = ∑ k ∈ Finset.range 5, ∑ t ∈ s.powersetCard k, f t := by
-  classical
-  refine (Finset.sum_fiberwise_of_maps_to (s := s.powerset) (t := Finset.range 5)
-    (g := Finset.card) ?_ f).symm.trans ?_
-  · intro t ht
-    simp only [Finset.mem_range]
-    have := Finset.card_le_card (Finset.mem_powerset.mp ht)
-    lia
-  · refine Finset.sum_congr rfl fun k _ => ?_
-    rw [Finset.powersetCard_eq_filter]
-
 /-- Every word of `bchQuinticTerm`'s coefficient-1 group has at most four letters `a`. -/
 private lemma card_group1 (i : Fin 4) :
     (wordPositions (bchQuinticGroup1Words i) 0).card ≤ 4 := by
@@ -173,22 +159,18 @@ private lemma group_add_eq_sum_subsets [Semiring 𝔸] {m : ℕ} (words : Fin m 
     (hcard : ∀ i : Fin m, (wordPositions (words i) 0).card ≤ 4) (x V y : 𝔸) :
     (∑ i : Fin m, ((List.ofFn (words i)).map ![x + V, y]).prod)
       = ∑ k ∈ Finset.range 5, bchQuinticGroupSubsets words k x V y := by
-  calc ∑ i : Fin m, ((List.ofFn (words i)).map ![x + V, y]).prod
-      = ∑ i : Fin m, ∑ s ∈ (wordPositions (words i) 0).powerset,
-          (List.ofFn (s.piecewise (fun _ => V) (fun j => ![x, y] (words i j)))).prod :=
-        Finset.sum_congr rfl fun i _ => by
-          have hu : Function.update (![x, y] : Fin 2 → 𝔸) 0 (x + V) = ![x + V, y] := by
-            ext j
-            fin_cases j <;> simp
-          simpa only [Matrix.cons_val_zero, hu, List.map_ofFn, Function.comp_def] using
-            prod_word_update_add (words i) ![x, y] 0 V
+  have hu : Function.update (![x, y] : Fin 2 → 𝔸) 0 (x + V) = ![x + V, y] := by
+    ext j
+    fin_cases j <;> simp
+  calc
     _ = ∑ i : Fin m, ∑ k ∈ Finset.range 5,
-          ∑ s ∈ (wordPositions (words i) 0).powersetCard k,
-            (List.ofFn (s.piecewise (fun _ => V) (fun j => ![x, y] (words i j)))).prod :=
-        Finset.sum_congr rfl fun i _ => sum_powerset_eq_sum_powersetCard (hcard i) _
-    _ = ∑ k ∈ Finset.range 5, bchQuinticGroupSubsets words k x V y := by
-        rw [Finset.sum_comm]
-        rfl
+        wordTaylorPiece (words i) 0 ![x, y] V k :=
+      Finset.sum_congr rfl fun i _ ↦ by
+        simpa only [Matrix.cons_val_zero, hu, wordEval] using
+          word_update_add_eq_sum_taylorPiece (words i) 0 ![x, y] V (hcard i)
+    _ = _ := by
+      rw [Finset.sum_comm]
+      rfl
 
 /-- **`bchQuinticTerm` at `x + V` is the sum of its subset pieces.** -/
 theorem bchQuinticTerm_add_eq_sum_pieces [Ring 𝔸] [Algebra ℚ 𝔸] (x V y : 𝔸) :

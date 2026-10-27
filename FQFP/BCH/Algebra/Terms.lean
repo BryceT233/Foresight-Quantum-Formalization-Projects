@@ -27,6 +27,8 @@ identities without changing the rational polynomials they represent.
 * The `bchCubicTerm_smul`, `bchQuarticTerm_smul`, and `bchQuinticTerm_smul`
   homogeneity identities.
 * The cubic and quartic linear/quadratic decompositions in the first argument.
+* `bchCubicTerm_residual_eq`, `bchCommutator_residual_eq`: exact residual identities for
+  arbitrary approximations to the exponentials.
 -/
 
 @[expose] public section
@@ -604,5 +606,48 @@ noncomputable def bchOcticTerm {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸]
   eval coefficientScale ![a, b] bchOcticTermTable
 
 end
+
+/-! ### Exact low-degree residuals -/
+
+/-- Exact cubic cancellation with arbitrary approximations to the two exponentials. -/
+theorem bchCubicTerm_residual_eq {𝔸 : Type*} [Ring 𝔸] [Algebra ℚ 𝔸] (ea eb a b : 𝔸) :
+    let D₁ := ea - 1 - a
+    let D₂ := eb - 1 - b
+    let P := ea * eb - 1 - (a + b)
+    let E₁ := D₁ - (2 : ℚ)⁻¹ • a ^ 2
+    let E₂ := D₂ - (2 : ℚ)⁻¹ • b ^ 2
+    let Q := a * D₂ + D₁ * b + D₁ * D₂
+    let F₁ := E₁ - (6 : ℚ)⁻¹ • a ^ 3
+    let F₂ := E₂ - (6 : ℚ)⁻¹ • b ^ 3
+    (2 : ℚ)⁻¹ • ((2 : ℚ) • (E₁ + E₂ + a * D₂ + D₁ * b + D₁ * D₂) -
+          (a + b) * P - P * (a + b) - P ^ 2) +
+        (3 : ℚ)⁻¹ • (a + b) ^ 3 - bchCubicTerm a b =
+    F₁ + F₂ + a * E₂ + E₁ * b + D₁ * D₂ -
+    (2 : ℚ)⁻¹ • ((a + b) * (E₁ + E₂ + Q) + (E₁ + E₂ + Q) * (a + b)) -
+    (2 : ℚ)⁻¹ • P ^ 2 := by
+  dsimp only
+  unfold bchCubicTerm
+  simp only [pow_succ, pow_zero, one_mul, mul_one, mul_add, add_mul, mul_sub, sub_mul,
+    Algebra.mul_smul_comm, Algebra.smul_mul_assoc, smul_add, smul_sub, smul_smul,
+    ← mul_assoc]
+  module
+
+/-- Exact commutator extraction with arbitrary approximations to the exponentials. -/
+theorem bchCommutator_residual_eq {A : Type*} [Ring A] [Algebra ℚ A]
+    (ea eb a b : A) :
+    let y := ea * eb - 1
+    let D₁ := ea - 1 - a
+    let D₂ := eb - 1 - b
+    let E₁ := D₁ - (2 : ℚ)⁻¹ • a ^ 2
+    let E₂ := D₂ - (2 : ℚ)⁻¹ • b ^ 2
+    let P := y - (a + b)
+    y - (a + b) - (2 : ℚ)⁻¹ • (a * b - b * a) - (2 : ℚ)⁻¹ • y ^ 2 =
+      (2 : ℚ)⁻¹ • ((2 : ℚ) • (E₁ + E₂ + a * D₂ + D₁ * b + D₁ * D₂) -
+        (a + b) * P - P * (a + b) - P ^ 2) := by
+  dsimp only
+  simp only [pow_succ, pow_zero, one_mul, mul_one, mul_add, add_mul, mul_sub, sub_mul,
+    smul_add, smul_sub, smul_smul,
+    ← mul_assoc]
+  module
 
 end FQFP.BCH
