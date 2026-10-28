@@ -5,7 +5,7 @@ Authors: Bingyu Xia
 -/
 module
 
-public import FQFP.CQM.Category.DaggerRigid
+public import FQFP.CategoryTheory.Monoidal.Dagger.Rigid
 public import FQFP.CQM.QuditCat.Monoidal
 
 /-!
@@ -17,7 +17,7 @@ maximally entangled state `∑ i, b i ⊗ b i` and evaluation the bilinear form 
 two coordinates. This file constructs that pairing from an explicit basis
 (`exactPairingOfOrthonormalBasis`) and records its two snake equations, checked on pure tensors.
 The self-dual pairing of the standard space `ℂⁿ` is the special case of the computational basis,
-`RelCat`'s counterpart being `FQFP.CQM.RelCat.Rigid`.
+`RelCat`'s counterpart being `FQFP.CategoryTheory.Category.RelCat.Rigid`.
 
 The evaluation is the dagger of the coevaluation (`dagger_basisCoevaluation`), so the pairing is
 invariant under the dagger: reversing it as in Lemma 3.45 returns the same coevaluation and

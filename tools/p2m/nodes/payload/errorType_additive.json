@@ -1,0 +1,12 @@
+{
+ "theorem_name": "TrotterError.errorType_additive",
+ "preamble": "import Mathlib\nimport Definitions.Def_TrotterErrorMilestones\nopen NormedSpace\nopen TrotterError.List\nopen ProductFormulaData\nopen scoped Topology ContDiff\nvariable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]\nvariable {Υ Γ : ℕ}\nvariable (P : ProductFormulaData Υ Γ)",
+ "formal_statement": "theorem TrotterError.errorType_additive [NormedAlgebra ℚ 𝔸] (H : Fin Γ → 𝔸) (t : ℝ) :\n    P.eval H t = exp (t • (∑ γ, H γ)) + ∫ τ in 0..t,\n      exp ((t - τ) • (∑ γ, H γ)) * P.eval H τ * additiveKernel P H τ := by sorry",
+ "source": "https://github.com/BryceT233/Foresight-Quantum-Formalization-Projects/blob/d6bfac12d15bc59fcc5f90206ac3312da602eb3d/FQFP/TrotterError/ErrorTypes.lean#L519-L540",
+ "lean_module": "FQFP.TrotterError.ErrorTypes",
+ "lean_span": [
+  519,
+  540
+ ],
+ "published_id": null
+}

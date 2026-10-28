@@ -5,8 +5,10 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.Carleman.Compression
-public import FQFP.Carleman.LinearODE
+public import FQFP.RingTheory.MvPolynomial.DerivationCompression
+public import FQFP.Analysis.Calculus.Deriv.MvPolynomialTrunc
+public import FQFP.Algebra.MvPolynomial.Eval
+public import FQFP.Analysis.ODE.Linear
 
 /-! # Carleman approximants, state recovery, and the error equation -/
 
@@ -183,15 +185,6 @@ lemma carlemanApproximant_eq_of_totalDegree_le_one
     (fun p hp => mkDerivation_mem_range_truncTotal_of_totalDegree_le_one F hF (N + 1) hp)
   funext t i
   simp [carlemanApproximant, heq, truncTotal_X (N + 1) (by lia)]
-
-omit [Finite σ] in
-lemma constantCoeff_aeval_translate
-    (F : σ → MvPolynomial σ ℝ) (q : σ → ℝ) (i : σ) :
-    constantCoeff (aeval (fun j => C (q j) + X j) (F i)) = aeval q (F i) := by
-  have h : (constantCoeff : MvPolynomial σ ℝ →+* ℝ).comp
-      (aeval (fun j => C (q j) + X j)).toRingHom = (aeval (R := ℝ) q).toRingHom := by
-    apply ringHom_ext <;> intro j <;> simp
-  exact RingHom.congr_fun h (F i)
 
 lemma translated_carlemanApproximant_initial
     (F : σ → MvPolynomial σ ℝ) (x₀ q : σ → ℝ) (N : ℕ) (hN : 1 ≤ N) (i : σ) :

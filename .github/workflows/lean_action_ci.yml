@@ -18,4 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: leanprover/lean-action@v1
+      - name: Build, lint and run regressions
+        run: python3 scripts/check.py
       - uses: leanprover-community/docgen-action@v1

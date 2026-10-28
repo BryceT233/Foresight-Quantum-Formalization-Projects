@@ -6,8 +6,8 @@ Authors: Bingyu Xia
 module
 
 public import FQFP.CQM.Category.Teleportation
-public import FQFP.CQM.RelCat.Measurement
-public import FQFP.CQM.RelCat.Rigid
+public import FQFP.CategoryTheory.Category.RelCat.Measurement
+public import FQFP.CategoryTheory.Category.RelCat.Rigid
 public import Mathlib.Logic.Equiv.Bool
 public import Mathlib.Tactic.FinCases
 

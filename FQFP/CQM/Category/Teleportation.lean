@@ -5,8 +5,8 @@ Authors: Bingyu Xia
 -/
 module
 
-public import FQFP.CQM.Category.DaggerRigid
-public import FQFP.CQM.Category.Measurement
+public import FQFP.CategoryTheory.Dagger.Basic
+public import FQFP.CategoryTheory.Monoidal.Rigid.Basic
 
 /-!
 # Teleportation
@@ -25,8 +25,8 @@ parameterised by the correction `U`, recovers the input state.
 
 The proof does not unfold the snake equations: it uses Mathlib's `tensorRightHomEquiv`, the
 transposition bijection `(L ⊗ R ⟶ 𝟙) ≃ (L ⟶ 𝟙 ⊗ L)` attached to the exact pairing, together with
-the sliding identity `tensorRightHomEquiv (V ▷ R ≫ ε) = V ≫ (λ_ L).inv`, proved here for an
-explicit pairing as
+the sliding identity `tensorRightHomEquiv (V ▷ R ≫ ε) = V ≫ (λ_ L).inv`, provided by
+`FQFP.CategoryTheory.Monoidal.Rigid.Basic` for an explicit pairing as
 `tensorRightHomEquiv_whiskerRight_comp_evaluation_pairing`. This is the "effect written on the `L`
 side" form of the protocol; translating it to the transpose form of the printed figure is not done
 here.
@@ -91,22 +91,6 @@ lemma teleportationBranch_comp {L R : C} (η : 𝟙_ C ⟶ R ⊗ L) (x : L ⊗ R
 section Pairing
 
 variable {L R : C} [ExactPairing R L]
-
-/-- Sliding an effect along the pairing: the transposed branch effect `V ▷ R ≫ ε` is the
-transpose of `V`. This is the explicit-pairing form of Mathlib's
-`tensorRightHomEquiv_whiskerRight_comp_evaluation`. -/
-theorem tensorRightHomEquiv_whiskerRight_comp_evaluation_pairing (V : L ⟶ L) :
-    (tensorRightHomEquiv L R L (𝟙_ C)) ((V ▷ R) ≫ ε_ R L) = V ≫ (λ_ L).inv := by
-  calc
-    _ = 𝟙 _ ⊗≫ (L ◁ η_ R L ≫ V ▷ (R ⊗ L)) ⊗≫ ε_ R L ▷ L := by
-      dsimp [tensorRightHomEquiv]
-      monoidal
-    _ = V ⊗≫ (L ◁ η_ R L ⊗≫ ε_ R L ▷ L) := by
-      rw [whisker_exchange]
-      monoidal
-    _ = _ := by
-      rw [ExactPairing.coevaluation_evaluation'']
-      monoidal
 
 /-- The branch whose effect is `V ▷ R ≫ ε` and whose correction is trivial is `V`: the effect
 already carries the whole map, because `ε` together with the resource state transposes `V` back

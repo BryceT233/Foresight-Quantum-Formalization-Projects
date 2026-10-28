@@ -1,0 +1,973 @@
+{
+ "modules": [
+  "FQFP.TrotterError.Calculus",
+  "FQFP.TrotterError.Commutator",
+  "FQFP.TrotterError.CommutatorExpansion",
+  "FQFP.TrotterError.CommutatorScaling",
+  "FQFP.TrotterError.ErrorTypes",
+  "FQFP.TrotterError.ExpSMulConj",
+  "FQFP.TrotterError.Integrals",
+  "FQFP.TrotterError.ListLemmas",
+  "FQFP.TrotterError.MainTheorem",
+  "FQFP.TrotterError.OneNormScaling",
+  "FQFP.TrotterError.OrderCondition",
+  "FQFP.TrotterError.OrderingRemoval",
+  "FQFP.TrotterError.Prefactor",
+  "FQFP.TrotterError.ProductFormula",
+  "FQFP.TrotterError.Suzuki",
+  "FQFP.TrotterError.TimeOrderedExp"
+ ],
+ "counts": {
+  "decls": 461,
+  "defs": 73,
+  "nodes": 68,
+  "inlines": 320
+ },
+ "targets": [
+  "TrotterError.trotter_error_bound_comm_scaling",
+  "TrotterError.trotter_error_comm_scaling",
+  "TrotterError.trotter_error_bound_comm_scaling_of_skewAdjoint",
+  "TrotterError.trotter_error_comm_scaling_of_skewAdjoint",
+  "TrotterError.multiplicative_error_bound_comm_scaling",
+  "TrotterError.multiplicative_error_comm_scaling",
+  "TrotterError.multiplicative_error_bound_comm_scaling_of_skewAdjoint",
+  "TrotterError.multiplicative_error_comm_scaling_of_skewAdjoint",
+  "TrotterError.norm_additiveKernel_le_of_rem_bound",
+  "TrotterError.norm_additiveKernel_le_of_skewAdjoint",
+  "TrotterError.norm_additiveKernel_le",
+  "TrotterError.norm_additiveResidual_le_of_rem_bound",
+  "TrotterError.norm_additiveResidual_le",
+  "TrotterError.trotter_error_bound_one_norm_scaling",
+  "TrotterError.trotter_error_one_norm_scaling",
+  "TrotterError.trotter_error_bound_one_norm_scaling_of_skew_adjoint",
+  "TrotterError.trotter_error_one_norm_scaling_of_skew_adjoint",
+  "TrotterError.trotter_number_one_norm_scaling",
+  "TrotterError.norm_commutatorRemainder_le",
+  "TrotterError.norm_commutatorRemainder_le_of_skewAdjoint",
+  "TrotterError.commutatorExpansion_conj",
+  "TrotterError.errorOrderCond_iff",
+  "TrotterError.firstOrder_bound",
+  "TrotterError.secondOrder_bound",
+  "TrotterError.lieTrotter_eq_eval",
+  "TrotterError.suzuki2_eq_eval",
+  "TrotterError.suzuki_eq_eval"
+ ],
+ "nodes": [
+  {
+   "name": "TrotterError.iteratedDeriv_ofFn_prod",
+   "module": "FQFP.TrotterError.Calculus",
+   "span": 65,
+   "startLine": 162,
+   "endLine": 226
+  },
+  {
+   "name": "TrotterError.isBigO_norm_iff_iteratedDeriv_eq_zero",
+   "module": "FQFP.TrotterError.Calculus",
+   "span": 93,
+   "startLine": 321,
+   "endLine": 413
+  },
+  {
+   "name": "TrotterError.sum_range_add_antidiagonal",
+   "module": "FQFP.TrotterError.Calculus",
+   "span": 50,
+   "startLine": 650,
+   "endLine": 699
+  },
+  {
+   "name": "TrotterError.norm_integral_smul_conj_le",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 45,
+   "startLine": 88,
+   "endLine": 132
+  },
+  {
+   "name": "TrotterError.norm_exp_mul_expSMulConj_le",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 43,
+   "startLine": 194,
+   "endLine": 236
+  },
+  {
+   "name": "TrotterError.norm_absorbed_conj_smul_integral_le",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 69,
+   "startLine": 238,
+   "endLine": 306
+  },
+  {
+   "name": "TrotterError.norm_mul_commutatorRemainderTerm_le",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 147,
+   "startLine": 554,
+   "endLine": 700
+  },
+  {
+   "name": "TrotterError.norm_commutatorRemainderTerm_le",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 63,
+   "startLine": 755,
+   "endLine": 817
+  },
+  {
+   "name": "TrotterError.norm_commutatorRemainder_le_of_term_bound",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 46,
+   "startLine": 819,
+   "endLine": 864
+  },
+  {
+   "name": "TrotterError.norm_mul_commutatorRemainder_le_of_term_bound",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 48,
+   "startLine": 866,
+   "endLine": 913
+  },
+  {
+   "name": "TrotterError.norm_commutatorRemainder_le",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 9,
+   "startLine": 915,
+   "endLine": 923
+  },
+  {
+   "name": "TrotterError.norm_commutatorRemainderTerm_le_of_skewAdjoint",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 63,
+   "startLine": 969,
+   "endLine": 1031
+  },
+  {
+   "name": "TrotterError.norm_commutatorRemainder_le_of_skewAdjoint",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 11,
+   "startLine": 1033,
+   "endLine": 1043
+  },
+  {
+   "name": "TrotterError.expSMulConj_commutatorRemainderTerm",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 49,
+   "startLine": 1166,
+   "endLine": 1214
+  },
+  {
+   "name": "TrotterError.conjCoeff_sum_of_taylor",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 45,
+   "startLine": 1237,
+   "endLine": 1281
+  },
+  {
+   "name": "TrotterError.expSMulConj_taylor_remainder_conjCoeff",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 94,
+   "startLine": 1304,
+   "endLine": 1397
+  },
+  {
+   "name": "TrotterError.commutatorExpansion_conj",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "span": 55,
+   "startLine": 1468,
+   "endLine": 1522
+  },
+  {
+   "name": "TrotterError.additiveKernel_eq_commutatorRemainder_sum",
+   "module": "FQFP.TrotterError.CommutatorScaling",
+   "span": 146,
+   "startLine": 127,
+   "endLine": 272
+  },
+  {
+   "name": "TrotterError.posDerivSum_eq_evalDeriv",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "span": 49,
+   "startLine": 176,
+   "endLine": 224
+  },
+  {
+   "name": "TrotterError.prefix_point_suffix_norm_sum_le",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "span": 43,
+   "startLine": 370,
+   "endLine": 412
+  },
+  {
+   "name": "TrotterError.expSMulConj_taylor",
+   "module": "FQFP.TrotterError.ExpSMulConj",
+   "span": 68,
+   "startLine": 132,
+   "endLine": 199
+  },
+  {
+   "name": "TrotterError.norm_expSMulConj_remainder_le",
+   "module": "FQFP.TrotterError.ExpSMulConj",
+   "span": 53,
+   "startLine": 240,
+   "endLine": 292
+  },
+  {
+   "name": "TrotterError.List.hasDerivAt_list_prod",
+   "module": "FQFP.TrotterError.ListLemmas",
+   "span": 45,
+   "startLine": 126,
+   "endLine": 170
+  },
+  {
+   "name": "TrotterError.norm_additiveKernel_le_of_rem_bound",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 45,
+   "startLine": 45,
+   "endLine": 89
+  },
+  {
+   "name": "TrotterError.norm_additiveKernel_le_of_skewAdjoint",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 34,
+   "startLine": 91,
+   "endLine": 124
+  },
+  {
+   "name": "TrotterError.norm_additiveKernel_le",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 65,
+   "startLine": 128,
+   "endLine": 192
+  },
+  {
+   "name": "TrotterError.norm_eval_mul_commutatorRemainderTerm_le",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 76,
+   "startLine": 196,
+   "endLine": 271
+  },
+  {
+   "name": "TrotterError.norm_eval_mul_commutatorRemainderTerm_ordered_le",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 53,
+   "startLine": 273,
+   "endLine": 325
+  },
+  {
+   "name": "TrotterError.norm_additiveResidual_le_of_rem_bound",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 45,
+   "startLine": 327,
+   "endLine": 371
+  },
+  {
+   "name": "TrotterError.norm_additiveResidual_le",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 38,
+   "startLine": 373,
+   "endLine": 410
+  },
+  {
+   "name": "TrotterError.trotter_error_bound_comm_scaling",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 88,
+   "startLine": 429,
+   "endLine": 516
+  },
+  {
+   "name": "TrotterError.trotter_error_comm_scaling",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 19,
+   "startLine": 518,
+   "endLine": 536
+  },
+  {
+   "name": "TrotterError.trotter_error_bound_comm_scaling_of_skewAdjoint",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 63,
+   "startLine": 540,
+   "endLine": 602
+  },
+  {
+   "name": "TrotterError.trotter_error_comm_scaling_of_skewAdjoint",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 18,
+   "startLine": 604,
+   "endLine": 621
+  },
+  {
+   "name": "TrotterError.multiplicative_error_bound_comm_scaling",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 90,
+   "startLine": 662,
+   "endLine": 751
+  },
+  {
+   "name": "TrotterError.multiplicative_error_comm_scaling",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 20,
+   "startLine": 753,
+   "endLine": 772
+  },
+  {
+   "name": "TrotterError.multiplicative_error_bound_comm_scaling_of_skewAdjoint",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 13,
+   "startLine": 795,
+   "endLine": 807
+  },
+  {
+   "name": "TrotterError.multiplicative_error_comm_scaling_of_skewAdjoint",
+   "module": "FQFP.TrotterError.MainTheorem",
+   "span": 19,
+   "startLine": 809,
+   "endLine": 827
+  },
+  {
+   "name": "TrotterError.norm_taylor_le_of_deriv_bound",
+   "module": "FQFP.TrotterError.OneNormScaling",
+   "span": 55,
+   "startLine": 111,
+   "endLine": 165
+  },
+  {
+   "name": "TrotterError.paper_bound_le_target",
+   "module": "FQFP.TrotterError.OneNormScaling",
+   "span": 46,
+   "startLine": 191,
+   "endLine": 236
+  },
+  {
+   "name": "TrotterError.trotter_error_bound_one_norm_scaling",
+   "module": "FQFP.TrotterError.OneNormScaling",
+   "span": 20,
+   "startLine": 238,
+   "endLine": 257
+  },
+  {
+   "name": "TrotterError.trotter_error_one_norm_scaling",
+   "module": "FQFP.TrotterError.OneNormScaling",
+   "span": 65,
+   "startLine": 259,
+   "endLine": 323
+  },
+  {
+   "name": "TrotterError.trotter_error_bound_one_norm_scaling_of_skew_adjoint",
+   "module": "FQFP.TrotterError.OneNormScaling",
+   "span": 21,
+   "startLine": 464,
+   "endLine": 484
+  },
+  {
+   "name": "TrotterError.trotter_error_one_norm_scaling_of_skew_adjoint",
+   "module": "FQFP.TrotterError.OneNormScaling",
+   "span": 62,
+   "startLine": 486,
+   "endLine": 547
+  },
+  {
+   "name": "TrotterError.trotter_number_one_norm_scaling",
+   "module": "FQFP.TrotterError.OneNormScaling",
+   "span": 60,
+   "startLine": 619,
+   "endLine": 678
+  },
+  {
+   "name": "TrotterError.timeOrderedExp_iteratedDeriv_eq_iff",
+   "module": "FQFP.TrotterError.OrderCondition",
+   "span": 81,
+   "startLine": 289,
+   "endLine": 369
+  },
+  {
+   "name": "TrotterError.orderCond_exp_iff",
+   "module": "FQFP.TrotterError.OrderCondition",
+   "span": 41,
+   "startLine": 371,
+   "endLine": 411
+  },
+  {
+   "name": "TrotterError.errorOrderCond_additive_iff",
+   "module": "FQFP.TrotterError.OrderCondition",
+   "span": 75,
+   "startLine": 612,
+   "endLine": 686
+  },
+  {
+   "name": "TrotterError.errorOrderCond_iff",
+   "module": "FQFP.TrotterError.OrderCondition",
+   "span": 13,
+   "startLine": 761,
+   "endLine": 773
+  },
+  {
+   "name": "TrotterError.exp_mul_exp_sub_exp_add_eq_integral",
+   "module": "FQFP.TrotterError.Prefactor",
+   "span": 62,
+   "startLine": 47,
+   "endLine": 108
+  },
+  {
+   "name": "TrotterError.firstOrder_twoTerm",
+   "module": "FQFP.TrotterError.Prefactor",
+   "span": 74,
+   "startLine": 112,
+   "endLine": 185
+  },
+  {
+   "name": "TrotterError.firstOrder_bound",
+   "module": "FQFP.TrotterError.Prefactor",
+   "span": 61,
+   "startLine": 224,
+   "endLine": 284
+  },
+  {
+   "name": "TrotterError.secondOrder_sub_eq_integral",
+   "module": "FQFP.TrotterError.Prefactor",
+   "span": 99,
+   "startLine": 295,
+   "endLine": 393
+  },
+  {
+   "name": "TrotterError.secondOrder_twoTerm",
+   "module": "FQFP.TrotterError.Prefactor",
+   "span": 87,
+   "startLine": 507,
+   "endLine": 593
+  },
+  {
+   "name": "TrotterError.secondOrder_bound",
+   "module": "FQFP.TrotterError.Prefactor",
+   "span": 72,
+   "startLine": 620,
+   "endLine": 691
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.eval_iteratedDeriv_succ",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "span": 58,
+   "startLine": 142,
+   "endLine": 199
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.eval_iteratedDeriv_norm_le",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "span": 59,
+   "startLine": 285,
+   "endLine": 343
+  },
+  {
+   "name": "TrotterError.αCommConj_suffixGenerators_le",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "span": 68,
+   "startLine": 691,
+   "endLine": 758
+  },
+  {
+   "name": "TrotterError.sum_αCommConj_suffix_add_ordered_le",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "span": 41,
+   "startLine": 760,
+   "endLine": 800
+  },
+  {
+   "name": "TrotterError.lieTrotter_eq_eval",
+   "module": "FQFP.TrotterError.Suzuki",
+   "span": 4,
+   "startLine": 135,
+   "endLine": 138
+  },
+  {
+   "name": "TrotterError.suzuki2_eq_eval",
+   "module": "FQFP.TrotterError.Suzuki",
+   "span": 5,
+   "startLine": 199,
+   "endLine": 203
+  },
+  {
+   "name": "TrotterError.suzuki_eq_eval",
+   "module": "FQFP.TrotterError.Suzuki",
+   "span": 7,
+   "startLine": 335,
+   "endLine": 341
+  },
+  {
+   "name": "TrotterError.abs_integral_mul_abs_integral_pow_div_factorial",
+   "module": "FQFP.TrotterError.TimeOrderedExp",
+   "span": 66,
+   "startLine": 125,
+   "endLine": 190
+  },
+  {
+   "name": "TrotterError.timeOrderedExp_eq_integral",
+   "module": "FQFP.TrotterError.TimeOrderedExp",
+   "span": 57,
+   "startLine": 322,
+   "endLine": 378
+  },
+  {
+   "name": "TrotterError.timeOrderedExp_interaction_picture",
+   "module": "FQFP.TrotterError.TimeOrderedExp",
+   "span": 46,
+   "startLine": 675,
+   "endLine": 720
+  },
+  {
+   "name": "TrotterError.abs_integral_add_le_abs_integral_of_mem_uIcc",
+   "module": "FQFP.TrotterError.TimeOrderedExp",
+   "span": 74,
+   "startLine": 869,
+   "endLine": 942
+  },
+  {
+   "name": "TrotterError.timeOrderedExp_sub",
+   "module": "FQFP.TrotterError.TimeOrderedExp",
+   "span": 44,
+   "startLine": 946,
+   "endLine": 989
+  },
+  {
+   "name": "TrotterError.norm_timeOrderedExp_sub_integrand_le",
+   "module": "FQFP.TrotterError.TimeOrderedExp",
+   "span": 54,
+   "startLine": 994,
+   "endLine": 1047
+  }
+ ],
+ "defs": [
+  {
+   "name": "TrotterError.adPow",
+   "module": "FQFP.TrotterError.Commutator",
+   "startLine": 65,
+   "endLine": 67
+  },
+  {
+   "name": "TrotterError.adSequence",
+   "module": "FQFP.TrotterError.Commutator",
+   "startLine": 69,
+   "endLine": 78
+  },
+  {
+   "name": "TrotterError.nestedComm",
+   "module": "FQFP.TrotterError.Commutator",
+   "startLine": 80,
+   "endLine": 85
+  },
+  {
+   "name": "TrotterError.αComm",
+   "module": "FQFP.TrotterError.Commutator",
+   "startLine": 87,
+   "endLine": 92
+  },
+  {
+   "name": "TrotterError.αCommConj",
+   "module": "FQFP.TrotterError.Commutator",
+   "startLine": 94,
+   "endLine": 99
+  },
+  {
+   "name": "TrotterError.nestedCommOfList",
+   "module": "FQFP.TrotterError.Commutator",
+   "startLine": 194,
+   "endLine": 197
+  },
+  {
+   "name": "TrotterError.listIndexed",
+   "module": "FQFP.TrotterError.Commutator",
+   "startLine": 217,
+   "endLine": 219
+  },
+  {
+   "name": "TrotterError.layersOf",
+   "module": "FQFP.TrotterError.Commutator",
+   "startLine": 276,
+   "endLine": 279
+  },
+  {
+   "name": "TrotterError.layerIndices",
+   "module": "FQFP.TrotterError.Commutator",
+   "startLine": 301,
+   "endLine": 302
+  },
+  {
+   "name": "TrotterError.expandTuple",
+   "module": "FQFP.TrotterError.Commutator",
+   "startLine": 341,
+   "endLine": 347
+  },
+  {
+   "name": "TrotterError.multiConj",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "startLine": 50,
+   "endLine": 56
+  },
+  {
+   "name": "TrotterError.commutatorRemainderTerm",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "startLine": 58,
+   "endLine": 67
+  },
+  {
+   "name": "TrotterError.commutatorRemainder",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "startLine": 69,
+   "endLine": 77
+  },
+  {
+   "name": "TrotterError.conjCoeff",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "startLine": 79,
+   "endLine": 84
+  },
+  {
+   "name": "TrotterError.layerSum",
+   "module": "FQFP.TrotterError.CommutatorExpansion",
+   "startLine": 459,
+   "endLine": 465
+  },
+  {
+   "name": "TrotterError.factorProdOver",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 54,
+   "endLine": 58
+  },
+  {
+   "name": "TrotterError.prefixFactorProd",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 60,
+   "endLine": 63
+  },
+  {
+   "name": "TrotterError.strictSuffixFactorProd",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 65,
+   "endLine": 68
+  },
+  {
+   "name": "TrotterError.suffixFactorProd",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 70,
+   "endLine": 73
+  },
+  {
+   "name": "TrotterError.invPrefixFactorProd",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 75,
+   "endLine": 78
+  },
+  {
+   "name": "TrotterError.invStrictSuffixFactorProd",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 80,
+   "endLine": 83
+  },
+  {
+   "name": "TrotterError.posDerivSum",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 160,
+   "endLine": 167
+  },
+  {
+   "name": "TrotterError.evalDeriv",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 169,
+   "endLine": 173
+  },
+  {
+   "name": "TrotterError.additiveResidual",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 240,
+   "endLine": 244
+  },
+  {
+   "name": "TrotterError.exponentiatedGenerator",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 253,
+   "endLine": 256
+  },
+  {
+   "name": "TrotterError.additiveKernel",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 423,
+   "endLine": 429
+  },
+  {
+   "name": "TrotterError.exponentiatedError",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 431,
+   "endLine": 434
+  },
+  {
+   "name": "TrotterError.interactionGenerator",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 436,
+   "endLine": 439
+  },
+  {
+   "name": "TrotterError.multiplicativeError",
+   "module": "FQFP.TrotterError.ErrorTypes",
+   "startLine": 441,
+   "endLine": 444
+  },
+  {
+   "name": "TrotterError.expSMulConj",
+   "module": "FQFP.TrotterError.ExpSMulConj",
+   "startLine": 45,
+   "endLine": 48
+  },
+  {
+   "name": "TrotterError.expSMulConjLin",
+   "module": "FQFP.TrotterError.ExpSMulConj",
+   "startLine": 294,
+   "endLine": 299
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.IsOrderOf",
+   "module": "FQFP.TrotterError.OrderCondition",
+   "startLine": 61,
+   "endLine": 66
+  },
+  {
+   "name": "TrotterError.iteratedIntegralMonomial",
+   "module": "FQFP.TrotterError.OrderCondition",
+   "startLine": 415,
+   "endLine": 423
+  },
+  {
+   "name": "TrotterError.monomialConstant",
+   "module": "FQFP.TrotterError.OrderCondition",
+   "startLine": 425,
+   "endLine": 430
+  },
+  {
+   "name": "TrotterError.Antidiag",
+   "module": "FQFP.TrotterError.OrderingRemoval",
+   "startLine": 34,
+   "endLine": 35
+  },
+  {
+   "name": "TrotterError.layerAt",
+   "module": "FQFP.TrotterError.OrderingRemoval",
+   "startLine": 37,
+   "endLine": 41
+  },
+  {
+   "name": "TrotterError.stageOf",
+   "module": "FQFP.TrotterError.OrderingRemoval",
+   "startLine": 43,
+   "endLine": 46
+  },
+  {
+   "name": "TrotterError.orderedLayers",
+   "module": "FQFP.TrotterError.OrderingRemoval",
+   "startLine": 48,
+   "endLine": 54
+  },
+  {
+   "name": "TrotterError.upperSum",
+   "module": "FQFP.TrotterError.Prefactor",
+   "startLine": 189,
+   "endLine": 191
+  },
+  {
+   "name": "TrotterError.secondOrderKernel",
+   "module": "FQFP.TrotterError.Prefactor",
+   "startLine": 288,
+   "endLine": 293
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.rec",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 59,
+   "endLine": 69
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.noConfusion",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 59,
+   "endLine": 69
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.casesOn",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 59,
+   "endLine": 69
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.recOn",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 59,
+   "endLine": 69
+  },
+  {
+   "name": "TrotterError.ProductFormulaData",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 59,
+   "endLine": 69
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.mk.noConfusion",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 63,
+   "endLine": 63
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.mk",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 63,
+   "endLine": 63
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.coeff",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 65,
+   "endLine": 65
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.perm",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 67,
+   "endLine": 67
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.evalIndexList",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 75,
+   "endLine": 78
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.generator",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 80,
+   "endLine": 84
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.evalFactor",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 94,
+   "endLine": 99
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.eval",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 112,
+   "endLine": 117
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.derivProd",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 227,
+   "endLine": 235
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.scale",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 347,
+   "endLine": 354
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.concat",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 367,
+   "endLine": 395
+  },
+  {
+   "name": "TrotterError.ProductFormulaData.castStages",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 452,
+   "endLine": 459
+  },
+  {
+   "name": "TrotterError.orderedSummands",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 476,
+   "endLine": 483
+  },
+  {
+   "name": "TrotterError.orderedGenerators",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 485,
+   "endLine": 490
+  },
+  {
+   "name": "TrotterError.suffixGenerators",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 492,
+   "endLine": 497
+  },
+  {
+   "name": "TrotterError.reverseStages",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 508,
+   "endLine": 513
+  },
+  {
+   "name": "TrotterError.orderedSummandsEval",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 515,
+   "endLine": 519
+  },
+  {
+   "name": "TrotterError.fullGenerators",
+   "module": "FQFP.TrotterError.ProductFormula",
+   "startLine": 525,
+   "endLine": 530
+  },
+  {
+   "name": "TrotterError.lieTrotter",
+   "module": "FQFP.TrotterError.Suzuki",
+   "startLine": 48,
+   "endLine": 55
+  },
+  {
+   "name": "TrotterError.suzuki2",
+   "module": "FQFP.TrotterError.Suzuki",
+   "startLine": 57,
+   "endLine": 65
+  },
+  {
+   "name": "TrotterError.suzukiU",
+   "module": "FQFP.TrotterError.Suzuki",
+   "startLine": 67,
+   "endLine": 70
+  },
+  {
+   "name": "TrotterError.suzuki",
+   "module": "FQFP.TrotterError.Suzuki",
+   "startLine": 72,
+   "endLine": 82
+  },
+  {
+   "name": "TrotterError.lieTrotterData",
+   "module": "FQFP.TrotterError.Suzuki",
+   "startLine": 84,
+   "endLine": 89
+  },
+  {
+   "name": "TrotterError.suzuki2Data",
+   "module": "FQFP.TrotterError.Suzuki",
+   "startLine": 91,
+   "endLine": 96
+  },
+  {
+   "name": "TrotterError.suzukiStages",
+   "module": "FQFP.TrotterError.Suzuki",
+   "startLine": 264,
+   "endLine": 268
+  },
+  {
+   "name": "TrotterError.suzukiData",
+   "module": "FQFP.TrotterError.Suzuki",
+   "startLine": 277,
+   "endLine": 291
+  },
+  {
+   "name": "TrotterError.dysonTerm",
+   "module": "FQFP.TrotterError.TimeOrderedExp",
+   "startLine": 58,
+   "endLine": 63
+  },
+  {
+   "name": "TrotterError.timeOrderedExp",
+   "module": "FQFP.TrotterError.TimeOrderedExp",
+   "startLine": 65,
+   "endLine": 70
+  }
+ ]
+}

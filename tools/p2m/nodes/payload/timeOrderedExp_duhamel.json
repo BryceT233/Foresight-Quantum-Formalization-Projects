@@ -1,0 +1,12 @@
+{
+ "theorem_name": "TrotterError.timeOrderedExp_duhamel",
+ "preamble": "import Mathlib\nimport Definitions.Def_TrotterErrorMilestones\nopen NormedSpace\nopen scoped Topology BigOperators Interval\nvariable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]",
+ "formal_statement": "theorem TrotterError.timeOrderedExp_duhamel (H R : ℝ → 𝔸) (hH : Continuous H) (hR : Continuous R)\n    {U : ℝ → 𝔸} (U₀ : 𝔸) (hU : ∀ t, HasDerivAt U (H t * U t + R t) t) (hU0 : U 0 = U₀) (t : ℝ) :\n    U t = timeOrderedExp H 0 t * U₀ + ∫ τ in 0..t, timeOrderedExp H τ t * R τ := by sorry",
+ "source": "https://github.com/BryceT233/Foresight-Quantum-Formalization-Projects/blob/d6bfac12d15bc59fcc5f90206ac3312da602eb3d/FQFP/TrotterError/TimeOrderedExp.lean#L641-L671",
+ "lean_module": "FQFP.TrotterError.TimeOrderedExp",
+ "lean_span": [
+  641,
+  671
+ ],
+ "published_id": null
+}

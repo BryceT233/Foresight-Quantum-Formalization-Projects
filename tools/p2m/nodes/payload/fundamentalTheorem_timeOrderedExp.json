@@ -1,0 +1,12 @@
+{
+ "theorem_name": "TrotterError.fundamentalTheorem_timeOrderedExp",
+ "preamble": "import Mathlib\nimport Definitions.Def_TrotterErrorMilestones\nopen NormedSpace\nopen scoped Topology BigOperators Interval\nvariable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]",
+ "formal_statement": "theorem TrotterError.fundamentalTheorem_timeOrderedExp (U : ℝ → 𝔸) :\n    (ContDiff ℝ 1 U ∧ ∀ t, IsUnit (U t)) ↔\n      IsUnit (U 0) ∧ ∃ H : ℝ → 𝔸, Continuous H ∧ ∀ t, U t = timeOrderedExp H 0 t * U 0 := by sorry",
+ "source": "https://github.com/BryceT233/Foresight-Quantum-Formalization-Projects/blob/d6bfac12d15bc59fcc5f90206ac3312da602eb3d/FQFP/TrotterError/TimeOrderedExp.lean#L778-L787",
+ "lean_module": "FQFP.TrotterError.TimeOrderedExp",
+ "lean_span": [
+  778,
+  787
+ ],
+ "published_id": null
+}

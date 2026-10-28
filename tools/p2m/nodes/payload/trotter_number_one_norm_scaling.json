@@ -1,0 +1,12 @@
+{
+ "theorem_name": "TrotterError.trotter_number_one_norm_scaling",
+ "preamble": "import Mathlib\nimport Definitions.Def_TrotterErrorMilestones\nopen NormedSpace\nopen Asymptotics\nopen ProductFormulaData\nopen scoped Topology BigOperators ContDiff\nvariable {Υ Γ : ℕ}\nvariable {𝔸 : Type*} [NormedRing 𝔸]\nvariable (P : ProductFormulaData Υ Γ)",
+ "formal_statement": "eorem trotter_number_one_norm_scaling\n    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸]\n    [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]\n    (H : Fin Γ → 𝔸) (p : ℕ) (h_skew : ∀ γ : Fin Γ, star (H γ) = -(H γ))\n    (h_order : P.IsOrderOf p H) (t : ℝ) (ht : 0 ≤ t) :\n    (fun r : ℕ => ‖(P.eval H (t / (r : ℝ))) ^ r - exp (t • ∑ γ : Fin Γ, H γ)‖) =O[Filter.atTop]\n      (fun r : ℕ => ((r : ℝ) ^ p)⁻¹) := := by sorry",
+ "source": "https://github.com/BryceT233/Foresight-Quantum-Formalization-Projects/blob/d6bfac12d15bc59fcc5f90206ac3312da602eb3d/FQFP/TrotterError/OneNormScaling.lean#L619-L678",
+ "lean_module": "FQFP.TrotterError.OneNormScaling",
+ "lean_span": [
+  619,
+  678
+ ],
+ "published_id": null
+}

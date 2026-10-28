@@ -1,0 +1,44 @@
+# Prove2Me upload targets — headline results of the TrotterError development.
+#
+# These are the theorems the paper reports (see artifacts/paper-plan.md §3).
+# Each becomes a platform node: a `Thm_` statement node plus a `Sol_` proof node.
+# Nodes are uploaded leaves-first, so a child is always `Proved` before its parent.
+
+# --- MainTheorem.lean: the commutator-scaling bounds (the headline results) ---
+TrotterError.trotter_error_bound_comm_scaling
+TrotterError.trotter_error_comm_scaling
+TrotterError.trotter_error_bound_comm_scaling_of_skewAdjoint
+TrotterError.trotter_error_comm_scaling_of_skewAdjoint
+TrotterError.multiplicative_error_bound_comm_scaling
+TrotterError.multiplicative_error_comm_scaling
+TrotterError.multiplicative_error_bound_comm_scaling_of_skewAdjoint
+TrotterError.multiplicative_error_comm_scaling_of_skewAdjoint
+
+# --- MainTheorem.lean: the engines the bounds are assembled from ---
+TrotterError.norm_additiveKernel_le_of_rem_bound
+TrotterError.norm_additiveKernel_le_of_skewAdjoint
+TrotterError.norm_additiveKernel_le
+TrotterError.norm_additiveResidual_le_of_rem_bound
+TrotterError.norm_additiveResidual_le
+
+# --- OneNormScaling.lean: the one-norm scaling family ---
+TrotterError.trotter_error_bound_one_norm_scaling
+TrotterError.trotter_error_one_norm_scaling
+TrotterError.trotter_error_bound_one_norm_scaling_of_skew_adjoint
+TrotterError.trotter_error_one_norm_scaling_of_skew_adjoint
+TrotterError.trotter_number_one_norm_scaling
+
+# --- CommutatorExpansion / OrderCondition: structural results ---
+TrotterError.norm_commutatorRemainder_le
+TrotterError.norm_commutatorRemainder_le_of_skewAdjoint
+TrotterError.commutatorExpansion_conj
+TrotterError.errorOrderCond_iff
+
+# --- Prefactor.lean: Lie--Trotter and Suzuki small-prefactor bounds ---
+TrotterError.firstOrder_bound
+TrotterError.secondOrder_bound
+
+# --- Suzuki.lean: the concrete product formulas reduce to `eval` ---
+TrotterError.lieTrotter_eq_eval
+TrotterError.suzuki2_eq_eval
+TrotterError.suzuki_eq_eval

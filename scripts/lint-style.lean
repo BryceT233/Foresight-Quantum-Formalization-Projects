@@ -54,7 +54,7 @@ partial def modulesUnder (dir : System.FilePath) (pre : Lean.Name) :
 /-- Every Lean module of the project, derived from the source directories. -/
 def projectModules : IO (Array Lean.Name) := do
   let mut mods : Array Lean.Name := #[]
-  for dir in ["FQFP", "_spike"] do
+  for dir in ["FQFP", "FQFPTest", "_spike"] do
     if ← (dir : System.FilePath).pathExists then
       mods := mods ++ (← modulesUnder dir dir.toName)
   return mods

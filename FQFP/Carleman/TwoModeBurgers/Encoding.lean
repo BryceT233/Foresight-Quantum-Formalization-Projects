@@ -6,8 +6,8 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.Carleman.TwoModeBurgers.Obstruction
-public import FQFP.Carleman.TwoModeBurgers.PolynomialIdentity
-public import FQFP.Carleman.Truncation
+public import FQFP.Topology.Algebra.MvPolynomial.Identity
+public import FQFP.RingTheory.MvPolynomial.Trunc
 
 /-!
 # Obstruction to local polynomial encoders

@@ -1,0 +1,12 @@
+{
+ "theorem_name": "TrotterError.trotter_error_one_norm_scaling",
+ "preamble": "import Mathlib\nimport Definitions.Def_TrotterErrorMilestones\nopen NormedSpace\nopen Asymptotics\nopen ProductFormulaData\nopen scoped Topology BigOperators ContDiff\nvariable {Υ Γ : ℕ}\nvariable {𝔸 : Type*} [NormedRing 𝔸]\nvariable (P : ProductFormulaData Υ Γ)",
+ "formal_statement": "theorem TrotterError.trotter_error_one_norm_scaling\n    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]\n    (H : Fin Γ → 𝔸) (p : ℕ) (h_order : P.IsOrderOf p H) :\n    (fun t : ℝ ↦ ‖P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)‖) =O[𝓝 (0 : ℝ)]\n      (fun t : ℝ ↦ ((∑ γ : Fin Γ, ‖H γ‖) * t) ^ (p + 1) *\n        exp (t * (Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖)) := by sorry",
+ "source": "https://github.com/BryceT233/Foresight-Quantum-Formalization-Projects/blob/d6bfac12d15bc59fcc5f90206ac3312da602eb3d/FQFP/TrotterError/OneNormScaling.lean#L259-L323",
+ "lean_module": "FQFP.TrotterError.OneNormScaling",
+ "lean_span": [
+  259,
+  323
+ ],
+ "published_id": null
+}

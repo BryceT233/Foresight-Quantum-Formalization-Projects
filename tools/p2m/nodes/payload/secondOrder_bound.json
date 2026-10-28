@@ -1,0 +1,12 @@
+{
+ "theorem_name": "TrotterError.secondOrder_bound",
+ "preamble": "import Mathlib\nimport Definitions.Def_TrotterErrorMilestones\nopen NormedSpace Finset LieAlgebra MeasureTheory\nopen scoped BigOperators algebraMap\nattribute [local instance] LieRing.ofAssociativeRing",
+ "formal_statement": "theorem TrotterError.secondOrder_bound {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸]\n    [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸]\n    (Γ : ℕ) (K : Fin Γ → 𝔸) (h : ∀ γ, star (K γ) = -(K γ)) :\n    ∀ t : ℝ, 0 ≤ t →\n      ‖suzuki2 K t - exp (t • ∑ γ, K γ)‖ ≤\n        (t ^ 3 / 12) * ∑ γ₁ : Fin Γ, ‖adPow (upperSum K γ₁) 2 (K γ₁)‖\n        + (t ^ 3 / 24) * ∑ γ₁ : Fin Γ, ‖adPow (K γ₁) 2 (upperSum K γ₁)‖ := by sorry",
+ "source": "https://github.com/BryceT233/Foresight-Quantum-Formalization-Projects/blob/d6bfac12d15bc59fcc5f90206ac3312da602eb3d/FQFP/TrotterError/Prefactor.lean#L620-L691",
+ "lean_module": "FQFP.TrotterError.Prefactor",
+ "lean_span": [
+  620,
+  691
+ ],
+ "published_id": null
+}

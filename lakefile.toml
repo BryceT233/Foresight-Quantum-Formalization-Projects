@@ -19,7 +19,7 @@ name = "FQFP"
 
 # `lake exe lint-style` runs Mathlib's text-based style linters (line length, trailing
 # whitespace, tabs, ...) over this project. The linters come from
-# `Mathlib.Tactic.Linter.TextBased`; `scripts/LintStyle.lean` supplies the project's options
+# `Mathlib.Tactic.Linter.TextBased`; `scripts/lint-style.lean` supplies the project's options
 # and module list. It reads `scripts/nolints-style.txt` for per-file exceptions.
 [[lean_exe]]
 name = "lint-style"

@@ -8,7 +8,7 @@ module
 public import FQFP.CQM.QuditCat.Dagger
 public import FQFP.CQM.QuditCat.Monoidal
 public import FQFP.CQM.QuditCat.Biproducts
-public import FQFP.CQM.Category.Measurement
+public import FQFP.CategoryTheory.Monoidal.Measurement
 
 /-!
 # Measurement in finite-dimensional complex Hilbert spaces

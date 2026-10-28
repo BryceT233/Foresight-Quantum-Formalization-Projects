@@ -6,7 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.Carleman.TwoModeBurgers.Monomials
-public import FQFP.Carleman.Truncation
+public import FQFP.RingTheory.MvPolynomial.Trunc
 public import Mathlib.Algebra.MonoidAlgebra.Module
 
 /-!

@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.Carleman.Algebra
+public import FQFP.RingTheory.MvPolynomial.Derivation
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Tactic.Ring
 

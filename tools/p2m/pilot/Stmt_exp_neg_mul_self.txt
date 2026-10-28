@@ -1,0 +1,4 @@
+open NormedSpace
+
+theorem TrotterError.exp_neg_mul_self {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (x : 𝔸) :
+    exp (-x) * exp x = 1 := by sorry

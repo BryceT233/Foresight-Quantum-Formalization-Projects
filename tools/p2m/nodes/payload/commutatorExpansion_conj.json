@@ -1,0 +1,12 @@
+{
+ "theorem_name": "TrotterError.commutatorExpansion_conj",
+ "preamble": "import Mathlib\nimport Definitions.Def_TrotterErrorMilestones\nopen NormedSpace MeasureTheory Finset\nopen TrotterError.List\nopen scoped ContDiff algebraMap",
+ "formal_statement": "theorem TrotterError.commutatorExpansion_conj {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]\n    [CompleteSpace 𝔸] {s : ℕ} (A : Fin s → 𝔸) (B : 𝔸) (p : ℕ) (τ : ℝ) (hp : 1 ≤ p) :\n    multiConj A B τ =\n      (∑ j ∈ Finset.range p, conjCoeff A B j * (τ ^ j : 𝔸)) + commutatorRemainder A B p τ := by sorry",
+ "source": "https://github.com/BryceT233/Foresight-Quantum-Formalization-Projects/blob/d6bfac12d15bc59fcc5f90206ac3312da602eb3d/FQFP/TrotterError/CommutatorExpansion.lean#L1468-L1522",
+ "lean_module": "FQFP.TrotterError.CommutatorExpansion",
+ "lean_span": [
+  1468,
+  1522
+ ],
+ "published_id": null
+}

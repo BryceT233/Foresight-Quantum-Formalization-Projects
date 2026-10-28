@@ -6,7 +6,7 @@ Authors: Bingyu Xia
 module
 
 public import FQFP.CQM.QuditCat.Basic
-public import FQFP.CQM.Category.DaggerRigid
+public import FQFP.CategoryTheory.Monoidal.Dagger.Braided
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 
 /-!

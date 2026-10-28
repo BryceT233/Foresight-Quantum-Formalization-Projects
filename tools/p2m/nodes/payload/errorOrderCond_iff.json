@@ -1,0 +1,12 @@
+{
+ "theorem_name": "TrotterError.errorOrderCond_iff",
+ "preamble": "import Mathlib\nimport Definitions.Def_TrotterErrorMilestones\nopen Asymptotics\nopen TrotterError.List\nopen ProductFormulaData\nopen scoped Topology ContDiff algebraMap\nvariable {Υ Γ : ℕ}\nvariable {𝔸 : Type*} [NormedRing 𝔸]\nvariable (P : ProductFormulaData Υ Γ)\nopen NormedSpace",
+ "formal_statement": "theorem TrotterError.errorOrderCond_iff [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ 𝔸]\n    [CompleteSpace 𝔸] (p : ℕ) (H : Fin Γ → 𝔸) :\n    List.TFAE [P.IsOrderOf p H,\n      (fun τ => ‖additiveKernel P H τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p),\n      (fun τ => ‖exponentiatedError P H τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p),\n      (fun t => ‖multiplicativeError P H t‖) =O[𝓝 (0 : ℝ)] (fun t => t ^ (p + 1))] := by sorry",
+ "source": "https://github.com/BryceT233/Foresight-Quantum-Formalization-Projects/blob/d6bfac12d15bc59fcc5f90206ac3312da602eb3d/FQFP/TrotterError/OrderCondition.lean#L761-L773",
+ "lean_module": "FQFP.TrotterError.OrderCondition",
+ "lean_span": [
+  761,
+  773
+ ],
+ "published_id": null
+}

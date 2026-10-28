@@ -5,6 +5,7 @@ Authors: Bingyu Xia
 -/
 module
 
+public import FQFP.CategoryTheory.Dagger.Kernels
 public import FQFP.CQM.QuditCat.Dagger
 
 /-!

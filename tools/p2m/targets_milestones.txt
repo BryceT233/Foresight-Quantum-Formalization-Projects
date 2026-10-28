@@ -1,0 +1,14 @@
+# Milestone targets for the "Trotter Error with Commutator Scaling" mission.
+# Ordered by the paper's numbering; the goal (Theorem 11) is separate.
+# Format: <Lean theorem user-name>  # <paper milestone title>
+
+TrotterError.timeOrderedExp_duhamel            # Lemma 1
+TrotterError.fundamentalTheorem_timeOrderedExp # Lemma 3
+TrotterError.trotter_error_one_norm_scaling    # Lemma 6
+TrotterError.trotter_number_one_norm_scaling   # Corollary 7
+TrotterError.errorType_additive                # Theorem 8 (additive branch)
+TrotterError.errorOrderCond_iff                # Theorem 9
+TrotterError.commutatorExpansion_conj          # Theorem 10
+TrotterError.norm_commutatorRemainder_le       # Theorem 10 continued (bound)
+TrotterError.firstOrder_bound                  # Proposition 13
+TrotterError.secondOrder_bound                 # Proposition 14

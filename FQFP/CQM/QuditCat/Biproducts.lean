@@ -6,7 +6,7 @@ Authors: Bingyu Xia
 module
 
 public import FQFP.CQM.QuditCat.Dagger
-public import FQFP.CQM.Category.DaggerBiproduct
+public import FQFP.CategoryTheory.Dagger.Biproducts
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
@@ -18,7 +18,7 @@ public import Mathlib.LinearAlgebra.Pi
 The orthogonal direct sum of a finite family of finite-dimensional Hilbert spaces is their
 `L²` product `PiLp 2`. Its coordinate maps are adjoint, so it is a concrete normalized dagger
 biproduct in `QuditCat`: the dagger-biproduct calculus of
-`FQFP.CQM.Category.DaggerBiproduct` then applies to it without assuming anything about
+`FQFP.CategoryTheory.Dagger.Biproducts` then applies to it without assuming anything about
 Mathlib's independently chosen ordinary biproduct.
 
 The empty family is included: `PiLp 2` over an empty index type is the zero space, so the

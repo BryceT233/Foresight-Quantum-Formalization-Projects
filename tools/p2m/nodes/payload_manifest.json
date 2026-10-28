@@ -1,0 +1,102 @@
+[
+ {
+  "target": "TrotterError.timeOrderedExp_duhamel",
+  "file": "timeOrderedExp_duhamel.json",
+  "published_id": null,
+  "module": "FQFP.TrotterError.TimeOrderedExp",
+  "span": [
+   641,
+   671
+  ]
+ },
+ {
+  "target": "TrotterError.fundamentalTheorem_timeOrderedExp",
+  "file": "fundamentalTheorem_timeOrderedExp.json",
+  "published_id": null,
+  "module": "FQFP.TrotterError.TimeOrderedExp",
+  "span": [
+   778,
+   787
+  ]
+ },
+ {
+  "target": "TrotterError.trotter_error_one_norm_scaling",
+  "file": "trotter_error_one_norm_scaling.json",
+  "published_id": null,
+  "module": "FQFP.TrotterError.OneNormScaling",
+  "span": [
+   259,
+   323
+  ]
+ },
+ {
+  "target": "TrotterError.trotter_number_one_norm_scaling",
+  "file": "trotter_number_one_norm_scaling.json",
+  "published_id": null,
+  "module": "FQFP.TrotterError.OneNormScaling",
+  "span": [
+   619,
+   678
+  ]
+ },
+ {
+  "target": "TrotterError.errorType_additive",
+  "file": "errorType_additive.json",
+  "published_id": null,
+  "module": "FQFP.TrotterError.ErrorTypes",
+  "span": [
+   519,
+   540
+  ]
+ },
+ {
+  "target": "TrotterError.errorOrderCond_iff",
+  "file": "errorOrderCond_iff.json",
+  "published_id": null,
+  "module": "FQFP.TrotterError.OrderCondition",
+  "span": [
+   761,
+   773
+  ]
+ },
+ {
+  "target": "TrotterError.commutatorExpansion_conj",
+  "file": "commutatorExpansion_conj.json",
+  "published_id": null,
+  "module": "FQFP.TrotterError.CommutatorExpansion",
+  "span": [
+   1468,
+   1522
+  ]
+ },
+ {
+  "target": "TrotterError.norm_commutatorRemainder_le",
+  "file": "norm_commutatorRemainder_le.json",
+  "published_id": "f7c88b3b-41df-498e-af3e-2d9fbb8a5dd8",
+  "module": "FQFP.TrotterError.CommutatorExpansion",
+  "span": [
+   915,
+   923
+  ]
+ },
+ {
+  "target": "TrotterError.firstOrder_bound",
+  "file": "firstOrder_bound.json",
+  "published_id": null,
+  "module": "FQFP.TrotterError.Prefactor",
+  "span": [
+   224,
+   284
+  ]
+ },
+ {
+  "target": "TrotterError.secondOrder_bound",
+  "file": "secondOrder_bound.json",
+  "published_id": null,
+  "module": "FQFP.TrotterError.Prefactor",
+  "span": [
+   620,
+   691
+  ]
+ }
+]
