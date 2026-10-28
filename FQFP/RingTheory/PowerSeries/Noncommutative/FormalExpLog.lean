@@ -14,6 +14,12 @@ public import Mathlib.RingTheory.PowerSeries.Log
 The exponential of a series with constant coefficient zero and the logarithm of
 a series with constant coefficient one are mutually inverse. The proof uses
 scalar composition at one positive element and does not expand words.
+
+## Main results
+
+* `formalExp_formalLog`, `formalLog_formalExp`: the formal inverse identities.
+* `coeff_formalExp_congr`, `coeff_formalLog_congr`: preservation of finite prefixes.
+* `expListTerm_eq_sum_log_powers`: recovery of product coefficients from the logarithm.
 -/
 
 @[expose] public noncomputable section
@@ -83,5 +89,57 @@ theorem coeff_formalLog_expListSeries (l : List A) (n : ℕ) :
     simp
   rw [formalLog, scalarSeriesApply_congr _ _ _ hp]
   simp only [scalarSeriesApply, coeff_mk, coeff_log_eq_logCoeff, expListLogCoeff]
+
+/-- Exponentiating the logarithm recovers each ordered product coefficient. -/
+theorem expListTerm_eq_sum_log_powers (l : List A) (n : ℕ) :
+    expListTerm l n = ∑ k ∈ Finset.range (n + 1),
+      (Nat.factorial k : ℚ)⁻¹ • positivePowerCoeff (expListLogCoeff l) k n := by
+  have h := congrArg (coeff n)
+    (formalExp_formalLog (expListSeries l) (by simp [expListSeries]))
+  simpa only [formalExp, scalarSeriesApply, coeff_mk, coeff_exp,
+    Algebra.algebraMap_self_apply, one_div, coeff_formalLog_expListSeries,
+    coeff_expListSeries] using h.symm
+
+/-- The formal logarithm of one is zero. -/
+@[simp]
+theorem formalLog_one : formalLog (1 : PowerSeries A) = 0 := by
+  ext n
+  rw [← expListSeries_nil, coeff_formalLog_expListSeries]
+  simp
+
+/-- Formal exponential coefficients are finite factorial-weighted power coefficients. -/
+theorem coeff_formalExp (p : PowerSeries A) (n : ℕ) :
+    coeff n (formalExp p) = ∑ k ∈ Finset.range (n + 1),
+      (Nat.factorial k : ℚ)⁻¹ • positivePowerCoeff (fun i ↦ coeff i p) k n := by
+  simp only [formalExp, scalarSeriesApply, coeff_mk, coeff_exp,
+    Algebra.algebraMap_self_apply, one_div]
+
+/-- Formal logarithms depend only on the positive coefficients of the input. -/
+theorem coeff_formalLog (p : PowerSeries A) (n : ℕ) :
+    coeff n (formalLog p) = ∑ k ∈ Finset.range (n + 1),
+      logCoeff k • positivePowerCoeff (fun i ↦ coeff i p) k n := by
+  simp only [formalLog, scalarSeriesApply, coeff_mk, coeff_log_eq_logCoeff]
+  apply Finset.sum_congr rfl
+  intro k hk
+  congr 1
+  apply positivePowerCoeff_congr
+  intro i hi _
+  simp [coeff_one, hi.ne']
+
+/-- Equality of positive prefixes is preserved by formal logarithms. -/
+theorem coeff_formalLog_congr (p q : PowerSeries A) (n : ℕ)
+    (h : ∀ i, 0 < i → i ≤ n → coeff i p = coeff i q) :
+    coeff n (formalLog p) = coeff n (formalLog q) := by
+  simp only [coeff_formalLog]
+  exact Finset.sum_congr rfl fun k _ ↦ congrArg (logCoeff k • ·)
+    (positivePowerCoeff_congr _ _ n h k)
+
+/-- Equality of positive prefixes is preserved by formal exponentials. -/
+theorem coeff_formalExp_congr (p q : PowerSeries A) (n : ℕ)
+    (h : ∀ i, 0 < i → i ≤ n → coeff i p = coeff i q) :
+    coeff n (formalExp p) = coeff n (formalExp q) := by
+  simp only [coeff_formalExp]
+  exact Finset.sum_congr rfl fun k _ ↦ congrArg ((Nat.factorial k : ℚ)⁻¹ • ·)
+    (positivePowerCoeff_congr _ _ n h k)
 
 end FQFP

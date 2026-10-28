@@ -6,7 +6,6 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.Algebra.Word.BinaryTable
-public import FQFP.RingTheory.PowerSeries.Noncommutative.ExponentialProductCoefficients
 public import FQFP.Algebra.Lie.BCH.Associative.SymmetricTerms
 public import FQFP.RingTheory.PowerSeries.Noncommutative.ExponentialProduct
 public import FQFP.Algebra.Lie.BCH.Compatibility.SymmetricRecurrence

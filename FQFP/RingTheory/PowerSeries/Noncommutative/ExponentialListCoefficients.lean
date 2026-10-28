@@ -6,8 +6,6 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.RingTheory.PowerSeries.Noncommutative.Coefficients
-public import Mathlib.Algebra.Algebra.Hom
-public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 
 /-!
 # Homogeneous coefficients of ordered exponential lists
@@ -66,7 +64,7 @@ lemma map_expListTerm {B : Type*} [Semiring B] [Algebra ℚ B]
   | nil => simp [expListTerm]
   | cons a l ih => simp [expListTerm, map_sum, ih]
 
-/-- Uniform scaling multiplies each homogeneous exponential coefficient by its degree. -/
+/-- Scaling every input by `c` scales the degree-`n` exponential coefficient by `c ^ n`. -/
 lemma expListTerm_smul {R : Type*} [CommSemiring R] [Algebra R A]
     (l : List A) (c : R) (n : ℕ) :
     expListTerm (l.map fun a ↦ c • a) n = c ^ n • expListTerm l n := by
@@ -79,29 +77,6 @@ lemma expListTerm_smul {R : Type*} [CommSemiring R] [Algebra R A]
       rw [smul_pow, ih, smul_comm ((Nat.factorial ij.1 : ℚ)⁻¹), smul_mul_smul_comm,
         ← pow_add, (mem_antidiagonal.mp hij)]
 
-/-- Algebra homomorphisms preserve the coefficients of positive-degree powers. -/
-lemma map_positivePowerCoeff {B : Type*} [Semiring B] [Algebra ℚ B]
-    (f : A →ₐ[ℚ] B) (u : ℕ → A) (k n : ℕ) :
-    f (positivePowerCoeff u k n) = positivePowerCoeff (fun i ↦ f (u i)) k n := by
-  induction k generalizing n with
-  | zero => by_cases hn : n = 0 <;> simp [positivePowerCoeff, hn]
-  | succ k ih => simp [positivePowerCoeff, map_sum, ih]
-
-/-- Graded scaling is preserved by positive-degree power coefficients. -/
-lemma positivePowerCoeff_smul {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
-    (u : ℕ → B) (c : R) (k n : ℕ) :
-    positivePowerCoeff (fun i ↦ c ^ i • u i) k n = c ^ n • positivePowerCoeff u k n := by
-  induction k generalizing n with
-  | zero => by_cases hn : n = 0 <;> simp [positivePowerCoeff, hn]
-  | succ k ih =>
-      simp only [positivePowerCoeff, ih, smul_sum]
-      apply sum_congr rfl
-      intro i hi
-      have hin : i + 1 ≤ n := by
-        have := mem_range.mp hi
-        lia
-      rw [smul_mul_smul_comm, ← pow_add, Nat.add_sub_of_le hin]
-
 /-- The homogeneous degree-`n` coefficient of the formal logarithm of the product. -/
 def expListLogCoeff (l : List A) (n : ℕ) : A :=
   ∑ k ∈ range (n + 1), logCoeff k • positivePowerCoeff (expListTerm l) k n
@@ -110,6 +85,15 @@ def expListLogCoeff (l : List A) (n : ℕ) : A :=
 @[simp]
 lemma expListLogCoeff_zero (l : List A) : expListLogCoeff l 0 = 0 := by
   simp [expListLogCoeff, positivePowerCoeff]
+
+/-- The empty exponential product has zero logarithm in every degree. -/
+@[simp]
+lemma expListLogCoeff_nil (n : ℕ) : expListLogCoeff ([] : List A) n = 0 := by
+  apply sum_eq_zero
+  intro k hk
+  cases k with
+  | zero => simp [logCoeff]
+  | succ k => simp [positivePowerCoeff, expListTerm]
 
 /-- The linear logarithm coefficient is the sum of the exponent arguments. -/
 @[simp]
@@ -123,7 +107,7 @@ lemma map_expListLogCoeff {B : Type*} [Semiring B] [Algebra ℚ B]
   simp only [expListLogCoeff, map_sum, map_smul, map_positivePowerCoeff]
   simp only [map_expListTerm]
 
-/-- Uniform scaling multiplies each homogeneous logarithm coefficient by its degree. -/
+/-- Scaling every input by `c` scales the degree-`n` logarithm coefficient by `c ^ n`. -/
 lemma expListLogCoeff_smul {R : Type*} [CommSemiring R] [Algebra R A]
     (l : List A) (c : R) (n : ℕ) :
     expListLogCoeff (l.map fun a ↦ c • a) n = c ^ n • expListLogCoeff l n := by

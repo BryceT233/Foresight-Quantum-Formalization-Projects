@@ -26,8 +26,13 @@ public import FQFP.Algebra.Lie.BCH.Compatibility.SymmetricQuintic
 public import FQFP.Algebra.Lie.BCH.Compatibility.SymmetricRecurrence
 public import FQFP.Algebra.Lie.BCH.Compatibility.SymmetricTerms
 public import FQFP.Algebra.Lie.BCH.GradedRealization
+public import FQFP.Algebra.Lie.BCH.SuzukiGradedSemantics
 public import FQFP.Algebra.Lie.BCH.LowDegree
 public import FQFP.Algebra.Lie.BCH.SuzukiTerms
+public import FQFP.Algebra.Lie.BCH.SuzukiCubicArithmetic
+public import FQFP.Algebra.Lie.BCH.SuzukiGradedRecurrence
+public import FQFP.Algebra.Lie.BCH.SuzukiHallBridge
+public import FQFP.Algebra.Word.SuzukiCertificateProbe
 public import FQFP.Algebra.Lie.BCH.SymmetricCoefficients
 public import FQFP.Algebra.Lie.BCH.SymmetricProduct
 public import FQFP.Algebra.Lie.BCH.SymmetricQuintic
@@ -37,7 +42,6 @@ public import FQFP.Algebra.Lie.Hom
 public import FQFP.Algebra.Lie.HomogeneousConvolution
 public import FQFP.Algebra.Lie.IteratedCommutator
 public import FQFP.Algebra.Lie.Polynomial
-public import FQFP.Algebra.Lie.PolynomialDegree
 public import FQFP.Algebra.Lie.PolynomialRealization
 public import FQFP.Algebra.MvPolynomial.Eval
 public import FQFP.Algebra.Polynomial.Module.Calculus
@@ -105,11 +109,13 @@ public import FQFP.Analysis.Normed.Algebra.ProductFormula.ErrorTypes
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.OneNormScaling
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.OrderCondition
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.Palindromic
+public import FQFP.Analysis.Normed.Algebra.ProductFormula.SuzukiHalf
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.Prefactor
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.SuzukiParameter
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.SuzukiQuintic
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.SuzukiQuinticBounds
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.SuzukiSeries
+public import FQFP.Analysis.Normed.Algebra.ProductFormula.SuzukiTaylor
 public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import FQFP.Analysis.Normed.Algebra.Word
 public import FQFP.Analysis.Normed.Algebra.WordTable
@@ -196,7 +202,6 @@ public import FQFP.RingTheory.PowerSeries.Noncommutative.ExponentialCurve
 public import FQFP.RingTheory.PowerSeries.Noncommutative.ExponentialDerivative
 public import FQFP.RingTheory.PowerSeries.Noncommutative.ExponentialListCoefficients
 public import FQFP.RingTheory.PowerSeries.Noncommutative.ExponentialProduct
-public import FQFP.RingTheory.PowerSeries.Noncommutative.ExponentialProductCoefficients
 public import FQFP.RingTheory.PowerSeries.Noncommutative.FormalExpLog
 public import FQFP.RingTheory.PowerSeries.Noncommutative.PositiveSeries
 public import FQFP.RingTheory.PowerSeries.Noncommutative.ScalarComposition

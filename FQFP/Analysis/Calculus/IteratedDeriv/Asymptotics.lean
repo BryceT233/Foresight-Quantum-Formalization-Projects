@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import FQFP.Analysis.Calculus.Taylor
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 
@@ -22,6 +23,8 @@ Smooth power bounds are equivalent to vanishing derivatives and transform under 
 -/
 
 @[expose] public section
+
+open scoped RealScalar
 
 namespace TrotterError
 
@@ -80,8 +83,8 @@ theorem orderCond_deriv_iff [NormedAlgebra ℝ 𝔸]
       | succ k => simpa [iteratedDeriv_succ'] using hderiv_van k (by lia))
 
 /-- For smooth `F`, the function `t ↦ ∫₀ᵗ F` is smooth. -/
-lemma contDiff_integral_of_contDiff [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (F : ℝ → 𝔸) (hF : ContDiff ℝ ∞ F) :
+lemma contDiff_integral_of_contDiff
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (F : ℝ → 𝔸) (hF : ContDiff ℝ ∞ F) :
     ContDiff ℝ ∞ (fun t => ∫ τ in 0..t, F τ) := by
   let IF : ℝ → 𝔸 := fun t => ∫ τ in 0..t, F τ
   have hcont : Continuous F := hF.continuous
@@ -95,8 +98,8 @@ lemma contDiff_integral_of_contDiff [NormedAlgebra ℝ 𝔸]
   exact (contDiff_infty_iff_deriv (f := IF)).mpr ⟨hdiff, by simpa [hderiv] using hF⟩
 
 /-- Integration rule (order.tex:83): `F = O(τ^p)` iff `∫₀ᵗ F = O(t^{p+1})`. -/
-theorem orderCond_integral_iff [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (F : ℝ → 𝔸) (p : ℕ) (hF : ContDiff ℝ ∞ F) :
+theorem orderCond_integral_iff
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (F : ℝ → 𝔸) (p : ℕ) (hF : ContDiff ℝ ∞ F) :
     (fun τ => ‖F τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) ↔
       (fun t => ‖∫ τ in 0..t, F τ‖) =O[𝓝 (0 : ℝ)] (fun t => t ^ (p + 1)) := by
   let IF : ℝ → 𝔸 := fun t => ∫ τ in 0..t, F τ

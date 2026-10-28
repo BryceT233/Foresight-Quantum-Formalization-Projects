@@ -6,8 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Analysis.Normed.Ring.Basic
-public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Ring
 
 /-!
 # Norm bounds for real scalar multiples
@@ -24,18 +23,18 @@ Bounds use only the real scalar norm; no exponential construction is required.
 
 namespace TrotterError
 
-/-- `|c| ≤ 1` implies `‖c • A‖ ≤ ‖A‖` in any normed algebra. -/
-lemma norm_smul_le_of_abs_le_one {𝔸 : Type*} [NormedRing 𝔸] [NormedSpace ℝ 𝔸]
-    (c : ℝ) (A : 𝔸) (hc : |c| ≤ 1) : ‖c • A‖ ≤ ‖A‖ := by
+/-- A scalar of absolute value at most one does not increase the seminorm. -/
+lemma norm_smul_le_of_abs_le_one {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    (c : ℝ) (A : E) (hc : |c| ≤ 1) : ‖c • A‖ ≤ ‖A‖ := by
   calc
     ‖c • A‖ = |c| * ‖A‖ := by rw [norm_smul, Real.norm_eq_abs]
     _ ≤ 1 * ‖A‖ := mul_le_mul_of_nonneg_right hc (norm_nonneg _)
     _ = ‖A‖ := one_mul _
 
-/-- For `u ≤ 1`, `0 ≤ t`, and `|c| ≤ 1`, the exponential argument `(u * t) * ‖c • A‖` is at
+/-- For `u ≤ 1`, `0 ≤ t`, and `|c| ≤ 1`, the scaled seminorm `(u * t) * ‖c • A‖` is at
 most `t * ‖A‖`. -/
-lemma norm_smul_exp_arg_le {𝔸 : Type*} [NormedRing 𝔸] [NormedSpace ℝ 𝔸]
-    (c : ℝ) (A : 𝔸) (hc : |c| ≤ 1) (u t : ℝ) (ht : 0 ≤ t) (hu1 : u ≤ 1) :
+lemma norm_smul_exp_arg_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    (c : ℝ) (A : E) (hc : |c| ≤ 1) (u t : ℝ) (ht : 0 ≤ t) (hu1 : u ≤ 1) :
     (u * t) * ‖c • A‖ ≤ t * ‖A‖ := by
   have hc' : u * |c| ≤ 1 := by
     simpa using mul_le_mul hu1 hc (abs_nonneg _) zero_le_one

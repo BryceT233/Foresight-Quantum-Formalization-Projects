@@ -31,6 +31,8 @@ applications*, J. Math. Phys. 50, 033513 (2009).
 namespace FQFP
 
 /-- The degree-five symmetric BCH Lie polynomial, with common denominator `5760`.
+This is the Strang coefficient `D₅` in
+`log (exp (h x / 2) * exp (h y) * exp (h x / 2)) = h (x + y) + h³ C₃ + h⁵ D₅ + O(h⁷)`.
 The six brackets correspond to classical Hall indices `9` through `14`, with
 `E₃ = ⁅y, x⁆` and the recursive rule `E_i = [E_{i'}, E_{i''}]`. -/
 def symmetricBchQuinticLieTerm {L : Type*} [LieRing L] [LieAlgebra ℚ L]

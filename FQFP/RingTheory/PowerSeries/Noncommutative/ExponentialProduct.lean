@@ -6,7 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.RingTheory.PowerSeries.Noncommutative.ExponentialCurve
-public import FQFP.RingTheory.PowerSeries.Noncommutative.ExponentialProductCoefficients
+public import FQFP.RingTheory.PowerSeries.Noncommutative.Coefficients
 
 /-!
 # Compatibility of list and exponential product coefficients

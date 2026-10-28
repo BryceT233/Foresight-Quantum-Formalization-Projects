@@ -6,6 +6,8 @@ Authors: Foresight Quantum
 module
 
 public import Mathlib.Algebra.Algebra.Basic
+public import Mathlib.Algebra.Algebra.Hom
+public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Module.Rat
@@ -21,7 +23,7 @@ or completeness. The power truncation itself is defined over an arbitrary semiri
 
 ## Main definitions
 
-* `FQFP.expMulTerm`: the factorial convolution in total degree `n`.
+* `FQFP.expMulTerm`, `FQFP.expMulMulTerm`: ordered factorial convolutions in degree `n`.
 * `FQFP.positivePowerTrunc`: the terms in a positive-degree power below a degree cutoff.
 * `FQFP.positivePowerCoeff`: one homogeneous coefficient of a positive-degree power.
 * `FQFP.logCoeff`, `FQFP.logPartialSum`: rational logarithm coefficients and finite sums.
@@ -29,6 +31,7 @@ or completeness. The power truncation itself is defined over an arbitrary semiri
 ## Main results
 
 * `FQFP.expMulTerm_zero`, `FQFP.expMulTerm_one`: constant and linear exponential terms.
+* `FQFP.map_positivePowerCoeff`, `FQFP.positivePowerCoeff_smul`: naturality and scaling.
 * `FQFP.pow_sub_positivePowerTrunc_succ`: a residual decomposition by the first factor.
 * `FQFP.positivePowerTrunc_succ`, `FQFP.sum_smul_positivePowerTrunc_succ`: cutoff increments.
 * `FQFP.logPartialSum_succ`: the recurrence for finite logarithm sums.
@@ -71,6 +74,23 @@ lemma sum_range_expMulTerm_two (a b : A) :
     ∑ i ∈ range 2, expMulTerm a b i = 1 + (a + b) := by
   simp [sum_range_succ]
 
+/-- The total-degree coefficient of an ordered product of three exponentials. -/
+noncomputable def expMulMulTerm (a b c : A) (n : ℕ) : A :=
+  ∑ ij ∈ antidiagonal n,
+    expMulTerm a b ij.1 * ((Nat.factorial ij.2 : ℚ)⁻¹ • c ^ ij.2)
+
+/-- The constant coefficient of a triple exponential product is one. -/
+@[simp]
+lemma expMulMulTerm_zero (a b c : A) : expMulMulTerm a b c 0 = 1 := by
+  simp [expMulMulTerm]
+
+/-- The linear coefficient of a triple exponential product is the sum of its inputs. -/
+@[simp]
+lemma expMulMulTerm_one (a b c : A) : expMulMulTerm a b c 1 = a + b + c := by
+  rw [expMulMulTerm, sum_antidiagonal_eq_sum_range_succ_mk]
+  norm_num [sum_range_succ]
+  ac_rfl
+
 end FQFP
 
 /-! ### Powers of positive homogeneous expansions -/
@@ -94,6 +114,42 @@ def positivePowerCoeff (u : ℕ → A) : ℕ → ℕ → A
   | 0, n => if n = 0 then 1 else 0
   | k + 1, n => ∑ i ∈ range (n - k),
       u (i + 1) * positivePowerCoeff u k (n - (i + 1))
+
+/-- A coefficient of a positive power depends only on the input prefix. -/
+lemma positivePowerCoeff_congr (u v : ℕ → A) (n : ℕ)
+    (h : ∀ i, 0 < i → i ≤ n → u i = v i) (k : ℕ) :
+    positivePowerCoeff u k n = positivePowerCoeff v k n := by
+  induction k generalizing n with
+  | zero => rfl
+  | succ k ih =>
+      simp only [positivePowerCoeff]
+      apply sum_congr rfl
+      intro i hi
+      have hi' := mem_range.mp hi
+      rw [h (i + 1) (by lia) (by lia), ih _ (fun j hj hjn ↦ h j hj (by lia))]
+
+/-- Algebra homomorphisms preserve the coefficients of positive-degree powers. -/
+lemma map_positivePowerCoeff [Algebra ℚ A] {B : Type*} [Semiring B] [Algebra ℚ B]
+    (f : A →ₐ[ℚ] B) (u : ℕ → A) (k n : ℕ) :
+    f (positivePowerCoeff u k n) = positivePowerCoeff (fun i ↦ f (u i)) k n := by
+  induction k generalizing n with
+  | zero => by_cases hn : n = 0 <;> simp [positivePowerCoeff, hn]
+  | succ k ih => simp [positivePowerCoeff, map_sum, ih]
+
+/-- Graded scaling is preserved by positive-degree power coefficients. -/
+lemma positivePowerCoeff_smul {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
+    (u : ℕ → B) (c : R) (k n : ℕ) :
+    positivePowerCoeff (fun i ↦ c ^ i • u i) k n = c ^ n • positivePowerCoeff u k n := by
+  induction k generalizing n with
+  | zero => by_cases hn : n = 0 <;> simp [positivePowerCoeff, hn]
+  | succ k ih =>
+      simp only [positivePowerCoeff, ih, smul_sum]
+      apply sum_congr rfl
+      intro i hi
+      have hin : i + 1 ≤ n := by
+        have := mem_range.mp hi
+        lia
+      rw [smul_mul_smul_comm, ← pow_add, Nat.add_sub_of_le hin]
 
 /-- Convolution for powers of at least two, keeping linear coefficients as the leaves. -/
 lemma positivePowerCoeff_add_two (u : ℕ → A) (k n : ℕ) :

@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
@@ -25,12 +26,14 @@ error estimates. The interval integral carries the orientation of its endpoints.
 
 @[expose] public section
 
+open scoped RealScalar
+
 namespace TrotterError
 
 open NormedSpace
 open scoped Topology BigOperators Interval
 
-variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
 
 /-! ### The fundamental-theorem identity behind the norm bound -/
 

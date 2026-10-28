@@ -88,6 +88,14 @@ theorem expListSeries_cons (a : A) (l : List A) :
   ext n
   simp only [expListSeries, coeff_mk, coeff_mul, expListTerm]
 
+/-- Formal exponential products preserve concatenation order. -/
+theorem expListSeries_append (l r : List A) :
+    expListSeries (l ++ r) = expListSeries l * expListSeries r := by
+  induction l with
+  | nil => simp [expListSeries_nil]
+  | cons a l ih =>
+      simp only [List.cons_append, expListSeries_cons, ih, mul_assoc]
+
 /-- The positive part of an exponential product is its formal series minus one. -/
 theorem positiveSeries_expListTerm (l : List A) :
     positiveSeries (expListTerm l) + 1 = expListSeries l := by

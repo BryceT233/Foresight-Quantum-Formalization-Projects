@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import FQFP.Analysis.SpecialFunctions.Integrals.IteratedBounds
 public import FQFP.Analysis.ODE.Algebra
 public import Mathlib.Analysis.Normed.Ring.Basic
@@ -48,6 +49,8 @@ Linear ODE uniqueness is provided by `FQFP.Analysis.ODE.Algebra`.
 
 @[expose] public section
 
+open scoped RealScalar
+
 namespace TrotterError
 
 variable {𝔸 : Type*} [NormedRing 𝔸] [NormedSpace ℝ 𝔸]
@@ -59,14 +62,15 @@ namespace TrotterError
 open NormedSpace
 open scoped Topology BigOperators Interval
 
-variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
 
 /-! ### The Dyson series -/
 
 /-- The `n`-th term of the Dyson (Neumann/Picard) series for the time-ordered exponential:
 `D₀ = 1` and `D_{n+1}(t) = ∫ τ in t₁..t, H τ * D_n τ`. The interval integral is oriented,
 so this is defined for every `t : ℝ` (not only `t ≥ t₁`). -/
-noncomputable def dysonTerm (H : ℝ → 𝔸) (t₁ : ℝ) : ℕ → ℝ → 𝔸
+noncomputable def dysonTerm {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
+    (H : ℝ → 𝔸) (t₁ : ℝ) : ℕ → ℝ → 𝔸
   | 0 => fun _ => 1
   | n + 1 => fun t => ∫ τ in t₁..t, H τ * dysonTerm H t₁ n τ
 
@@ -74,7 +78,8 @@ noncomputable def dysonTerm (H : ℝ → 𝔸) (t₁ : ℝ) : ℕ → ℝ → �
 generator `H` as the sum of the Dyson series. For `t₁ ≤ t₂` this is the unique solution of
 `U' = H·U`, `U(t₁) = 1`; for `t₂ < t₁` it is the inverse evolution (a theorem, not
 built into the definition). -/
-noncomputable def timeOrderedExp (H : ℝ → 𝔸) (t₁ t₂ : ℝ) : 𝔸 :=
+noncomputable def timeOrderedExp {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
+    (H : ℝ → 𝔸) (t₁ t₂ : ℝ) : 𝔸 :=
   ∑' n : ℕ, dysonTerm H t₁ n t₂
 
 /-! ### Continuity of the Dyson terms -/
@@ -91,10 +96,11 @@ lemma continuous_dysonTerm (H : ℝ → 𝔸) (hH : Continuous H) (t₁ : ℝ) (
 
 /-! ### Norm bound of the Dyson terms -/
 
-omit [CompleteSpace 𝔸] in
+omit [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] in
 /-- The `n`-th Dyson term is bounded by `‖1‖ · |∫_{t₁}^{t} ‖H‖|^n / n!` for all `t` (both
 orientations), valid without `NormOneClass`. -/
-lemma norm_dysonTerm_le_abs (H : ℝ → 𝔸) (hH : Continuous H) (t₁ : ℝ) (n : ℕ) (t : ℝ) :
+lemma norm_dysonTerm_le_abs [NormedAlgebra ℝ 𝔸] (H : ℝ → 𝔸) (hH : Continuous H)
+    (t₁ : ℝ) (n : ℕ) (t : ℝ) :
     ‖dysonTerm H t₁ n t‖ ≤ ‖(1 : 𝔸)‖ * |∫ u in t₁..t, ‖H u‖| ^ n / Nat.factorial n := by
   induction n generalizing t with
   | zero => simp [dysonTerm]
@@ -132,10 +138,11 @@ lemma summable_dysonTerm_abs (H : ℝ → 𝔸) (hH : Continuous H) (t₁ t₂ :
 
 /-! ### The norm bound -/
 
-omit [CompleteSpace 𝔸] in
+omit [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] in
 /-- `lem:time_ordered_norm_bound`: `‖exp_T H t₁ t₂‖ ≤ Real.exp |∫ τ in t₁..t₂, ‖H τ‖|`
 (the two-sided form, valid for both time orderings). -/
-lemma timeOrderedExp_norm_le [NormOneClass 𝔸] (H : ℝ → 𝔸) (hH : Continuous H) (t₁ t₂ : ℝ) :
+lemma timeOrderedExp_norm_le [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸]
+    (H : ℝ → 𝔸) (hH : Continuous H) (t₁ t₂ : ℝ) :
     ‖timeOrderedExp H t₁ t₂‖ ≤ Real.exp |∫ τ in t₁..t₂, ‖H τ‖| := by
   rw [timeOrderedExp]
   refine tsum_of_norm_bounded (f := fun n : ℕ => dysonTerm H t₁ n t₂)
@@ -148,10 +155,11 @@ lemma timeOrderedExp_norm_le [NormOneClass 𝔸] (H : ℝ → 𝔸) (hH : Contin
 
 /-! ### The initial condition -/
 
-omit [CompleteSpace 𝔸] in
+omit [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] in
 /-- `exp_T H t₁ t₁ = 1`: the `D₀` term is `1` and all higher terms vanish because the
 interval `[t₁, t₁]` has integral `0`. -/
-lemma timeOrderedExp_initial (H : ℝ → 𝔸) (t₁ : ℝ) : timeOrderedExp H t₁ t₁ = 1 := by
+lemma timeOrderedExp_initial [NormedAlgebra ℝ 𝔸] (H : ℝ → 𝔸) (t₁ : ℝ) :
+    timeOrderedExp H t₁ t₁ = 1 := by
   rw [timeOrderedExp, tsum_eq_single (0 : ℕ)]
   · simp [dysonTerm]
   · intro n hn
@@ -452,9 +460,9 @@ lemma timeOrderedExp_duhamel_hasDerivAt (H R : ℝ → 𝔸) (hH : Continuous H)
     abel
   exact hderiv_eq ▸ hsum
 
-omit [CompleteSpace 𝔸] in
+omit [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] in
 /-- The closed-form solution of `U' = H · U + R` has initial value `U₀`. -/
-lemma timeOrderedExp_duhamel_initial (H R : ℝ → 𝔸) (U₀ : 𝔸) :
+lemma timeOrderedExp_duhamel_initial [NormedAlgebra ℝ 𝔸] (H R : ℝ → 𝔸) (U₀ : 𝔸) :
     timeOrderedExp H 0 0 * U₀ + ∫ τ in 0..0, timeOrderedExp H τ 0 * R τ = U₀ := by
   rw [timeOrderedExp_initial H 0, one_mul, intervalIntegral.integral_same, add_zero]
 
@@ -709,11 +717,12 @@ lemma timeOrderedExp_sub (H G : ℝ → 𝔸) (hH : Continuous H) (hG : Continuo
 
 /-! ### Distance bounds -/
 
-omit [CompleteSpace 𝔸] in
+omit [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] in
 /-- Pointwise bound for the integrand of the general distance bound: for `τ` in the unordered
 interval between `t₁` and `t₂`,
 `‖exp_T(G,τ,t₂) · (H τ − G τ) · exp_T(H,t₁,τ)‖ ≤ Real.exp |∫ ‖H‖+‖G‖| · ‖H τ − G τ‖`. -/
-lemma norm_timeOrderedExp_sub_integrand_le [NormOneClass 𝔸] (H G : ℝ → 𝔸) (hH : Continuous H)
+lemma norm_timeOrderedExp_sub_integrand_le [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸]
+    (H G : ℝ → 𝔸) (hH : Continuous H)
     (hG : Continuous G) (t₁ t₂ τ : ℝ) (hτ : τ ∈ Set.uIcc t₁ t₂) :
     ‖timeOrderedExp G τ t₂ * (H τ - G τ) * timeOrderedExp H t₁ τ‖ ≤
       Real.exp |∫ u in t₁..t₂, ‖H u‖ + ‖G u‖| * ‖H τ - G τ‖ := by

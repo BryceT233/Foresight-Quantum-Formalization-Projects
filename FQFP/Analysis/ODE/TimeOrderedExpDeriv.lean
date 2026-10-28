@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import FQFP.Analysis.ODE.TimeOrderedExp
 public import FQFP.Analysis.Calculus.IteratedDeriv.Asymptotics
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
@@ -24,6 +25,8 @@ Smoothness and power-order comparison depend on evolution itself, not on product
 
 @[expose] public section
 
+open scoped RealScalar
+
 namespace TrotterError
 
 open NormedSpace Asymptotics Finset
@@ -32,8 +35,8 @@ open scoped Topology BigOperators ContDiff algebraMap
 variable {𝔸 : Type*} [NormedRing 𝔸]
 
 /-- For smooth `H`, the solution `t ↦ exp_T(∫₀ᵗ H)` is smooth. -/
-lemma contDiff_timeOrderedExp_of_contDiff [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (H : ℝ → 𝔸) (hH : ContDiff ℝ ∞ H) :
+lemma contDiff_timeOrderedExp_of_contDiff
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (H : ℝ → 𝔸) (hH : ContDiff ℝ ∞ H) :
     ContDiff ℝ ∞ (fun t => timeOrderedExp H 0 t) := by
   let U : ℝ → 𝔸 := fun t => timeOrderedExp H 0 t
   have hcont : Continuous H := hH.continuous
@@ -58,8 +61,8 @@ lemma contDiff_timeOrderedExp_of_contDiff [NormedAlgebra ℝ 𝔸]
 /-- The recurrence for iterated derivatives of `t ↦ exp_T(∫₀ᵗ H)` at `0`: the `(j+1)`-st
 iterated derivative is `iteratedDeriv j H 0` plus terms built from strictly lower derivatives of
 `H` and lower iterated derivatives of the time-ordered exponential. -/
-lemma iteratedDeriv_timeOrderedExp_succ [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (H : ℝ → 𝔸) (hH : ContDiff ℝ ∞ H) (j : ℕ) :
+lemma iteratedDeriv_timeOrderedExp_succ
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (H : ℝ → 𝔸) (hH : ContDiff ℝ ∞ H) (j : ℕ) :
     iteratedDeriv (j + 1) (fun t => timeOrderedExp H 0 t) 0 =
       (∑ i ∈ Finset.range j, (j.choose i : 𝔸) * iteratedDeriv i H 0 *
         iteratedDeriv (j - i) (fun t => timeOrderedExp H 0 t) 0) + iteratedDeriv j H 0 := by
@@ -91,8 +94,8 @@ lemma iteratedDeriv_timeOrderedExp_succ [NormedAlgebra ℝ 𝔸]
 /-- The derivative-comparison heart of the exponentiation rule: the generators agree to order
 `p - 1` (all iterated derivatives of order `< p` coincide at `0`) iff the associated time-ordered
 exponentials agree to order `p` (all iterated derivatives of order `≤ p` coincide at `0`). -/
-lemma timeOrderedExp_iteratedDeriv_eq_iff [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (F G : ℝ → 𝔸) (p : ℕ)
+lemma timeOrderedExp_iteratedDeriv_eq_iff
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (F G : ℝ → 𝔸) (p : ℕ)
     (hF : ContDiff ℝ ∞ F) (hG : ContDiff ℝ ∞ G) :
     (∀ j, j < p → iteratedDeriv j F 0 = iteratedDeriv j G 0) ↔
       (∀ j, j ≤ p → iteratedDeriv j (fun t => timeOrderedExp F 0 t) 0 =
@@ -172,7 +175,7 @@ lemma timeOrderedExp_iteratedDeriv_eq_iff [NormedAlgebra ℝ 𝔸]
 
 /-- Exponentiation rule (order.tex:84): `F = G + O(τ^p)` iff
 `exp_T(∫₀ᵗ F) = exp_T(∫₀ᵗ G) + O(t^{p+1})`. -/
-theorem orderCond_exp_iff [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+theorem orderCond_exp_iff [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (F G : ℝ → 𝔸) (p : ℕ) (hF : ContDiff ℝ ∞ F) (hG : ContDiff ℝ ∞ G) :
     (fun τ => ‖F τ - G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) ↔
       (fun t => ‖timeOrderedExp F 0 t - timeOrderedExp G 0 t‖) =O[𝓝 (0 : ℝ)]

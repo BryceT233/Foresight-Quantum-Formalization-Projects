@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import FQFP.Analysis.Normed.Algebra.Commutator
 public import FQFP.Analysis.Normed.Algebra.ExponentialCalculus
 public import FQFP.Analysis.SpecialFunctions.Integrals.IteratedBounds
@@ -35,6 +36,8 @@ expansion and norm bounds of the single conjugation `exp (τ • A) * X * exp (-
 
 @[expose] public section
 
+open scoped RealScalar
+
 namespace TrotterError
 
 open NormedSpace MeasureTheory
@@ -46,8 +49,8 @@ noncomputable def expSMulConj {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra �
   exp (τ • A) * X * exp ((-τ) • A)
 
 /-- The conjugation `t ↦ expSMulConj A Y t` is smooth. -/
-lemma contDiff_expSMulConj {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (A Y : 𝔸) :
+lemma contDiff_expSMulConj {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A Y : 𝔸) :
     ContDiff ℝ ∞ (fun t : ℝ => expSMulConj A Y t) := by
   unfold expSMulConj
   exact ((contDiff_exp_smul_const A).mul contDiff_const).mul
@@ -55,16 +58,16 @@ lemma contDiff_expSMulConj {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ �
 
 /-- The conjugation `t ↦ expSMulConj A Y t` is continuous. -/
 @[fun_prop]
-lemma continuous_expSMulConj {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (A Y : 𝔸) :
+lemma continuous_expSMulConj {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A Y : 𝔸) :
     Continuous (fun t : ℝ => expSMulConj A Y t) :=
   (contDiff_expSMulConj A Y).continuous
 
 /-- Derivative of the conjugation:
 `d/dτ expSMulConj A X τ = expSMulConj A ⁅A, X⁆ τ`
 (i.e. `e^{τA} [A, X] e^{-τA}`). -/
-theorem expSMulConj_hasDerivAt {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (A X : 𝔸) (τ : ℝ) :
+theorem expSMulConj_hasDerivAt {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸) (τ : ℝ) :
     HasDerivAt (fun s => expSMulConj A X s) (expSMulConj A ⁅A, X⁆ τ) τ := by
   have hneg : HasDerivAt (fun s : ℝ => exp ((-s) • A)) (-A * exp ((-τ) • A)) τ := by
     have h := hasDerivAt_exp_smul_const' (-A) τ
@@ -82,8 +85,8 @@ theorem expSMulConj_hasDerivAt {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra �
 
 /-- Fundamental theorem of calculus for the conjugation:
 `expSMulConj A X τ - X = ∫ s in 0..τ, expSMulConj A ⁅A, X⁆ s`. -/
-theorem expSMulConj_sub_eq_integral {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (A X : 𝔸) (τ : ℝ) :
+theorem expSMulConj_sub_eq_integral {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸) (τ : ℝ) :
     expSMulConj A X τ - X = ∫ s in 0..τ, expSMulConj A ⁅A, X⁆ s := by
   have hderiv : ∀ x ∈ Set.uIcc (0 : ℝ) τ,
       HasDerivAt (fun s => expSMulConj A X s) (expSMulConj A ⁅A, X⁆ x) x :=
@@ -97,8 +100,8 @@ theorem expSMulConj_sub_eq_integral {𝔸 : Type*} [NormedRing 𝔸] [NormedAlge
 
 /-- The `j`-th iterated derivative of `τ ↦ expSMulConj A X τ` is
 `τ ↦ expSMulConj A (adPow A j X) τ`. -/
-lemma iteratedDeriv_expSMulConj {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (A X : 𝔸) (j : ℕ) :
+lemma iteratedDeriv_expSMulConj {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸) (j : ℕ) :
     iteratedDeriv j (fun τ => expSMulConj A X τ) = fun τ => expSMulConj A (adPow A j X) τ := by
   induction j with
   | zero => simp [iteratedDeriv_zero]
@@ -108,8 +111,8 @@ lemma iteratedDeriv_expSMulConj {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra 
       rw [(expSMulConj_hasDerivAt A (adPow A j X) t).deriv, ad_pow_succ]
 
 /-- The `j`-th iterated derivative of `τ ↦ expSMulConj A X τ` at `0` is `adPow A j X`. -/
-theorem iteratedDeriv_expSMulConj_zero {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (A X : 𝔸) (j : ℕ) :
+theorem iteratedDeriv_expSMulConj_zero {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸) (j : ℕ) :
     iteratedDeriv j (fun τ => expSMulConj A X τ) 0 = adPow A j X := by
   rw [iteratedDeriv_expSMulConj]; simp [expSMulConj]
 
@@ -125,8 +128,8 @@ lemma taylor_poly_zero {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
 /-- Single-layer Taylor expansion (theory.tex:137-150):
 `expSMulConj A X τ = Σ_{j<p} adPow A j X τ^j/j! +
   ∫₀^τ expSMulConj A (adPow A p X) (τ-s) s^{p-1}/(p-1)!`. -/
-theorem expSMulConj_taylor {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (A X : 𝔸) (p : ℕ) (τ : ℝ) (hp : 1 ≤ p) :
+theorem expSMulConj_taylor {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸) (p : ℕ) (τ : ℝ) (hp : 1 ≤ p) :
     expSMulConj A X τ =
       (∑ j ∈ Finset.range p, (Nat.factorial j : ℝ)⁻¹ • (adPow A j X) * (τ ^ j : 𝔸))
       + ∫ s in 0..τ, expSMulConj A (adPow A p X) (τ - s) *
@@ -215,9 +218,10 @@ theorem norm_expSMulConj_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 
               _ = ‖Y‖ * Real.exp (2 * |t| * ‖A‖) := by ring_nf
 
 /-- Conjugation by the exponential of a skew-adjoint element preserves the norm. -/
-lemma norm_expSMulConj_eq_of_skewAdjoint {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [StarModule ℝ 𝔸]
-    [CompleteSpace 𝔸] (A X : 𝔸) (hskew : star A = -A) (u : ℝ) :
+lemma norm_expSMulConj_eq_of_skewAdjoint {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+    [StarRing 𝔸] [CStarRing 𝔸] [StarModule ℝ 𝔸]
+    (A X : 𝔸) (hskew : star A = -A) (u : ℝ) :
     ‖expSMulConj A X u‖ = ‖X‖ := by
   unfold expSMulConj
   rw [CStarRing.norm_mul_mem_unitary _ (exp_smul_mem_unitary_of_skewAdjoint hskew (-u)),
@@ -283,5 +287,60 @@ noncomputable def expSMulConjLin {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra
   toFun := fun X => expSMulConj A X τ
   map_add' _ _ := by unfold expSMulConj; noncomm_ring
   map_smul' _ _ := by simp [expSMulConj]
+
+end TrotterError
+
+namespace TrotterError
+
+open NormedSpace
+
+/-- A two-sided contraction bound for the exponential makes left multiplication isometric.
+The hypothesis applies to all real parameters, including negative ones. -/
+theorem norm_exp_smul_mul_eq_of_le_one {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸)
+    (hA : ∀ t : ℝ, ‖exp (t • A)‖ ≤ 1) (t : ℝ) :
+    ‖exp (t • A) * X‖ = ‖X‖ := by
+  have hinv : exp ((-t) • A) * exp (t • A) = 1 := by
+    simpa only [neg_smul] using exp_neg_mul_self (t • A)
+  apply le_antisymm
+  · calc
+      ‖exp (t • A) * X‖ ≤ ‖exp (t • A)‖ * ‖X‖ := norm_mul_le _ _
+      _ ≤ 1 * ‖X‖ := mul_le_mul_of_nonneg_right (hA t) (norm_nonneg X)
+      _ = ‖X‖ := one_mul _
+  · calc
+      ‖X‖ = ‖exp ((-t) • A) * (exp (t • A) * X)‖ := by
+        rw [← mul_assoc, hinv, one_mul]
+      _ ≤ ‖exp ((-t) • A)‖ * ‖exp (t • A) * X‖ := norm_mul_le _ _
+      _ ≤ 1 * ‖exp (t • A) * X‖ :=
+        mul_le_mul_of_nonneg_right (hA (-t)) (norm_nonneg _)
+      _ = ‖exp (t • A) * X‖ := one_mul _
+
+/-- A two-sided contraction bound for the exponential makes right multiplication isometric. -/
+theorem norm_mul_exp_smul_eq_of_le_one {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸)
+    (hA : ∀ t : ℝ, ‖exp (t • A)‖ ≤ 1) (t : ℝ) :
+    ‖X * exp (t • A)‖ = ‖X‖ := by
+  have hinv : exp (t • A) * exp ((-t) • A) = 1 := by
+    simpa only [neg_smul] using exp_mul_neg_self (t • A)
+  apply le_antisymm
+  · calc
+      ‖X * exp (t • A)‖ ≤ ‖X‖ * ‖exp (t • A)‖ := norm_mul_le _ _
+      _ ≤ ‖X‖ * 1 := mul_le_mul_of_nonneg_left (hA t) (norm_nonneg X)
+      _ = ‖X‖ := mul_one _
+  · calc
+      ‖X‖ = ‖(X * exp (t • A)) * exp ((-t) • A)‖ := by
+        rw [mul_assoc, hinv, mul_one]
+      _ ≤ ‖X * exp (t • A)‖ * ‖exp ((-t) • A)‖ := norm_mul_le _ _
+      _ ≤ ‖X * exp (t • A)‖ * 1 :=
+        mul_le_mul_of_nonneg_left (hA (-t)) (norm_nonneg _)
+      _ = ‖X * exp (t • A)‖ := mul_one _
+
+/-- Two-sided exponential bounds give an isometric conjugation in a normed algebra. -/
+theorem norm_expSMulConj_eq_of_le_one {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸)
+    (hA : ∀ t : ℝ, ‖exp (t • A)‖ ≤ 1) (t : ℝ) :
+    ‖expSMulConj A X t‖ = ‖X‖ := by
+  rw [expSMulConj, norm_mul_exp_smul_eq_of_le_one A _ hA (-t),
+    norm_exp_smul_mul_eq_of_le_one A X hA t]
 
 end TrotterError

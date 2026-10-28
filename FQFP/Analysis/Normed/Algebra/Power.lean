@@ -64,12 +64,8 @@ lemma norm_pow_sub_pow_le_of_le (x y : A) {X Y d : ℝ}
 /-- A noncommutative square difference is controlled by the difference of its inputs. -/
 lemma norm_sq_sub_sq_le {𝔸 : Type*} [NormedRing 𝔸] (x y : 𝔸) :
     ‖x ^ 2 - y ^ 2‖ ≤ (‖x‖ + ‖y‖) * ‖x - y‖ := by
-  rw [show x ^ 2 - y ^ 2 = x * (x - y) + (x - y) * y by noncomm_ring]
-  calc _ ≤ ‖x * (x - y)‖ + ‖(x - y) * y‖ := norm_add_le _ _
-       _ ≤ ‖x‖ * ‖x - y‖ + ‖x - y‖ * ‖y‖ :=
-         add_le_add (norm_mul_le _ _) (norm_mul_le _ _)
-       _ = _ := by
-         ring
+  simpa [sum_range_succ, add_comm, mul_comm] using
+    norm_pow_sub_pow_le_of_le x y le_rfl le_rfl le_rfl 1
 
 /-! ### Homogeneous polynomial corrections -/
 

@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.CommutatorExpansion
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.OrderCondition
 import FQFP.Analysis.Calculus.ListProd
@@ -31,6 +32,8 @@ The ordering-removal estimates bound the multinomial-weighted conjugation scalin
 -/
 
 @[expose] public section
+
+open scoped RealScalar
 
 namespace TrotterError
 
@@ -399,7 +402,7 @@ lemma commutatorRemainder_isBigO {s} [NormedAlgebra ℚ 𝔸]
 /-- `thm:trotter_error_order_cond` cancellation step (theory.tex:258-264): under the order condition
 `P.IsOrderOf p H`, the additive kernel is exactly the difference of the commutator remainders. -/
 lemma additiveKernel_eq_commutatorRemainder_sum
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸] [CompleteSpace 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H) (τ : ℝ) :
     additiveKernel P H τ =
       (∑ i : Fin Υ × Fin Γ,

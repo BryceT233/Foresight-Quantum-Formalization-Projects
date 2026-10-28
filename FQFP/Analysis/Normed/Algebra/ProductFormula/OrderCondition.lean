@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import FQFP.Analysis.ODE.TimeOrderedExpDeriv
 public import FQFP.Analysis.Normed.Algebra.InverseAsymptotics
 public import FQFP.Analysis.SpecialFunctions.Integrals.Monomial
@@ -32,6 +33,8 @@ The general power-order, Taylor and evolution calculus is supplied by independen
 
 @[expose] public section
 
+open scoped RealScalar
+
 namespace TrotterError
 
 open Asymptotics
@@ -50,7 +53,7 @@ section ErrorOrderCond
 open NormedSpace
 
 /-- Every value of the product formula `𝒮(τ)` is a unit (a product of unit exponentials). -/
-lemma isUnit_eval [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+lemma isUnit_eval [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (H : Fin Γ → 𝔸) (τ : ℝ) :
     IsUnit (P.eval H τ) := by
   unfold ProductFormulaData.eval
@@ -61,8 +64,8 @@ lemma isUnit_eval [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpa
       exact (isUnit_exp (τ • P.generator H i)).mul ih
 
 /-- The additive error, factored: `𝒮(t) − e^{tH} = e^{tH} ∫₀ᵗ e^{−τH} 𝒮(τ) 𝒯(τ) dτ`. -/
-lemma eval_sub_exp_eq_exp_mul_integral [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ 𝔸]
-    [CompleteSpace 𝔸] (H : Fin Γ → 𝔸) (t : ℝ) :
+lemma eval_sub_exp_eq_exp_mul_integral [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+    (H : Fin Γ → 𝔸) (t : ℝ) :
     P.eval H t - exp (t • ∑ γ, H γ) =
       exp (t • ∑ γ, H γ) * ∫ τ in 0..t,
         (exp ((-τ) • ∑ γ, H γ) * P.eval H τ) * additiveKernel P H τ := by
@@ -92,8 +95,8 @@ lemma eval_sub_exp_eq_exp_mul_integral [NormedAlgebra ℝ 𝔸] [NormedAlgebra �
 
 /-- `thm:error_order_cond`, additive part: the additive-kernel order condition `𝒯 = O(τ^p)` is
 equivalent to the `p`-th order condition `𝒮(t) = e^{tH} + O(t^{p+1})`. -/
-lemma errorOrderCond_additive_iff [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ 𝔸]
-    [CompleteSpace 𝔸] (p : ℕ) (H : Fin Γ → 𝔸) :
+lemma errorOrderCond_additive_iff [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+    (p : ℕ) (H : Fin Γ → 𝔸) :
     P.IsOrderOf p H ↔
       (fun τ => ‖additiveKernel P H τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) := by
   let K : ℝ → 𝔸 := fun τ => (exp ((-τ) • ∑ γ, H γ) * P.eval H τ) * additiveKernel P H τ
@@ -170,8 +173,8 @@ lemma errorOrderCond_additive_iff [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ �
 
 /-- `thm:error_order_cond`, exponentiated part: the exponentiated-error order condition
 `ℰ = O(τ^p)` is equivalent to the `p`-th order condition. -/
-lemma errorOrderCond_exponentiated_iff [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ 𝔸]
-    [CompleteSpace 𝔸] (p : ℕ) (H : Fin Γ → 𝔸) :
+lemma errorOrderCond_exponentiated_iff [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+    (p : ℕ) (H : Fin Γ → 𝔸) :
     P.IsOrderOf p H ↔
       (fun τ => ‖exponentiatedError P H τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) := by
   let F : ℝ → 𝔸 := fun τ => (∑ γ, H γ) + exponentiatedError P H τ
@@ -208,8 +211,8 @@ lemma errorOrderCond_exponentiated_iff [NormedAlgebra ℝ 𝔸] [NormedAlgebra �
 
 /-- `thm:error_order_cond`, multiplicative part: the multiplicative-error order condition
 `ℳ = O(t^{p+1})` is equivalent to the `p`-th order condition. -/
-lemma errorOrderCond_multiplicative_iff [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ 𝔸]
-    [CompleteSpace 𝔸] (p : ℕ) (H : Fin Γ → 𝔸) :
+lemma errorOrderCond_multiplicative_iff [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+    (p : ℕ) (H : Fin Γ → 𝔸) :
     P.IsOrderOf p H ↔
       (fun t => ‖multiplicativeError P H t‖) =O[𝓝 (0 : ℝ)] (fun t => t ^ (p + 1)) := by
   have hmul : ∀ t, P.eval H t - exp (t • ∑ γ, H γ) =
@@ -245,8 +248,8 @@ lemma errorOrderCond_multiplicative_iff [NormedAlgebra ℝ 𝔸] [NormedAlgebra 
 /-- `thm:error_order_cond` (order.tex:124): the additive (`𝒯 = O(τ^p)`), exponentiated
 (`ℰ = O(τ^p)`), and multiplicative (`ℳ = O(t^{p+1})`) order conditions are all equivalent to the
 `p`-th order condition `𝒮(t) = e^{tH} + O(t^{p+1})`. -/
-theorem errorOrderCond_iff [NormedAlgebra ℝ 𝔸] [NormedAlgebra ℚ 𝔸]
-    [CompleteSpace 𝔸] (p : ℕ) (H : Fin Γ → 𝔸) :
+theorem errorOrderCond_iff [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+    (p : ℕ) (H : Fin Γ → 𝔸) :
     List.TFAE [P.IsOrderOf p H,
       (fun τ => ‖additiveKernel P H τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p),
       (fun τ => ‖exponentiatedError P H τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p),

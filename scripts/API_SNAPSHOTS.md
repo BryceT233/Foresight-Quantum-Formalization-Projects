@@ -61,8 +61,9 @@ the actual private destination when one old module splits into several files:
 the recorded primary destination is not a claim that every helper moved there.
 The checked-in declaration map also records the four generated proof helpers
 moved when generic polynomial degree bounds were split out of the Lie module.
-The original private support-bound theorem stays in the Lie module as a wrapper;
-its identity is deliberately not mapped to the new public theorem.
+The redundant private support-bound wrapper was subsequently removed when the
+Lie bracket degree bound was merged into `Algebra.Lie.Polynomial`. Its removal
+must be reviewed as an intentional deletion, not mapped to a public declaration.
 The dagger-category split maps its generated `HasKernels` proof helper explicitly
 to `CategoryTheory.Dagger.Kernels`; other private helpers remain in the primary
 destinations. Monoidal, braided, scalar and state declarations retain their
@@ -82,6 +83,22 @@ final destinations; this preserves the comparator's one-pass rename semantics
 when a declaration has moved in more than one refactoring round.
 Overlapping rename rules are applied once, longest match first; identity
 collisions fail closed. Review every reported removal or registration change.
+
+The coefficient and Lie-polynomial consolidation removes two import paths:
+`RingTheory.PowerSeries.Noncommutative.ExponentialProductCoefficients` is now
+part of `RingTheory.PowerSeries.Noncommutative.Coefficients`, and
+`Algebra.Lie.PolynomialDegree` is now part of `Algebra.Lie.Polynomial`.
+All paths are relative to `FQFP`. Public declaration names stay unchanged;
+the module map redirects both recent and historical private identities directly
+to the final module. Moving individual lemmas from retained modules is recorded
+with exact declaration mappings when their generated helpers also move.
+
+The Suzuki naming pass records declaration renames and their generated helpers in
+`api_migrations.json`. The `fiveStageStrang*` family counts Strang
+blocks; `binaryQuinticCommutator*` describes the redundant degree-five family.
+`suzukiQuinticCoeffUpperBound` stores coefficient bounds, while
+`suzukiFourthOrderCommutatorBoundWeight` stores the published comparison weights.
+The definitions retain their formulas, assumptions and existing namespaces.
 
 ## Regression tests for the tools
 

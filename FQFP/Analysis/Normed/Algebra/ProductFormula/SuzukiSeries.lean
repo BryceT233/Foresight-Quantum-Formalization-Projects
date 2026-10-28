@@ -25,7 +25,7 @@ through degree five. The quotient tables use the same letter scale.
 
 ## Main results
 
-* `sum_expListLogCoeff_suzuki5_eq`: the finite logarithm through degree five.
+* `sum_expListLogCoeff_fiveStageStrang_eq`: the finite logarithm through degree five.
 -/
 
 @[expose] public noncomputable section
@@ -259,8 +259,8 @@ private lemma eval_tablePow (t : ParamTable) (n : ℕ) :
 
 private lemma eval_argumentTables :
     (argumentTables.map fun t ↦ (60 : ℝ) • E t) =
-      suzuki5Arguments a b p 1 := by
-  norm_num [argumentTables, parameterLetters, CoeffWordTable.eval, suzuki5Arguments,
+      fiveStageStrangArguments a b p 1 := by
+  norm_num [argumentTables, parameterLetters, CoeffWordTable.eval, fiveStageStrangArguments,
     smul_mul_assoc, mul_smul_comm, smul_smul]
   repeat' constructor
   all_goals module
@@ -275,7 +275,7 @@ private lemma eval_tableBracket (s t : ParamTable) :
 
 private lemma eval_childsTables (i : Fin 8) :
     E (childsTables i) =
-      childsComm ((120 : ℝ)⁻¹ • a) ((120 : ℝ)⁻¹ • b) i := by
+      binaryQuinticCommutator ((120 : ℝ)⁻¹ • a) ((120 : ℝ)⁻¹ • b) i := by
   fin_cases i <;> dsimp [childsTables]
   all_goals
     simp only [eval_tableBracket, CoeffWordTable.eval_singleton, List.map_cons, List.map_nil,
@@ -290,13 +290,13 @@ private lemma eval_betaTables (i : Fin 8) :
       smul_mul_assoc, smul_smul]
   all_goals module
 
-private lemma childsComm_smul (a b : A) (c : ℝ) (i : Fin 8) :
-    childsComm (c • a) (c • b) i = c ^ 5 • childsComm a b i := by
+private lemma binaryQuinticCommutator_smul (a b : A) (c : ℝ) (i : Fin 8) :
+    binaryQuinticCommutator (c • a) (c • b) i = c ^ 5 • binaryQuinticCommutator a b i := by
   have hbracket (x y : A) (r s : ℝ) :
       (r • x) * (s • y) - (s • y) * (r • x) = (r * s) • (x * y - y * x) := by
     simp only [smul_mul_smul_comm, smul_sub]
     rw [mul_comm s r]
-  unfold childsComm
+  unfold binaryQuinticCommutator
   split <;> simp only [Ring.lie_def, hbracket] <;> congr 1 <;> ring
 
 private lemma eval_targetTable_five :
@@ -306,7 +306,7 @@ private lemma eval_targetTable_five :
   unfold suzukiQuinticTerm
   apply sum_congr rfl
   intro i hi
-  rw [CoeffWordTable.eval_mul, eval_betaTables, eval_childsTables, childsComm_smul,
+  rw [CoeffWordTable.eval_mul, eval_betaTables, eval_childsTables, binaryQuinticCommutator_smul,
     smul_mul_smul_comm, one_mul]
   congr 1
   norm_num
@@ -346,7 +346,7 @@ private lemma eval_tableExp (ts : List ParamTable) (n : ℕ) :
 
 private lemma eval_tablePower (k n : ℕ) (hn : n ≤ 5) :
     E (tablePower k n) =
-      positivePowerCoeff (expListTerm (suzuki5Arguments a b p 1)) k n := by
+      positivePowerCoeff (expListTerm (fiveStageStrangArguments a b p 1)) k n := by
   induction k generalizing n with
   | zero => by_cases h : n = 0 <;>
       simp [tablePower, positivePowerCoeff, h, CoeffWordTable.eval_unit,
@@ -361,7 +361,7 @@ private lemma eval_tablePower (k n : ℕ) (hn : n ≤ 5) :
 
 private lemma eval_tableLog (n : ℕ) (hn : n ≤ 5) :
     E (tableLog n) =
-      (60 : ℝ) • expListLogCoeff (suzuki5Arguments a b p 1) n := by
+      (60 : ℝ) • expListLogCoeff (fiveStageStrangArguments a b p 1) n := by
   rw [tableLog, eval_collect, expListLogCoeff, smul_sum, CoeffWordTable.eval_flatMap_range]
   apply sum_congr rfl
   intro k hk
@@ -373,7 +373,7 @@ private lemma eval_tableLog (n : ℕ) (hn : n ≤ 5) :
   interval_cases k <;> norm_num [logWeights, logCoeff]
 
 private lemma log_coefficient_eq_target (hp : IsSuzukiCubic p) (n : Fin 6) :
-    expListLogCoeff (suzuki5Arguments a b p 1) n = E (targetTable n) := by
+    expListLogCoeff (fiveStageStrangArguments a b p 1) n = E (targetTable n) := by
   have hz := CoeffWordTable.eval_eq_zero_of_all (Int.castRingHom ℝ)
     (parameterLetters a b p) (residualTable n) (coefficients_match n)
   rw [residualTable, eval_collect, CoeffWordTable.eval_append, CoeffWordTable.eval_append,
@@ -384,27 +384,36 @@ private lemma log_coefficient_eq_target (hp : IsSuzukiCubic p) (n : Fin 6) :
   change suzukiCubicCoeff p = 0 at hp
   rw [hp, zero_smul, zero_mul, smul_zero, add_zero] at hz
   norm_num only [map_neg, map_ofNat, neg_smul] at hz
-  have heq : (60 : ℝ) • expListLogCoeff (suzuki5Arguments a b p 1) n =
+  have heq : (60 : ℝ) • expListLogCoeff (fiveStageStrangArguments a b p 1) n =
       (60 : ℝ) • E (targetTable n) := by
     simpa only [add_neg_eq_zero] using hz
   exact (smul_right_injective A (by norm_num : (60 : ℝ) ≠ 0)) heq
 
 end Semantics
 
-private lemma suzuki5Arguments_smul {A : Type*} [Ring A] [Algebra ℝ A]
-    (a b : A) (p t : ℝ) :
-    suzuki5Arguments a b p t = (suzuki5Arguments a b p 1).map (fun x ↦ t • x) := by
-  simp [suzuki5Arguments, smul_smul, mul_comm]
+/-- The individual formal logarithm coefficients through degree five. This
+statement includes the zero slots, rather than only their finite sum. -/
+theorem expListLogCoeff_fiveStageStrang_through_five
+    {A : Type*} [Ring A] [Algebra ℚ A] [Algebra ℝ A] (a b : A) (p : ℝ)
+    (hp : IsSuzukiCubic p) (n : Fin 6) :
+    expListLogCoeff (fiveStageStrangArguments a b p 1) n =
+      if n = 1 then a + b else if n = 5 then suzukiQuinticTerm a b p else 0 := by
+  rw [log_coefficient_eq_target a b p hp n]
+  fin_cases n
+  · simp [targetTable, CoeffWordTable.eval]
+  · norm_num [targetTable, parameterLetters, CoeffWordTable.eval, smul_smul]
+  · simp [targetTable, CoeffWordTable.eval]
+  · simp [targetTable, CoeffWordTable.eval]
+  · simp [targetTable, CoeffWordTable.eval]
+  · simpa using eval_targetTable_five a b p
 
 /-- **Quintic Suzuki matching**: cubic cancellation leaves the linear term and the
-source Childs quintic polynomial through degree five. -/
-theorem sum_expListLogCoeff_suzuki5_eq {A : Type*} [Ring A] [Algebra ℝ A]
+source binary quintic polynomial through degree five. -/
+theorem sum_expListLogCoeff_fiveStageStrang_eq {A : Type*} [Ring A] [Algebra ℚ A] [Algebra ℝ A]
     (a b : A) (p t : ℝ) (hp : IsSuzukiCubic p) :
-    letI : Algebra ℚ A := .restrictScalars ℚ ℝ A
-    (∑ d ∈ range 6, expListLogCoeff (suzuki5Arguments a b p t) d) =
+    (∑ d ∈ range 6, expListLogCoeff (fiveStageStrangArguments a b p t) d) =
       t • (a + b) + t ^ 5 • suzukiQuinticTerm a b p := by
-  let : Algebra ℚ A := .restrictScalars ℚ ℝ A
-  rw [suzuki5Arguments_smul]
+  rw [fiveStageStrangArguments_smul]
   simp only [expListLogCoeff_smul]
   calc
     _ = ∑ d ∈ range 6, t ^ d •

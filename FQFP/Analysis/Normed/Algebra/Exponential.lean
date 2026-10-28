@@ -19,6 +19,7 @@ These estimates form a common analytic foundation for BCH and product-formula er
 ## Main results
 
 * `norm_exp_le`: the exponential norm is bounded by the real exponential of the norm.
+* `norm_sub_sum_le_real_exp_tail`: a factorial coefficient bound controls a series tail.
 * `norm_exp_sub_sum_le`: the Taylor remainder is bounded by the scalar exponential tail.
 * `real_exp_sub_sum_le_geometric`: a factorial-geometric bound for every scalar tail.
 * `norm_exp_mul_exp_sub_one_le`: a product estimate independent of convergence thresholds.
@@ -105,20 +106,32 @@ lemma hasSum_real_exp_tail (r : ℝ) (k : ℕ) :
 
 /-! ### Bounds for the exponential series -/
 
+/-- A factorial coefficient majorant controls every tail of a convergent homogeneous series. -/
+lemma norm_sub_sum_le_real_exp_tail {B : Type*} [NormedAddCommGroup B]
+    (u : ℕ → B) (p : B) (s : ℝ) (ht : HasSum u p)
+    (hu : ∀ n, ‖u n‖ ≤ s ^ n / Nat.factorial n) (n : ℕ) :
+    ‖p - ∑ i ∈ range n, u i‖ ≤
+      Real.exp s - ∑ i ∈ range n, s ^ i / Nat.factorial i := by
+  have heq : p - ∑ i ∈ range n, u i = ∑' k, u (k + n) := by
+    have h := ht.summable.sum_add_tsum_nat_add n
+    rw [ht.tsum_eq] at h
+    exact sub_eq_iff_eq_add.mpr (by simpa only [add_comm] using h.symm)
+  rw [heq]
+  refine tsum_of_norm_bounded ?_ fun k ↦ hu (k + n)
+  simpa only [div_eq_inv_mul] using hasSum_real_exp_tail s n
+
+/-- The parametrized exponential remainder bound: the tail of the exponential series after
+the first `n` terms is bounded by the corresponding tail of the real exponential series. -/
+theorem norm_exp_sub_sum_le [NormOneClass 𝔸] (x : 𝔸) (n : ℕ) :
+    ‖exp x - ∑ i ∈ range n, (Nat.factorial i : ℚ)⁻¹ • x ^ i‖
+      ≤ Real.exp ‖x‖ - ∑ i ∈ range n, ‖x‖ ^ i / Nat.factorial i :=
+  norm_sub_sum_le_real_exp_tail _ _ _
+    (exp_series_hasSum_exp' (𝕂 := ℚ) x) (norm_exp_term_le x) n
+
 /-- `‖exp x - 1‖ ≤ Real.exp ‖x‖ - 1` in any complete normed algebra. -/
 theorem norm_exp_sub_one_le [NormOneClass 𝔸] (x : 𝔸) :
     ‖exp x - 1‖ ≤ Real.exp ‖x‖ - 1 := by
-  have hsumm : Summable fun n : ℕ => (Nat.factorial n : ℚ)⁻¹ • x ^ n := expSeries_summable' x
-  have h0 : (Nat.factorial 0 : ℚ)⁻¹ • x ^ 0 = (1 : 𝔸) := by simp
-  have hsub : exp x - 1 = ∑' n : ℕ, (Nat.factorial (n + 1) : ℚ)⁻¹ • x ^ (n + 1) := by
-    rw [exp_eq_tsum_rat]
-    beta_reduce
-    rw [hsumm.tsum_eq_zero_add, h0, add_sub_cancel_left]
-  rw [hsub]
-  refine tsum_of_norm_bounded ?_ fun n => norm_exp_term_le x (n + 1)
-  convert hasSum_real_exp_tail ‖x‖ 1 using 2
-  · rw [inv_mul_eq_div]
-  · simp
+  simpa using norm_exp_sub_sum_le x 1
 
 /-- The distance from a product of exponentials to `1` is bounded by the scalar exponential
 at the sum of the norms, minus `1`. -/
@@ -154,33 +167,10 @@ theorem norm_exp_sub_one_lt_one [NormOneClass 𝔸] (a : 𝔸) (ha : ‖a‖ < R
   have h := norm_exp_mul_exp_sub_one_lt_one a (0 : 𝔸) (by simpa using ha)
   simpa [exp_zero] using h
 
-/-- The parametrized exponential remainder bound: the tail of the exponential series after
-the first `n` terms is bounded by the corresponding tail of the real exponential series. -/
-theorem norm_exp_sub_sum_le [NormOneClass 𝔸] (x : 𝔸) (n : ℕ) :
-    ‖exp x - ∑ i ∈ range n, (Nat.factorial i : ℚ)⁻¹ • x ^ i‖
-      ≤ Real.exp ‖x‖ - ∑ i ∈ range n, ‖x‖ ^ i / Nat.factorial i := by
-  have hsumm : Summable fun i : ℕ => (Nat.factorial i : ℚ)⁻¹ • x ^ i := expSeries_summable' x
-  have hsub : exp x - ∑ i ∈ range n, (Nat.factorial i : ℚ)⁻¹ • x ^ i
-      = ∑' k : ℕ, (Nat.factorial (k + n) : ℚ)⁻¹ • x ^ (k + n) := by
-    rw [exp_eq_tsum_rat]
-    beta_reduce
-    rw [← hsumm.sum_add_tsum_nat_add n]
-    abel
-  rw [hsub]
-  refine tsum_of_norm_bounded ?_ fun k => norm_exp_term_le x (k + n)
-  have hfin : ∑ i ∈ range n, ‖x‖ ^ i / Nat.factorial i
-      = ∑ i ∈ range n, (Nat.factorial i : ℝ)⁻¹ * ‖x‖ ^ i :=
-    sum_congr rfl fun i _ => by rw [div_eq_inv_mul]
-  convert hasSum_real_exp_tail ‖x‖ n using 2
-  rw [inv_mul_eq_div]
-
 /-! ### Taylor remainders of the real exponential
 
-The third-order remainder of `Real.exp` on `[0, 1)`, in the two forms the BCH estimates consume:
-a `1/(1 - r)`-shaped one valid on `[0, 1)`, and the polynomial `r³` one valid on `[0, 5/6)` — the
-latter is the shape appearing in the cubic and higher-order BCH bounds, which is why it carries the
-numerically convenient threshold `5/6` rather than the sharp `1`. Both come from the termwise
-bound `1/k! ≤ 1/6` for `k ≥ 3`.
+A factorial-geometric majorant controls every real exponential tail on `[0, 1)`.
+Its low-order specializations give polynomial bounds on smaller intervals.
 
 These are statements about `Real.exp` alone, so they carry no algebra variables. -/
 
@@ -292,7 +282,8 @@ lemma real_exp_sub_one_pow_le_of_le {s t : ℝ} (hs : 0 ≤ s) (hst : s ≤ t)
 
 The low-order cases of `norm_exp_sub_sum_le` written in the form every caller uses: the remainder
 after subtracting `1 + x` (resp. `1 + x + x²/2`). These are the second- and third-order inputs of
-the BCH estimates in `BCHElement.lean` and `BCHCommutator.lean`. -/
+the BCH estimates in `FQFP.Analysis.Normed.Algebra.BCH.Basic` and
+`FQFP.Analysis.Normed.Algebra.BCH.Commutator`. -/
 
 section ExpRemainder
 
@@ -302,17 +293,7 @@ variable [NormOneClass 𝔸]
 `‖exp x - 1 - x‖ ≤ Real.exp ‖x‖ - 1 - ‖x‖`. -/
 theorem norm_exp_sub_one_sub_id_le (x : 𝔸) :
     ‖exp x - 1 - x‖ ≤ Real.exp ‖x‖ - 1 - ‖x‖ := by
-  have h := norm_exp_sub_sum_le x 2
-  have hsum : (∑ i ∈ Finset.range 2, (Nat.factorial i : ℚ)⁻¹ • x ^ i) = 1 + x := by
-    rw [Finset.sum_range_succ, Finset.sum_range_one]
-    norm_num
-  have hsum' : (∑ i ∈ Finset.range 2, ‖x‖ ^ i / (Nat.factorial i : ℝ)) = 1 + ‖x‖ := by
-    rw [Finset.sum_range_succ, Finset.sum_range_one]
-    norm_num
-  rw [hsum, hsum'] at h
-  rw [show exp x - (1 + x) = exp x - 1 - x by abel] at h
-  refine h.trans_eq ?_
-  ring
+  simpa [sum_range_succ, Nat.factorial, sub_add_eq_sub_sub] using norm_exp_sub_sum_le x 2
 
 /-- The error after the linear part of a product of two exponentials is bounded by the
 quadratic scalar exponential remainder at the sum of the norms. -/
@@ -339,20 +320,7 @@ theorem norm_exp_mul_exp_sub_one_sub_add_le (a b : 𝔸) :
 `‖exp x - 1 - x - x²/2‖ ≤ Real.exp ‖x‖ - 1 - ‖x‖ - ‖x‖²/2`. -/
 theorem norm_exp_sub_one_sub_id_sub_sq_le (x : 𝔸) :
     ‖exp x - 1 - x - (2 : ℚ)⁻¹ • x ^ 2‖ ≤ Real.exp ‖x‖ - 1 - ‖x‖ - ‖x‖ ^ 2 / 2 := by
-  have h := norm_exp_sub_sum_le x 3
-  have hsum : (∑ i ∈ Finset.range 3, (Nat.factorial i : ℚ)⁻¹ • x ^ i)
-      = 1 + x + (2 : ℚ)⁻¹ • x ^ 2 := by
-    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
-    norm_num
-  have hsum' : (∑ i ∈ Finset.range 3, ‖x‖ ^ i / (Nat.factorial i : ℝ))
-      = 1 + ‖x‖ + ‖x‖ ^ 2 / 2 := by
-    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
-    norm_num
-  rw [hsum, hsum'] at h
-  rw [show exp x - (1 + x + (2 : ℚ)⁻¹ • x ^ 2) = exp x - 1 - x - (2 : ℚ)⁻¹ • x ^ 2 by
-    abel] at h
-  refine h.trans_eq ?_
-  ring
+  simpa [sum_range_succ, Nat.factorial, sub_add_eq_sub_sub] using norm_exp_sub_sum_le x 3
 
 /-- The exponential Taylor error is bounded by the corresponding real tail. -/
 lemma norm_exp_sub_cubic_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]

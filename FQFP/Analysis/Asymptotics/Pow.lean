@@ -34,8 +34,7 @@ open scoped Topology BigOperators
 
 variable {𝔸 : Type*} [NormedRing 𝔸]
 
-/-- For `|τ| ≤ 1` in a neighborhood of `0`, the function `|τ|^n` is bounded by `|τ|^m` whenever
-`m ≤ n`. -/
+/-- The absolute value is at most one in a neighborhood of zero. -/
 lemma eventually_abs_le_one_nhds_zero : ∀ᶠ τ in 𝓝 (0 : ℝ), |τ| ≤ 1 := by
   refine Filter.mem_of_superset
     (Metric.closedBall_mem_nhds (0 : ℝ) (by norm_num : 0 < (1 : ℝ))) ?_
@@ -56,39 +55,24 @@ theorem orderCond_add (F G : ℝ → 𝔸) (p q : ℕ)
     (hF : (fun τ => ‖F τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p))
     (hG : (fun τ => ‖G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ q)) :
     (fun τ => ‖F τ + G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ min p q) := by
-  have htri : (fun τ => ‖F τ + G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => ‖F τ‖ + ‖G τ‖) := by
-    refine Filter.Eventually.isBigO ?_
-    filter_upwards with τ
-    simpa [Real.norm_eq_abs] using (norm_add_le (F τ) (G τ))
-  have hsum : (fun τ => ‖F τ‖ + ‖G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => |τ| ^ p + |τ| ^ q) := by
-    simpa [Real.norm_eq_abs, norm_pow] using hF.add_add hG
-  have hlast : (fun τ => |τ| ^ p + |τ| ^ q) =O[𝓝 (0 : ℝ)] (fun τ => |τ| ^ min p q) := by
-    have hp : (fun τ => |τ| ^ p) =O[𝓝 (0 : ℝ)] (fun τ => |τ| ^ min p q) :=
+  have hp : (fun τ : ℝ => τ ^ p) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ min p q) := by
+    simpa only [← Real.norm_eq_abs, ← norm_pow, isBigO_norm_left, isBigO_norm_right] using
       isBigO_abs_pow_abs_pow_of_le (Nat.min_le_left p q)
-    have hq : (fun τ => |τ| ^ q) =O[𝓝 (0 : ℝ)] (fun τ => |τ| ^ min p q) :=
+  have hq : (fun τ : ℝ => τ ^ q) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ min p q) := by
+    simpa only [← Real.norm_eq_abs, ← norm_pow, isBigO_norm_left, isBigO_norm_right] using
       isBigO_abs_pow_abs_pow_of_le (Nat.min_le_right p q)
-    exact hp.add hq
-  have hbig : (fun τ => ‖F τ‖ + ‖G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => |τ| ^ min p q) :=
-    hsum.trans hlast
-  have hres : (fun τ => ‖F τ + G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => |τ| ^ min p q) :=
-    htri.trans hbig
-  have hres' : (fun τ => ‖F τ + G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => ‖τ ^ min p q‖) := by
-    simpa [Real.norm_eq_abs, norm_pow] using hres
-  exact isBigO_norm_right.mp hres'
+  exact isBigO_norm_left.mpr
+    (((isBigO_norm_left.mp hF).trans hp).add ((isBigO_norm_left.mp hG).trans hq))
 
 /-- Multiplication rule (order.tex:81): `F = O(τ^p)` and `G = O(τ^q)` imply
 `F * G = O(τ^{p+q})`. -/
 theorem orderCond_mul (F G : ℝ → 𝔸) (p q : ℕ)
     (hF : (fun τ => ‖F τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p))
     (hG : (fun τ => ‖G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ q)) :
-    (fun τ => ‖F τ * G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ (p + q)) := by
-  have htri : (fun τ => ‖F τ * G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => ‖F τ‖ * ‖G τ‖) := by
-    refine Filter.Eventually.isBigO ?_
-    filter_upwards with τ
-    simpa [Real.norm_eq_abs] using (norm_mul_le (F τ) (G τ))
-  have hbig : (fun τ => ‖F τ‖ * ‖G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ (p + q)) :=
-    (hF.mul hG).congr_right (fun τ => (pow_add τ p q).symm)
-  exact htri.trans hbig
+    (fun τ => ‖F τ * G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ (p + q)) :=
+  isBigO_norm_left.mpr
+    (((isBigO_norm_left.mp hF).mul (isBigO_norm_left.mp hG)).congr_right
+      (fun τ => (pow_add τ p q).symm))
 
 /-- A continuous function is `O(1)` at `0` (bounded in a neighbourhood of `0`). -/
 lemma isBigO_norm_one_of_continuous {F : ℝ → 𝔸} (hF : Continuous F) :

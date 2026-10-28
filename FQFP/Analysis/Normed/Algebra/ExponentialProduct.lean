@@ -43,20 +43,6 @@ lemma factorial_convolution (x y : ℝ) (n : ℕ) :
   rw [← Nat.cast_smul_eq_nsmul ℝ, smul_eq_mul, ← h, Nat.cast_add_choose]
   field_simp
 
-/-- A factorial coefficient majorant controls every tail of a convergent homogeneous series. -/
-lemma norm_sub_sum_le_real_exp_tail {B : Type*} [NormedAddCommGroup B]
-    (u : ℕ → B) (p : B) (s : ℝ) (ht : HasSum u p)
-    (hu : ∀ n, ‖u n‖ ≤ s ^ n / Nat.factorial n) (n : ℕ) :
-    ‖p - ∑ i ∈ range n, u i‖ ≤
-      Real.exp s - ∑ i ∈ range n, s ^ i / Nat.factorial i := by
-  have heq : p - ∑ i ∈ range n, u i = ∑' k, u (k + n) := by
-    have h := ht.summable.sum_add_tsum_nat_add n
-    rw [ht.tsum_eq] at h
-    exact sub_eq_iff_eq_add.mpr (by simpa only [add_comm] using h.symm)
-  rw [heq]
-  refine tsum_of_norm_bounded ?_ fun k ↦ hu (k + n)
-  simpa only [div_eq_inv_mul] using hasSum_real_exp_tail s n
-
 /-- Uniform power-truncation errors control the corresponding finite logarithm. -/
 lemma norm_logPartialSum_sub_sum_positivePowerTrunc_le_of_pow
     {B : Type*} [NormedRing B] [NormedAlgebra ℚ B]

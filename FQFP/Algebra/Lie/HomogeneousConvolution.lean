@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.Algebra.Lie.PolynomialDegree
+public import FQFP.Algebra.Lie.Polynomial
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Tactic.Linarith
 

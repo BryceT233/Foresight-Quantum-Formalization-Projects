@@ -5,14 +5,20 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.Algebra.Polynomial.Module.Calculus
+public import FQFP.Algebra.Polynomial.Module.Degree
 public import Mathlib.Algebra.Lie.OfAssociative
 
 /-!
 # Convolution brackets on Lie-valued polynomials
 
 The bilinear convolution bracket commutes with evaluation and Lie homomorphisms.
-Its finite-support formula connects the bracket with coefficientwise degree bounds.
+Its finite-support formula shows that the bracket adds coefficientwise degree bounds.
+
+## Main results
+
+* `PolynomialModule.eval_lieBracket`: evaluation preserves the bracket.
+* `PolynomialModule.map_lieBracket`: Lie homomorphisms preserve the bracket.
+* `PolynomialModule.DegreeLE.lieBracket`: the bracket adds degree bounds.
 -/
 
 @[expose] public noncomputable section
@@ -86,5 +92,15 @@ theorem lieBracket_eq_sum (p q : PolynomialModule ℚ L) :
   simp only [lieBracket, lift, LinearMap.comp_apply,
     Finsupp.lsum_apply, Finsupp.sum, LinearMap.sum_apply]
   rfl
+
+/-- A convolution bracket adds the auxiliary polynomial degree bounds. -/
+theorem DegreeLE.lieBracket {p q : PolynomialModule ℚ L} {m n : ℕ}
+    (hp : DegreeLE p m) (hq : DegreeLE q n) : DegreeLE (lieBracket p q) (m + n) := by
+  rw [lieBracket_eq_sum]
+  apply degreeLE_sum
+  intro i hi
+  apply degreeLE_sum
+  intro j hj
+  exact degreeLE_single _ (Nat.add_le_add (hp.le_of_mem_support hi) (hq.le_of_mem_support hj))
 
 end PolynomialModule

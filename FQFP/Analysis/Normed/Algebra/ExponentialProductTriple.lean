@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.RingTheory.PowerSeries.Noncommutative.ExponentialProductCoefficients
+public import FQFP.RingTheory.PowerSeries.Noncommutative.Coefficients
 public import FQFP.Analysis.Normed.Algebra.ExponentialProduct
 
 /-!

@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import FQFP.Analysis.Normed.Algebra.ExponentialConjugation
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.Commutator
 import FQFP.Analysis.Calculus.ListProd
@@ -35,6 +36,8 @@ of its remainder (theory.tex:184-249).
 -/
 
 @[expose] public section
+
+open scoped RealScalar
 
 namespace TrotterError
 
@@ -350,8 +353,8 @@ lemma commutatorRemainderTerm_last {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedA
 
 /-- The single `j`-th Taylor remainder of the outermost conjugation, expanded over the
 `finAntidiagonal s j` fibers and matched against the outermost-layer `commutatorRemainderTerm`s. -/
-lemma expSMulConj_taylor_remainder_conjCoeff {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (A : Fin (s + 1) → 𝔸) (B : 𝔸) (p j : ℕ) (τ : ℝ) :
+lemma expSMulConj_taylor_remainder_conjCoeff {s} {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A : Fin (s + 1) → 𝔸) (B : 𝔸) (p j : ℕ) (τ : ℝ) :
     (∫ u in 0..τ, expSMulConj (A (Fin.last s))
         (adPow (A (Fin.last s)) (p - j) (conjCoeff (fun i : Fin s => A i.castSucc) B j)) (τ - u) *
         ((u ^ (p - j - 1) / (Nat.factorial (p - j - 1) : ℝ)) : 𝔸)) * (τ ^ j : 𝔸)
@@ -444,7 +447,7 @@ lemma expSMulConj_taylor_remainder_conjCoeff {s} {𝔸 : Type*} [NormedRing 𝔸
 
 /-- Summing the single-layer Taylor remainders over `j < p` and reindexing by the antidiagonal
 fiber gives the outermost-layer part of `commutatorRemainder`. -/
-lemma taylor_remainder_sum {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+lemma taylor_remainder_sum {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (A : Fin (s + 1) → 𝔸) (B : 𝔸) (p : ℕ) (τ : ℝ) :
     (∑ j ∈ range p,
         (∫ u in 0..τ, expSMulConj (A (Fin.last s))
@@ -473,7 +476,7 @@ lemma taylor_remainder_sum {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra �
 
 /-- The single-layer Taylor expansion of `expSMulConj A' (Σ_{j<p} C_j · τ^j) τ`, split into the
 reassembled polynomial `Σ_{m<p} conjCoeff A B m · τ^m` plus the outermost-layer remainder. -/
-lemma expSMulConj_taylor_poly {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+lemma expSMulConj_taylor_poly {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (A : Fin (s + 1) → 𝔸) (B : 𝔸) (p : ℕ) (τ : ℝ) :
     expSMulConj (A (Fin.last s))
         (∑ j ∈ range p, conjCoeff (fun i : Fin s => A i.castSucc) B j * (τ ^ j : 𝔸)) τ
@@ -514,8 +517,9 @@ lemma expSMulConj_taylor_poly {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebr
 /-- `thm:comm_exp_conj` (theory.tex:222-236): the multi-layer conjugation expands as
 `multiConj A B τ = Σ_{j < p} conjCoeff A B j · τ^j + commutatorRemainder A B p τ`,
 where the `conjCoeff A B j` are the operators `C_j` independent of `τ`. -/
-theorem commutatorExpansion_conj {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] {s : ℕ} (A : Fin s → 𝔸) (B : 𝔸) (p : ℕ) (τ : ℝ) (hp : 1 ≤ p) :
+theorem commutatorExpansion_conj {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] {s : ℕ} (A : Fin s → 𝔸) (B : 𝔸)
+    (p : ℕ) (τ : ℝ) (hp : 1 ≤ p) :
     multiConj A B τ =
       (∑ j ∈ Finset.range p, conjCoeff A B j * (τ ^ j : 𝔸)) + commutatorRemainder A B p τ := by
   induction s with
@@ -686,8 +690,8 @@ lemma norm_conj_smul_integral_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra
 /-- For `0 ≤ τ` and `u ∈ [0, -τ]`, the absorbed conjugation `e^{τA} e^{uA} X e^{-uA}` has norm
 at most `‖X‖ · e^{τ‖A‖}`: the two inner exponentials `e^{(τ+u)A}` and `e^{-uA}` telescope to a
 single factor of `τ`. -/
-lemma norm_exp_mul_expSMulConj_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸] (A X : 𝔸) (τ u : ℝ) (hτ : 0 ≤ τ)
+lemma norm_exp_mul_expSMulConj_le {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸] (A X : 𝔸) (τ u : ℝ) (hτ : 0 ≤ τ)
     (hu : u ∈ Set.uIcc (0 : ℝ) (-τ)) :
     ‖exp (τ • A) * expSMulConj A X u‖ ≤ ‖X‖ * Real.exp (τ * ‖A‖) := by
   have hu' : u ∈ Set.uIcc (-τ) (0 : ℝ) := by simpa [Set.uIcc_comm] using hu
@@ -730,8 +734,9 @@ lemma norm_exp_mul_expSMulConj_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebr
 /-- The norm of the integral of the *absorbed* conjugation `e^{τA} e^{uA} X e^{-uA}` times the
 scalar `(-τ-u)^(q-1) (-τ)^m / D` is bounded by `‖X‖ |τ|^(q+m)/(q·D) e^{τ‖A‖}` — one factor of
 `τ` instead of the naive `2|τ|`. -/
-lemma norm_absorbed_conj_smul_integral_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸] (A X : 𝔸) (q m : ℕ) (D : ℝ)
+lemma norm_absorbed_conj_smul_integral_le {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+    [NormOneClass 𝔸] (A X : 𝔸) (q m : ℕ) (D : ℝ)
     (hq : 1 ≤ q) (hD : 0 < D) (τ : ℝ) (hτ : 0 ≤ τ) :
     ‖∫ u in 0..(-τ), (((-τ - u) ^ (q - 1) * (-τ) ^ m / D) : ℝ) •
         (exp (τ • A) * expSMulConj A X u)‖ ≤
@@ -808,8 +813,9 @@ lemma ofFn_take_succ_prod {s : ℕ} {𝔸 : Type*} [Monoid 𝔸] (f : Fin s → 
 
 /-- The telescoping `(∏_k e^{τA_k}) · (e^{-τA_{s-1}} ⋯ e^{-τA_{j+1}}) = e^{τA_0} ⋯ e^{τA_j}`: the
 outer exponential factors beyond layer `j` cancel against the reversed dropped suffix. -/
-lemma prod_exp_mul_drop_reverse_telescope {s : ℕ} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] (A : Fin s → 𝔸) (j : Fin s) (τ : ℝ) :
+lemma prod_exp_mul_drop_reverse_telescope {s : ℕ} {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+    (A : Fin s → 𝔸) (j : Fin s) (τ : ℝ) :
     (List.ofFn (fun k : Fin s => exp (τ • A k))).prod *
       (((List.ofFn (fun k : Fin s => exp (-τ • A k))).drop ((j : ℕ) + 1)).reverse).prod
       = ((List.ofFn (fun k : Fin s => exp (τ • A k))).take ((j : ℕ) + 1)).prod := by
@@ -1047,7 +1053,7 @@ lemma coeff_eq_multinomial_div_factorial {j p : ℕ} (q : Fin (j + 1) → ℕ) (
 `L · (∏_k e^{τA_k}) · commutatorRemainderTerm A B (-τ) j q` telescopes to a single exponential
 `exp(|τ| (C + Σ_k ‖A_k‖))`, with `‖L‖ ≤ exp(|τ| C)`. -/
 lemma norm_mul_commutatorRemainderTerm_le {s : ℕ} {𝔸 : Type*} [NormedRing 𝔸]
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (A : Fin s → 𝔸) (B : 𝔸) (L : 𝔸) (C : ℝ) (p : ℕ) (j : Fin s) (q : Fin (j + 1) → ℕ)
     (τ : ℝ) (hτ : 0 ≤ τ) (hq : q ∈ finAntidiagonal (j + 1) p) (hlast : q (Fin.last j) ≠ 0)
     (hL : ‖L‖ ≤ Real.exp (|τ| * C)) :
@@ -1369,9 +1375,10 @@ theorem norm_commutatorRemainder_le {s} {𝔸 : Type*} [NormedRing 𝔸] [Normed
         norm_commutatorRemainderTerm_le A B p τ j q (mem_filter.mp hq).1 (mem_filter.mp hq).2)
 
 /-- The product of the norms of skew-exponentials `exp (τ • A i)` is at most `1`. -/
-lemma norm_ofFn_drop_prod_le_one_of_skewAdjoint {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
-    [StarModule ℝ 𝔸] [CompleteSpace 𝔸] (A : Fin s → 𝔸) (hskew : ∀ i, star (A i) = -A i)
+lemma norm_ofFn_drop_prod_le_one_of_skewAdjoint {s} {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+    [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸]
+    [StarModule ℝ 𝔸] (A : Fin s → 𝔸) (hskew : ∀ i, star (A i) = -A i)
     (k : ℕ) (τ : ℝ) :
     (((List.ofFn (fun i : Fin s => exp (τ • A i))).drop k).map (fun x : 𝔸 => ‖x‖)).prod ≤ 1 := by
   have hle : ∀ i ∈ (List.ofFn (fun i : Fin s => i)).drop k, ‖exp (τ • A i)‖ ≤ 1 := by
@@ -1402,9 +1409,10 @@ lemma norm_ofFn_drop_prod_le_one_of_skewAdjoint {s} {𝔸 : Type*} [NormedRing �
 
 /-- The norm of the integral in one skew-adjoint remainder summand is bounded by
 `‖X‖ · |τ|^(q+m) / (q · D)` (no exponential factor). -/
-lemma norm_conj_smul_integral_le_of_skew {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
-    [NormedAlgebra ℝ 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
-    [StarModule ℝ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸) (hskew : star A = -A) (q m : ℕ) (D : ℝ)
+lemma norm_conj_smul_integral_le_of_skew {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+    [StarRing 𝔸] [CStarRing 𝔸]
+    [StarModule ℝ 𝔸] (A X : 𝔸) (hskew : star A = -A) (q m : ℕ) (D : ℝ)
     (hq : 1 ≤ q) (hD : 0 < D) (τ : ℝ) :
     ‖∫ u in 0..τ, (((τ - u) ^ (q - 1) * τ ^ m / D) : ℝ) • (expSMulConj A X u)‖ ≤
       ‖X‖ * |τ| ^ (q + m) / ((q : ℝ) * D) := by
@@ -1414,8 +1422,8 @@ lemma norm_conj_smul_integral_le_of_skew {𝔸 : Type*} [NormedRing 𝔸] [Norme
 
 /-- The norm bound of a single remainder summand in the skew-adjoint case. -/
 lemma norm_commutatorRemainderTerm_le_of_skewAdjoint {s} {𝔸 : Type*} [NormedRing 𝔸]
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
-    [Nontrivial 𝔸] [StarModule ℝ 𝔸] [CompleteSpace 𝔸] (A : Fin s → 𝔸) (B : 𝔸) (p : ℕ)
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
+    [Nontrivial 𝔸] [StarModule ℝ 𝔸] (A : Fin s → 𝔸) (B : 𝔸) (p : ℕ)
     (τ : ℝ) (hskew : ∀ i, star (A i) = -A i) (j : Fin s) (q : Fin (j + 1) → ℕ)
     (hq : q ∈ finAntidiagonal (j + 1) p) (hlast : q (Fin.last j) ≠ 0) :
     ‖commutatorRemainderTerm A B τ j q‖ ≤
@@ -1479,8 +1487,8 @@ lemma norm_commutatorRemainderTerm_le_of_skewAdjoint {s} {𝔸 : Type*} [NormedR
 /-- The spectral-norm bound of the commutator remainder for anti-Hermitian operators
 (theory.tex:242-244). -/
 theorem norm_commutatorRemainder_le_of_skewAdjoint {s} {𝔸 : Type*} [NormedRing 𝔸]
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
-    [Nontrivial 𝔸] [StarModule ℝ 𝔸] [CompleteSpace 𝔸] (A : Fin s → 𝔸) (B : 𝔸) (p : ℕ) (τ : ℝ)
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
+    [Nontrivial 𝔸] [StarModule ℝ 𝔸] (A : Fin s → 𝔸) (B : 𝔸) (p : ℕ) (τ : ℝ)
     (hskew : ∀ i, star (A i) = -A i) :
     ‖commutatorRemainder A B p τ‖ ≤ αCommConj A B p * |τ| ^ p / (Nat.factorial p : ℝ) := by
   simpa only [one_mul, mul_one] using

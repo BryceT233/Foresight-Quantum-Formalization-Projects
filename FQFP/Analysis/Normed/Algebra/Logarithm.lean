@@ -13,7 +13,7 @@ public import Mathlib.Analysis.Calculus.SmoothSeries
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 
-import FQFP.Analysis.Normed.Algebra.RealScalar
+public import FQFP.Analysis.Normed.Algebra.RealScalar
 
 /-!
 # Analysis of the Banach-algebra logarithm
@@ -40,6 +40,8 @@ Imported from `FQFP.RingTheory.PowerSeries.Noncommutative.Coefficients`.
 -/
 
 @[expose] public section
+
+open scoped RealScalar
 
 open FormalMultilinearSeries Filter NormedSpace Topology
 open scoped ENNReal
@@ -280,9 +282,9 @@ differentiation below. -/
 
 section BallReal
 
-variable [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
+variable [NormedRing 𝔸]
 
-variable [CompleteSpace 𝔸] in
+variable [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] in
 /-- **`log (1 + x)` is the sum of the `ℝ`-series inside its ball of convergence.** Counterpart of
 `logSeries_hasSum_log_one_add_of_mem_ball`, specialized to real scalars. -/
 theorem logSeries_hasSum_log_one_add_of_mem_ball_real (x : 𝔸)
@@ -290,13 +292,13 @@ theorem logSeries_hasSum_log_one_add_of_mem_ball_real (x : 𝔸)
     HasSum (fun n => logSeries ℝ 𝔸 n fun _ => x) (log (1 + x)) :=
   logSeries_hasSum_log_one_add_of_mem_ball x hx
 
-variable [NormOneClass 𝔸] in
+variable [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸] in
 /-- Any point of the open unit ball lies inside the radius of convergence, over `ℝ`. -/
 theorem mem_eball_logSeries_radius_real {x : 𝔸} (hx : ‖x‖ < 1) :
     x ∈ Metric.eball (0 : 𝔸) (logSeries ℝ 𝔸).radius := by
   rwa [mem_eball_zero_iff, logSeries_radius_eq_one_real, ← ofReal_norm, ENNReal.ofReal_lt_one]
 
-variable [CompleteSpace 𝔸] [NormOneClass 𝔸] in
+variable [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸] in
 /-- **`x ↦ log (1 + x)` is the sum of `logSeries ℝ 𝔸` at `0`.** -/
 theorem hasFPowerSeriesOnBall_log_one_add_real :
     HasFPowerSeriesOnBall (fun y : 𝔸 => log (1 + y)) (logSeries ℝ 𝔸) 0 1 := by
@@ -531,6 +533,8 @@ private lemma summable_logTerm_deriv_bound (x : 𝔸) {r : ℝ} (hr : 0 < r) (hr
   ((summable_geometric_of_lt_one (mul_nonneg hr.le (norm_nonneg x)) hrx).mul_left
     ‖x‖).congr fun n => by ring
 
+section
+
 variable [NormedAlgebra ℝ 𝔸]
 
 /-- **The log series along the curve `s ↦ s • x` as an explicit `tsum`.**
@@ -590,7 +594,9 @@ private lemma norm_hasDerivAt_logTerm_le (x : 𝔸) (n : ℕ) {r : ℝ} {t : ℝ
         mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (abs_nonneg t) htabs.le n)
           (pow_nonneg (norm_nonneg x) (n + 1))
 
-variable [CompleteSpace 𝔸]
+end
+
+variable [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
 
 /-- **The derivative series cancels the factor `1 + t • x` on the right.** -/
 private lemma log_one_add_smul_deriv_mul (x : 𝔸) (t : ℝ) (ht : |t| * ‖x‖ < 1) :
@@ -650,8 +656,6 @@ private lemma hasDerivAt_log_one_add_smul_tsum (x : 𝔸) (t : ℝ) (ht : |t| * 
 
 end ExpLogDerivative
 
-variable [NormedAlgebra ℚ 𝔸]
-
 /-- **The chain rule for `exp` along a curve whose increment commutes with the value.**
 
 Writing `exp (f s) = exp (f t) * exp (f s - f t)` reduces the derivative of `exp ∘ f` to the
@@ -685,7 +689,6 @@ The ODE/constancy argument: `Q t = exp (-(log (1 + t • x))) * (1 + t • x)` h
 `Q' = 0`, because the derivative of `log (1 + t • x)` is the `tsum` whose product with `1 + t • x`
 is `x` (`geom_series_mul_neg`). -/
 theorem exp_log_one_add (x : 𝔸) (hx : ‖x‖ < 1) : exp (log (1 + x)) = 1 + x := by
-  have : NormedAlgebra ℝ 𝔸 := normedAlgebraReal 𝔸
   suffices h : exp (-(log (1 + x))) * (1 + x) = 1 by
     apply (isUnit_exp (-log (1 + x))).mul_left_cancel
     rw [TrotterError.exp_neg_mul_self, h]
@@ -792,7 +795,6 @@ Only two inputs are used: the
 /-- **`log (exp a) = a` for `‖a‖ < log 2`**: the logarithm inverts the exponential on the ball
 where the BCH series converges. -/
 theorem log_exp_of_norm_lt (a : 𝔸) (ha : ‖a‖ < Real.log 2) : log (exp a) = a := by
-  have : NormedAlgebra ℝ 𝔸 := normedAlgebraReal 𝔸
   set h : ℝ → 𝔸 := fun t => log (1 + (exp (t • a) - 1)) - t • a with hh_def
   suffices h1 : h 1 = 0 by
     simp only [hh_def] at h1

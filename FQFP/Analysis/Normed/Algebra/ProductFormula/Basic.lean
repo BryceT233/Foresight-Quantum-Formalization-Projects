@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 import FQFP.Analysis.Calculus.ListProd
 public import Mathlib.Analysis.Asymptotics.Defs
@@ -441,8 +442,10 @@ lemma norm_eval_eq_one_of_skewAdjoint
     ‖P.eval H t‖ = 1 :=
   CStarRing.norm_of_mem_unitary (P.eval_mem_unitary_of_skewAdjoint H hskew t)
 
+open scoped RealScalar
+
 /-- The `k`-th iterated derivative of a single factor `P.evalFactor H i`. -/
-lemma evalFactor_iteratedDeriv [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+lemma evalFactor_iteratedDeriv [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (H : Fin Γ → 𝔸) (i : Fin Υ × Fin Γ) (k : ℕ) (t : ℝ) :
     iteratedDeriv k (fun t : ℝ => P.evalFactor H i t) t =
       P.generator H i ^ k * P.evalFactor H i t := by
@@ -451,7 +454,7 @@ lemma evalFactor_iteratedDeriv [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
 
 /-- The `(p + 1)`-st iterated derivative of `eval`, expanded as a multinomial Leibniz sum over
 multi-indices on `Fin Υ × Fin Γ` (the paper's `𝒮^{(p+1)}(ut)` expansion, prelim.tex:174–178). -/
-theorem eval_iteratedDeriv_succ [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+theorem eval_iteratedDeriv_succ [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (t : ℝ) :
     iteratedDeriv (p + 1) (fun t : ℝ => P.eval H t) t =
       ∑ q ∈ piAntidiag (univ : Finset (Fin Υ × Fin Γ)) (p + 1),
@@ -590,7 +593,7 @@ lemma sum_norm_prod (H : Fin Γ → 𝔸) :
 /-- The `(p + 1)`-st iterated derivative norm bound (prelim.tex:182–185):
 `‖𝒮^{(p+1)}(ut)‖ ≤ (Υ · Σ_γ ‖H_γ‖)^{p+1} · Real.exp (t · Υ · Σ_γ ‖H_γ‖)`. -/
 theorem eval_iteratedDeriv_norm_le
-    [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
     (H : Fin Γ → 𝔸) (p : ℕ) (u t : ℝ)
     (ht : 0 ≤ t) (hu0 : 0 ≤ u) (hu1 : u ≤ 1) :
     ‖iteratedDeriv (p + 1) (fun s : ℝ => P.eval H s) (u * t)‖ ≤
@@ -866,12 +869,14 @@ variable {Υ Γ : ℕ}
 variable {𝔸 : Type*} [NormedRing 𝔸]
 variable (P : ProductFormulaData Υ Γ)
 
+open scoped RealScalar
+
 /-! ### The Lie-Trotter and Suzuki formulas (`prelim.tex:127-146`) -/
 
 /-- The first-order Lie-Trotter formula `∏_{γ=1}^Γ e^{t K_γ} = e^{t K_{Γ-1}} ⋯ e^{t K_0}` (the
 paper's `∏_{γ=1}^Γ A_γ = A_Γ ⋯ A_1` convention, in 0-based `Fin Γ`), defined by peeling the
 innermost (rightmost) factor `K 0`. -/
-noncomputable def lieTrotter {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+noncomputable def lieTrotter {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     {Γ : ℕ} (K : Fin Γ → 𝔸) (t : ℝ) : 𝔸 :=
   match Γ with
   | 0 => 1
@@ -941,7 +946,7 @@ lemma lieTrotterData_eval_eq [NormedSpace ℝ 𝔸] (H : Fin Γ → 𝔸) (t : �
   simp [ProductFormulaData.evalFactor, ProductFormulaData.generator]
 
 /-- `lieTrotter` equals the reversed `finRange` product. -/
-lemma lieTrotter_eq_prod [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+lemma lieTrotter_eq_prod [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (K : Fin Γ → 𝔸) (t : ℝ) :
     lieTrotter K t = (((List.finRange Γ).reverse).map (fun γ => exp (t • K γ))).prod := by
   induction Γ with
@@ -956,7 +961,7 @@ lemma lieTrotter_eq_prod [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
         Function.comp_def]
 
 /-- `lieTrotter` is `(lieTrotterData Γ).eval` (`prelim.tex:127,142`). -/
-theorem lieTrotter_eq_eval [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+theorem lieTrotter_eq_eval [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (K : Fin Γ → 𝔸) (t : ℝ) : lieTrotter K t = (lieTrotterData Γ).eval K t := by
   rw [lieTrotter_eq_prod, lieTrotterData_eval_eq]
 

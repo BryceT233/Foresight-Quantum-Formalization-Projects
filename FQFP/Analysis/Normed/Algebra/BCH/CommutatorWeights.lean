@@ -10,50 +10,21 @@ public import Mathlib.Analysis.Normed.Algebra.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 /-!
-# Weighted norms of four-fold commutators
+# Norm sums of binary quintic commutators
 
-The eight nested commutators `[X₁, [X₂, [X₃, [B, A]]]]` with `Xᵢ ∈ {A, B}` that Childs
-enumerates for weight-5 elements of the free Lie algebra on `{A, B}`, used for Suzuki S₄ BCH
-bounds are imported from the algebraic layer. This file defines their weighted norm sums.
+The eight right-nested degree-five commutators are imported from the algebraic layer.
+This file defines their unit-weight norm sum, the displayed two-summand weights from
+Childs et al., Appendix J, Proposition J.1, and rational upper bounds for the absolute
+Suzuki quintic coefficients at the standard parameter.
 
-## Contents
+The family is redundant. With zero-based `Fin 8` indices, Jacobi identifies entries
+`1` and `2`, and entries `5` and `6`. The reduced Suzuki representation sets coefficients
+`2` and `6` to zero. These are a commutator family and bound weights, not a basis or
+optimal coefficients.
 
-* `childsComm A B i`, `i : Fin 8` — the `i`-th commutator, a pattern match, so `childsComm A B i`
-  is the form every call site uses.
-* `childsComm_zero … childsComm_seven` — the eight branches, as `@[simp]` rewrite rules giving
-  the concrete bracket expression. They are needed because `childsComm` is a pattern match on
-  `Fin 8`: `unfold childsComm` leaves a *stuck* `match` on a literal index, and it is these
-  lemmas (or `rfl`) that discharge it.
-* `bchFourFoldSum A B = Σᵢ ‖childsComm A B i‖` — the unit-coefficient Level-2 RHS.
-* `childsPrefactors`, `bchTightPrefactors : Fin 8 → ℝ` — the two prefactor families, each with
-  its own `_nonneg` lemma. The weighted sum `Σᵢ γ i · ‖childsComm A B i‖` is written out where
-  it is used rather than named.
-
-## Provenance and design
-
-Ported from `Lean-BCH/BCH/ChildsBasis.lean`. That file defined a private helper
-`commBr X Y := X * Y - Y * X`, unrolled the eight commutators by hand as eight separate
-named `def`s, wrote every sum out as eight explicit terms `‖C₁‖ + ⋯ + ‖C₈‖`, and gave each
-prefactor structure eight separate `γᵢ` fields plus eight `nonnegᵢ` proof fields.
-
-None of that is necessary. `commBr` **is** Mathlib's associative-ring Lie bracket `⁅X, Y⁆`
-(`Ring.lie_def`), taken from Mathlib here. The eight commutators are one `Fin 8`-indexed
-object, so call sites write `childsComm A B i` and there are no numbered aliases to keep in
-sync. The sums are `Finset.sum` over `Fin 8`. A prefactor family is a plain function
-`Fin 8 → ℝ` with its own `_nonneg` lemma, rather than a structure bundling the two. Only the choice
-of which words appear and which constants are stored is new here.
-
-The **values** are unchanged: `childsPrefactors` and `bchTightPrefactors` carry the same
-constants as the source. Call sites that projected `γ.γ₁ … γ.γ₈` write `γ 0 … γ 7`.
-
-## Note on overcompleteness
-
-By Witt's formula the degree-5 component of the free Lie algebra on `{A, B}` has dimension
-`(1/5)·(2⁵ - 2) = 6`, while the enumeration has `2³ = 8` elements, so it is an over-complete
-spanning set admitting two Jacobi relations (between indices `2`/`3` and `6`/`7`). The
-eight-element form is retained because it is uniform to enumerate and symmetric under
-`A ↔ B`; the overcompleteness costs nothing in bound tightness since the projection used
-downstream has `β₃ = β₇ = 0`.
+The reference weights are stored as the exact rationals represented by the published
+decimals. Their local-error inequality is distinct from the quintic logarithm estimates
+proved using the coefficient upper bounds.
 -/
 
 @[expose] public section
@@ -69,69 +40,51 @@ attribute [local instance] LieRing.ofAssociativeRing
 
 variable {𝔸 : Type*} [NormedRing 𝔸]
 
-/-! ### The prefactors and the unit-coefficient sum
+/-! ### Weights and the unit-coefficient norm sum -/
 
-A prefactor family is just a function `Fin 8 → ℝ` weighting the eight commutator norms; there is no
-need to bundle it with its nonnegativity in a structure. `bchFourFoldSum` is the unit-coefficient
-weighted sum, named because it is the RHS that the Suzuki bounds quote; the two concrete families
-are `childsPrefactors` and `bchTightPrefactors`, each with its own nonnegativity lemma. -/
+/-- Sum of the norms of the eight binary quintic commutators, with unit weights. -/
+def binaryQuinticCommutatorNormSum (A B : 𝔸) : ℝ :=
+  ∑ i : Fin 8, ‖binaryQuinticCommutator A B i‖
 
-/-- Sum of the norms of the eight Childs four-fold commutators, with unit coefficients.
-This one *is* named, because it is the RHS that the Suzuki bounds quote. -/
-def bchFourFoldSum (A B : 𝔸) : ℝ :=
-  ∑ i : Fin 8, ‖childsComm A B i‖
-
-lemma bchFourFoldSum_nonneg (A B : 𝔸) : 0 ≤ bchFourFoldSum A B :=
+lemma binaryQuinticCommutatorNormSum_nonneg (A B : 𝔸) : 0 ≤ binaryQuinticCommutatorNormSum A B :=
   sum_nonneg fun _ _ => norm_nonneg _
 
-/-- Childs's heuristic prefactors (2021) — balanced-factoring values from the reference
-paper. -/
-def childsPrefactors : Fin 8 → ℝ :=
+/-- The displayed rational weights of the two-summand fourth-order Suzuki bound in
+Childs et al., Appendix J, Proposition J.1, in binary quintic commutator order. -/
+def suzukiFourthOrderCommutatorBoundWeight : Fin 8 → ℝ :=
   ![0.0047, 0.0057, 0.0046, 0.0074, 0.0097, 0.0097, 0.0173, 0.0284]
 
-lemma childsPrefactors_nonneg (i : Fin 8) : 0 ≤ childsPrefactors i := by
-  fin_cases i <;> norm_num [childsPrefactors]
+lemma suzukiFourthOrderCommutatorBoundWeight_nonneg (i : Fin 8) :
+    0 ≤ suzukiFourthOrderCommutatorBoundWeight i := by
+  fin_cases i <;> norm_num [suzukiFourthOrderCommutatorBoundWeight]
 
-/-- **BCH-derived tight prefactors** — rational ceilings of `|βᵢ(suzukiP)|` at the 1/10⁶ grid,
-where `βᵢ(p)` are the degree-2 polynomial coefficients from the CAS pipeline.
-
-At Suzuki `p = 1/(4 − 4^(1/3)) ≈ 0.4144908` the eight numerical `|βᵢ(suzukiP)|` values are
-`0.0002595, 0.0006624, 0, 0.0001317, 0.0003757, 0.0011272, 0, 0.0004416`. Ceilings at the
-1/10⁶ grid make `γᵢ ≥ |βᵢ(suzukiP)|` rigorous (slack ~10⁻⁷ per coefficient); a truncation at the
-same grid would fail the strict inequality.
-
-Every ceiling is strictly smaller than Childs's heuristic coefficient (~9× to ~64× tighter
-for the non-zero values). The Childs basis is over-complete (two free parameters, since the
-weight-5 free Lie algebra is 6-dimensional); `bchTightPrefactors` is the projection that sets
-both to zero, giving `γ₃ = γ₇ = 0`. -/
-noncomputable def bchTightPrefactors : Fin 8 → ℝ :=
+/-- Rational upper bounds for the absolute Suzuki quintic coefficients at `suzukiP`.
+The nonzero bounds round upward to the `1 / 10⁶` grid; indices `2` and `6` are zero.
+Componentwise domination is proved in `SuzukiQuinticBounds`. No optimality is claimed. -/
+noncomputable def suzukiQuinticCoeffUpperBound : Fin 8 → ℝ :=
   ![260 / 1000000, 663 / 1000000, 0, 132 / 1000000,
     376 / 1000000, 1128 / 1000000, 0, 442 / 1000000]
 
-lemma bchTightPrefactors_nonneg (i : Fin 8) : 0 ≤ bchTightPrefactors i := by
-  fin_cases i <;> norm_num [bchTightPrefactors]
+lemma suzukiQuinticCoeffUpperBound_nonneg (i : Fin 8) : 0 ≤ suzukiQuinticCoeffUpperBound i := by
+  fin_cases i <;> norm_num [suzukiQuinticCoeffUpperBound]
 
-/-! ### The weighted sum
-
-The weighted sum `∑ i, γ i * ‖childsComm A B i‖` is not bundled into a structure; the two facts
-needed downstream — nonnegativity, and domination by `bchFourFoldSum` for `bchTightPrefactors` — are
-recorded directly. -/
+/-! ### Weighted norm estimates -/
 
 /-- A weighted sum of commutator norms with nonnegative weights is nonnegative. -/
-theorem sum_mul_norm_childsComm_nonneg {γ : Fin 8 → ℝ} (hγ : ∀ i, 0 ≤ γ i) (A B : 𝔸) :
-    0 ≤ ∑ i : Fin 8, γ i * ‖childsComm A B i‖ :=
+theorem sum_mul_norm_binaryQuinticCommutator_nonneg {γ : Fin 8 → ℝ} (hγ : ∀ i, 0 ≤ γ i) (A B : 𝔸) :
+    0 ≤ ∑ i : Fin 8, γ i * ‖binaryQuinticCommutator A B i‖ :=
   sum_nonneg fun i _ => mul_nonneg (hγ i) (norm_nonneg _)
 
-/-- **The tight prefactors are dominated by the unit-coefficient sum**: the weighted sum
-`∑ i, bchTightPrefactors i * ‖childsComm A B i‖` is at most `bchFourFoldSum A B`, since every
-`γᵢ ≤ 1` in `bchTightPrefactors` (in fact `γᵢ ≪ 1`). -/
-theorem bchTightPrefactors_sum_mul_norm_le_bchFourFoldSum (A B : 𝔸) :
-    ∑ i : Fin 8, bchTightPrefactors i * ‖childsComm A B i‖ ≤ bchFourFoldSum A B :=
+/-- The coefficient upper bounds are at most one, so their weighted norm sum is bounded
+by the unit-weight binary quintic commutator norm sum. -/
+theorem suzukiQuinticCoeffUpperBound_sum_mul_norm_le_binaryQuinticCommutatorNormSum (A B : 𝔸) :
+    ∑ i : Fin 8, suzukiQuinticCoeffUpperBound i * ‖binaryQuinticCommutator A B i‖ ≤
+      binaryQuinticCommutatorNormSum A B :=
   sum_le_sum fun i _ => by
-    have h1 : bchTightPrefactors i ≤ 1 := by
-      fin_cases i <;> norm_num [bchTightPrefactors]
-    calc bchTightPrefactors i * ‖childsComm A B i‖
-        ≤ 1 * ‖childsComm A B i‖ := mul_le_mul_of_nonneg_right h1 (norm_nonneg _)
-      _ = ‖childsComm A B i‖ := one_mul _
+    have h1 : suzukiQuinticCoeffUpperBound i ≤ 1 := by
+      fin_cases i <;> norm_num [suzukiQuinticCoeffUpperBound]
+    calc suzukiQuinticCoeffUpperBound i * ‖binaryQuinticCommutator A B i‖
+        ≤ 1 * ‖binaryQuinticCommutator A B i‖ := mul_le_mul_of_nonneg_right h1 (norm_nonneg _)
+      _ = ‖binaryQuinticCommutator A B i‖ := one_mul _
 
 end FQFP.BCH

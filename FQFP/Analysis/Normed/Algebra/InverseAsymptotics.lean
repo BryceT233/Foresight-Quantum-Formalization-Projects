@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import FQFP.Analysis.Asymptotics.Pow
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 
@@ -20,6 +21,8 @@ A continuous function through a unit has a locally bounded pointwise ring invers
 
 @[expose] public section
 
+open scoped RealScalar
+
 namespace TrotterError
 
 open Asymptotics
@@ -29,7 +32,7 @@ variable {𝔸 : Type*} [NormedRing 𝔸]
 
 /-- If a continuous operator-valued function `U` is a unit at `0`, then its pointwise inverse
 `Ring.inverse (U τ)` is `O(1)` as `τ → 0`. -/
-lemma inverse_isBigO_one_of_continuous_unit [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+lemma inverse_isBigO_one_of_continuous_unit [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     {U : ℝ → 𝔸} (hU : Continuous U) (hU0 : IsUnit (U 0)) :
     (fun τ => ‖Ring.inverse (U τ)‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) := by
   have hcont : ContinuousAt (fun τ => Ring.inverse (U τ)) 0 :=

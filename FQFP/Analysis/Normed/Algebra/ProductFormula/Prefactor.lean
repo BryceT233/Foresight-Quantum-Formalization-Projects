@@ -401,7 +401,7 @@ private lemma lie_mul_neg_half_coe {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgeb
 
 /-- The `p = 2` specialization of the single-layer Taylor expansion:
 `expSMulConj A X τ = X + ⁅A, X⁆ * τ + ∫₀^τ expSMulConj A (adPow A 2 X) (τ-s) * s`. -/
-lemma expSMulConj_taylor_two {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+lemma expSMulConj_taylor_two {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (A X : 𝔸) (τ : ℝ) :
     expSMulConj A X τ = X + ⁅A, X⁆ * (τ : 𝔸) +
       ∫ s in 0..τ, expSMulConj A (adPow A 2 X) (τ - s) * (s : 𝔸) := by
@@ -415,8 +415,8 @@ lemma expSMulConj_taylor_two {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ
 
 /-- The second-order kernel is the difference of two `p = 2` Taylor remainders
 (prefactor.tex:63–68, anti-Hermitian-generator form). -/
-lemma secondOrderKernel_eq_remainder {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    [CompleteSpace 𝔸] (A B : 𝔸) (τ : ℝ) :
+lemma secondOrderKernel_eq_remainder {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A B : 𝔸) (τ : ℝ) :
     secondOrderKernel A B τ =
       (∫ s in 0..τ, expSMulConj B ((1 / 2 : ℝ) • adPow B 2 A) (τ - s) * (s : 𝔸))
       - (∫ s in 0..-(τ / 2), expSMulConj A (adPow A 2 B) ((-(τ / 2)) - s) * (s : 𝔸)) := by

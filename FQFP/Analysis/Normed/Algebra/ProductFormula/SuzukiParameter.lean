@@ -25,6 +25,7 @@ reals it has the unique solution `1 / (4 - 4^(1/3))`.
 * `isSuzukiCubic_suzukiP`: the canonical parameter satisfies the condition.
 * `isSuzukiCubic_iff_eq_suzukiP`: uniqueness over the reals.
 * `suzukiP_mem_rational_interval`: the source rational enclosure.
+* `suzukiP_mem_tight_rational_interval`: a certified fifteen-decimal enclosure.
 -/
 
 @[expose] public noncomputable section
@@ -87,6 +88,35 @@ theorem suzukiP_mem_rational_interval :
     rw [cube_root_four_cubed]
     norm_num
   have hhi : (4 : ℝ) ^ ((1 : ℝ) / 3) < 4 - 100000 / 41450 := by
+    apply (Odd.pow_lt_pow (by decide : Odd 3)).mp
+    rw [cube_root_four_cubed]
+    norm_num
+  constructor
+  · rw [suzukiP, lt_div_iff₀ hd]
+    linarith only [hlo]
+  · rw [suzukiP, div_lt_iff₀ hd]
+    linarith only [hhi]
+
+/-- The cubic relation in monic form over the rationals. -/
+theorem suzukiP_cubic_relation :
+    60 * suzukiP ^ 3 - 48 * suzukiP ^ 2 + 12 * suzukiP - 1 = 0 := by
+  have h := isSuzukiCubic_suzukiP
+  unfold IsSuzukiCubic suzukiCubicCoeff at h
+  nlinarith only [h]
+
+/-- A certified fifteen-decimal interval for the canonical Suzuki parameter. -/
+theorem suzukiP_mem_tight_rational_interval :
+    (414490771794375 : ℝ) / 10 ^ 15 < suzukiP ∧
+      suzukiP < (414490771794376 : ℝ) / 10 ^ 15 := by
+  have hd : 0 < 4 - (4 : ℝ) ^ ((1 : ℝ) / 3) := by
+    linarith only [cube_root_four_lt_two]
+  have hlo : (4 : ℝ) - 10 ^ 15 / 414490771794375 <
+      (4 : ℝ) ^ ((1 : ℝ) / 3) := by
+    apply (Odd.pow_lt_pow (by decide : Odd 3)).mp
+    rw [cube_root_four_cubed]
+    norm_num
+  have hhi : (4 : ℝ) ^ ((1 : ℝ) / 3) <
+      4 - 10 ^ 15 / 414490771794376 := by
     apply (Odd.pow_lt_pow (by decide : Odd 3)).mp
     rw [cube_root_four_cubed]
     norm_num

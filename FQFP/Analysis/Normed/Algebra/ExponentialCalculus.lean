@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import FQFP.Analysis.Calculus.Taylor
 public import FQFP.Analysis.Calculus.IteratedDeriv.ListProd
 public import FQFP.Algebra.Algebra.ScalarIdentities
@@ -21,6 +22,9 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 # Calculus of normed algebra exponentials
 
 Exponential derivatives, smoothness and skew-adjoint estimates in complete normed algebras.
+
+The real scalar action in the derivative statements is the canonical extension from `ℚ`.
+Use `open scoped RealScalar` when applying them to a complete normed `ℚ`-algebra.
 
 ## Main results
 
@@ -39,9 +43,13 @@ open Asymptotics
 open Finset
 open scoped Topology BigOperators ContDiff algebraMap
 
+section
+
+open scoped RealScalar
+
 /-- The `q`-th iterated derivative of `u ↦ exp (u • A)` is `u ↦ A^q * exp (u • A)`. -/
 theorem iteratedDeriv_exp_smul_const {𝔸 : Type*} [NormedRing 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] (A : 𝔸) (q : ℕ) :
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A : 𝔸) (q : ℕ) :
     iteratedDeriv q (fun u : ℝ => exp (u • A)) = fun u : ℝ => A ^ q * exp (u • A) := by
   induction q with
   | zero =>
@@ -54,19 +62,21 @@ theorem iteratedDeriv_exp_smul_const {𝔸 : Type*} [NormedRing 𝔸]
 
 /-- `u ↦ exp (u • A)` is `C^m` at every point. -/
 lemma contDiffAt_exp_smul_const {𝔸 : Type*} [NormedRing 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] (A : 𝔸) (m : ℕ) (t : ℝ) :
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A : 𝔸) (m : ℕ) (t : ℝ) :
     ContDiffAt ℝ m (fun u : ℝ => exp (u • A)) t :=
   (NormedSpace.exp_analytic (t • A)).contDiffAt.comp t
     (ContDiffAt.smul (f := fun u : ℝ => u) (g := fun _ : ℝ => A) contDiffAt_id contDiffAt_const)
 
 /-- `u ↦ exp (u • A)` is smooth. -/
 lemma contDiff_exp_smul_const {𝔸 : Type*} [NormedRing 𝔸]
-    [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] (A : 𝔸) :
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A : 𝔸) :
     ContDiff ℝ ∞ (fun t : ℝ => exp (t • A)) := by
   rw [contDiff_iff_contDiffAt]
   intro t
   exact ((NormedSpace.exp_analytic (t • A)).contDiffAt).comp t
     (ContDiffAt.smul (f := fun u : ℝ => u) (g := fun _ : ℝ => A) contDiffAt_id contDiffAt_const)
+
+end
 
 /-- The exponential of a real multiple of a skew-adjoint element is unitary. -/
 lemma exp_smul_mem_unitary_of_skewAdjoint {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
