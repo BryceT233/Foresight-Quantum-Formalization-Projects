@@ -336,6 +336,21 @@ lemma adSequence_sum {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] {s : ℕ} (A 
     adSequence A q (∑ γ : ι, H γ) = ∑ γ : ι, adSequence A q (H γ) := by
   simpa only [adSequenceLinear_apply] using map_sum (adSequenceLinear A q) H Finset.univ
 
+/-- Splitting off the innermost multiplicity first applies its iterated adjoint. -/
+lemma adSequence_cons {A : Type*} [Ring A] [Algebra ℝ A] {s : ℕ}
+    (Z : Fin (s + 1) → A) (q : Fin s → ℕ) (k : ℕ) (B : A) :
+    adSequence Z (Fin.cons k q) B =
+      adSequence (fun i ↦ Z i.succ) q (adPow (Z 0) k B) := by
+  rw [adSequence_eq_nestedCommOfList, adSequence_eq_nestedCommOfList]
+  have hlayers : layersOf Z (Fin.cons k q) =
+      List.replicate k (Z 0) ++ layersOf (fun i ↦ Z i.succ) q := by
+    simp only [layersOf, List.finRange_succ, List.flatMap_cons, List.flatMap_map,
+      Fin.cons_zero, Fin.cons_succ]
+  rw [hlayers, nestedCommOfList, List.foldl_append]
+  have hrepl := nestedCommOfList_append_replicate B (Z 0) [] k
+  simpa only [List.nil_append, nestedCommOfList, List.foldl_nil] using
+    congrArg (fun b ↦ (layersOf (fun i ↦ Z i.succ) q).foldl (fun b z ↦ ⁅z, b⁆) b) hrepl
+
 /-- Prepending a zero multiplicity shifts the layers: the innermost `f 0` contributes nothing and
 each `f (i.succ)` becomes the `i`-th layer. -/
 lemma layersOf_cons_zero {α : Type*} {s : ℕ} (f : Fin (s + 1) → α) (q : Fin s → ℕ) :

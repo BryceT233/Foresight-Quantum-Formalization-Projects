@@ -23,6 +23,12 @@ positions, and products of finite-index lists. No calculus is needed.
 
 namespace TrotterError.List
 
+/-- A finite sum commutes with summing a list, including repeated list entries. -/
+lemma sum_map_sum {ι κ M : Type*} [AddCommMonoid M]
+    (l : List ι) (s : Finset κ) (f : ι → κ → M) :
+    (l.map fun a ↦ ∑ k ∈ s, f a k).sum = ∑ k ∈ s, (l.map fun a ↦ f a k).sum := by
+  simpa using (Multiset.sum_map_sum (m := (l : Multiset ι)) (s := s) (f := f))
+
 /-! ### Products over sublists -/
 
 /-- The product over `l.drop k` splits as `f (l.get k)` times the product over `l.drop (k + 1)`. -/

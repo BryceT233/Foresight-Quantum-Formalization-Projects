@@ -34,6 +34,7 @@ and is odd when both logarithms lie in the local injectivity ball.
 * `exp_fiveStageStrangLog`: the local exponential/logarithm round trip.
 * `fiveStageStrangLog_neg`: local oddness of the logarithm.
 * `fiveStageStrangProduct_eq_strangBlock_prod`: the five-block factorization.
+* `fiveStageStrangProduct_eq_exp_of_commute`: exactness for commuting generators.
 * `log_strangBlock_eq_symmetricBch`: the local symmetric BCH representation of a Strang block.
 * `fiveStageStrangLog_neg_of_lt_quarter`: oddness from the coefficient bound alone.
 -/
@@ -153,6 +154,30 @@ theorem fiveStageStrangProduct_eq_strangBlock_prod (a b : A) (p t : K) :
   rw [exp_smul_mul_exp_smul_mul a, hpp, exp_smul_mul_exp_smul_mul a, hpq,
     exp_smul_mul_exp_smul_mul a, hqp, exp_smul_mul_exp_smul_mul a, hpp]
   rw [div_mul_eq_mul_div]
+
+/-- A Strang block is exact when its two generators commute. -/
+theorem strangBlock_eq_exp_of_commute (a b : A) (hab : Commute a b) (c t : K) :
+    strangBlock a b c t = exp ((c * t) • (a + b)) := by
+  let : NormedAlgebra ℚ A := .restrictScalars ℚ K A
+  rw [strangBlock, ← exp_add_of_commute ((hab.smul_left (c * t / 2)).smul_right (c * t))]
+  rw [← exp_add_of_commute
+    (((Commute.refl a).smul_left (c * t / 2)).smul_right (c * t / 2) |>.add_left
+      ((hab.symm.smul_left (c * t)).smul_right (c * t / 2)))]
+  congr 1
+  module
+
+/-- The five-block product is exact for commuting generators, for every coefficient and time. -/
+theorem fiveStageStrangProduct_eq_exp_of_commute (a b : A) (hab : Commute a b) (p t : K) :
+    fiveStageStrangProduct a b p t = exp (t • (a + b)) := by
+  let : NormedAlgebra ℚ A := .restrictScalars ℚ K A
+  have hmul (x y : K) : exp (x • (a + b)) * exp (y • (a + b)) =
+      exp ((x + y) • (a + b)) := by
+    rw [← exp_add_of_commute (((Commute.refl (a + b)).smul_left x).smul_right y),
+      ← add_smul]
+  rw [fiveStageStrangProduct_eq_strangBlock_prod]
+  simp only [strangBlock_eq_exp_of_commute a b hab, hmul]
+  congr 2
+  ring
 
 /-- The product at reflected time is a right inverse, without smallness assumptions. -/
 theorem fiveStageStrangProduct_mul_neg_eq_one (a b : A) (p t : K) :

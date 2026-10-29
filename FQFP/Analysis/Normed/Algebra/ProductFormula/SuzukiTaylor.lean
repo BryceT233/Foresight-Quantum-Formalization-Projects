@@ -19,19 +19,28 @@ logarithm has a controlled seventh-order remainder.
 ## Main results
 
 * `iteratedDeriv_fiveStageStrangProduct_zero`: derivatives of the actual product.
+* `contDiff_fiveStageStrangProduct`: smoothness for every real parameter.
 * `norm_fiveStageStrangProduct_sub_taylor_le`: the global finite Taylor remainder.
 * `norm_fiveStageStrangLog_sub_quintic_le_septic`: the local logarithm remainder.
 -/
 
 @[expose] public noncomputable section
 
-open scoped RealScalar
+open scoped RealScalar ContDiff
 
 namespace FQFP.BCH
 
 open Finset NormedSpace
 
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A]
+
+/-- The actual five-stage Strang product is smooth for every real composition parameter. -/
+theorem contDiff_fiveStageStrangProduct (a b : A) (p : ℝ) :
+    ContDiff ℝ ∞ (fiveStageStrangProduct a b p) := by
+  convert contDiff_prod_exp_smul (fiveStageStrangArguments a b p 1) using 1
+  funext t
+  rw [fiveStageStrangProduct, fiveStageStrangArguments_smul]
+  simp only [List.map_map, Function.comp_def]
 
 /-- The actual Suzuki product has the factorial-scaled formal coefficients as derivatives. -/
 theorem iteratedDeriv_fiveStageStrangProduct_zero (a b : A) (p : ℝ) (n : ℕ) :

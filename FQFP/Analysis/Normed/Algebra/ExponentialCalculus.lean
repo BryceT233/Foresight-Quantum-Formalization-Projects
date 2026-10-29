@@ -47,6 +47,12 @@ section
 
 open scoped RealScalar
 
+/-- Exponentials of real multiples of one generator form an additive one-parameter group. -/
+lemma exp_smul_mul_exp_smul {A : Type*} [NormedRing A] [NormedAlgebra ℚ A]
+    [CompleteSpace A] (G : A) (x y : ℝ) :
+    exp (x • G) * exp (y • G) = exp ((x + y) • G) := by
+  rw [← exp_add_of_commute (((Commute.refl G).smul_left x).smul_right y), ← add_smul]
+
 /-- The `q`-th iterated derivative of `u ↦ exp (u • A)` is `u ↦ A^q * exp (u • A)`. -/
 theorem iteratedDeriv_exp_smul_const {𝔸 : Type*} [NormedRing 𝔸]
     [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A : 𝔸) (q : ℕ) :
@@ -94,6 +100,17 @@ lemma norm_exp_smul_of_skewAdjoint {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgeb
     [StarModule ℝ 𝔸] {a : 𝔸} (ha : star a = -a) (t : ℝ) :
     ‖exp (t • a)‖ = 1 :=
   CStarRing.norm_of_mem_unitary (exp_smul_mem_unitary_of_skewAdjoint ha t)
+
+/-- A skew-adjoint exponential is a contraction, including in the zero algebra. -/
+lemma norm_exp_smul_le_one_of_skewAdjoint {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [NormedSpace ℝ 𝔸] [CompleteSpace 𝔸]
+    [StarRing 𝔸] [CStarRing 𝔸] [StarModule ℝ 𝔸]
+    {a : 𝔸} (ha : star a = -a) (t : ℝ) : ‖exp (t • a)‖ ≤ 1 := by
+  rcases subsingleton_or_nontrivial 𝔸 with h | h
+  · have := h
+    simp [Subsingleton.elim (exp (t • a)) 0]
+  · have := h
+    exact (norm_exp_smul_of_skewAdjoint ha t).le
 
 /-- For a single element, the norm of `H^k * exp (s • H)` is bounded by
 `‖H‖^k * Real.exp (s * ‖H‖)` whenever `s ≥ 0` (the paper's single-element bound,
