@@ -34,9 +34,18 @@ in `FQFP.CQM.QuditCat.Monoidal`.
 
 ## Notation
 
-* `⟨a|` is notation for the bra functional of a state `a`.
-* `|b⟩` is notation for the ket map of a state `b`.
-* `⟨v|u⟩` is notation for the inner product of `v` and `u`.
+Open `QuditCat.Braket` as a scope to use the Dirac notation:
+
+* `⟨a∣` is notation for the bra functional of a state `a`.
+* `∣b⟩` is notation for the ket map of a state `b`.
+* `⟨v‖u⟩` is notation for the inner product of `v` and `u`.
+
+The Unicode bars and scoping follow physlib's `QuantumInfo.States.Pure.Braket`,
+with Mathlib's allowed mathematical angle brackets. Bras and kets are linear maps,
+and their vectors need not be normalized: `∣v⟩ 1 = v` and `(⟨v∣) w = inner ℂ v w`.
+The composite `∣v⟩ ∘ₗ ⟨w∣` is an outer product; `⟨w∣ ∘ₗ ∣v⟩` is a scalar endomorphism.
+Parenthesize a bra before applying it inside a tuple: `(⟨v∣) w`. Without parentheses,
+Lean can read the opening bracket as a tuple constructor and the bar as divisibility.
 
 ## Main results
 
@@ -79,6 +88,9 @@ meta def QuditCat.delabOf : Delab := delabApp
 end Notation
 
 namespace QuditCat
+
+/-- Finite-dimensional qudit state spaces are complete. -/
+instance (H : QuditCat) : CompleteSpace H.state := FiniteDimensional.complete ℂ H.state
 
 lemma of_state {H : QuditCat} : of H.state = H := rfl
 
@@ -317,50 +329,52 @@ lemma inner_self_nonneg_of_isPositive {H : QuditCat} (f : H ⟶ H) [IsPositive f
     0 ≤ RCLike.re (inner ℂ (f.hom x) x) :=
   (hom_isPositive_of_isPositive f).re_inner_nonneg_left x
 
-section braket
-
-/-- Converts a quantum state `a : H.state` into its corresponding bra functional `⟨a|`. -/
+/-- Converts a quantum state `a : H.state` into its corresponding bra functional `⟨a∣`. -/
 noncomputable def bra {H : QuditCat} (a : H.state) : H.state →ₗ[ℂ] ℂ := innerₛₗ ℂ a
 
-/-- Notation `⟨a|` for the bra functional of a state `a`. -/
-notation "⟨" u "|" => bra u
-
-@[simp]
-lemma bra_apply {H : QuditCat} (a b : H.state) : ⟨a| b = inner ℂ a b := rfl
-
-/-- Converts a quantum state `b : H.state` into its corresponding ket map |b⟩. -/
+/-- Converts a quantum state `b : H.state` into its corresponding ket map `∣b⟩`. -/
 def ket {H : QuditCat} (b : H.state) : ℂ →ₗ[ℂ] H.state := .toSpanSingleton ℂ H.state b
 
-/-- Notation `|b⟩` for the ket map of a state `b`. -/
-notation "|" u "⟩" => ket u
+namespace Braket
+
+/-- Scoped Dirac notation for the bra linear functional. -/
+scoped notation:max "⟨" v:90 "∣" => QuditCat.bra v
+
+/-- Scoped Dirac notation for the ket linear map. -/
+scoped notation:max "∣" v:90 "⟩" => QuditCat.ket v
+
+/-- Scoped Dirac notation for the complex inner product. -/
+scoped notation "⟨" v:90 "‖" w:90 "⟩" => inner ℂ v w
+
+end Braket
+
+open scoped Braket
 
 @[simp]
-lemma hom_ket_apply {H : QuditCat} (b : H.state) (x : ℂ) : |b⟩ x = x • b := rfl
-
-/-- Notation `⟨v|u⟩` for the inner product of states `v` and `u`. -/
-notation "⟨" v "|" u "⟩" => inner ℂ v u
+lemma bra_apply {H : QuditCat} (a b : H.state) : (⟨a∣) b = inner ℂ a b := rfl
 
 @[simp]
-lemma ket_comp_bra {H : QuditCat} (a b : H.state) : ⟨b| ∘ₗ |a⟩ = .lsmul ℂ _ ⟨b|a⟩ := by
+lemma hom_ket_apply {H : QuditCat} (b : H.state) (x : ℂ) : ∣b⟩ x = x • b := rfl
+
+@[simp]
+lemma ket_comp_bra {H : QuditCat} (a b : H.state) : ⟨b∣ ∘ₗ ∣a⟩ = .lsmul ℂ _ ⟨b‖a⟩ := by
   ext; simp
 
-/-- Morphism in `QuditCat` corresponding to the bra functional `⟨a|`. -/
+/-- Morphism in `QuditCat` corresponding to the bra functional `⟨a∣`. -/
 noncomputable def braArrow {H : QuditCat} (a : H.state) : H ⟶ of ℂ := ofHom (bra a)
 
-/-- Morphism in `QuditCat` corresponding to the ket map `|b⟩`. -/
+/-- Morphism in `QuditCat` corresponding to the ket map `∣b⟩`. -/
 noncomputable def ketArrow {H : QuditCat} (b : H.state) : of ℂ ⟶ H := ofHom (ket b)
 
 lemma ketArrow_comp_braArrow {H : QuditCat} (a b : H.state) :
-    ketArrow a ≫ braArrow b = ofHom (.lsmul ℂ ℂ ⟨b|a⟩) := by
+    ketArrow a ≫ braArrow b = ofHom (.lsmul ℂ ℂ ⟨b‖a⟩) := by
   ext1; rw [hom_comp]; exact ket_comp_bra a b
 
 lemma hom_ketArrow_comp_braArrow_apply {H : QuditCat} (a b : H.state) (x : ℂ) :
-    (ketArrow a ≫ braArrow b).hom x = ⟨b|a⟩ • x := by simp [ketArrow_comp_braArrow]
-
-end braket
+    (ketArrow a ≫ braArrow b).hom x = ⟨b‖a⟩ • x := by simp [ketArrow_comp_braArrow]
 
 /-- A state is normalized if its norm is 1. -/
-def state.Normalized {H : QuditCat} (v : H.state) : Prop := ⟨v|v⟩ = 1
+def state.Normalized {H : QuditCat} (v : H.state) : Prop := ⟨v‖v⟩ = 1
 
 noncomputable section standard
 
@@ -369,6 +383,16 @@ def std (n : ℕ) : QuditCat := of (EuclideanSpace ℂ (Fin n))
 
 lemma state_std (n : ℕ) : (std n).state = EuclideanSpace ℂ (Fin n) := rfl
 
+/-- The dimension of the standard qudit space. -/
+@[simp]
+lemma finrank_std (n : ℕ) : Module.finrank ℂ (std n).state = n :=
+  finrank_euclideanSpace_fin
+
+/-- The zero-dimensional standard space is a subsingleton. This instance exposes the
+underlying fact through the bundled `std` object. -/
+instance : Subsingleton (std 0).state :=
+  inferInstanceAs (Subsingleton (EuclideanSpace ℂ (Fin 0)))
+
 /-- The computational basis for the standard `n`-dimensional Hilbert space `ℂⁿ`. -/
 def ZBasis (n : ℕ) : OrthonormalBasis (Fin n) ℂ (std n).state :=
   EuclideanSpace.basisFun (Fin n) ℂ
@@ -376,10 +400,10 @@ def ZBasis (n : ℕ) : OrthonormalBasis (Fin n) ℂ (std n).state :=
 lemma ZBasis_apply {n : ℕ} (i : Fin n) : ZBasis n i = EuclideanSpace.single i 1 :=
   EuclideanSpace.basisFun_apply ..
 
-/-- The `i`-th computational basis vector representing `|i⟩`. -/
+/-- The `i`-th computational basis vector representing `∣i⟩`. -/
 abbrev ithKet {n : ℕ} (i : Fin n) : (std n).state := ZBasis n i
 
-lemma ithKet_eq_ket_ZBasis {n : ℕ} (i : Fin n) : ithKet i = |ZBasis n i⟩ 1 := by simp
+lemma ithKet_eq_ket_ZBasis {n : ℕ} (i : Fin n) : ithKet i = ∣ZBasis n i⟩ 1 := by simp
 
 /-- Converts an `n × n` complex matrix into an endomorphism on the standard `n`-dimensional
 Hilbert space. The transformation is defined with respect to the computational basis. -/

@@ -7,6 +7,7 @@ module
 
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.SuzukiSeries
 public import FQFP.RingTheory.PowerSeries.Noncommutative.Palindromic
+public import FQFP.RingTheory.PowerSeries.Noncommutative.QuinticJet
 
 /-!
 # The sixth-order Suzuki jet
@@ -51,27 +52,8 @@ theorem expListTerm_fiveStageStrang_through_six (a b : A) (p : ℝ)
         if n = 5 then suzukiQuinticTerm a b p else
         if n = 6 then (2 : ℚ)⁻¹ •
           ((a + b) * suzukiQuinticTerm a b p + suzukiQuinticTerm a b p * (a + b)) else 0 := by
-  rw [expListTerm_eq_sum_log_powers]
-  have hc (k : ℕ) :
-      positivePowerCoeff (expListLogCoeff (fiveStageStrangArguments a b p 1)) k n =
-        positivePowerCoeff
-          (fun j ↦ if j = 1 then a + b else if j = 5 then suzukiQuinticTerm a b p else 0) k n := by
-    apply positivePowerCoeff_congr
-    intro i _ hi
-    simpa [Fin.ext_iff] using
-      expListLogCoeff_fiveStageStrang_through_six a b p hp
-        ⟨i, by
-          have := n.isLt
-          lia⟩
-  simp only [hc]
-  generalize a + b = G
-  generalize suzukiQuinticTerm a b p = L
-  fin_cases n <;>
-    norm_num only [positivePowerCoeff, sum_range_succ, sum_range_zero, Nat.factorial,
-      Nat.reduceSub, Nat.reduceAdd, ite_true, ite_false, zero_mul, mul_zero,
-      zero_smul, one_smul, add_zero, zero_add, mul_one, one_mul, smul_zero, pow_succ,
-      smul_add, smul_smul, mul_add, add_mul]
-  all_goals norm_num [Fin.ext_iff, mul_assoc]
-  all_goals module
+  simpa only [one_div] using expListTerm_through_six_of_log_jet
+    (fiveStageStrangArguments a b p 1) (a + b) (suzukiQuinticTerm a b p)
+    (expListLogCoeff_fiveStageStrang_through_six a b p hp) n
 
 end FQFP.BCH

@@ -62,16 +62,15 @@ lemma conjCoeff_one {s : ℕ} (Z : Fin s → A) (B : A) :
 
 end TrotterError
 
-
 namespace FQFP
+
+/-- The innermost-to-outermost generators of the centered half-product. -/
+def centeredConjugationList {A : Type*} [SMul ℝ A] (l : List A) (G : A) : List A :=
+  l.reverse ++ [-(1 / 2 : ℝ) • G]
 
 section Definitions
 
 variable {A : Type*} [NormedRing A] [Algebra ℝ A]
-
-/-- The innermost-to-outermost generators of the centered half-product. -/
-def centeredConjugationList (l : List A) (G : A) : List A :=
-  l.reverse ++ [-(1 / 2 : ℝ) • G]
 
 /-- The original second-order multinomial commutator constant for the centered frame. -/
 def centeredConjugationConstant (l : List A) (G L : A) : ℝ :=
@@ -123,6 +122,21 @@ lemma conjCoeff_centeredConjugationList_one (l : List A) (G B : A)
   rw [hs]
   simp [Ring.lie_def]
 
+/-- Centered half-generators inherit the two-sided exponential bounds. -/
+lemma norm_exp_smul_centeredConjugationList_le_one (l : List A) (G : A)
+    (hZ : ∀ Z ∈ l, ∀ t : ℝ, ‖exp (t • Z)‖ ≤ 1)
+    (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1)
+    (i : Fin (centeredConjugationList l G).length) (u : ℝ) :
+    ‖exp (u • (centeredConjugationList l G).get i)‖ ≤ 1 := by
+  have hi := List.get_mem (centeredConjugationList l G) i
+  simp only [centeredConjugationList, List.mem_append, List.mem_reverse,
+    List.mem_singleton] at hi
+  rcases hi with hi | hi
+  · exact hZ _ hi u
+  · change ‖exp (u • (l.reverse ++ [-(1 / 2 : ℝ) • G]).get i)‖ ≤ 1
+    rw [hi, smul_smul]
+    exact hG _
+
 /-- The centered change of frame has a second-order error with the original commutator constant. -/
 theorem norm_centeredConjugation_sub_le (l : List A) (G L : A)
     (hZ : ∀ Z ∈ l, ∀ t : ℝ, ‖exp (t • Z)‖ ≤ 1)
@@ -131,18 +145,9 @@ theorem norm_centeredConjugation_sub_le (l : List A) (G L : A)
     ‖exp ((-x / 2) • G) * expListProduct l x * L *
       expListProduct l.reverse (-x) * exp ((x / 2) • G) - L‖ ≤
       x ^ 2 / 2 * centeredConjugationConstant l G L := by
-  have hc : ∀ i (u : ℝ), ‖exp (u • (centeredConjugationList l G).get i)‖ ≤ 1 := by
-    intro i u
-    have hi := List.get_mem (centeredConjugationList l G) i
-    simp only [centeredConjugationList, List.mem_append, List.mem_reverse,
-      List.mem_singleton] at hi
-    rcases hi with hi | hi
-    · exact hZ _ hi u
-    · change ‖exp (u • (l.reverse ++ [-(1 / 2 : ℝ) • G]).get i)‖ ≤ 1
-      rw [hi, smul_smul]
-      exact hG _
   have hb := norm_multiConj_sub_sum_le_of_le_one
-    (centeredConjugationList l G).get L 2 (by norm_num) x hc
+    (centeredConjugationList l G).get L 2 (by norm_num) x
+    (norm_exp_smul_centeredConjugationList_le_one l G hZ hG)
   rw [multiConj_centeredConjugationList] at hb
   simp only [sum_range_succ, sum_range_zero, zero_add, conjCoeff_zero,
     conjCoeff_centeredConjugationList_one l G L hsum, zero_mul, add_zero,

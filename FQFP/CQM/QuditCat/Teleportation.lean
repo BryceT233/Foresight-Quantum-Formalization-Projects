@@ -152,9 +152,7 @@ lemma orthonormal_bellVector : Orthonormal ℂ bellVector := by
 def bellBasis : OrthonormalBasis (Fin 4) ℂ (Qubit ⊗ Qubit).state :=
   OrthonormalBasis.mk orthonormal_bellVector
     (orthonormal_bellVector.linearIndependent.span_eq_top_of_card_eq_finrank'
-      (by simpa using
-        (Module.finrank_eq_card_basis
-          ((ZBasis 2).tensorProduct (ZBasis 2)).toBasis).symm)).ge
+      (by simp)).ge
 
 /-- The Bell basis has the four explicitly given normalized Bell vectors. -/
 lemma bellBasis_apply (i : Fin 4) : bellBasis i = bellVector i := by

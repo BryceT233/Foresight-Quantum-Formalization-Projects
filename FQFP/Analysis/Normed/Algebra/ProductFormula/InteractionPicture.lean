@@ -46,10 +46,8 @@ lemma one_add_interactionIncrement (G S : A) (h : ℝ) (k : ℕ) :
     rw [exp_smul_mul_exp_smul]
     simp
   unfold interactionIncrement
-  rw [mul_sub, sub_mul, mul_one, hi]
-  rw [add_sub_cancel]
-  rw [← mul_assoc, exp_smul_mul_exp_smul]
-  rw [show -((k : ℝ) * h) + -h = -(((k : ℝ) + 1) * h) by ring]
+  rw [mul_sub, sub_mul, mul_one, hi, add_sub_cancel, ← mul_assoc,
+    exp_smul_mul_exp_smul, show -((k : ℝ) * h) + -h = -(((k : ℝ) + 1) * h) by ring]
 
 /-- The interaction-picture splitting power is precisely the ordered finite product. -/
 theorem interactionProduct_eq_contractionProduct (G S : A) (h : ℝ) (r : ℕ) :
@@ -96,43 +94,81 @@ lemma interactionIncrement_eq_midpoint_conj (G S : A) (h : ℝ) (k : ℕ) :
   have hleft : -(((k : ℝ) + 1 / 2) * h) + -h / 2 = -(((k : ℝ) + 1) * h) := by ring
   have hright : -h / 2 + ((k : ℝ) + 1 / 2) * h = (k : ℝ) * h := by ring
   have hcenter : exp ((-h / 2) • G) * exp (h • G) * exp ((-h / 2) • G) = 1 := by
-    rw [exp_smul_mul_exp_smul, exp_smul_mul_exp_smul]
-    rw [show -h / 2 + h + -h / 2 = 0 by ring]
+    rw [exp_smul_mul_exp_smul, exp_smul_mul_exp_smul,
+      show -h / 2 + h + -h / 2 = 0 by ring]
     simp
   apply add_left_cancel (a := (1 : A))
   rw [one_add_interactionIncrement]
   simp only [expSMulConj, smul_neg, ← neg_smul, neg_neg]
-  rw [mul_sub, sub_mul, hcenter, mul_sub, sub_mul, mul_one]
-  rw [show exp (-(((k : ℝ) + 1 / 2) * h) • G) *
+  rw [mul_sub, sub_mul, hcenter, mul_sub, sub_mul, mul_one,
+    show exp (-(((k : ℝ) + 1 / 2) * h) • G) *
       exp ((((k : ℝ) + 1 / 2) * h) • G) = 1 by
-    rw [exp_smul_mul_exp_smul]
-    simp]
-  rw [add_sub_cancel]
+      rw [exp_smul_mul_exp_smul]
+      simp, add_sub_cancel]
   simp only [← mul_assoc]
-  rw [exp_smul_mul_exp_smul, hleft]
-  rw [mul_assoc _ S, mul_assoc _ (exp ((-h / 2) • G)), exp_smul_mul_exp_smul, hright, mul_assoc]
+  rw [exp_smul_mul_exp_smul, hleft, mul_assoc _ S, mul_assoc _ (exp ((-h / 2) • G)),
+    exp_smul_mul_exp_smul, hright, mul_assoc]
 
 /-- A centered local estimate transports unchanged to each interaction increment. -/
+theorem norm_interactionIncrement_sub_conj_le (G S B : A)
+    (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1) (h : ℝ) {η : ℝ}
+    (hlocal : ‖exp ((-h / 2) • G) * (S - exp (h • G)) * exp ((-h / 2) • G) -
+      B‖ ≤ η) (k : ℕ) :
+    ‖interactionIncrement G S h k -
+      expSMulConj (-G) B (((k : ℝ) + 1 / 2) * h)‖ ≤ η := by
+  rw [interactionIncrement_eq_midpoint_conj]
+  change ‖expSMulConjLin (-G) _ _ - expSMulConjLin (-G) _ B‖ ≤ η
+  rw [← map_sub]
+  exact (norm_expSMulConj_eq_of_le_one (-G) _ (fun t ↦ by
+    simpa only [smul_neg, ← neg_smul] using hG (-t)) _).le.trans hlocal
+
+/-- A homogeneous quintic centered estimate transports to a midpoint conjugation. -/
 theorem norm_interactionIncrement_sub_midpoint_le (G S L : A)
     (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1) (h : ℝ) {η : ℝ}
     (hlocal : ‖exp ((-h / 2) • G) * (S - exp (h • G)) * exp ((-h / 2) • G) -
       h ^ 5 • L‖ ≤ η) (k : ℕ) :
     ‖interactionIncrement G S h k -
       h ^ 5 • expSMulConj (-G) L (((k : ℝ) + 1 / 2) * h)‖ ≤ η := by
-  rw [interactionIncrement_eq_midpoint_conj]
-  have heq : ∀ X Y : A, ∀ c t : ℝ,
-      expSMulConj (-G) X t - c • expSMulConj (-G) Y t =
-        expSMulConj (-G) (X - c • Y) t := by
-    intro X Y c t
-    change (expSMulConjLin (-G) t) X - c • (expSMulConjLin (-G) t) Y =
-      (expSMulConjLin (-G) t) (X - c • Y)
-    rw [map_sub, map_smul]
-  rw [heq]
-  exact (norm_expSMulConj_eq_of_le_one (-G) _ (fun t ↦ by
-    simpa only [smul_neg, ← neg_smul] using hG (-t)) _).le.trans hlocal
+  simpa only [expSMulConj, mul_smul_comm, smul_mul_assoc] using
+    norm_interactionIncrement_sub_conj_le G S (h ^ 5 • L) hG h hlocal k
 
-/-- **Discrete operator remainder.** Finite contraction products retain the full midpoint
-operator sum, with a quadratic rather than exponential accumulation remainder. -/
+/-- **Discrete operator remainder.** Finite contraction products retain any complete
+centered main term, with quadratic accumulation of the single-step distances. -/
+theorem norm_interactionProduct_sub_sum_conj_le (G S B : A)
+    (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1) (hS : ‖S‖ ≤ 1)
+    (h : ℝ) {η δ : ℝ}
+    (hlocal : ‖exp ((-h / 2) • G) * (S - exp (h • G)) * exp ((-h / 2) • G) -
+      B‖ ≤ η)
+    (hδ : ‖S - exp (h • G)‖ ≤ δ) (r : ℕ) :
+    ‖exp (-((r : ℝ) * h) • G) * S ^ r - 1 -
+      ∑ k ∈ range r, expSMulConj (-G) B (((k : ℝ) + 1 / 2) * h)‖ ≤
+        (r : ℝ) * η + (r : ℝ) * ((r : ℝ) - 1) / 2 * δ ^ 2 := by
+  have hrem := norm_contractionProduct_sub_one_sub_sum_le
+    (interactionIncrement G S h)
+    (norm_one_add_interactionIncrement_le_one G S hG hS h)
+    (fun k ↦ (norm_interactionIncrement_eq G S hG h k).le.trans hδ) r
+  rw [← interactionProduct_eq_contractionProduct G S h r] at hrem
+  calc
+    _ = ‖(exp (-((r : ℝ) * h) • G) * S ^ r - 1 -
+          ∑ k ∈ range r, interactionIncrement G S h k) +
+        ∑ k ∈ range r, (interactionIncrement G S h k -
+          expSMulConj (-G) B (((k : ℝ) + 1 / 2) * h))‖ := by
+      rw [sum_sub_distrib]
+      congr 1
+      abel
+    _ ≤ ‖exp (-((r : ℝ) * h) • G) * S ^ r - 1 -
+          ∑ k ∈ range r, interactionIncrement G S h k‖ +
+        ‖∑ k ∈ range r, (interactionIncrement G S h k -
+          expSMulConj (-G) B (((k : ℝ) + 1 / 2) * h))‖ := norm_add_le _ _
+    _ ≤ (r : ℝ) * ((r : ℝ) - 1) / 2 * δ ^ 2 + ∑ _k ∈ range r, η := by
+      apply add_le_add hrem
+      exact (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦
+        norm_interactionIncrement_sub_conj_le G S B hG h hlocal k)
+    _ = _ := by
+      simp
+      ring
+
+/-- A quintic centered main term gives the original discrete midpoint bound. -/
 theorem norm_interactionProduct_sub_midpoint_le (G S L : A)
     (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1) (hS : ‖S‖ ≤ 1)
     (h : ℝ) {η δ : ℝ}
@@ -142,33 +178,8 @@ theorem norm_interactionProduct_sub_midpoint_le (G S L : A)
     ‖exp (-((r : ℝ) * h) • G) * S ^ r - 1 -
       h ^ 4 • midpointConjugationIntegral G L r h‖ ≤
         (r : ℝ) * η + (r : ℝ) * ((r : ℝ) - 1) / 2 * δ ^ 2 := by
-  have hsum : h ^ 4 • midpointConjugationIntegral G L r h =
-      ∑ k ∈ range r, h ^ 5 • expSMulConj (-G) L (((k : ℝ) + 1 / 2) * h) := by
-    rw [midpointConjugationIntegral, smul_smul, ← pow_succ, smul_sum]
-  have hrem := norm_contractionProduct_sub_one_sub_sum_le
-    (interactionIncrement G S h)
-    (norm_one_add_interactionIncrement_le_one G S hG hS h)
-    (fun k ↦ (norm_interactionIncrement_eq G S hG h k).le.trans hδ) r
-  rw [← interactionProduct_eq_contractionProduct G S h r] at hrem
-  rw [hsum]
-  calc
-    _ = ‖(exp (-((r : ℝ) * h) • G) * S ^ r - 1 -
-          ∑ k ∈ range r, interactionIncrement G S h k) +
-        ∑ k ∈ range r, (interactionIncrement G S h k -
-          h ^ 5 • expSMulConj (-G) L (((k : ℝ) + 1 / 2) * h))‖ := by
-      rw [sum_sub_distrib]
-      congr 1
-      abel
-    _ ≤ ‖exp (-((r : ℝ) * h) • G) * S ^ r - 1 -
-          ∑ k ∈ range r, interactionIncrement G S h k‖ +
-        ‖∑ k ∈ range r, (interactionIncrement G S h k -
-          h ^ 5 • expSMulConj (-G) L (((k : ℝ) + 1 / 2) * h))‖ := norm_add_le _ _
-    _ ≤ (r : ℝ) * ((r : ℝ) - 1) / 2 * δ ^ 2 + ∑ _k ∈ range r, η := by
-      apply add_le_add hrem
-      exact (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦
-        norm_interactionIncrement_sub_midpoint_le G S L hG h hlocal k)
-    _ = _ := by
-      simp
-      ring
+  simpa only [midpointConjugationIntegral, smul_smul, ← pow_succ, smul_sum,
+    expSMulConj, mul_smul_comm, smul_mul_assoc] using
+    norm_interactionProduct_sub_sum_conj_le G S (h ^ 5 • L) hG hS h hlocal hδ r
 
 end TrotterError

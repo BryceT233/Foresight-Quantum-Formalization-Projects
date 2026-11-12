@@ -267,6 +267,25 @@ lemma groupedConjCoeff_zero {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸]
   | zero => simp [groupedConjCoeff]
   | succ s ih => simp [groupedConjCoeff, adPow, ih, Fin.sum_univ_castSucc, add_assoc]
 
+/-- Zero kicks recover the ordinary multilayer conjugation. -/
+lemma groupedConj_zero_kicks_eq_multiConj {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℝ 𝔸] {s : ℕ} (Z : Fin s → 𝔸) (B : 𝔸) (x : ℝ) :
+    groupedConj Z (fun _ ↦ 0) B x = multiConj Z B x := by
+  induction s with
+  | zero => simp [groupedConj, multiConj]
+  | succ s ih => simp only [groupedConj, multiConj_succ, ih, add_zero]
+
+/-- Zero kicks recover the ordinary conjugation coefficients. -/
+lemma groupedConjCoeff_zero_kicks_eq_conjCoeff {𝔸 : Type*} [Ring 𝔸]
+    [Algebra ℝ 𝔸] {s : ℕ} (Z : Fin s → 𝔸) (B : 𝔸) (n : ℕ) :
+    groupedConjCoeff Z (fun _ ↦ 0) B n = conjCoeff Z B n := by
+  induction s generalizing n with
+  | zero =>
+      by_cases hn : n = 0
+      · simp [groupedConjCoeff, conjCoeff, hn, adSequence, finAntidiagonal_zero]
+      · simp [groupedConjCoeff, conjCoeff, hn, finAntidiagonal_zero]
+  | succ s ih => simp only [groupedConjCoeff, conjCoeff_succ, ih, ite_self, add_zero]
+
 /-- A single layer is exactly one conjugation followed by its kick. -/
 @[simp]
 lemma groupedConj_single {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
