@@ -6,13 +6,13 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.Analysis.InnerProductSpace.PartialTrace
-public import FQFP.CQM.QuditCat.Density
-public import FQFP.CQM.QuditCat.Monoidal
+public import FQFP.CQM.Qudit.State.Density
+public import FQFP.CQM.Qudit.Monoidal
 
 /-!
 # Composite systems and reduced density operators
 
-Tensor products use the existing Hilbert tensor product of `QuditCat`.
+Tensor products use the existing Hilbert tensor product of `Qudit`.
 `partialTraceRight` discards the right factor, and `partialTraceLeft` discards the left.
 Both are basis-independent linear maps on all operators and preserve positivity and trace.
 Their restrictions to density operators therefore require no additional normalization.
@@ -23,11 +23,11 @@ Their restrictions to density operators therefore require no additional normaliz
 open CategoryTheory CategoryTheory.MonoidalCategory
 open scoped TensorProduct ComplexOrder
 
-namespace QuditCat
+namespace Qudit
 
 noncomputable section
 
-variable {H K : QuditCat}
+variable {H K : Qudit}
 
 /-- The tensor product of two unit vectors. -/
 def UnitState.tensor (v : UnitState H) (w : UnitState K) : UnitState (H ⊗ K) :=
@@ -132,14 +132,14 @@ end Operator
 namespace Density
 
 /-- The maximally mixed density operator; the dimension must be nonzero. -/
-def maximallyMixed (H : QuditCat) (hn : Module.finrank ℂ H.state ≠ 0) : Density H where
+def maximallyMixed (H : Qudit) (hn : Module.finrank ℂ H.state ≠ 0) : Density H where
   op := (Module.finrank ℂ H.state : ℂ)⁻¹ • (1 : Operator H)
   positive := LinearMap.isPositive_one.smul_of_nonneg (by positivity)
   trace_one := by simp [Operator.trace, LinearMap.trace_one, hn]
 
 /-- The maximally mixed state is the identity divided by the dimension. -/
 @[simp]
-lemma op_maximallyMixed (H : QuditCat) (hn : Module.finrank ℂ H.state ≠ 0) :
+lemma op_maximallyMixed (H : Qudit) (hn : Module.finrank ℂ H.state ≠ 0) :
     (maximallyMixed H hn).op = (Module.finrank ℂ H.state : ℂ)⁻¹ • (1 : Operator H) := rfl
 
 /-- The independent product of two density operators. -/
@@ -266,4 +266,4 @@ end Density
 
 end
 
-end QuditCat
+end Qudit

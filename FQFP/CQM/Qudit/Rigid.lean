@@ -6,7 +6,7 @@ Authors: Bingyu Xia
 module
 
 public import FQFP.CategoryTheory.Monoidal.Dagger.Rigid
-public import FQFP.CQM.QuditCat.Monoidal
+public import FQFP.CQM.Qudit.Monoidal
 
 /-!
 # Self-duality of a finite-dimensional Hilbert space
@@ -34,20 +34,20 @@ one, and this file does not construct it.
 
 ## Main definitions
 
-* `QuditCat.basisForm`: the bilinear form multiplying the coordinates in an orthonormal basis.
-* `QuditCat.basisCoevaluation`, `QuditCat.basisEvaluation`: its coevaluation and evaluation.
-* `QuditCat.exactPairingOfOrthonormalBasis`: an exact pairing of a space with itself, from a
+* `Qudit.basisForm`: the bilinear form multiplying the coordinates in an orthonormal basis.
+* `Qudit.basisCoevaluation`, `Qudit.basisEvaluation`: its coevaluation and evaluation.
+* `Qudit.exactPairingOfOrthonormalBasis`: an exact pairing of a space with itself, from a
   chosen orthonormal basis.
-* `QuditCat.instExactPairingStd`, `QuditCat.instHasRightDualStd`, `QuditCat.instHasLeftDualStd`:
+* `Qudit.instExactPairingStd`, `Qudit.instHasRightDualStd`, `Qudit.instHasLeftDualStd`:
   the standard space `ℂⁿ` is self-dual.
 
 ## Main results
 
-* `QuditCat.basisForm_apply_basis`: the form on a basis vector is the corresponding bra.
-* `QuditCat.coevaluation_evaluation`, `QuditCat.evaluation_coevaluation`: the two snake
+* `Qudit.basisForm_apply_basis`: the form on a basis vector is the corresponding bra.
+* `Qudit.coevaluation_evaluation`, `Qudit.evaluation_coevaluation`: the two snake
   equations.
-* `QuditCat.dagger_basisCoevaluation`: the evaluation is the dagger of the coevaluation.
-* `QuditCat.exactPairingDagger_self`: the self-dual pairing is invariant under the dagger.
+* `Qudit.dagger_basisCoevaluation`: the evaluation is the dagger of the coevaluation.
+* `Qudit.exactPairingDagger_self`: the self-dual pairing is invariant under the dagger.
 
 ## Implementation notes
 
@@ -71,11 +71,11 @@ The snakes are computed on pure tensors. The coordinate of a basis vector is eva
 open CategoryTheory CategoryTheory.MonoidalCategory CategoryTheory.DaggerCategory
 open scoped TensorProduct
 
-namespace QuditCat
+namespace Qudit
 
 noncomputable section
 
-variable {H : QuditCat} {ι : Type*} [Fintype ι]
+variable {H : Qudit} {ι : Type*} [Fintype ι]
 
 /-! ### The bilinear form determined by an orthonormal basis -/
 
@@ -111,11 +111,11 @@ lemma basisForm_comm (b : OrthonormalBasis ι ℂ H.state) (x y : H.state) :
 
 /-- The coevaluation `𝟙_ ⟶ H ⊗ H` of the self-dual pairing: the maximally entangled state
 `∑ i, b i ⊗ b i` of the basis. -/
-def basisCoevaluation (b : OrthonormalBasis ι ℂ H.state) : 𝟙_ QuditCat ⟶ H ⊗ H :=
+def basisCoevaluation (b : OrthonormalBasis ι ℂ H.state) : 𝟙_ Qudit ⟶ H ⊗ H :=
   ofHom (LinearMap.toSpanSingleton ℂ (H.state ⊗[ℂ] H.state) (∑ i, b i ⊗ₜ[ℂ] b i))
 
 /-- The evaluation `H ⊗ H ⟶ 𝟙_` of the self-dual pairing: the bilinear form `basisForm`. -/
-def basisEvaluation (b : OrthonormalBasis ι ℂ H.state) : H ⊗ H ⟶ 𝟙_ QuditCat :=
+def basisEvaluation (b : OrthonormalBasis ι ℂ H.state) : H ⊗ H ⟶ 𝟙_ Qudit :=
   ofHom (TensorProduct.lift (basisForm b))
 
 /-- The coevaluation sends a scalar to the corresponding multiple of the entangled state. -/
@@ -299,4 +299,4 @@ lemma instExactPairingStd_evaluation (n : ℕ) :
 
 end
 
-end QuditCat
+end Qudit

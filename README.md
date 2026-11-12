@@ -53,7 +53,7 @@ This repository collects Lean 4 formalization projects developed at
   Ordinary bicone maps and semiadditive biproducts have their own modules.
   `Category/RelCat/` extends Mathlib's standard category of relations with its
   dagger, tensor, biproduct, kernel, duality and measurement structures.
-- **`FQFP/CQM`** — Concrete `QuditCat` and `HilbCat` models, the teleportation
+- **`FQFP/CQM`** — Concrete `Qudit` and `HilbCat` models, the teleportation
   protocol, and its qubit and Boolean-relation examples.
 
 Import `FQFP` for the whole library, or import individual modules such as

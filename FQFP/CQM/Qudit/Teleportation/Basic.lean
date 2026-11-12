@@ -6,14 +6,14 @@ Authors: Bingyu Xia
 module
 
 public import FQFP.CQM.Category.Teleportation
-public import FQFP.CQM.QuditCat.Measurement
-public import FQFP.CQM.QuditCat.Rigid
+public import FQFP.CQM.Qudit.Measurement.Basic
+public import FQFP.CQM.Qudit.Rigid
 
 /-!
 # Teleportation in the qubit model
 
 `FQFP.CQM.Category.Teleportation` proves the single-branch identity of teleportation for the
-unnormalized Bell data of the source. This file instantiates it on the qubit `QuditCat.std 2` with
+unnormalized Bell data of the source. This file instantiates it on the qubit `Qudit.std 2` with
 the four corrections of Example 3.17 — `I`, `Z`, `X` and `J = [[0, 1], [-1, 0]]` — and the exact
 pairing `exactPairingOfOrthonormalBasis (ZBasis 2)`: for each correction the branch is the
 identity.
@@ -23,9 +23,9 @@ and its four Bell effects each have norm `√2`, so with the *unnormalized* data
 exactly the identity. Physically the resource state and the effects each carry a factor
 `1/√2`; with those factors the branch map is `(1/2) • 𝟙`:
 
-* `QuditCat.normalizedBranch_apply`: the normalized branch sends a vector `x` to `(1/2) • x`,
+* `Qudit.normalizedBranch_apply`: the normalized branch sends a vector `x` to `(1/2) • x`,
   so it is `(1/2) • 𝟙` as a linear map (`normalizedBranch_eq_smul`);
-* `QuditCat.branch_probability`: for a unit input the branch state has squared norm `1/4`, the
+* `Qudit.branch_probability`: for a unit input the branch state has squared norm `1/4`, the
   probability of that branch.
 
 The last two statements are the *two* normalized factors together; one cannot normalize the cup
@@ -43,30 +43,30 @@ basis amplitudes.
 
 ## Main definitions
 
-* `QuditCat.bellState`, `QuditCat.bellEffect`: the normalized Bell resource state and the
+* `Qudit.bellState`, `Qudit.bellEffect`: the normalized Bell resource state and the
   scaled Bell effect, normalized when the correction is unitary.
-* `QuditCat.corrections`: the four corrections of Example 3.17, in the order of its effect table.
-* `QuditCat.jGate`: the gate `J = [[0, 1], [-1, 0]]` of Example 3.17.
-* `QuditCat.bellBasis`, `QuditCat.qubitBellEffects`: the normalized Bell basis and measurement.
+* `Qudit.corrections`: the four corrections of Example 3.17, in the order of its effect table.
+* `Qudit.jGate`: the gate `J = [[0, 1], [-1, 0]]` of Example 3.17.
+* `Qudit.bellBasis`, `Qudit.qubitBellEffects`: the normalized Bell basis and measurement.
 
 ## Main results
 
 * `CategoryTheory.correctedTeleportation_eq_id` for each of the four corrections
   (`correctedTeleportation_corrections`).
-* `QuditCat.isUnitary_corrections`: each correction is unitary, including for a variable index.
-* `QuditCat.normalizedBranch_eq_smul`: the normalized branch is `(1/2) • 𝟙`.
-* `QuditCat.branch_probability`: its branch probability is `1/4`.
-* `QuditCat.qubitBellEffects_complete`, `QuditCat.qubitBellEffects_disjoint`: measurement axioms.
-* `QuditCat.sum_probability_qubitBellEffects`: the Bell measurement Born rule.
-* `QuditCat.scalarRingEquiv_probability_qubitBellEffects`: squared Bell amplitudes.
+* `Qudit.isUnitary_corrections`: each correction is unitary, including for a variable index.
+* `Qudit.normalizedBranch_eq_smul`: the normalized branch is `(1/2) • 𝟙`.
+* `Qudit.branch_probability`: its branch probability is `1/4`.
+* `Qudit.qubitBellEffects_complete`, `Qudit.qubitBellEffects_disjoint`: measurement axioms.
+* `Qudit.sum_probability_qubitBellEffects`: the Bell measurement Born rule.
+* `Qudit.scalarRingEquiv_probability_qubitBellEffects`: squared Bell amplitudes.
 -/
 
 @[expose] public section
 
-open CategoryTheory CategoryTheory.MonoidalCategory CategoryTheory.DaggerCategory QuditCat
+open CategoryTheory CategoryTheory.MonoidalCategory CategoryTheory.DaggerCategory Qudit
 open scoped TensorProduct BigOperators
 
-namespace QuditCat
+namespace Qudit
 
 noncomputable section
 
@@ -83,12 +83,12 @@ lemma conj_bellFactor : starRingEnd ℂ bellFactor = bellFactor := by
   simp [bellFactor]
 
 /-- The normalized Bell resource state `(1/√2) (|00⟩ + |11⟩)`. -/
-def bellState : 𝟙_ QuditCat ⟶ Qubit ⊗ Qubit :=
+def bellState : 𝟙_ Qudit ⟶ Qubit ⊗ Qubit :=
   ofHom (LinearMap.toSpanSingleton ℂ (Qubit.state ⊗[ℂ] Qubit.state)
     (bellFactor • ∑ i, ZBasis 2 i ⊗ₜ[ℂ] ZBasis 2 i))
 
 /-- The scaled Bell effect associated with `U`; it is normalized when `U` is unitary. -/
-def bellEffect (U : Qubit ⟶ Qubit) : Qubit ⊗ Qubit ⟶ 𝟙_ QuditCat :=
+def bellEffect (U : Qubit ⟶ Qubit) : Qubit ⊗ Qubit ⟶ 𝟙_ Qudit :=
   ofHom (bellFactor • ((U† ▷ Qubit) ≫ basisEvaluation (ZBasis 2)).hom)
 
 /-- The matrix `[[0, 1], [-1, 0]]` of Example 3.17, as an endomorphism of `Qubit`. -/
@@ -326,4 +326,4 @@ theorem branch_probability (U : Qubit ⟶ Qubit) [IsUnitary U] (ψ : Qubit.state
 
 end
 
-end QuditCat
+end Qudit

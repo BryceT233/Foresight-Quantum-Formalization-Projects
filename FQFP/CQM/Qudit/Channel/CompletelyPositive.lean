@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.QuditCat.Superoperator
+public import FQFP.CQM.Qudit.Channel.Superoperator
 
 /-!
 # Completely positive and trace-preserving superoperators
@@ -24,11 +24,11 @@ in particular Definition 2.13 and Theorems 2.22 and 2.26 (sufficiency directions
 open CategoryTheory CategoryTheory.MonoidalCategory
 open scoped ComplexOrder
 
-namespace QuditCat.Superoperator
+namespace Qudit.Superoperator
 
 noncomputable section
 
-variable {H K L M : QuditCat}
+variable {H K L M : Qudit}
 
 /-- Positivity of a superoperator: positive operators have positive images. -/
 def IsPositive (Φ : Superoperator H K) : Prop :=
@@ -36,7 +36,7 @@ def IsPositive (Φ : Superoperator H K) : Prop :=
 
 /-- Complete positivity on every finite-dimensional auxiliary quantum system. -/
 def IsCompletelyPositive (Φ : Superoperator H K) : Prop :=
-  ∀ (R : QuditCat), (tensor Φ (LinearMap.id : Superoperator R R)).IsPositive
+  ∀ (R : Qudit), (tensor Φ (LinearMap.id : Superoperator R R)).IsPositive
 
 /-- Preservation of the complex trace on all operators, not only density inputs. -/
 def IsTracePreserving (Φ : Superoperator H K) : Prop :=
@@ -54,7 +54,7 @@ lemma IsCompletelyPositive.isPositive {Φ : Superoperator H K}
   simpa only [Operator.partialTraceRight_tensor, ρ.trace_one, one_smul] using h
 
 /-- Identity maps are completely positive. -/
-lemma isCompletelyPositive_id (H : QuditCat) :
+lemma isCompletelyPositive_id (H : Qudit) :
     IsCompletelyPositive (LinearMap.id : Superoperator H H) := by
   intro R A hA
   rw [tensor_id_id]
@@ -85,7 +85,7 @@ lemma isCompletelyPositive_relabel (e : H.state ≃ₗᵢ[ℂ] K.state) :
 
 /-- Appending an identity factor preserves complete positivity. -/
 lemma IsCompletelyPositive.tensor_id {Φ : Superoperator H K}
-    (hΦ : Φ.IsCompletelyPositive) (L : QuditCat) :
+    (hΦ : Φ.IsCompletelyPositive) (L : Qudit) :
     (tensor Φ (LinearMap.id : Superoperator L L)).IsCompletelyPositive := by
   intro R A hA
   rw [tensor_id_assoc, LinearMap.comp_apply, LinearMap.comp_apply]
@@ -93,7 +93,7 @@ lemma IsCompletelyPositive.tensor_id {Φ : Superoperator H K}
 
 /-- Prepending an identity factor preserves complete positivity. -/
 lemma IsCompletelyPositive.id_tensor {Φ : Superoperator H K}
-    (hΦ : Φ.IsCompletelyPositive) (L : QuditCat) :
+    (hΦ : Φ.IsCompletelyPositive) (L : Qudit) :
     (tensor (LinearMap.id : Superoperator L L) Φ).IsCompletelyPositive := by
   rw [id_tensor_eq_comm]
   exact (isCompletelyPositive_relabel _).comp
@@ -132,7 +132,7 @@ lemma isCompletelyPositive_kraus {ι : Type*} [Fintype ι]
   IsCompletelyPositive.sum _ _ fun i _ => isCompletelyPositive_conjugate (f i)
 
 /-- The identity map preserves trace. -/
-lemma isTracePreserving_id (H : QuditCat) :
+lemma isTracePreserving_id (H : Qudit) :
     IsTracePreserving (LinearMap.id : Superoperator H H) := fun _ => rfl
 
 /-- Composition preserves trace preservation. -/
@@ -200,13 +200,13 @@ lemma partialTraceRight_eq_kraus {ι : Type*} [Fintype ι]
     LinearMap.partialTraceRightWith, kraus_apply]
 
 /-- Discarding the right subsystem is completely positive. -/
-lemma isCompletelyPositive_partialTraceRight (H K : QuditCat) :
+lemma isCompletelyPositive_partialTraceRight (H K : Qudit) :
     IsCompletelyPositive (Operator.partialTraceRight : Superoperator (H ⊗ K) H) := by
   rw [partialTraceRight_eq_kraus (stdOrthonormalBasis ℂ K.state)]
   exact isCompletelyPositive_kraus _
 
 /-- Discarding the left subsystem is completely positive. -/
-lemma isCompletelyPositive_partialTraceLeft (H K : QuditCat) :
+lemma isCompletelyPositive_partialTraceLeft (H K : Qudit) :
     IsCompletelyPositive (Operator.partialTraceLeft : Superoperator (H ⊗ K) K) := by
   change IsCompletelyPositive
     ((Operator.partialTraceRight : Superoperator (K ⊗ H) K) ∘ₗ
@@ -217,4 +217,4 @@ lemma isCompletelyPositive_partialTraceLeft (H K : QuditCat) :
 
 end
 
-end QuditCat.Superoperator
+end Qudit.Superoperator

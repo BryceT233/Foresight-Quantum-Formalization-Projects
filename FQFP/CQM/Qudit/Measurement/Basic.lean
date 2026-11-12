@@ -5,9 +5,9 @@ Authors: Bingyu Xia
 -/
 module
 
-public import FQFP.CQM.QuditCat.Dagger
-public import FQFP.CQM.QuditCat.Monoidal
-public import FQFP.CQM.QuditCat.Biproducts
+public import FQFP.CQM.Qudit.Dagger
+public import FQFP.CQM.Qudit.Monoidal
+public import FQFP.CQM.Qudit.Biproducts
 public import FQFP.CategoryTheory.Monoidal.Measurement
 
 /-!
@@ -35,12 +35,12 @@ the identity, so its bra effects satisfy the abstract Born rule.
 open CategoryTheory CategoryTheory.MonoidalCategory CategoryTheory.DaggerCategory
 open scoped BigOperators
 
-namespace QuditCat
+namespace Qudit
 
 noncomputable section
 
 /-- Evaluation at `1` identifies categorical scalars with complex numbers. -/
-def scalarRingEquiv : Scalar QuditCat ≃+* ℂ where
+def scalarRingEquiv : Scalar Qudit ≃+* ℂ where
   toFun s := s.asHom.hom (1 : ℂ)
   invFun z := .of (ofHom (.lsmul ℂ ℂ z))
   left_inv s := by ext; simp
@@ -49,7 +49,7 @@ def scalarRingEquiv : Scalar QuditCat ≃+* ℂ where
   map_add' _ _ := by simp
 
 /-- A ket is an isometry precisely when its vector has unit norm. -/
-theorem isIsometry_ketArrow_iff {H : QuditCat} (v : H.state) :
+theorem isIsometry_ketArrow_iff {H : Qudit} (v : H.state) :
     IsIsometry (ketArrow v) ↔ ‖v‖ = 1 := by
   constructor
   · intro h
@@ -60,7 +60,7 @@ theorem isIsometry_ketArrow_iff {H : QuditCat} (v : H.state) :
     simpa using ofHom_lsmul_one
 
 /-- The bra effects of an orthonormal basis resolve the identity. -/
-theorem sum_braArrow_comp_ketArrow {H : QuditCat} {ι : Type*} [Fintype ι]
+theorem sum_braArrow_comp_ketArrow {H : Qudit} {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℂ H.state) :
     ∑ i, braArrow (b i) ≫ ketArrow (b i) = 𝟙 H := by
   apply hom_ext
@@ -70,7 +70,7 @@ theorem sum_braArrow_comp_ketArrow {H : QuditCat} {ι : Type*} [Fintype ι]
   simpa [braArrow, ketArrow, bra, ket] using (b.sum_repr' x)
 
 /-- The bra effects of an orthonormal basis detect every nonzero process. -/
-theorem complete_braArrow_orthonormalBasis {H : QuditCat} {ι : Type*} [Fintype ι]
+theorem complete_braArrow_orthonormalBasis {H : Qudit} {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℂ H.state) : Effect.Complete (fun i ↦ braArrow (b i)) := by
   intro Y f hf
   calc
@@ -80,7 +80,7 @@ theorem complete_braArrow_orthonormalBasis {H : QuditCat} {ι : Type*} [Fintype 
     _ = 0 := by simp [Semiadditive.comp_sum, ← Category.assoc, hf]
 
 /-- The bra effects of an orthonormal basis are normalized and pairwise orthogonal. -/
-theorem disjoint_braArrow_orthonormalBasis {H : QuditCat} {ι : Type*} [Fintype ι]
+theorem disjoint_braArrow_orthonormalBasis {H : Qudit} {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℂ H.state) : Effect.Disjoint (fun i ↦ braArrow (b i)) := by
   constructor
   · intro i
@@ -92,13 +92,13 @@ theorem disjoint_braArrow_orthonormalBasis {H : QuditCat} {ι : Type*} [Fintype 
     simp
 
 /-- The coordinate measurement map into an explicit orthogonal sum of scalar objects. -/
-def basisMeasurement {H : QuditCat} {ι : Type} [Fintype ι]
+def basisMeasurement {H : Qudit} {ι : Type} [Fintype ι]
     (b : OrthonormalBasis ι ℂ H.state) : H ⟶ of (EuclideanSpace ℂ ι) :=
   (sumBicone (fun _ : ι ↦ of ℂ)).lift (sumBiconeIsBilimit _)
     (fun i ↦ braArrow (b i))
 
 /-- Each component of a basis measurement is its usual inner-product amplitude. -/
-theorem basisMeasurement_apply {H : QuditCat} {ι : Type} [Fintype ι]
+theorem basisMeasurement_apply {H : Qudit} {ι : Type} [Fintype ι]
     (b : OrthonormalBasis ι ℂ H.state) (v : H.state) (i : ι) :
     ((basisMeasurement b).hom v).ofLp i = inner ℂ (b i) v :=
   congrArg (fun f ↦ f.hom v)
@@ -107,7 +107,7 @@ theorem basisMeasurement_apply {H : QuditCat} {ι : Type} [Fintype ι]
 
 /-- The underlying linear map of a basis measurement is the orthonormal coordinate map. -/
 @[simp]
-theorem hom_basisMeasurement {H : QuditCat} {ι : Type} [Fintype ι]
+theorem hom_basisMeasurement {H : Qudit} {ι : Type} [Fintype ι]
     (b : OrthonormalBasis ι ℂ H.state) :
     (basisMeasurement b).hom = b.repr.toLinearEquiv.toLinearMap := by
   apply LinearMap.ext
@@ -119,7 +119,7 @@ theorem hom_basisMeasurement {H : QuditCat} {ι : Type} [Fintype ι]
   exact basisMeasurement_apply b v i
 
 /-- **Example 2.54**: a basis measurement is unitary by the abstract complete/disjoint theorem. -/
-instance isUnitary_basisMeasurement {H : QuditCat} {ι : Type} [Fintype ι]
+instance isUnitary_basisMeasurement {H : Qudit} {ι : Type} [Fintype ι]
     (b : OrthonormalBasis ι ℂ H.state) : IsUnitary (basisMeasurement b) :=
   Effect.isUnitary_bicone_lift_of_complete_disjoint
     (sumBicone (fun _ : ι ↦ of ℂ)) (sumBiconeIsBilimit _)
@@ -127,7 +127,7 @@ instance isUnitary_basisMeasurement {H : QuditCat} {ι : Type} [Fintype ι]
     (disjoint_braArrow_orthonormalBasis b)
 
 /-- The categorical Born rule for the bra effects of an orthonormal basis. -/
-theorem sum_probability_orthonormalBasis {H : QuditCat} {ι : Type*} [Fintype ι]
+theorem sum_probability_orthonormalBasis {H : Qudit} {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℂ H.state) (v : H.state) (hv : ‖v‖ = 1) :
     ∑ i, probability (ketArrow v) (braArrow (b i)) = 1 := by
   let : IsIsometry (ketArrow v) := (isIsometry_ketArrow_iff v).2 hv
@@ -136,7 +136,7 @@ theorem sum_probability_orthonormalBasis {H : QuditCat} {ι : Type*} [Fintype ι
     (ketArrow v)
 
 /-- Evaluating a categorical Born scalar gives the squared modulus of the amplitude. -/
-theorem scalarRingEquiv_probability_ketArrow_braArrow {H : QuditCat} (v w : H.state) :
+theorem scalarRingEquiv_probability_ketArrow_braArrow {H : Qudit} (v w : H.state) :
     scalarRingEquiv (probability (ketArrow v) (braArrow w)) =
       (‖inner ℂ w v‖ ^ 2 : ℂ) := by
   change (ketArrow v ≫ braArrow w ≫ (braArrow w)† ≫ (ketArrow v)†).hom 1 = _
@@ -148,7 +148,7 @@ theorem scalarRingEquiv_probability_ketArrow_braArrow {H : QuditCat} (v w : H.st
   norm_cast
 
 /-- Every probability in the qudit model is a nonnegative real scalar. -/
-theorem probability_re_nonneg {H : QuditCat} (v w : H.state) :
+theorem probability_re_nonneg {H : Qudit} (v w : H.state) :
     0 ≤ (scalarRingEquiv (probability (ketArrow v) (braArrow w))).re := by
   rw [scalarRingEquiv_probability_ketArrow_braArrow]
   norm_cast
@@ -156,21 +156,21 @@ theorem probability_re_nonneg {H : QuditCat} (v w : H.state) :
 
 /-- A qudit Born scalar has zero imaginary part. -/
 @[simp]
-theorem probability_im_eq_zero {H : QuditCat} (v w : H.state) :
+theorem probability_im_eq_zero {H : Qudit} (v w : H.state) :
     (scalarRingEquiv (probability (ketArrow v) (braArrow w))).im = 0 := by
   rw [scalarRingEquiv_probability_ketArrow_braArrow]
   norm_cast
 
 /-- Real probabilities for an orthonormal-basis measurement sum to one. -/
-theorem sum_probability_re_orthonormalBasis {H : QuditCat} {ι : Type*} [Fintype ι]
+theorem sum_probability_re_orthonormalBasis {H : Qudit} {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℂ H.state) (v : H.state) (hv : ‖v‖ = 1) :
     ∑ i, (scalarRingEquiv (probability (ketArrow v) (braArrow (b i)))).re = 1 := by
-  have h := congrArg (fun s : Scalar QuditCat ↦ (scalarRingEquiv s).re)
+  have h := congrArg (fun s : Scalar Qudit ↦ (scalarRingEquiv s).re)
     (sum_probability_orthonormalBasis b v hv)
   simpa only [map_sum, Complex.re_sum, map_one, Complex.one_re] using h
 
 /-- A probability from a complete orthonormal-basis measurement is at most one. -/
-theorem probability_re_le_one_orthonormalBasis {H : QuditCat} {ι : Type*} [Fintype ι]
+theorem probability_re_le_one_orthonormalBasis {H : Qudit} {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℂ H.state) (v : H.state) (hv : ‖v‖ = 1) (i : ι) :
     (scalarRingEquiv (probability (ketArrow v) (braArrow (b i)))).re ≤ 1 := by
   rw [← sum_probability_re_orthonormalBasis b v hv]
@@ -178,7 +178,7 @@ theorem probability_re_le_one_orthonormalBasis {H : QuditCat} {ι : Type*} [Fint
     (Finset.mem_univ i)
 
 /-- Measuring a basis vector in its own basis gives a Kronecker distribution. -/
-theorem probability_basis_vector {H : QuditCat} {ι : Type*} [Fintype ι]
+theorem probability_basis_vector {H : Qudit} {ι : Type*} [Fintype ι]
     [DecidableEq ι] (b : OrthonormalBasis ι ℂ H.state) (i j : ι) :
     scalarRingEquiv (probability (ketArrow (b i)) (braArrow (b j))) =
       if i = j then 1 else 0 := by
@@ -200,7 +200,7 @@ theorem qubit_zero_probability_one : scalarRingEquiv
   simpa using probability_basis_vector (ZBasis 2) 0 1
 
 /-- Bra addition is the additive structure on linear functionals. -/
-theorem braArrow_add {H : QuditCat} (v w : H.state) :
+theorem braArrow_add {H : Qudit} (v w : H.state) :
     braArrow (v + w) = braArrow v + braArrow w := by
   apply hom_ext
   ext x
@@ -274,7 +274,7 @@ theorem counterexample_not_disjoint : ¬ Effect.Disjoint counterexampleEffect :=
   let : IsIsometry (ketArrow (ZBasis 2 0)) := counterexample_unit_state
   apply counterexample_probability_sum_ne_one
   exact Effect.sum_probability_eq_one_of_complete_disjoint_bicone
-    (sumBicone (fun _ : Fin 2 ↦ 𝟙_ QuditCat)) (sumBiconeIsBilimit _)
+    (sumBicone (fun _ : Fin 2 ↦ 𝟙_ Qudit)) (sumBiconeIsBilimit _)
     counterexampleEffect counterexample_complete hx (ketArrow (ZBasis 2 0))
 
 /-- The Hadamard gate sends `|0⟩` to the equal superposition state. -/
@@ -308,4 +308,4 @@ theorem hadamard_zero_probability (i : Fin 2) :
 
 end
 
-end QuditCat
+end Qudit

@@ -6,7 +6,7 @@ Authors: Bingyu Xia
 module
 
 public import FQFP.CategoryTheory.Dagger.Kernels
-public import FQFP.CQM.QuditCat.Dagger
+public import FQFP.CQM.Qudit.Dagger
 
 /-!
 # Dagger kernels of qudit morphisms
@@ -36,14 +36,14 @@ ordinary kernel.
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.DaggerCategory
 
-namespace QuditCat
+namespace Qudit
 
 noncomputable section
 
-variable {H K L : QuditCat}
+variable {H K L : Qudit}
 
 /-- The kernel subspace of a linear map, with its induced Hilbert space structure. -/
-abbrev kernelObj (f : H ⟶ K) : QuditCat := of (LinearMap.ker f.hom)
+abbrev kernelObj (f : H ⟶ K) : Qudit := of (LinearMap.ker f.hom)
 
 /-- The inclusion of the kernel subspace into the domain. -/
 def kernelι (f : H ⟶ K) : kernelObj f ⟶ H :=
@@ -105,9 +105,9 @@ def daggerKernel (f : H ⟶ K) : DaggerKernel f where
   isIsometry := inferInstanceAs (IsIsometry (kernelι f))
 
 /-- Every morphism between finite-dimensional qudits has a dagger kernel. -/
-instance hasDaggerKernels : HasDaggerKernels QuditCat where
+instance hasDaggerKernels : HasDaggerKernels Qudit where
   hasDaggerKernel f := ⟨⟨daggerKernel f⟩⟩
 
 end
 
-end QuditCat
+end Qudit

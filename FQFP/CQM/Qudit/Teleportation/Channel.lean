@@ -5,8 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.QuditCat.QuantumChannel
-public import FQFP.CQM.QuditCat.Teleportation
+public import FQFP.CQM.Qudit.Channel.Basic
+public import FQFP.CQM.Qudit.Teleportation.Basic
 
 /-!
 # Teleportation as a quantum channel
@@ -22,7 +22,7 @@ an arbitrary finite-dimensional reference system.
 
 open CategoryTheory CategoryTheory.MonoidalCategory
 
-namespace QuditCat
+namespace Qudit
 
 noncomputable section
 
@@ -104,7 +104,7 @@ lemma teleportationChannel_map (ρ : Density Qubit) : teleportationChannel.map �
   rw [teleportationChannel_eq_id, QuantumChannel.map_id]
 
 /-- The channel preserves arbitrary entanglement with an untouched reference system. -/
-lemma teleportationChannel_tensor_map (R : QuditCat) (ρ : Density (Qubit ⊗ R)) :
+lemma teleportationChannel_tensor_map (R : Qudit) (ρ : Density (Qubit ⊗ R)) :
     (teleportationChannel.tensor (QuantumChannel.id R)).map ρ = ρ := by
   apply Density.ext
   rw [teleportationChannel_eq_id]
@@ -114,4 +114,4 @@ lemma teleportationChannel_tensor_map (R : QuditCat) (ρ : Density (Qubit ⊗ R)
 
 end
 
-end QuditCat
+end Qudit

@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.QuditCat.CompletelyPositive
+public import FQFP.CQM.Qudit.Channel.CompletelyPositive
 
 /-!
 # Quantum channels on qudits
@@ -13,18 +13,18 @@ public import FQFP.CQM.QuditCat.CompletelyPositive
 `QuantumChannel H K` bundles a completely positive, trace-preserving superoperator.
 It acts on density operators and supports composition, tensor products, normalized
 finite Kraus families, isometric (in particular unitary) processes, and partial traces.
-It does not change the category or dagger instances of `QuditCat`.
+It does not change the category or dagger instances of `Qudit`.
 -/
 
 @[expose] public section
 
 open CategoryTheory CategoryTheory.MonoidalCategory CategoryTheory.DaggerCategory
 
-namespace QuditCat
+namespace Qudit
 
 /-- A completely positive and trace-preserving linear map between operator spaces. -/
 @[ext]
-structure QuantumChannel (H K : QuditCat) where
+structure QuantumChannel (H K : Qudit) where
   /-- The underlying map on all operators. -/
   toSuperoperator : Superoperator H K
   /-- Positivity holds with every finite-dimensional auxiliary system. -/
@@ -36,7 +36,7 @@ namespace QuantumChannel
 
 noncomputable section
 
-variable {H K L M : QuditCat}
+variable {H K L M : Qudit}
 
 /-- Apply a quantum channel to a density state. -/
 def map (Φ : QuantumChannel H K) (ρ : Density H) : Density K where
@@ -49,7 +49,7 @@ lemma op_map (Φ : QuantumChannel H K) (ρ : Density H) :
     (Φ.map ρ).op = Φ.toSuperoperator ρ.op := rfl
 
 /-- The identity quantum channel. -/
-def id (H : QuditCat) : QuantumChannel H H where
+def id (H : Qudit) : QuantumChannel H H where
   toSuperoperator := LinearMap.id
   completelyPositive := Superoperator.isCompletelyPositive_id H
   tracePreserving := Superoperator.isTracePreserving_id H
@@ -82,13 +82,13 @@ def ofIsometry (f : H ⟶ K) [IsIsometry f] : QuantumChannel H K where
     (congrArg Hom.hom (IsIsometry.comp_dagger_eq_id f))
 
 /-- The channel discarding the right subsystem. -/
-def partialTraceRight (H K : QuditCat) : QuantumChannel (H ⊗ K) H where
+def partialTraceRight (H K : Qudit) : QuantumChannel (H ⊗ K) H where
   toSuperoperator := Operator.partialTraceRight
   completelyPositive := Superoperator.isCompletelyPositive_partialTraceRight H K
   tracePreserving := LinearMap.trace_partialTraceRight
 
 /-- The channel discarding the left subsystem. -/
-def partialTraceLeft (H K : QuditCat) : QuantumChannel (H ⊗ K) K where
+def partialTraceLeft (H K : Qudit) : QuantumChannel (H ⊗ K) K where
   toSuperoperator := Operator.partialTraceLeft
   completelyPositive := Superoperator.isCompletelyPositive_partialTraceLeft H K
   tracePreserving := LinearMap.trace_partialTraceLeft
@@ -157,4 +157,4 @@ end
 
 end QuantumChannel
 
-end QuditCat
+end Qudit

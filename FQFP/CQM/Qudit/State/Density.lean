@@ -5,8 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.QuditCat.Operator
-public import FQFP.CQM.QuditCat.UnitState
+public import FQFP.CQM.Qudit.State.Operator
+public import FQFP.CQM.Qudit.State.UnitState
 
 /-!
 # Density operators on qudits
@@ -25,11 +25,11 @@ state space: a zero-dimensional space has no density operators.
 open CategoryTheory CategoryTheory.DaggerCategory
 open scoped ComplexOrder BigOperators
 
-namespace QuditCat
+namespace Qudit
 
 /-- A positive operator of trace one on a finite-dimensional complex Hilbert space. -/
 @[ext]
-structure Density (H : QuditCat) where
+structure Density (H : Qudit) where
   /-- The underlying linear operator. -/
   op : Operator H
   /-- Positivity, including self-adjointness. -/
@@ -41,7 +41,7 @@ namespace Density
 
 noncomputable section
 
-variable {H : QuditCat}
+variable {H : Qudit}
 
 attribute [simp] trace_one
 
@@ -87,7 +87,7 @@ lemma pure_phase (c : ℂ) (hc : ‖c‖ = 1) (v : UnitState H) :
   exact Operator.outer_smul_self_of_norm_eq_one (H := H) c hc v.val
 
 /-- Isometric evolution of a density operator, including unitary evolution. -/
-def map {K : QuditCat} (f : H ⟶ K) [IsIsometry f] (ρ : Density H) : Density K where
+def map {K : Qudit} (f : H ⟶ K) [IsIsometry f] (ρ : Density H) : Density K where
   op := f.hom ∘ₗ ρ.op ∘ₗ f.hom.adjoint
   positive := ρ.positive.conj_adjoint f.hom
   trace_one := by
@@ -99,11 +99,11 @@ def map {K : QuditCat} (f : H ⟶ K) [IsIsometry f] (ρ : Density H) : Density K
 
 /-- The operator of an isometric image is the conjugated operator. -/
 @[simp]
-lemma op_map {K : QuditCat} (f : H ⟶ K) [IsIsometry f] (ρ : Density H) :
+lemma op_map {K : Qudit} (f : H ⟶ K) [IsIsometry f] (ρ : Density H) :
     (map f ρ).op = f.hom ∘ₗ ρ.op ∘ₗ f.hom.adjoint := rfl
 
 /-- Pure-state embedding commutes with isometric evolution. -/
-lemma map_pure {K : QuditCat} (f : H ⟶ K) [IsIsometry f] (v : UnitState H) :
+lemma map_pure {K : Qudit} (f : H ⟶ K) [IsIsometry f] (v : UnitState H) :
     (pure v).map f = pure (v.map f) := by
   apply Density.ext
   ext x
@@ -286,4 +286,4 @@ end
 
 end Density
 
-end QuditCat
+end Qudit

@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.QuditCat.Dagger
+public import FQFP.CQM.Qudit.Dagger
 public import FQFP.Analysis.InnerProductSpace.PositiveTrace
 
 /-!
@@ -24,14 +24,14 @@ Coordinates use Mathlib's `LinearMap.toMatrixOrthonormal`; no second matrix alge
 open CategoryTheory CategoryTheory.DaggerCategory
 open scoped ComplexOrder
 
-namespace QuditCat
+namespace Qudit
 
 /-- The algebra of linear operators on a qudit. -/
-abbrev Operator (H : QuditCat) := Module.End ℂ H.state
+abbrev Operator (H : Qudit) := Module.End ℂ H.state
 
 namespace Operator
 
-variable {H : QuditCat}
+variable {H : Qudit}
 
 /-- The basis-independent complex trace. -/
 noncomputable abbrev trace (A : Operator H) : ℂ := LinearMap.trace ℂ H.state A
@@ -115,4 +115,4 @@ lemma trace_adjoint (A : Operator H) : trace A.adjoint = star A.trace := by
 
 end Operator
 
-end QuditCat
+end Qudit

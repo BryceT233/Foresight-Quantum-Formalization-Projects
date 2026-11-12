@@ -71,6 +71,16 @@ lemma traceNorm_add_le (A B : E →ₗ[ℂ] E) :
   simpa only [traceNorm, traceFunctional_add] using norm_add_le (traceFunctional A)
     (traceFunctional B)
 
+/-- The trace norm of a finite sum is at most the sum of the trace norms. -/
+lemma traceNorm_sum_le {ι : Type*} (s : Finset ι) (A : ι → E →ₗ[ℂ] E) :
+    traceNorm (∑ i ∈ s, A i) ≤ ∑ i ∈ s, traceNorm (A i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [traceNorm_zero]
+  | @insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi]
+    exact (traceNorm_add_le _ _).trans (add_le_add le_rfl ih)
+
 /-- Absolute homogeneity of the trace norm. -/
 lemma traceNorm_smul (c : ℂ) (A : E →ₗ[ℂ] E) :
     traceNorm (c • A) = ‖c‖ * traceNorm A := by
@@ -270,6 +280,47 @@ lemma IsPositive.traceNorm_eq_re_trace {A : E →ₗ[ℂ] E} (hA : A.IsPositive)
         rw [hA.isSymmetric.re_trace_eq_sum_eigenvalues rfl]
         exact Finset.sum_congr rfl fun i _ => abs_of_nonneg (hA.nonneg_eigenvalues rfl i)
   · exact (Complex.re_le_norm _).trans (norm_trace_le_traceNorm A)
+
+/-- Spectral decomposition of a self-adjoint operator into rank-one orthogonal projections. -/
+lemma IsSymmetric.eq_sum_smul_rankOne {A : E →ₗ[ℂ] E} (hA : A.IsSymmetric) :
+    A = ∑ i, (hA.eigenvalues rfl i : ℂ) •
+      (InnerProductSpace.rankOne ℂ (hA.eigenvectorBasis rfl i)
+        (hA.eigenvectorBasis rfl i)).toLinearMap := by
+  classical
+  let b := hA.eigenvectorBasis rfl
+  apply b.toBasis.ext
+  intro j
+  simp only [LinearMap.sum_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe,
+    InnerProductSpace.rankOne_apply]
+  simp [b, (hA.eigenvectorBasis rfl).inner_eq_ite, smul_ite]
+
+/-- Positive trace-preserving linear maps contract the trace norm of self-adjoint inputs.
+Complete positivity is not needed for this unextended inequality. -/
+lemma IsSymmetric.traceNorm_map_le {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+    {A : E →ₗ[ℂ] E} (hA : A.IsSymmetric)
+    (Φ : (E →ₗ[ℂ] E) →ₗ[ℂ] (F →ₗ[ℂ] F))
+    (hpos : ∀ B, B.IsPositive → (Φ B).IsPositive)
+    (htr : ∀ B, trace ℂ F (Φ B) = trace ℂ E B) :
+    traceNorm (Φ A) ≤ traceNorm A := by
+  classical
+  let b := hA.eigenvectorBasis rfl
+  have hn (i) : traceNorm (Φ (InnerProductSpace.rankOne ℂ (b i) (b i)).toLinearMap) = 1 := by
+    rw [(hpos _
+      (InnerProductSpace.isPositive_rankOne_self (b i)).toLinearMap).traceNorm_eq_re_trace,
+      htr, InnerProductSpace.trace_rankOne, inner_self_eq_norm_sq_to_K, b.norm_eq_one]
+    norm_num
+  calc
+    traceNorm (Φ A) = traceNorm (∑ i, (hA.eigenvalues rfl i : ℂ) •
+        Φ (InnerProductSpace.rankOne ℂ (b i) (b i)).toLinearMap) := by
+      conv_lhs => rw [hA.eq_sum_smul_rankOne]
+      rw [map_sum]
+      simp only [map_smul, b]
+    _ ≤ ∑ i, traceNorm ((hA.eigenvalues rfl i : ℂ) •
+        Φ (InnerProductSpace.rankOne ℂ (b i) (b i)).toLinearMap) := traceNorm_sum_le _ _
+    _ = traceNorm A := by
+      simp only [traceNorm_smul, hn, mul_one, Complex.norm_real, Real.norm_eq_abs,
+        hA.traceNorm_eq_sum_abs_eigenvalues]
 
 /-- Centering an operator effect produces a contraction. -/
 lemma opNorm_add_self_sub_one_le {A : E →ₗ[ℂ] E} (h₀ : A.IsPositive) (h₁ : A ≤ 1) :

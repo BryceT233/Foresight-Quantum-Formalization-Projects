@@ -5,7 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.QuditCat.UnitaryEvolution
+public import FQFP.CQM.Qudit.Error.UnitaryEvolution
+public import FQFP.CQM.Qudit.Error.Channel
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.ErrorBounds
 
 /-!
@@ -22,11 +23,11 @@ The resulting operator error controls both trace distance and measurement probab
 open scoped BigOperators RealScalar
 open NormedSpace TrotterError
 
-namespace QuditCat
+namespace Qudit
 
 noncomputable section
 
-variable {H : QuditCat} {Υ Γ : ℕ}
+variable {H : Qudit} {Υ Γ : ℕ}
 
 private lemma starModule_real {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
     [NormedAlgebra ℂ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸] [StarModule ℂ 𝔸]
@@ -89,6 +90,31 @@ theorem abs_probability_productFormula_sub_le {ι : Type*} [Fintype ι]
   (M.abs_probability_sub_le_traceDistance _ _ i).trans
     (traceDistance_productFormula_le P A hA p hp horder hΥ t ht ρ)
 
+/-- Common noise or postprocessing preserves the product-formula trace-distance bound. -/
+theorem traceDistance_channel_productFormula_le {K : Qudit} (Φ : QuantumChannel H K)
+    (P : ProductFormulaData Υ Γ)
+    (A : Fin Γ → H.state →L[ℂ] H.state) (hA : ∀ i, star (A i) = -(A i))
+    (p : ℕ) (hp : 1 ≤ p) (horder : P.IsOrderOf p A) (hΥ : 0 < Υ)
+    (t : ℝ) (ht : 0 ≤ t) (ρ : Density H) :
+    (Φ.map (ρ.evolve (productFormulaEvolution P A hA t))).traceDistance
+        (Φ.map (ρ.evolve (exactEvolution A hA t))) ≤
+      2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1) * αComm p A * t ^ (p + 1) :=
+  (Φ.traceDistance_map_le _ _).trans
+    (traceDistance_productFormula_le P A hA p hp horder hΥ t ht ρ)
+
+/-- After common noise, every output POVM retains the original commutator error constant. -/
+theorem abs_probability_channel_productFormula_sub_le {K : Qudit}
+    {ι : Type*} [Fintype ι] (M : POVM K ι) (Φ : QuantumChannel H K)
+    (P : ProductFormulaData Υ Γ)
+    (A : Fin Γ → H.state →L[ℂ] H.state) (hA : ∀ i, star (A i) = -(A i))
+    (p : ℕ) (hp : 1 ≤ p) (horder : P.IsOrderOf p A) (hΥ : 0 < Υ)
+    (t : ℝ) (ht : 0 ≤ t) (ρ : Density H) (i : ι) :
+    |M.probability (Φ.map (ρ.evolve (productFormulaEvolution P A hA t))) i -
+        M.probability (Φ.map (ρ.evolve (exactEvolution A hA t))) i| ≤
+      2 / ((p + 1 : ℕ) : ℝ) * (Υ : ℝ) ^ (p + 1) * αComm p A * t ^ (p + 1) :=
+  (M.abs_probability_sub_le_traceDistance _ _ i).trans
+    (traceDistance_channel_productFormula_le Φ P A hA p hp horder hΥ t ht ρ)
+
 end
 
-end QuditCat
+end Qudit

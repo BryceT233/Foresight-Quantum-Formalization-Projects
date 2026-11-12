@@ -35,14 +35,14 @@ here.
 
 The theorems here are per branch: they say what a given outcome does *if it occurs*.
 Completeness and disjointness of the branch effects are separate requirements, proved in the
-models for `RelCat.bitBellEffects` and the normalized `QuditCat.qubitBellEffects`.
+models for `RelCat.bitBellEffects` and the normalized `Qudit.qubitBellEffects`.
 
 ## Normalization boundary
 
 Nothing here normalizes: the resource state `η` and the effect `x` are arbitrary arguments of
 `teleportationBranch`, so the unnormalized Bell data of the source — the cup `∑ᵢ |ii⟩` and the
 four Bell effects, each of norm `√2` for a qubit — gives an exact identity. The physically
-normalized data instead gives the scalar multiple `(1/2) • 𝟙` that `QuditCat.Teleportation`
+normalized data instead gives the scalar multiple `(1/2) • 𝟙` that `Qudit.Teleportation`
 computes; one cannot normalize the cup and keep the exact-pairing snake equations at the same
 time, which is why the two statements are kept apart.
 

@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.QuditCat.TraceDistance
+public import FQFP.CQM.Qudit.Error.TraceDistance
 
 /-!
 # Unitary evolution in the Hilbert operator algebra
@@ -18,11 +18,11 @@ and density-state evolution. The operator norm is the Hilbert-space operator nor
 
 open CategoryTheory CategoryTheory.DaggerCategory
 
-namespace QuditCat
+namespace Qudit
 
 noncomputable section
 
-variable {H : QuditCat}
+variable {H : Qudit}
 
 /-- A unitary element of the Hilbert operator algebra as a qudit endomorphism. -/
 def unitaryHom (U : unitary (H.state →L[ℂ] H.state)) : H ⟶ H := ofHom U.val.toLinearMap
@@ -78,4 +78,4 @@ end POVM
 
 end
 
-end QuditCat
+end Qudit

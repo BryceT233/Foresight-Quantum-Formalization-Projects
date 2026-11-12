@@ -12,29 +12,29 @@ public import Mathlib.RingTheory.PicardGroup
 /-!
 # The category of qudits
 
-This file defines `QuditCat`, the category of qudits: objects are finite-dimensional
+This file defines `Qudit`, the category of qudits: objects are finite-dimensional
 complex Hilbert spaces (the state spaces of qudits) and morphisms are linear maps between
 them. The category is equipped with a dagger structure given by the adjoint. The file also
 sets up Dirac bra-ket notation, the standard `n`-dimensional Hilbert space `ℂⁿ` with its
 computational basis, and the usual single-qubit gates.
 
-The tensor product of state spaces, and with it the monoidal structure on `QuditCat`, lives
-in `FQFP.CQM.QuditCat.Monoidal`.
+The tensor product of state spaces, and with it the monoidal structure on `Qudit`, lives
+in `FQFP.CQM.Qudit.Monoidal`.
 
 ## Main definitions
 
-* `QuditCat`: the category of finite-dimensional complex Hilbert spaces.
-* `QuditCat.Hom`: a morphism between two qudits, i.e. a linear map of the underlying
+* `Qudit`: the category of finite-dimensional complex Hilbert spaces.
+* `Qudit.Hom`: a morphism between two qudits, i.e. a linear map of the underlying
   state spaces.
-* `QuditCat.bra` and `QuditCat.ket`: the bra and ket maps of a state.
-* `QuditCat.std` and `QuditCat.ZBasis`: the standard `n`-dimensional Hilbert space and
+* `Qudit.bra` and `Qudit.ket`: the bra and ket maps of a state.
+* `Qudit.std` and `Qudit.ZBasis`: the standard `n`-dimensional Hilbert space and
   its computational basis.
-* `QuditCat.matrixToEnd`: a matrix, interpreted as an endomorphism of the standard space.
-* `QuditCat.Qubit`: the 2-dimensional qubit space.
+* `Qudit.matrixToEnd`: a matrix, interpreted as an endomorphism of the standard space.
+* `Qudit.Qubit`: the 2-dimensional qubit space.
 
 ## Notation
 
-Open `QuditCat.Braket` as a scope to use the Dirac notation:
+Open `Qudit.Braket` as a scope to use the Dirac notation:
 
 * `⟨a∣` is notation for the bra functional of a state `a`.
 * `∣b⟩` is notation for the ket map of a state `b`.
@@ -49,7 +49,7 @@ Lean can read the opening bracket as a tuple constructor and the bar as divisibi
 
 ## Main results
 
-* `QuditCat` is a dagger category.
+* `Qudit` is a dagger category.
 * `isUnitary_matrixToEnd_iff` characterizes unitary matrices by `M * star M = 1`.
 * `matrixToEnd_apply_basis` and `dagger_matrixToEnd` compute matrix columns and daggers.
 
@@ -64,8 +64,8 @@ open CategoryTheory
 
 /-- The category of qudits, where the universe level of state spaces is fixed to be 0
 for simplicity. Objects in this category represent finite-dimensional quantum state spaces. -/
-structure QuditCat where
-  /-- Construct an object in `QuditCat` from a state space. -/
+structure Qudit where
+  /-- Construct an object in `Qudit` from a state space. -/
   of ::
   /-- The underlying finite-dimensional Hilbert space of a qudit. -/
   state : Type
@@ -73,95 +73,95 @@ structure QuditCat where
   [isInnerProductSpace : InnerProductSpace ℂ state]
   [finiteDim : FiniteDimensional ℂ state]
 
-initialize_simps_projections QuditCat (-isNormedAddCommGroup, -isInnerProductSpace, -finiteDim)
-attribute [instance] QuditCat.isNormedAddCommGroup QuditCat.isInnerProductSpace QuditCat.finiteDim
+initialize_simps_projections Qudit (-isNormedAddCommGroup, -isInnerProductSpace, -finiteDim)
+attribute [instance] Qudit.isNormedAddCommGroup Qudit.isInnerProductSpace Qudit.finiteDim
 
 section Notation
 
 open Lean.PrettyPrinter.Delaborator
 
-/-- This prevents `QuditCat.of X` being printed as
+/-- This prevents `Qudit.of X` being printed as
 `{ Qudit := X, isNormedAddCommGroup := ... }` by `delabStructureInstance`. -/
-@[app_delab QuditCat.of]
-meta def QuditCat.delabOf : Delab := delabApp
+@[app_delab Qudit.of]
+meta def Qudit.delabOf : Delab := delabApp
 
 end Notation
 
-namespace QuditCat
+namespace Qudit
 
 /-- Finite-dimensional qudit state spaces are complete. -/
-instance (H : QuditCat) : CompleteSpace H.state := FiniteDimensional.complete ℂ H.state
+instance (H : Qudit) : CompleteSpace H.state := FiniteDimensional.complete ℂ H.state
 
-lemma of_state {H : QuditCat} : of H.state = H := rfl
+lemma of_state {H : Qudit} : of H.state = H := rfl
 
 lemma state_of (X : Type) [NormedAddCommGroup X] [InnerProductSpace ℂ X]
     [FiniteDimensional ℂ X] : (of X).state = X := rfl
 
 section Hom
 
-/-- The type of morphisms in `QuditCat`. -/
+/-- The type of morphisms in `Qudit`. -/
 @[ext]
-structure Hom (H₁ H₂ : QuditCat) where
+structure Hom (H₁ H₂ : Qudit) where
   private mk ::
   /-- The underlying linear map between the state spaces. -/
   hom' : H₁.state →ₗ[ℂ] H₂.state
 
 set_option backward.privateInPublic true in
 set_option backward.privateInPublic.warn false in
-instance largeCategory : LargeCategory QuditCat where
+instance largeCategory : LargeCategory Qudit where
   Hom H₁ H₂ := Hom H₁ H₂
   id _ := ⟨LinearMap.id⟩
   comp f g := ⟨g.hom'.comp f.hom'⟩
 
 set_option backward.privateInPublic true in
 set_option backward.privateInPublic.warn false in
-instance concreteCategory : ConcreteCategory QuditCat (fun H₁ H₂ ↦ H₁.state →ₗ[ℂ] H₂.state) where
+instance concreteCategory : ConcreteCategory Qudit (fun H₁ H₂ ↦ H₁.state →ₗ[ℂ] H₂.state) where
   hom := Hom.hom'
   ofHom := Hom.mk
 
-/-- Turn a morphism in `QuditCat` back into a `LinearMap`. -/
-abbrev Hom.hom {H₁ H₂ : QuditCat} (f : Hom H₁ H₂) :=
-  ConcreteCategory.hom (C := QuditCat) f
+/-- Turn a morphism in `Qudit` back into a `LinearMap`. -/
+abbrev Hom.hom {H₁ H₂ : Qudit} (f : Hom H₁ H₂) :=
+  ConcreteCategory.hom (C := Qudit) f
 
-/-- Typecheck a `LinearMap` as a morphism in `QuditCat`. -/
+/-- Typecheck a `LinearMap` as a morphism in `Qudit`. -/
 abbrev ofHom {X Y : Type} [NormedAddCommGroup X] [InnerProductSpace ℂ X]
     [FiniteDimensional ℂ X] [NormedAddCommGroup Y] [InnerProductSpace ℂ Y]
     [FiniteDimensional ℂ Y] (f : X →ₗ[ℂ] Y) : of X ⟶ of Y :=
-  ConcreteCategory.ofHom (C := QuditCat) f
+  ConcreteCategory.ofHom (C := Qudit) f
 
 /-- Use the `ConcreteCategory.hom` projection for `@[simps]` lemmas. -/
-def Hom.Simps.hom (H₁ H₂ : QuditCat) (f : Hom H₁ H₂) := f.hom
+def Hom.Simps.hom (H₁ H₂ : Qudit) (f : Hom H₁ H₂) := f.hom
 
 initialize_simps_projections Hom (hom' → hom)
 
 @[simp]
-lemma hom_id {H : QuditCat} : (𝟙 H : H ⟶ H).hom = LinearMap.id := rfl
+lemma hom_id {H : Qudit} : (𝟙 H : H ⟶ H).hom = LinearMap.id := rfl
 
-lemma id_apply (H : QuditCat) (x : H.state) : 𝟙 H x = x := by simp
+lemma id_apply (H : Qudit) (x : H.state) : 𝟙 H x = x := by simp
 
 @[simp]
-lemma hom_comp {H₁ H₂ H₃ : QuditCat} (f : H₁ ⟶ H₂) (g : H₂ ⟶ H₃) :
+lemma hom_comp {H₁ H₂ H₃ : Qudit} (f : H₁ ⟶ H₂) (g : H₂ ⟶ H₃) :
     (f ≫ g).hom = g.hom.comp f.hom := rfl
 
-lemma comp_apply {H₁ H₂ H₃ : QuditCat} (f : H₁ ⟶ H₂) (g : H₂ ⟶ H₃) (x : H₁.state) :
+lemma comp_apply {H₁ H₂ H₃ : Qudit} (f : H₁ ⟶ H₂) (g : H₂ ⟶ H₃) (x : H₁.state) :
     (f ≫ g) x = g (f x) := by simp
 
 @[ext]
-lemma hom_ext {H₁ H₂ : QuditCat} {f g : H₁ ⟶ H₂} (hf : f.hom = g.hom) : f = g :=
+lemma hom_ext {H₁ H₂ : Qudit} {f g : H₁ ⟶ H₂} (hf : f.hom = g.hom) : f = g :=
   Hom.ext hf
 
-lemma hom_bijective {H₁ H₂ : QuditCat} :
+lemma hom_bijective {H₁ H₂ : Qudit} :
     Function.Bijective (Hom.hom : (H₁ ⟶ H₂) → (H₁.state →ₗ[ℂ] H₂.state)) where
   left f g h := by cases f; cases g; simpa using! h
   right f := ⟨⟨f⟩, rfl⟩
 
 /-- Convenience shortcut for `ModuleCat.hom_bijective.injective`. -/
-lemma hom_injective {H₁ H₂ : QuditCat} :
+lemma hom_injective {H₁ H₂ : Qudit} :
     Function.Injective (Hom.hom : (H₁ ⟶ H₂) → (H₁.state →ₗ[ℂ] H₂.state)) :=
   hom_bijective.injective
 
 /-- Convenience shortcut for `ModuleCat.hom_bijective.surjective`. -/
-lemma hom_surjective {H₁ H₂ : QuditCat} :
+lemma hom_surjective {H₁ H₂ : Qudit} :
     Function.Surjective (Hom.hom : (H₁ ⟶ H₂) → (H₁.state →ₗ[ℂ] H₂.state)) :=
   hom_bijective.surjective
 
@@ -171,7 +171,7 @@ lemma hom_ofHom {X Y : Type} [NormedAddCommGroup X] [InnerProductSpace ℂ X]
     [FiniteDimensional ℂ Y] (f : X →ₗ[ℂ] Y) : (ofHom f).hom = f := rfl
 
 @[simp]
-lemma ofHom_hom {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) :
+lemma ofHom_hom {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) :
     ofHom (Hom.hom f) = f := rfl
 
 @[simp]
@@ -189,18 +189,18 @@ lemma ofHom_apply {X Y : Type} [NormedAddCommGroup X] [InnerProductSpace ℂ X]
     [FiniteDimensional ℂ X] [NormedAddCommGroup Y] [InnerProductSpace ℂ Y]
     [FiniteDimensional ℂ Y] (f : X →ₗ[ℂ] Y) (x : X) : ofHom f x = f x := rfl
 
-lemma inv_hom_apply {H₁ H₂ : QuditCat} (e : H₁ ≅ H₂) (x : H₁.state) :
+lemma inv_hom_apply {H₁ H₂ : Qudit} (e : H₁ ≅ H₂) (x : H₁.state) :
     e.inv (e.hom x) = x := by simp
 
-lemma hom_inv_apply {H₁ H₂ : QuditCat} (e : H₁ ≅ H₂) (x : H₂.state) :
+lemma hom_inv_apply {H₁ H₂ : Qudit} (e : H₁ ≅ H₂) (x : H₂.state) :
     e.hom (e.inv x) = x := by simp
 
-/-- `QuditCat.Hom.hom` bundled as an `Equiv`. -/
-def homEquiv {H₁ H₂ : QuditCat} : (H₁ ⟶ H₂) ≃ (H₁.state →ₗ[ℂ] H₂.state) where
+/-- `Qudit.Hom.hom` bundled as an `Equiv`. -/
+def homEquiv {H₁ H₂ : Qudit} : (H₁ ⟶ H₂) ≃ (H₁.state →ₗ[ℂ] H₂.state) where
   toFun := Hom.hom
   invFun := ofHom
 
-/-- Build an isomorphism in the category `QuditCat` from an `LinearEquiv` between
+/-- Build an isomorphism in the category `Qudit` from an `LinearEquiv` between
 finite dimensional Hilbert spaces. -/
 def isoMk {X Y : Type} {_ : NormedAddCommGroup X} {_ : InnerProductSpace ℂ X}
     {_ : FiniteDimensional ℂ X} {_ : NormedAddCommGroup Y} {_ : InnerProductSpace ℂ Y}
@@ -208,8 +208,8 @@ def isoMk {X Y : Type} {_ : NormedAddCommGroup X} {_ : InnerProductSpace ℂ X}
   hom := ofHom (e : X →ₗ[ℂ] Y)
   inv := ofHom (e.symm : Y →ₗ[ℂ] X)
 
-/-- Build an `LinearEquiv` from an isomorphism in the category `QuditCat`. -/
-def linearEquivOfIso {H₁ H₂ : QuditCat} (i : H₁ ≅ H₂) : H₁.state ≃ₗ[ℂ] H₂.state where
+/-- Build an `LinearEquiv` from an isomorphism in the category `Qudit`. -/
+def linearEquivOfIso {H₁ H₂ : Qudit} (i : H₁ ≅ H₂) : H₁.state ≃ₗ[ℂ] H₂.state where
   __ := i.hom.hom
   toFun := i.hom
   invFun := i.inv
@@ -218,7 +218,7 @@ def linearEquivOfIso {H₁ H₂ : QuditCat} (i : H₁ ≅ H₂) : H₁.state ≃
 
 end Hom
 
-noncomputable instance daggerCategory : DaggerCategory QuditCat where
+noncomputable instance daggerCategory : DaggerCategory Qudit where
   dagger f := ofHom (f.hom.adjoint)
   dagger_comp f g := by simp
   dagger_id f := by simp
@@ -227,17 +227,17 @@ noncomputable instance daggerCategory : DaggerCategory QuditCat where
 open DaggerCategory
 
 @[simp]
-lemma hom_dagger {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) : f†.hom = f.hom.adjoint := rfl
+lemma hom_dagger {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) : f†.hom = f.hom.adjoint := rfl
 
 /-- An isometry `f` has an injective underlying linear map. -/
-lemma hom_injective_of_isIsometry {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [IsIsometry f] :
+lemma hom_injective_of_isIsometry {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsIsometry f] :
     Function.Injective f.hom :=
   LinearMap.injective_of_comp_eq_id (f := f.hom) (g := f†.hom)
     (congrArg (fun g : H₁ ⟶ H₁ ↦ g.hom) (IsIsometry.comp_dagger_eq_id f))
 
 /-- An isometry `f` preserves inner products. -/
 @[simp]
-lemma inner_map_map_of_isIsometry {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [IsIsometry f]
+lemma inner_map_map_of_isIsometry {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsIsometry f]
     (x y : H₁.state) : inner ℂ (f.hom x) (f.hom y) = inner ℂ x y := by
   have hadj : LinearMap.adjoint (f.hom) (f.hom y) = y :=
     congrArg (fun g : H₁ ⟶ H₁ ↦ g.hom y) (IsIsometry.comp_dagger_eq_id f)
@@ -245,31 +245,31 @@ lemma inner_map_map_of_isIsometry {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [Is
 
 /-- An isometry `f` preserves norms. -/
 @[simp]
-lemma norm_hom_of_isIsometry {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [IsIsometry f] (x : H₁.state) :
+lemma norm_hom_of_isIsometry {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsIsometry f] (x : H₁.state) :
     ‖f.hom x‖ = ‖x‖ :=
   (LinearMap.norm_map_iff_inner_map_map f.hom).mpr (inner_map_map_of_isIsometry f) x
 
 /-- An isometric morphism, viewed as a linear isometric map between its state spaces. -/
-noncomputable def LIOfIsIsometry {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [IsIsometry f] :
+noncomputable def LIOfIsIsometry {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsIsometry f] :
     H₁.state →ₗᵢ[ℂ] H₂.state where
   __ := f.hom
   norm_map' := norm_hom_of_isIsometry f
 
 @[simp]
-lemma LIOfIsIsometry_apply {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [IsIsometry f]
+lemma LIOfIsIsometry_apply {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsIsometry f]
     (x : H₁.state) : LIOfIsIsometry f x = f.hom x := rfl
 
-lemma LIOfIsIsometry_toLinearMap {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [IsIsometry f] :
+lemma LIOfIsIsometry_toLinearMap {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsIsometry f] :
     (LIOfIsIsometry f).toLinearMap = f.hom := rfl
 
 /-- A unitary `f` has a surjective underlying linear map. -/
-lemma hom_surjective_of_isUnitary {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [IsUnitary f] :
+lemma hom_surjective_of_isUnitary {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsUnitary f] :
     Function.Surjective f.hom :=
   LinearMap.surjective_of_comp_eq_id (f := f†.hom) (g := f.hom)
     (congrArg (fun g : H₂ ⟶ H₂ ↦ g.hom) (IsUnitary.dagger_comp_eq_id f))
 
 /-- A unitary morphism, viewed as a linear isometric equivalence between its state spaces. -/
-noncomputable def LIEquivOfIsUnitary {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [IsUnitary f] :
+noncomputable def LIEquivOfIsUnitary {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsUnitary f] :
     H₁.state ≃ₗᵢ[ℂ] H₂.state where
   __ := f.hom
   invFun := f†.hom
@@ -282,66 +282,66 @@ noncomputable def LIEquivOfIsUnitary {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) 
   norm_map' _ := norm_hom_of_isIsometry ..
 
 @[simp]
-lemma LIEquivOfIsUnitary_apply {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [IsUnitary f]
+lemma LIEquivOfIsUnitary_apply {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsUnitary f]
     (x : H₁.state) : LIEquivOfIsUnitary f x = f.hom x := rfl
 
-lemma LIEquivOfIsUnitary_toLinearMap {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [IsUnitary f] :
+lemma LIEquivOfIsUnitary_toLinearMap {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsUnitary f] :
     (LIEquivOfIsUnitary f).toLinearMap = f.hom := rfl
 
-lemma LIEquivOfIsUnitary_symm_toLinearMap {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [IsUnitary f] :
+lemma LIEquivOfIsUnitary_symm_toLinearMap {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsUnitary f] :
     ((LIEquivOfIsUnitary f).symm : H₂.state →ₗ[ℂ] H₁.state) = f†.hom := rfl
 
 /-- A unitary morphism, viewed as a linear isometry, is the linear isometry associated to it
 as an isometry. -/
-lemma LIEquivOfIsUnitary_toLinearIsometry {H₁ H₂ : QuditCat} (f : H₁ ⟶ H₂) [IsUnitary f] :
+lemma LIEquivOfIsUnitary_toLinearIsometry {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsUnitary f] :
     (LIEquivOfIsUnitary f).toLinearIsometry = LIOfIsIsometry f := rfl
 
-lemma isUnitary_isoMk_coe_LIEquiv {H₁ H₂ : QuditCat} (e : H₁.state ≃ₗᵢ[ℂ] H₂.state) :
+lemma isUnitary_isoMk_coe_LIEquiv {H₁ H₂ : Qudit} (e : H₁.state ≃ₗᵢ[ℂ] H₂.state) :
     IsUnitary (c₁ := H₁) (c₂ := H₂) (isoMk e.toLinearEquiv).hom := by
   rw [isUnitary_hom_iff_dagger_hom_eq_inv]
   apply hom_ext
   exact e.adjoint_toLinearMap_eq_symm
 
 /-- A projection `f` has a self-adjoint underlying linear map. -/
-lemma hom_adjoint_of_isProj {H : QuditCat} (f : H ⟶ H) [IsProj f] :
+lemma hom_adjoint_of_isProj {H : Qudit} (f : H ⟶ H) [IsProj f] :
     LinearMap.adjoint f.hom = f.hom :=
   congrArg (fun g : H ⟶ H ↦ g.hom) (IsProj.selfAdjoint f)
 
 /-- A projection `f` has an idempotent underlying linear map. -/
-lemma hom_idem_of_isProj {H : QuditCat} (f : H ⟶ H) [IsProj f] :
+lemma hom_idem_of_isProj {H : Qudit} (f : H ⟶ H) [IsProj f] :
     f.hom ∘ₗ f.hom = f.hom :=
   congrArg (fun g : H ⟶ H ↦ g.hom) (IsProj.comp_self f)
 
 /-- The underlying linear map of a positive morphism is positive, in the sense of
 `LinearMap.IsPositive`. -/
-lemma hom_isPositive_of_isPositive {H : QuditCat} (f : H ⟶ H) [IsPositive f] :
+lemma hom_isPositive_of_isPositive {H : Qudit} (f : H ⟶ H) [IsPositive f] :
     LinearMap.IsPositive f.hom := by
   rcases IsPositive.out f with ⟨H', g, rfl⟩
   simpa using LinearMap.isPositive_adjoint_comp_self g.hom
 
 /-- A positive morphism `f` has a self-adjoint underlying linear map. -/
-lemma hom_adjoint_of_isPositive {H : QuditCat} (f : H ⟶ H) [IsPositive f] :
+lemma hom_adjoint_of_isPositive {H : Qudit} (f : H ⟶ H) [IsPositive f] :
     LinearMap.adjoint f.hom = f.hom :=
   congrArg (fun g : H ⟶ H ↦ g.hom) ‹IsPositive f›.selfAdjoint
 
 /-- A positive morphism `f` is positive semidefinite. -/
-lemma inner_self_nonneg_of_isPositive {H : QuditCat} (f : H ⟶ H) [IsPositive f] (x : H.state) :
+lemma inner_self_nonneg_of_isPositive {H : Qudit} (f : H ⟶ H) [IsPositive f] (x : H.state) :
     0 ≤ RCLike.re (inner ℂ (f.hom x) x) :=
   (hom_isPositive_of_isPositive f).re_inner_nonneg_left x
 
 /-- Converts a quantum state `a : H.state` into its corresponding bra functional `⟨a∣`. -/
-noncomputable def bra {H : QuditCat} (a : H.state) : H.state →ₗ[ℂ] ℂ := innerₛₗ ℂ a
+noncomputable def bra {H : Qudit} (a : H.state) : H.state →ₗ[ℂ] ℂ := innerₛₗ ℂ a
 
 /-- Converts a quantum state `b : H.state` into its corresponding ket map `∣b⟩`. -/
-def ket {H : QuditCat} (b : H.state) : ℂ →ₗ[ℂ] H.state := .toSpanSingleton ℂ H.state b
+def ket {H : Qudit} (b : H.state) : ℂ →ₗ[ℂ] H.state := .toSpanSingleton ℂ H.state b
 
 namespace Braket
 
 /-- Scoped Dirac notation for the bra linear functional. -/
-scoped notation:max "⟨" v:90 "∣" => QuditCat.bra v
+scoped notation:max "⟨" v:90 "∣" => Qudit.bra v
 
 /-- Scoped Dirac notation for the ket linear map. -/
-scoped notation:max "∣" v:90 "⟩" => QuditCat.ket v
+scoped notation:max "∣" v:90 "⟩" => Qudit.ket v
 
 /-- Scoped Dirac notation for the complex inner product. -/
 scoped notation "⟨" v:90 "‖" w:90 "⟩" => inner ℂ v w
@@ -351,35 +351,35 @@ end Braket
 open scoped Braket
 
 @[simp]
-lemma bra_apply {H : QuditCat} (a b : H.state) : (⟨a∣) b = inner ℂ a b := rfl
+lemma bra_apply {H : Qudit} (a b : H.state) : (⟨a∣) b = inner ℂ a b := rfl
 
 @[simp]
-lemma hom_ket_apply {H : QuditCat} (b : H.state) (x : ℂ) : ∣b⟩ x = x • b := rfl
+lemma hom_ket_apply {H : Qudit} (b : H.state) (x : ℂ) : ∣b⟩ x = x • b := rfl
 
 @[simp]
-lemma ket_comp_bra {H : QuditCat} (a b : H.state) : ⟨b∣ ∘ₗ ∣a⟩ = .lsmul ℂ _ ⟨b‖a⟩ := by
+lemma ket_comp_bra {H : Qudit} (a b : H.state) : ⟨b∣ ∘ₗ ∣a⟩ = .lsmul ℂ _ ⟨b‖a⟩ := by
   ext; simp
 
-/-- Morphism in `QuditCat` corresponding to the bra functional `⟨a∣`. -/
-noncomputable def braArrow {H : QuditCat} (a : H.state) : H ⟶ of ℂ := ofHom (bra a)
+/-- Morphism in `Qudit` corresponding to the bra functional `⟨a∣`. -/
+noncomputable def braArrow {H : Qudit} (a : H.state) : H ⟶ of ℂ := ofHom (bra a)
 
-/-- Morphism in `QuditCat` corresponding to the ket map `∣b⟩`. -/
-noncomputable def ketArrow {H : QuditCat} (b : H.state) : of ℂ ⟶ H := ofHom (ket b)
+/-- Morphism in `Qudit` corresponding to the ket map `∣b⟩`. -/
+noncomputable def ketArrow {H : Qudit} (b : H.state) : of ℂ ⟶ H := ofHom (ket b)
 
-lemma ketArrow_comp_braArrow {H : QuditCat} (a b : H.state) :
+lemma ketArrow_comp_braArrow {H : Qudit} (a b : H.state) :
     ketArrow a ≫ braArrow b = ofHom (.lsmul ℂ ℂ ⟨b‖a⟩) := by
   ext1; rw [hom_comp]; exact ket_comp_bra a b
 
-lemma hom_ketArrow_comp_braArrow_apply {H : QuditCat} (a b : H.state) (x : ℂ) :
+lemma hom_ketArrow_comp_braArrow_apply {H : Qudit} (a b : H.state) (x : ℂ) :
     (ketArrow a ≫ braArrow b).hom x = ⟨b‖a⟩ • x := by simp [ketArrow_comp_braArrow]
 
 /-- A state is normalized if its norm is 1. -/
-def state.Normalized {H : QuditCat} (v : H.state) : Prop := ⟨v‖v⟩ = 1
+def state.Normalized {H : Qudit} (v : H.state) : Prop := ⟨v‖v⟩ = 1
 
 noncomputable section standard
 
-/-- The standard `n`-dimensional Hilbert space `ℂⁿ`, treated as an object in `QuditCat`. -/
-def std (n : ℕ) : QuditCat := of (EuclideanSpace ℂ (Fin n))
+/-- The standard `n`-dimensional Hilbert space `ℂⁿ`, treated as an object in `Qudit`. -/
+def std (n : ℕ) : Qudit := of (EuclideanSpace ℂ (Fin n))
 
 lemma state_std (n : ℕ) : (std n).state = EuclideanSpace ℂ (Fin n) := rfl
 
@@ -472,7 +472,7 @@ theorem isUnitary_matrixToEnd_iff_fin_two (M : Matrix (Fin 2) (Fin 2) ℂ) :
   exact isUnitary_matrixToEnd_of_iff_fin_two
 
 /-- The Qubit space, defined as the 2-dimensional standard Hilbert space `ℂ²`. -/
-abbrev Qubit : QuditCat := std 2
+abbrev Qubit : Qudit := std 2
 
 namespace Qubit
 
@@ -515,4 +515,4 @@ end Qubit
 
 end standard
 
-end QuditCat
+end Qudit

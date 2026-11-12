@@ -5,12 +5,12 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.QuditCat.Basic
+public import FQFP.CQM.Qudit.Basic
 
 /-!
 # Unit vectors in a qudit
 
-`QuditCat.UnitState` bundles a vector with the existing normalization predicate.
+`Qudit.UnitState` bundles a vector with the existing normalization predicate.
 It does not identify vectors differing by a global phase. Isometric morphisms act on
 unit states, and every orthonormal basis supplies unit states.
 -/
@@ -19,10 +19,10 @@ unit states, and every orthonormal basis supplies unit states.
 
 open CategoryTheory CategoryTheory.DaggerCategory
 
-namespace QuditCat
+namespace Qudit
 
 /-- The existing inner-product normalization is equivalent to unit norm. -/
-lemma state.normalized_iff_norm_eq_one {H : QuditCat} (v : H.state) :
+lemma state.normalized_iff_norm_eq_one {H : Qudit} (v : H.state) :
     state.Normalized v ↔ ‖v‖ = 1 := by
   constructor
   · intro h
@@ -32,11 +32,11 @@ lemma state.normalized_iff_norm_eq_one {H : QuditCat} (v : H.state) :
   · exact inner_self_eq_one_of_norm_eq_one
 
 /-- A unit vector, before quotienting by global phase. -/
-abbrev UnitState (H : QuditCat) := {v : H.state // state.Normalized v}
+abbrev UnitState (H : Qudit) := {v : H.state // state.Normalized v}
 
 namespace UnitState
 
-variable {H K : QuditCat}
+variable {H K : Qudit}
 
 /-- A bundled unit state has inner square one. -/
 lemma inner_self (v : UnitState H) : inner ℂ (v : H.state) v = 1 := v.property
@@ -87,4 +87,4 @@ instance [Subsingleton H.state] : IsEmpty (UnitState H) :=
 
 end UnitState
 
-end QuditCat
+end Qudit

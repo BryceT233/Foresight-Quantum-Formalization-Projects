@@ -6,7 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.Analysis.InnerProductSpace.TraceNorm
-public import FQFP.CQM.QuditCat.POVM
+public import FQFP.CQM.Qudit.Measurement.POVM
 
 /-!
 # Trace distance and measurement errors
@@ -25,13 +25,13 @@ the trace distance. These estimates include singular states and zero-probability
 open CategoryTheory CategoryTheory.DaggerCategory
 open scoped BigOperators ComplexOrder
 
-namespace QuditCat
+namespace Qudit
 
 noncomputable section
 
 namespace Density
 
-variable {H : QuditCat}
+variable {H : Qudit}
 
 /-- A density operator has trace norm one. -/
 lemma traceNorm_op (ρ : Density H) : LinearMap.traceNorm ρ.op = 1 := by
@@ -140,7 +140,7 @@ end Density
 
 namespace POVM
 
-variable {H : QuditCat} {ι : Type*} [Fintype ι]
+variable {H : Qudit} {ι : Type*} [Fintype ι]
 
 /-- Every POVM outcome has probability error at most the trace distance. -/
 lemma abs_probability_sub_le_traceDistance (M : POVM H ι) (ρ σ : Density H) (i : ι) :
@@ -169,4 +169,4 @@ end POVM
 
 end
 
-end QuditCat
+end Qudit

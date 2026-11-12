@@ -5,8 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.QuditCat.Density
-public import FQFP.CQM.QuditCat.Measurement
+public import FQFP.CQM.Qudit.State.Density
+public import FQFP.CQM.Qudit.Measurement.Basic
 
 /-!
 # Finite positive operator-valued measurements
@@ -29,11 +29,11 @@ and Mathlib positivity directly. A POVM specifies outcome probabilities, not an 
 open CategoryTheory
 open scoped ComplexOrder BigOperators
 
-namespace QuditCat
+namespace Qudit
 
 /-- A finite family of positive operator effects resolving the identity. -/
 @[ext]
-structure POVM (H : QuditCat) (ι : Type*) [Fintype ι] where
+structure POVM (H : Qudit) (ι : Type*) [Fintype ι] where
   /-- The operator associated with each outcome. -/
   op : ι → Operator H
   /-- Every outcome operator is positive, including self-adjointness. -/
@@ -45,7 +45,7 @@ namespace POVM
 
 noncomputable section
 
-variable {H : QuditCat} {ι : Type*} [Fintype ι]
+variable {H : Qudit} {ι : Type*} [Fintype ι]
 
 /-- Each outcome operator is nonnegative in the Loewner order. -/
 lemma op_nonneg (M : POVM H ι) (i : ι) : 0 ≤ M.op i :=
@@ -149,4 +149,4 @@ end
 
 end POVM
 
-end QuditCat
+end Qudit

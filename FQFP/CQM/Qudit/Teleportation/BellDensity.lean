@@ -5,8 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.QuditCat.Composite
-public import FQFP.CQM.QuditCat.Teleportation
+public import FQFP.CQM.Qudit.State.Composite
+public import FQFP.CQM.Qudit.Teleportation.Basic
 
 /-!
 # The density operator of the Bell resource
@@ -22,7 +22,7 @@ Example 2.8, equations (2.35)--(2.37).
 open CategoryTheory CategoryTheory.MonoidalCategory
 open scoped TensorProduct
 
-namespace QuditCat
+namespace Qudit
 
 noncomputable section
 
@@ -72,4 +72,4 @@ lemma bellDensity_partialTraceLeft : bellDensity.partialTraceLeft =
 
 end
 
-end QuditCat
+end Qudit

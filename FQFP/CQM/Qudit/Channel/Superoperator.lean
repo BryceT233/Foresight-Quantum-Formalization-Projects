@@ -5,13 +5,13 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.QuditCat.Composite
+public import FQFP.CQM.Qudit.State.Composite
 public import Mathlib.LinearAlgebra.Contraction
 
 /-!
 # Linear maps between qudit operator spaces
 
-Superoperators act on operators, separately from the pure processes of `QuditCat`.
+Superoperators act on operators, separately from the pure processes of `Qudit`.
 Their tensor product is transported through Mathlib's canonical `homTensorHomEquiv`.
 No basis or positivity assumption is needed for these algebraic constructions.
 -/
@@ -21,33 +21,33 @@ No basis or positivity assumption is needed for these algebraic constructions.
 open CategoryTheory CategoryTheory.MonoidalCategory
 open scoped TensorProduct
 
-namespace QuditCat
+namespace Qudit
 
 noncomputable section
 
 /-- A complex-linear map between operator spaces. -/
-abbrev Superoperator (H K : QuditCat) := Operator H →ₗ[ℂ] Operator K
+abbrev Superoperator (H K : Qudit) := Operator H →ₗ[ℂ] Operator K
 
 namespace Operator
 
 /-- The canonical tensor equivalence for finite-dimensional operator spaces. -/
-def tensorEquiv (H K : QuditCat) :
+def tensorEquiv (H K : Qudit) :
     Operator H ⊗[ℂ] Operator K ≃ₗ[ℂ] Operator (H ⊗ K) :=
   homTensorHomEquiv ℂ H.state K.state H.state K.state
 
 /-- The canonical equivalence sends a simple tensor to the product operator. -/
-lemma tensorEquiv_tmul {H K : QuditCat} (A : Operator H) (B : Operator K) :
+lemma tensorEquiv_tmul {H K : Qudit} (A : Operator H) (B : Operator K) :
     tensorEquiv H K (A ⊗ₜ B) = tensor A B := rfl
 
 /-- Linear maps on composite operators are determined on product operators. -/
-lemma tensor_ext {H K : QuditCat} {V : Type*} [AddCommGroup V] [Module ℂ V]
+lemma tensor_ext {H K : Qudit} {V : Type*} [AddCommGroup V] [Module ℂ V]
     {f g : Operator (H ⊗ K) →ₗ[ℂ] V}
     (h : ∀ A B, f (tensor A B) = g (tensor A B)) : f = g := by
   apply (LinearMap.cancel_right (tensorEquiv H K).surjective).mp
   exact TensorProduct.ext' h
 
 /-- Every operator on a composite space is a finite sum of product operators. -/
-lemma tensor_induction_on {H K : QuditCat} (A : Operator (H ⊗ K))
+lemma tensor_induction_on {H K : Qudit} (A : Operator (H ⊗ K))
     {p : Operator (H ⊗ K) → Prop} (htensor : ∀ B C, p (tensor B C))
     (hadd : ∀ B C, p B → p C → p (B + C)) : p A := by
   obtain ⟨x, rfl⟩ := (tensorEquiv H K).surjective A
@@ -59,7 +59,7 @@ end Operator
 
 namespace Superoperator
 
-variable {H K L M N P : QuditCat}
+variable {H K L M N P : Qudit}
 
 /-- Tensor two superoperators using the canonical operator tensor equivalences. -/
 def tensor (Φ : Superoperator H K) (Ψ : Superoperator L M) :
@@ -77,7 +77,7 @@ lemma tensor_apply (Φ : Superoperator H K) (Ψ : Superoperator L M)
   rw [LinearEquiv.symm_apply_apply, TensorProduct.map_tmul, Operator.tensorEquiv_tmul]
 
 /-- Tensoring identity superoperators gives the identity. -/
-lemma tensor_id_id (H K : QuditCat) :
+lemma tensor_id_id (H K : Qudit) :
     tensor (LinearMap.id : Superoperator H H) (LinearMap.id : Superoperator K K) =
       LinearMap.id := by
   apply Operator.tensor_ext
@@ -112,10 +112,16 @@ lemma conjugate_apply (f : H.state →ₗ[ℂ] K.state) (A : Operator H) :
     conjugate f A = f ∘ₗ A ∘ₗ f.adjoint := rfl
 
 /-- Conjugation by the identity is the identity superoperator. -/
-lemma conjugate_id (H : QuditCat) :
+lemma conjugate_id (H : Qudit) :
     conjugate (LinearMap.id : H.state →ₗ[ℂ] H.state) = LinearMap.id := by
   ext A x
   simp [conjugate]
+
+/-- Conjugations respect sequential composition of the underlying linear processes. -/
+lemma conjugate_comp (f : H.state →ₗ[ℂ] K.state) (g : K.state →ₗ[ℂ] L.state) :
+    conjugate (g ∘ₗ f) = conjugate g ∘ₗ conjugate f := by
+  ext A x
+  simp only [conjugate_apply, LinearMap.comp_apply, LinearMap.adjoint_comp]
 
 /-- Product processes induce product conjugations. -/
 lemma conjugate_tensor (f : H.state →ₗ[ℂ] K.state) (g : L.state →ₗ[ℂ] M.state) :
@@ -191,7 +197,7 @@ lemma relabel_assoc_symm_tensor (A : Operator H) (B : Operator K) (C : Operator 
   | add u v hu hv => simp_all [TensorProduct.add_tmul]
 
 /-- Tensoring identities on two ancillary factors agrees with reassociation. -/
-lemma tensor_id_assoc (Φ : Superoperator H K) (L M : QuditCat) :
+lemma tensor_id_assoc (Φ : Superoperator H K) (L M : Qudit) :
     tensor (tensor Φ (LinearMap.id : Superoperator L L))
         (LinearMap.id : Superoperator M M) =
       relabel (TensorProduct.assocIsometry ℂ K.state L.state M.state).symm ∘ₗ
@@ -208,7 +214,7 @@ lemma tensor_id_assoc (Φ : Superoperator H K) (L M : QuditCat) :
       LinearMap.add_apply] using congrArg₂ (· + ·) hA hB
 
 /-- Tensoring on the left is tensoring on the right conjugated by swaps. -/
-lemma id_tensor_eq_comm (Φ : Superoperator H K) (L : QuditCat) :
+lemma id_tensor_eq_comm (Φ : Superoperator H K) (L : Qudit) :
     tensor (LinearMap.id : Superoperator L L) Φ =
       relabel (TensorProduct.commIsometry ℂ K.state L.state) ∘ₗ
         tensor Φ (LinearMap.id : Superoperator L L) ∘ₗ
@@ -221,4 +227,4 @@ end Superoperator
 
 end
 
-end QuditCat
+end Qudit
