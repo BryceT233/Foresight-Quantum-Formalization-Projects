@@ -13,7 +13,9 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Avoid doc-gen4 srcUri.github ENOMEM on Ubuntu 26.04 runners.
+    # Upstream workaround: https://github.com/leanprover/cslib/pull/1191
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v5
@@ -29,6 +31,7 @@ jobs:
           # doc-gen4 can exhaust memory even with a single Lean worker.
           swap_file=$(mktemp "$RUNNER_TEMP/docgen-swap.XXXXXX")
           sudo fallocate -l 8G "$swap_file"
+          sudo chown root:root "$swap_file"
           sudo chmod 600 "$swap_file"
           sudo mkswap "$swap_file"
           sudo swapon "$swap_file"
