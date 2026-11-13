@@ -150,6 +150,15 @@ lemma op_mixture {ι : Type*} [Fintype ι] (w : ι → ℝ) (hw : ∀ i, 0 ≤ w
     (hsum : ∑ i, w i = 1) (ρ : ι → Density H) :
     (mixture w hw hsum ρ).op = ∑ i, (w i : ℂ) • (ρ i).op := rfl
 
+/-- The operator of a finite mixture, expressed using the real scalar action. -/
+lemma op_mixture_real {ι : Type*} [Fintype ι]
+    (w : ι → ℝ) (hw : ∀ i, 0 ≤ w i) (hs : ∑ i, w i = 1) (ρ : ι → Density H) :
+    (mixture w hw hs ρ).op = ∑ i, w i • (ρ i).op := by
+  rw [op_mixture]
+  apply Finset.sum_congr rfl
+  intro i _
+  exact (RCLike.real_smul_eq_coe_smul (K := ℂ) (w i) _).symm
+
 /-- The complex trace pairing of an observable with a density operator. -/
 def expectationComplex (ρ : Density H) (A : Operator H) : ℂ := (A * ρ.op).trace
 

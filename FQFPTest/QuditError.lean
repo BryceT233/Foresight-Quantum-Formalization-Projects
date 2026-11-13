@@ -5,8 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-import FQFP.CQM.QuditCat.ProductFormula
-import FQFP.CQM.QuditCat.QuantumChannel
+import FQFP.CQM.Qudit.Error.ProductFormula
+import FQFP.CQM.Qudit.Channel.Basic
 
 /-!
 # Trace-distance and simulation-error clients
@@ -15,7 +15,7 @@ These check normalization on orthogonal and mixed states, zero-dimensional bound
 global phases, nonprojective POVMs, and compatibility with the existing channel interface.
 -/
 
-open CategoryTheory CategoryTheory.DaggerCategory QuditCat
+open CategoryTheory CategoryTheory.DaggerCategory Qudit
 open scoped ComplexOrder BigOperators
 
 noncomputable section
@@ -84,10 +84,10 @@ example : LinearMap.traceNorm (0 : Operator (std 0)) = 0 := LinearMap.traceNorm_
 example : IsEmpty (Density (std 0)) := inferInstance
 
 -- The unitary bridge requires no manually supplied named instance.
-example {H : QuditCat} (U : unitary (H.state →L[ℂ] H.state)) : IsUnitary (unitaryHom U) :=
+example {H : Qudit} (U : unitary (H.state →L[ℂ] H.state)) : IsUnitary (unitaryHom U) :=
   inferInstance
 
-example {H : QuditCat} (ρ : Density H) (U V : unitary (H.state →L[ℂ] H.state)) :
+example {H : Qudit} (ρ : Density H) (U V : unitary (H.state →L[ℂ] H.state)) :
     (ρ.evolve U).traceDistance (ρ.evolve V) ≤ ‖U.val - V.val‖ :=
   ρ.traceDistance_evolve_le_opNorm U V
 

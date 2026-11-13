@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-import FQFP.CQM.QuditCat.BellDensity
+import FQFP.CQM.Qudit.Teleportation.BellDensity
 
 /-!
 # Composite-state regressions
@@ -16,7 +16,7 @@ and a forbidden joint Bell outcome. In particular, uniform marginals do not asse
 the joint state is an independent product.
 -/
 
-open CategoryTheory CategoryTheory.MonoidalCategory QuditCat
+open CategoryTheory CategoryTheory.MonoidalCategory Qudit
 open scoped TensorProduct
 
 noncomputable section
@@ -32,13 +32,13 @@ example : ((ρ₀).tensor σ₂).partialTraceRight = ρ₀ := by simp
 example : ((ρ₀).tensor σ₂).partialTraceLeft = σ₂ := by simp
 
 -- The pure embedding uses the same Hilbert tensor product as the existing category.
-example {H K : QuditCat} (v : UnitState H) (w : UnitState K) :
+example {H K : Qudit} (v : UnitState H) (w : UnitState K) :
     (Density.pure (v.tensor w)).partialTraceRight = Density.pure v := by
   rw [← Density.tensor_pure]
   simp
 
 -- Partial trace acts on all operators, including a zero-dimensional discarded factor.
-example {H : QuditCat} (A : Operator H) :
+example {H : Qudit} (A : Operator H) :
     Operator.partialTraceRight (Operator.tensor A (1 : Operator (std 0))) = 0 := by
   simp [Operator.trace, LinearMap.trace_one]
 

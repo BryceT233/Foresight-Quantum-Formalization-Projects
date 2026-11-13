@@ -5,8 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-import FQFP.CQM.QuditCat.POVM
-import FQFP.CQM.QuditCat.BellDensity
+import FQFP.CQM.Qudit.Measurement.POVM
+import FQFP.CQM.Qudit.Teleportation.BellDensity
 
 /-!
 # Finite POVM clients
@@ -15,7 +15,7 @@ Mixed inputs, pure-state compatibility, Bell marginals, nonprojective measuremen
 zero effects, and empty outcome/zero-dimensional boundaries.
 -/
 
-open CategoryTheory QuditCat
+open CategoryTheory Qudit
 open scoped ComplexOrder BigOperators
 
 noncomputable section
@@ -86,7 +86,7 @@ example (ρ : Density Qubit) : zeroOutcome.probability ρ 0 = 0 := by
   simp [POVM.probability, zeroOutcome, Density.expectation, Density.expectationComplex]
 
 -- Empty outcomes cannot carry total probability one when an input density exists.
-example {H : QuditCat} (ρ : Density H) : IsEmpty (POVM H (Fin 0)) := by
+example {H : Qudit} (ρ : Density H) : IsEmpty (POVM H (Fin 0)) := by
   refine ⟨fun M => ?_⟩
   have h := M.sum_probability ρ
   simp at h

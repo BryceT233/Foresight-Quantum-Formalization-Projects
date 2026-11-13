@@ -5,8 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-import FQFP.CQM.QuditCat.Density
-import FQFP.CQM.QuditCat.Measurement
+import FQFP.CQM.Qudit.State.Density
+import FQFP.CQM.Qudit.Measurement.Basic
 
 /-!
 # Density-state and Dirac-notation regressions
@@ -16,23 +16,23 @@ global phase, singular pure states, mixed computational-basis probabilities and 
 reconstruction. They also connect density expectations with the existing Born-rule API.
 -/
 
-open CategoryTheory QuditCat
-open scoped QuditCat.Braket ComplexOrder
+open CategoryTheory Qudit
+open scoped Qudit.Braket ComplexOrder
 
 -- The Unicode notation works alongside tuple constructors.
-example {H : QuditCat} (v w : H.state) :
+example {H : Qudit} (v w : H.state) :
     ((⟨v∣) w, ∣w⟩ (1 : ℂ)) = ⟨inner ℂ v w, w⟩ := by simp [bra, ket]
 
-example {H : QuditCat} (v w : H.state) : ⟨v‖w⟩ = inner ℂ v w := rfl
+example {H : Qudit} (v w : H.state) : ⟨v‖w⟩ = inner ℂ v w := rfl
 
 -- The order is essential: ket after bra acts on H, while bra after ket acts on ℂ.
-example {H : QuditCat} (v w x : H.state) :
+example {H : Qudit} (v w x : H.state) :
     (∣v⟩ ∘ₗ ⟨w∣) x = ⟨w‖x⟩ • v := rfl
 
-example {H : QuditCat} (v w : H.state) (z : ℂ) :
+example {H : Qudit} (v w : H.state) (z : ℂ) :
     (⟨w∣ ∘ₗ ∣v⟩) z = z * ⟨w‖v⟩ := by simp [bra, ket, inner_smul_right]
 
-example {H : QuditCat} (v : UnitState H) :
+example {H : Qudit} (v : UnitState H) :
     Density.pure (v.phase Complex.I (by simp)) = Density.pure v := by simp
 
 -- No spurious default density state is introduced on the zero space.
@@ -73,7 +73,7 @@ example : (ρ₀).map Qubit.H.asHom = Density.pure ((v₀).map Qubit.H.asHom) :=
   rw [Density.map_pure]
 
 -- The new mixed-state interface recovers the existing pure-state Born scalar.
-example {H : QuditCat} (v : UnitState H) (w : H.state) :
+example {H : Qudit} (v : UnitState H) (w : H.state) :
     (Density.pure v).expectation (Operator.outer w w) =
       (scalarRingEquiv (CategoryTheory.MonoidalCategory.probability
         (ketArrow v.val) (braArrow w))).re := by

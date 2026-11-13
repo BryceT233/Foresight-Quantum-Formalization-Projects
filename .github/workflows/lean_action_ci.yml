@@ -21,3 +21,5 @@ jobs:
       - name: Build, lint and run regressions
         run: python3 scripts/check.py
       - uses: leanprover-community/docgen-action@v1
+        env:
+          LEAN_NUM_THREADS: "1"

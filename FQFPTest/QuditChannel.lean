@@ -5,8 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-import FQFP.CQM.QuditCat.TeleportationChannel
-import FQFP.CQM.QuditCat.BellDensity
+import FQFP.CQM.Qudit.Teleportation.Channel
+import FQFP.CQM.Qudit.Teleportation.BellDensity
 
 /-!
 # Quantum-channel clients
@@ -15,7 +15,7 @@ Nonunitary Kraus evolution, discarded entanglement, rectangular systems, arbitra
 reference systems, and the distinction between CP branches and normalized channels.
 -/
 
-open CategoryTheory CategoryTheory.MonoidalCategory QuditCat
+open CategoryTheory CategoryTheory.MonoidalCategory Qudit
 
 noncomputable section
 
@@ -50,7 +50,7 @@ example : dephasing.map ρ₀ = ρ₀ := by
     Operator.outer_apply]
 
 -- Tensor closure applies to arbitrary positive inputs, not just product inputs.
-example {H K L M R : QuditCat} (Φ : QuantumChannel H K) (Ψ : QuantumChannel L M)
+example {H K L M R : Qudit} (Φ : QuantumChannel H K) (Ψ : QuantumChannel L M)
     (A : Operator ((H ⊗ L) ⊗ R)) (hA : A.IsPositive) :
     (Superoperator.tensor (Φ.tensor Ψ).toSuperoperator
       (LinearMap.id : Superoperator R R) A).IsPositive :=

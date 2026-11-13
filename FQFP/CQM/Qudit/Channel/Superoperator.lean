@@ -101,6 +101,14 @@ lemma tensor_sum_left {ι : Type*} (s : Finset ι) (Φ : ι → Superoperator H 
   simp only [tensor_apply, LinearMap.sum_apply]
   simp only [Operator.tensor, ← TensorProduct.mapBilinear_apply, map_sum, LinearMap.sum_apply]
 
+/-- The adjoint of tensor insertion contracts against the inserted vector. -/
+lemma adjoint_tensorInsertion_apply {C : Qudit} (v : C.state) (x : H.state) (y : C.state) :
+    ((TensorProduct.mk ℂ H.state C.state).flip v).adjoint (x ⊗ₜ y) = inner ℂ v y • x := by
+  apply ext_inner_left ℂ
+  intro z
+  rw [LinearMap.adjoint_inner_right]
+  simp [TensorProduct.inner_tmul, inner_smul_right, mul_comm]
+
 /-- Conjugation by an arbitrary linear process, without a normalization requirement. -/
 def conjugate (f : H.state →ₗ[ℂ] K.state) : Superoperator H K where
   toFun A := f ∘ₗ A ∘ₗ f.adjoint

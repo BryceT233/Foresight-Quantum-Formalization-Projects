@@ -40,6 +40,43 @@ def UnitState.tensor (v : UnitState H) (w : UnitState K) : UnitState (H ⊗ K) :
 lemma UnitState.coe_tensor (v : UnitState H) (w : UnitState K) :
     (v.tensor w).val = v.val ⊗ₜ[ℂ] w.val := rfl
 
+/-- A bipartite unit vector is a product if it is exactly a tensor of two unit vectors.
+Any global phase can be absorbed into either factor. -/
+def UnitState.IsProduct (v : UnitState (H ⊗ K)) : Prop :=
+  ∃ (x : UnitState H) (y : UnitState K), v = x.tensor y
+
+/-- The tensor of two unit vectors is a product vector. -/
+lemma UnitState.isProduct_tensor (v : UnitState H) (w : UnitState K) :
+    (v.tensor w).IsProduct := ⟨v, w, rfl⟩
+
+/-- Exchange the tensor factors of a bipartite unit vector. -/
+def UnitState.swap (v : UnitState (H ⊗ K)) : UnitState (K ⊗ H) :=
+  ⟨TensorProduct.comm ℂ H.state K.state v.val, by
+    change inner ℂ (TensorProduct.comm ℂ H.state K.state v.val)
+      (TensorProduct.comm ℂ H.state K.state v.val) = 1
+    rw [TensorProduct.inner_comm_comm, v.inner_self]⟩
+
+/-- Exchanging the tensor factors twice recovers the original unit vector. -/
+lemma UnitState.swap_swap (v : UnitState (H ⊗ K)) : v.swap.swap = v := by
+  apply Subtype.ext
+  exact (TensorProduct.comm ℂ H.state K.state).symm_apply_apply v.val
+
+/-- Exchanging the tensor factors of a product vector exchanges its two unit factors. -/
+lemma UnitState.swap_tensor (v : UnitState H) (w : UnitState K) :
+    (v.tensor w).swap = w.tensor v := by
+  apply Subtype.ext
+  exact TensorProduct.comm_tmul _ _ _ _ _
+
+/-- Being a product vector is independent of the ordering of the two systems. -/
+lemma UnitState.isProduct_swap_iff (v : UnitState (H ⊗ K)) :
+    v.swap.IsProduct ↔ v.IsProduct := by
+  constructor
+  · rintro ⟨x, y, h⟩
+    exact ⟨y, x, by simpa only [swap_swap, swap_tensor] using congrArg UnitState.swap h⟩
+  · rintro ⟨x, y, rfl⟩
+    rw [swap_tensor]
+    exact isProduct_tensor _ _
+
 namespace Operator
 
 /-- The tensor product of two operators on qudits. -/
@@ -96,21 +133,27 @@ lemma partialTraceRight_tensor (A : Operator H) (B : Operator K) :
 lemma partialTraceLeft_tensor (A : Operator H) (B : Operator K) :
     partialTraceLeft (tensor A B) = A.trace • B := LinearMap.partialTraceLeft_map A B
 
+/-- Discarding an orthonormal label removes cross terms between its distinct labels. -/
+lemma partialTraceRight_outer_sum_tmul {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℂ K.state) (v w : ι → H.state) :
+    partialTraceRight (outer (∑ i, v i ⊗ₜ[ℂ] b i) (∑ i, w i ⊗ₜ[ℂ] b i)) =
+      ∑ i, outer (v i) (w i) := by
+  classical
+  ext y
+  apply ext_inner_left ℂ
+  intro x
+  rw [inner_partialTraceRight b]
+  simp [outer_apply, inner_smul_right, inner_sum, sum_inner,
+    TensorProduct.inner_tmul (𝕜 := ℂ) (E := H.state) (F := K.state), b.inner_eq_ite]
+
 /-- The right marginal of the unnormalized maximally entangled vector is the identity.
 The vector itself depends on the chosen basis; its marginal does not. -/
 lemma partialTraceRight_outer_sum_basis {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℂ H.state) :
     partialTraceRight (outer (∑ i, b i ⊗ₜ[ℂ] b i) (∑ i, b i ⊗ₜ[ℂ] b i)) =
       (1 : Operator H) := by
-  classical
-  apply b.toBasis.ext
-  intro j
-  apply ext_inner_left ℂ
-  intro x
-  rw [inner_partialTraceRight b]
-  simp only [outer_apply, inner_smul_right, sum_inner, inner_sum]
-  simp [TensorProduct.inner_tmul (𝕜 := ℂ) (E := H.state) (F := H.state),
-    b.inner_eq_ite, mul_ite]
+  rw [partialTraceRight_outer_sum_tmul]
+  simpa only [Module.End.one_apply] using sum_outer_basis b (1 : Operator H)
 
 /-- The left marginal of the unnormalized maximally entangled vector is the identity. -/
 lemma partialTraceLeft_outer_sum_basis {ι : Type*} [Fintype ι]

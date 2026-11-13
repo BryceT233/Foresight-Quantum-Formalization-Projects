@@ -113,6 +113,61 @@ lemma trace_adjoint (A : Operator H) : trace A.adjoint = star A.trace := by
     LinearMap.trace_eq_matrix_trace ℂ b.toBasis,
     LinearMap.toMatrix_adjoint b b, Matrix.trace_conjTranspose]
 
+variable {ι : Type*} [Fintype ι]
+
+/-- Outer products distribute over finite sums in their ket. -/
+lemma outer_sum_left (v : ι → H.state) (w : H.state) :
+    outer (∑ i, v i) w = ∑ i, outer (v i) w := by
+  ext x
+  simp [Finset.smul_sum]
+
+/-- Outer products distribute over finite sums in their bra. -/
+lemma outer_sum_right (v : H.state) (w : ι → H.state) :
+    outer v (∑ i, w i) = ∑ i, outer v (w i) := by
+  ext x
+  simp [sum_inner, Finset.sum_smul]
+
+/-- Scaling the ket scales an outer product linearly. -/
+lemma outer_smul_left (c : ℂ) (v w : H.state) : outer (c • v) w = c • outer v w := by
+  ext x
+  simp [smul_smul, mul_comm]
+
+/-- Expansion of an operator into its basis columns. -/
+lemma sum_outer_basis (b : OrthonormalBasis ι ℂ H.state) (A : Operator H) :
+    ∑ i, outer (A (b i)) (b i) = A := by
+  ext x
+  simpa only [LinearMap.sum_apply, outer_apply, ← map_smul, ← map_sum] using
+    congrArg A (b.sum_repr' x)
+
+/-- A linear map on operators is determined on basis matrix units. -/
+lemma basis_outer_ext {V : Type*} [AddCommGroup V] [Module ℂ V]
+    (b : OrthonormalBasis ι ℂ H.state) {f g : Operator H →ₗ[ℂ] V}
+    (h : ∀ i j, f (outer (b i) (b j)) = g (outer (b i) (b j))) : f = g := by
+  apply LinearMap.ext
+  intro A
+  rw [← sum_outer_basis b A, map_sum, map_sum]
+  apply Finset.sum_congr rfl
+  intro j _
+  rw [← b.sum_repr' (A (b j)), outer_sum_left, map_sum, map_sum]
+  simp only [outer_smul_left, map_smul, h]
+
+/-- A positive operator has an outer-product decomposition with exactly `finrank` terms.
+Zero eigenvalues contribute zero vectors, so singular and zero-dimensional cases are included. -/
+lemma exists_sum_outer_of_isPositive (A : Operator H) (hA : A.IsPositive) :
+    ∃ v : Fin (Module.finrank ℂ H.state) → H.state, A = ∑ i, outer (v i) (v i) := by
+  let b := hA.isSymmetric.eigenvectorBasis rfl
+  let v (i : Fin (Module.finrank ℂ H.state)) : H.state :=
+    (Real.sqrt (hA.isSymmetric.eigenvalues rfl i) : ℂ) • b i
+  refine ⟨v, (sum_outer_basis b A).symm.trans ?_⟩
+  apply Finset.sum_congr rfl
+  intro i _
+  dsimp only [v, b]
+  rw [hA.isSymmetric.apply_eigenvectorBasis, outer_smul_left, outer_smul_self]
+  congr 1
+  rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
+    ← Complex.ofReal_pow, Real.sq_sqrt (hA.nonneg_eigenvalues rfl i)]
+  rfl
+
 end Operator
 
 end Qudit

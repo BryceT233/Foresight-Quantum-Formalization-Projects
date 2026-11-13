@@ -30,14 +30,6 @@ namespace Superoperator
 
 variable {H C : Qudit}
 
-/-- The adjoint of tensor insertion contracts against the inserted vector. -/
-lemma adjoint_tensorInsertion_apply (v : C.state) (x : H.state) (y : C.state) :
-    ((TensorProduct.mk ℂ H.state C.state).flip v).adjoint (x ⊗ₜ y) = inner ℂ v y • x := by
-  apply ext_inner_left ℂ
-  intro z
-  rw [LinearMap.adjoint_inner_right]
-  simp [TensorProduct.inner_tmul, inner_smul_right, mul_comm]
-
 /-- Appending a pure state is conjugation by tensor insertion, hence is completely positive. -/
 lemma conjugate_tensorInsertion (v : C.state) (A : Operator H) :
     conjugate ((TensorProduct.mk ℂ H.state C.state).flip v) A =
