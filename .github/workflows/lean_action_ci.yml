@@ -20,6 +20,27 @@ jobs:
       - uses: leanprover/lean-action@v1
       - name: Build, lint and run regressions
         run: python3 scripts/check.py
+      - name: Add swap for documentation generation
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          free -h
+          df -h "$RUNNER_TEMP"
+          # doc-gen4 can exhaust memory even with a single Lean worker.
+          swap_file=$(mktemp "$RUNNER_TEMP/docgen-swap.XXXXXX")
+          sudo fallocate -l 8G "$swap_file"
+          sudo chmod 600 "$swap_file"
+          sudo mkswap "$swap_file"
+          sudo swapon "$swap_file"
+          free -h
+          swapon --show
       - uses: leanprover-community/docgen-action@v1
         env:
           LEAN_NUM_THREADS: "1"
+      - name: Report documentation memory usage
+        if: always() && github.event_name == 'push'
+        shell: bash
+        run: |
+          free -h
+          swapon --show
+          grep -E '^(MemAvailable|SwapTotal|SwapFree|CommitLimit|Committed_AS):' /proc/meminfo
