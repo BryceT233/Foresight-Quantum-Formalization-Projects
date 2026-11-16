@@ -207,7 +207,7 @@ theorem norm_suzukiProduct_pow_sub_integral_le_of_skewAdjoint
     isSuzukiCubic_suzukiP (norm_exp_smul_le_one_of_skewAdjoint ha)
     (norm_exp_smul_le_one_of_skewAdjoint hb) _ t ht r hr
   exact norm_exp_smul_le_one_of_skewAdjoint
-    (by simp only [star_add, ha, hb, neg_add_rev, add_comm])
+    ((skewAdjoint A).add_mem ha hb)
 
 /-- **Canonical sharp global coefficient.** The fixed-time integer sequence
 requires only skew-adjointness of the two splitting generators. -/
@@ -221,7 +221,7 @@ theorem tendsto_nat_pow_four_mul_norm_suzukiProduct_pow_sub_exp_of_skewAdjoint
     isSuzukiCubic_suzukiP (norm_exp_smul_le_one_of_skewAdjoint ha)
     (norm_exp_smul_le_one_of_skewAdjoint hb) _ t ht
   exact norm_exp_smul_le_one_of_skewAdjoint
-    (by simp only [star_add, ha, hb, neg_add_rev, add_comm])
+    ((skewAdjoint A).add_mem ha hb)
 
 /-- Complete cancellation of the integral coefficient gives sixth-order
 decay for the canonical C*-algebra Suzuki composition. -/
@@ -235,6 +235,6 @@ theorem isBigO_suzukiProduct_pow_sub_exp_of_skewAdjoint_of_integral_eq_zero
     isSuzukiCubic_suzukiP (norm_exp_smul_le_one_of_skewAdjoint ha)
     (norm_exp_smul_le_one_of_skewAdjoint hb) _ t ht hK
   exact norm_exp_smul_le_one_of_skewAdjoint
-    (by simp only [star_add, ha, hb, neg_add_rev, add_comm])
+    ((skewAdjoint A).add_mem ha hb)
 
 end FQFP.BCH

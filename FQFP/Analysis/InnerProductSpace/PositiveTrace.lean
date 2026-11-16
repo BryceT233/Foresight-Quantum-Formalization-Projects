@@ -13,6 +13,11 @@ public import Mathlib.Analysis.InnerProductSpace.Trace
 
 The trace of the product of two positive operators is nonnegative, even though their
 product need not be positive. This supplies positivity of mixed-state expectations.
+
+## Main results
+
+* `LinearMap.IsPositive.trace_mul_nonneg` gives nonnegativity of the trace of a product of two
+  positive operators.
 -/
 
 @[expose] public section

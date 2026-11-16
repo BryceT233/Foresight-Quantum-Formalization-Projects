@@ -21,6 +21,13 @@ where `z = a + b`, `T_k` is the degree-`k` part of `y = exp a * exp b - 1`,
 `W7 = 2·y_d7 - (y²)_d7`, and each `(y^m)_d7` is the sum over the positive compositions of `7` into
 `m` parts, in lexicographic order — written in that same order at the ring level and as a table.
 
+## Main results
+
+* `FQFP.BCH.dynkin7Tab_isZero` certifies that all degree-7 word coefficients of the difference
+  vanish.
+* `FQFP.BCH.octic_pure_identity` identifies the degree-7 logarithm coefficient with the explicit BCH
+  term.
+
 ## Coefficient computation
 
 `BinaryWordTable.collect` inserts each row along its binary word path. Unlike the old

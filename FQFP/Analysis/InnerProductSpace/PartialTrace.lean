@@ -16,6 +16,13 @@ public import Mathlib.Analysis.InnerProductSpace.Trace
 sum of compressions in an orthonormal basis. Its matrix coefficients are themselves
 basis-independent traces, proving that every orthonormal basis gives the same map.
 The left partial trace discards the left factor by first exchanging the factors.
+
+## Main definitions and results
+
+* `LinearMap.partialTraceRight` traces out the right tensor factor.
+* `LinearMap.partialTraceLeft` traces out the left tensor factor.
+* `LinearMap.partialTraceRightWith_eq` shows that the right partial trace is independent of the
+  chosen orthonormal basis.
 -/
 
 @[expose] public section

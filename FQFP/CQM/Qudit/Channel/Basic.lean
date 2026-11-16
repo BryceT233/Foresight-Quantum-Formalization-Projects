@@ -14,6 +14,13 @@ public import FQFP.CQM.Qudit.Channel.CompletelyPositive
 It acts on density operators and supports composition, tensor products, normalized
 finite Kraus families, isometric (in particular unitary) processes, and partial traces.
 It does not change the category or dagger instances of `Qudit`.
+
+## Main definitions
+
+* `Qudit.QuantumChannel`: completely positive, trace-preserving superoperators.
+* `Qudit.QuantumChannel.map`: the action of a channel on density states.
+* `Qudit.QuantumChannel.ofKraus`: a channel from a normalized finite Kraus family.
+* `Qudit.QuantumChannel.tensor`: parallel composition of quantum channels.
 -/
 
 @[expose] public section
@@ -79,7 +86,7 @@ def ofIsometry (f : H ⟶ K) [IsIsometry f] : QuantumChannel H K where
   toSuperoperator := Superoperator.conjugate f.hom
   completelyPositive := Superoperator.isCompletelyPositive_conjugate f.hom
   tracePreserving := Superoperator.isTracePreserving_conjugate f.hom
-    (congrArg Hom.hom (IsIsometry.comp_dagger_eq_id f))
+    (hom_adjoint_comp_of_isIsometry f)
 
 /-- The channel discarding the right subsystem. -/
 def partialTraceRight (H K : Qudit) : QuantumChannel (H ⊗ K) H where

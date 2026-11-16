@@ -96,7 +96,7 @@ theorem norm_fiveStageStrangProduct_centered_sub_quintic_le_of_skewAdjoint
     (norm_exp_smul_le_one_of_skewAdjoint ha) (norm_exp_smul_le_one_of_skewAdjoint hb)
     _ h hh
   exact norm_exp_smul_le_one_of_skewAdjoint
-    (by simp only [star_add, ha, hb, neg_add_rev, add_comm])
+    ((skewAdjoint A).add_mem ha hb)
 
 /-- The canonical Suzuki parameter automatically satisfies the cubic cancellation condition. -/
 theorem norm_suzukiProduct_centered_sub_quintic_le_of_skewAdjoint

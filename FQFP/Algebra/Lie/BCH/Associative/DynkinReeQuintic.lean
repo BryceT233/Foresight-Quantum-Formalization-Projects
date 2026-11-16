@@ -20,10 +20,17 @@ where `z = a + b`, `T_k` is the degree-`k` part of `y = exp a * exp b - 1`,
 `W5 = 2·y_d5 - (y²)_d5`, and `(y^m)_d5` is the degree-5 part of `y^m` — the sum over the positive
 compositions of `5` into `m` parts, in lexicographic order.
 
+## Main results
+
+* `FQFP.BCH.collapse_dynkin5Tab_all_zero` certifies that all degree-5 word coefficients of the
+  difference vanish.
+* `FQFP.BCH.sextic_pure_identity` identifies the degree-5 logarithm coefficient with the explicit
+  BCH term.
+
 ## How it is proved
 
 By computation. Each piece is a *table* (`w5Tab`, `y35Tab`, `y45Tab`, `z5Tab`, and
-`bchQuinticTermTable` from `BCHTerms.lean`), the whole left-hand side multiplied through by
+`bchQuinticTermTable` from `Terms.lean`), the whole left-hand side multiplied through by
 `lcm(1, …, 5) = 60` is `dynkin5Tab`, and comparing the two sides becomes one `decide` on a `List`
 and `ℤ` computation: 310 raw rows against the 32 words of degree 5. The bridge lemmas
 `eval_*` are the only place the `coefficientScale`-factors are discharged, and
@@ -65,7 +72,7 @@ def bchY45 {𝔸 : Type*} [Semiring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) : 𝔸
 
 The five pieces as tables, so that the coefficient comparison is a computation. Four of them are
 built here from `bchTTable`; the fifth, `bchQuinticTermTable`, is the term's own data and lives next
-to `bchQuinticTerm` in `BCHTerms.lean`. -/
+to `bchQuinticTerm` in `Terms.lean`. -/
 
 /-- The degree-5 `W5` table, mirroring `bchW5`. -/
 def w5Tab : WordTable.Table (Fin 2) :=

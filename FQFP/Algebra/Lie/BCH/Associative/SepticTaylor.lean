@@ -99,10 +99,8 @@ lemma bchSepticTermTaylor2Remainder_zero (x y : A) :
 /-- The septic polynomial at a perturbed input is the sum of its Taylor components. -/
 theorem bchSepticTerm_add_eq_sum_pieces (x V y : A) :
     bchSepticTerm (x + V) y = ∑ k ∈ range 7, bchSepticSubsetPiece k x V y := by
-  have hu : Function.update (![x, y] : Fin 2 → A) 0 (x + V) = ![x + V, y] := by
-    ext i
-    fin_cases i <;> simp
-  simpa only [Matrix.cons_val_zero, hu, bchSepticTerm, bchSepticSubsetPiece] using
+  simpa only [Matrix.vecCons, Fin.cons_zero, Fin.update_cons_zero, bchSepticTerm,
+    bchSepticSubsetPiece] using
     eval_update_add_eq_sum_taylorPiece coefficientScale bchSepticTermTable 0 ![x, y] V 6
       card_wordPositions_bchSepticTermTable
 

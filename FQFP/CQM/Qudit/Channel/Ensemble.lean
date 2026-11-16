@@ -13,6 +13,13 @@ public import FQFP.CQM.Qudit.State.Separable
 
 Channels commute with finite mixtures. In particular, local channels preserve mixed-state
 separability. The classical ensemble labels and their probabilities are retained.
+
+## Main definitions and results
+
+* `Qudit.Ensemble.map`: application of a channel to every component of an ensemble.
+* `Qudit.QuantumChannel.map_mixture`: channels preserve finite probabilistic mixtures.
+* `Qudit.Ensemble.mix_map`: mixing commutes with channel evolution.
+* `Qudit.Density.IsSeparable.map_tensor`: local channels preserve separability.
 -/
 
 @[expose] public section

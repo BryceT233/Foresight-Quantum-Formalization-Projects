@@ -24,14 +24,15 @@ No finiteness hypothesis on the variables is needed.
 @[expose] public section
 noncomputable section
 namespace MvPolynomial
-variable {σ : Type*}
+variable {σ 𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
+/-- The chain rule along a polynomial vector field, restricted to a set of times. -/
 lemma hasDerivWithinAt_aeval_of_hasDerivWithinAt_coordinates
-    (F : σ → MvPolynomial σ ℝ) (x : ℝ → σ → ℝ) (I : Set ℝ) (t : ℝ)
-    (hx : ∀ i, HasDerivWithinAt (fun s => x s i) (aeval (x t) (F i)) I t)
-    (p : MvPolynomial σ ℝ) :
-    HasDerivWithinAt (fun s => aeval (x s) p)
-      (aeval (x t) (mkDerivation ℝ F p)) I t := by
+    (F : σ → MvPolynomial σ 𝕜) (x : 𝕜 → σ → 𝕜) (I : Set 𝕜) (t : 𝕜)
+    (hx : ∀ i, HasDerivWithinAt (fun s ↦ x s i) (aeval (x t) (F i)) I t)
+    (p : MvPolynomial σ 𝕜) :
+    HasDerivWithinAt (fun s ↦ aeval (x s) p)
+      (aeval (x t) (mkDerivation 𝕜 F p)) I t := by
   induction p using MvPolynomial.induction_on with
   | C r => simpa using hasDerivWithinAt_const t I r
   | add p q hp hq =>
@@ -46,13 +47,14 @@ lemma hasDerivWithinAt_aeval_of_hasDerivWithinAt_coordinates
     · simp [Derivation.leibniz, smul_eq_mul]
       ring
 
+/-- The derivative of a polynomial observable is its derivation evaluated along the trajectory. -/
 lemma hasDerivAt_aeval_of_hasDerivAt_coordinates
-    (F : σ → MvPolynomial σ ℝ) (x : ℝ → σ → ℝ) (t : ℝ)
-    (hx : ∀ i, HasDerivAt (fun s => x s i) (aeval (x t) (F i)) t)
-    (p : MvPolynomial σ ℝ) :
-    HasDerivAt (fun s => aeval (x s) p) (aeval (x t) (mkDerivation ℝ F p)) t := by
+    (F : σ → MvPolynomial σ 𝕜) (x : 𝕜 → σ → 𝕜) (t : 𝕜)
+    (hx : ∀ i, HasDerivAt (fun s ↦ x s i) (aeval (x t) (F i)) t)
+    (p : MvPolynomial σ 𝕜) :
+    HasDerivAt (fun s ↦ aeval (x s) p) (aeval (x t) (mkDerivation 𝕜 F p)) t := by
   rw [← hasDerivWithinAt_univ]
   exact hasDerivWithinAt_aeval_of_hasDerivWithinAt_coordinates F x Set.univ t
-    (fun i => (hx i).hasDerivWithinAt) p
+    (fun i ↦ (hx i).hasDerivWithinAt) p
 
 end MvPolynomial

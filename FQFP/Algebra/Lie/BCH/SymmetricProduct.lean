@@ -16,6 +16,14 @@ import Mathlib.Tactic.Module
 The polynomial variable scales the outer exponentials. The series variable
 records total homogeneous degree. Polynomial differentiation is valid over
 noncommutative coefficients.
+
+## Main definitions and results
+
+* `FQFP.symmetricExponentialSeries` scales the outer two factors by a polynomial parameter.
+* `FQFP.mapSeriesLinear_symmetricExponentialSeries` gives the formal differential equation for that
+  product.
+* `FQFP.mapSeriesLinear_formalLog_symmetricExponentialSeries` gives the Bernoulli adjoint equation
+  for its logarithm.
 -/
 
 @[expose] public noncomputable section

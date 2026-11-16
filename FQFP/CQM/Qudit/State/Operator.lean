@@ -17,6 +17,14 @@ and positivity APIs. The category-to-operator bridge is `Hom.hom` in one directi
 Its trace is `inner ℂ w v`, and `outer v v` is positive without any normalization assumption.
 
 Coordinates use Mathlib's `LinearMap.toMatrixOrthonormal`; no second matrix algebra is defined.
+
+## Main definitions and results
+
+* `Qudit.Operator`: linear endomorphisms of a qudit.
+* `Qudit.Operator.trace_outer`: the trace of an outer product is its inner product.
+* `Qudit.Operator.sum_outer_basis`: expansion of an operator in an orthonormal basis.
+* `Qudit.Operator.exists_sum_outer_of_isPositive`: positive operators are finite sums of outer
+  squares.
 -/
 
 @[expose] public section

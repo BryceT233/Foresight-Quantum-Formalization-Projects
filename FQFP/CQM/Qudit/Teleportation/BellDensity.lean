@@ -15,6 +15,12 @@ The Bell resource already used by the teleportation protocol determines a pure d
 operator. Both reduced states are the maximally mixed qubit state, with operator `I / 2`.
 This is the two-dimensional case of Watrous, *The Theory of Quantum Information*,
 Example 2.8, equations (2.35)--(2.37).
+
+## Main definitions and results
+
+* `Qudit.bellDensity`: the normalized density operator of the Bell resource.
+* `Qudit.bellDensity_partialTraceRight`: the left marginal is maximally mixed.
+* `Qudit.bellDensity_partialTraceLeft`: the right marginal is maximally mixed.
 -/
 
 @[expose] public section

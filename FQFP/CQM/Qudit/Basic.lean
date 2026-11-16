@@ -155,12 +155,12 @@ lemma hom_bijective {H₁ H₂ : Qudit} :
   left f g h := by cases f; cases g; simpa using! h
   right f := ⟨⟨f⟩, rfl⟩
 
-/-- Convenience shortcut for `ModuleCat.hom_bijective.injective`. -/
+/-- The underlying linear map determines a qudit morphism. -/
 lemma hom_injective {H₁ H₂ : Qudit} :
     Function.Injective (Hom.hom : (H₁ ⟶ H₂) → (H₁.state →ₗ[ℂ] H₂.state)) :=
   hom_bijective.injective
 
-/-- Convenience shortcut for `ModuleCat.hom_bijective.surjective`. -/
+/-- Every linear map between qudit state spaces defines a qudit morphism. -/
 lemma hom_surjective {H₁ H₂ : Qudit} :
     Function.Surjective (Hom.hom : (H₁ ⟶ H₂) → (H₁.state →ₗ[ℂ] H₂.state)) :=
   hom_bijective.surjective
@@ -200,7 +200,7 @@ def homEquiv {H₁ H₂ : Qudit} : (H₁ ⟶ H₂) ≃ (H₁.state →ₗ[ℂ] H
   toFun := Hom.hom
   invFun := ofHom
 
-/-- Build an isomorphism in the category `Qudit` from an `LinearEquiv` between
+/-- Build an isomorphism in the category `Qudit` from a `LinearEquiv` between
 finite dimensional Hilbert spaces. -/
 def isoMk {X Y : Type} {_ : NormedAddCommGroup X} {_ : InnerProductSpace ℂ X}
     {_ : FiniteDimensional ℂ X} {_ : NormedAddCommGroup Y} {_ : InnerProductSpace ℂ Y}
@@ -208,7 +208,7 @@ def isoMk {X Y : Type} {_ : NormedAddCommGroup X} {_ : InnerProductSpace ℂ X}
   hom := ofHom (e : X →ₗ[ℂ] Y)
   inv := ofHom (e.symm : Y →ₗ[ℂ] X)
 
-/-- Build an `LinearEquiv` from an isomorphism in the category `Qudit`. -/
+/-- Build a `LinearEquiv` from an isomorphism in the category `Qudit`. -/
 def linearEquivOfIso {H₁ H₂ : Qudit} (i : H₁ ≅ H₂) : H₁.state ≃ₗ[ℂ] H₂.state where
   __ := i.hom.hom
   toFun := i.hom
@@ -229,19 +229,27 @@ open DaggerCategory
 @[simp]
 lemma hom_dagger {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) : f†.hom = f.hom.adjoint := rfl
 
+/-- The adjoint of an isometry is a left inverse of its underlying linear map. -/
+lemma hom_adjoint_comp_of_isIsometry {H K : Qudit} (f : H ⟶ K) [IsIsometry f] :
+    f.hom.adjoint ∘ₗ f.hom = LinearMap.id :=
+  congrArg Hom.hom (IsIsometry.comp_dagger_eq_id f)
+
+/-- Applying an isometry and then its adjoint recovers the original vector. -/
+lemma hom_adjoint_apply_of_isIsometry {H K : Qudit} (f : H ⟶ K) [IsIsometry f]
+    (x : H.state) : f.hom.adjoint (f.hom x) = x :=
+  LinearMap.congr_fun (hom_adjoint_comp_of_isIsometry f) x
+
 /-- An isometry `f` has an injective underlying linear map. -/
 lemma hom_injective_of_isIsometry {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsIsometry f] :
     Function.Injective f.hom :=
   LinearMap.injective_of_comp_eq_id (f := f.hom) (g := f†.hom)
-    (congrArg (fun g : H₁ ⟶ H₁ ↦ g.hom) (IsIsometry.comp_dagger_eq_id f))
+    (hom_adjoint_comp_of_isIsometry f)
 
 /-- An isometry `f` preserves inner products. -/
 @[simp]
 lemma inner_map_map_of_isIsometry {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsIsometry f]
     (x y : H₁.state) : inner ℂ (f.hom x) (f.hom y) = inner ℂ x y := by
-  have hadj : LinearMap.adjoint (f.hom) (f.hom y) = y :=
-    congrArg (fun g : H₁ ⟶ H₁ ↦ g.hom y) (IsIsometry.comp_dagger_eq_id f)
-  rw [← LinearMap.adjoint_inner_right, hadj]
+  rw [← LinearMap.adjoint_inner_right, hom_adjoint_apply_of_isIsometry]
 
 /-- An isometry `f` preserves norms. -/
 @[simp]
@@ -261,6 +269,21 @@ lemma LIOfIsIsometry_apply {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsIsometry f
 
 lemma LIOfIsIsometry_toLinearMap {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsIsometry f] :
     (LIOfIsIsometry f).toLinearMap = f.hom := rfl
+
+/-- Bundle a linear isometry as a qudit morphism while retaining its source and target. -/
+def ofLinearIsometry {H K : Qudit} (V : H.state →ₗᵢ[ℂ] K.state) : H ⟶ K :=
+  ConcreteCategory.ofHom V.toLinearMap
+
+/-- The underlying map of a morphism constructed from a linear isometry. -/
+lemma hom_ofLinearIsometry {H K : Qudit} (V : H.state →ₗᵢ[ℂ] K.state) :
+    (ofLinearIsometry V).hom = V.toLinearMap := rfl
+
+/-- A morphism constructed from a linear isometry is dagger-isometric. -/
+instance isIsometry_ofLinearIsometry {H K : Qudit} (V : H.state →ₗᵢ[ℂ] K.state) :
+    IsIsometry (ofLinearIsometry V) := by
+  rw [isIsometry_iff]
+  apply hom_ext
+  exact V.adjoint_comp_self'
 
 /-- A unitary `f` has a surjective underlying linear map. -/
 lemma hom_surjective_of_isUnitary {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) [IsUnitary f] :

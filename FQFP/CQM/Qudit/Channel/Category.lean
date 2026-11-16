@@ -13,6 +13,13 @@ public import FQFP.CQM.Qudit.Channel.Choi
 Objects retain the underlying Hilbert space; arrows are completely positive maps on
 its full operator algebra. Trace preservation is not part of this category. The pure
 process functor sends `f` to conjugation by `f`, and therefore forgets global phase.
+
+## Main definitions and results
+
+* `Qudit.CPMap`: bundled completely positive maps between qudit operator spaces.
+* `Qudit.CPQudit`: the symmetric monoidal category of completely positive processes.
+* `Qudit.CPQudit.pure`: the functor sending a linear map to conjugation by that map.
+* `Qudit.CPQudit.pure_tensor`: pure-process interpretation preserves tensor products.
 -/
 
 @[expose] public section

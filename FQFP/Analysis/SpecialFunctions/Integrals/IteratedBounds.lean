@@ -19,6 +19,7 @@ error estimates. The interval integral carries the orientation of its endpoints.
 * `integral_mul_integral_pow_div_factorial`: the iterated-integral FTC identity.
 * `abs_integral_mul_abs_integral_pow_div_factorial`: its two-sided norm companion.
 * `integral_abs_sub_pow_uIoc`: the beta integral used in commutator estimates.
+* `norm_intervalIntegral_le_of_le_abs_sub_pow`: a pointwise power bound for either time direction.
 * `integral_smul_eq_integral_mul_sub`: the substituted Taylor remainder integral.
 * `norm_intervalIntegral_le_const_mul_abs_pow_div_factorial_mul`: integrate a
   factorial-polynomial norm bound.
@@ -283,6 +284,23 @@ lemma integral_abs_sub_pow_uIoc (q : ℕ) (τ : ℝ) (hq : 1 ≤ q) :
               norm_cast
               rw [Nat.sub_add_cancel hq]
             rw [Nat.sub_add_cancel hq, hcast, abs_sub_comm (0 : ℝ) τ, sub_zero]
+
+/-- A pointwise power bound centered at the terminal endpoint bounds the integral for either
+orientation of the interval. -/
+lemma norm_intervalIntegral_le_of_le_abs_sub_pow {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (f : ℝ → E) {C τ : ℝ} {q : ℕ} (hC : 0 ≤ C) (hq : 1 ≤ q)
+    (h : ∀ u ∈ Set.uIoc (0 : ℝ) τ, ‖f u‖ ≤ C * |τ - u| ^ (q - 1)) :
+    ‖∫ u in 0..τ, f u‖ ≤ C * (|τ| ^ q / q) := by
+  calc
+    _ ≤ |∫ u in 0..τ, C * |τ - u| ^ (q - 1)| := by
+      apply intervalIntegral.norm_integral_le_abs_of_norm_le
+      · rw [ae_restrict_iff' measurableSet_uIoc]
+        filter_upwards with u hu
+        exact h u hu
+      · exact (by fun_prop : Continuous fun u : ℝ ↦ C * |τ - u| ^ (q - 1)).intervalIntegrable 0 τ
+    _ = _ := by
+      rw [intervalIntegral.abs_integral_eq_abs_integral_uIoc, integral_const_mul,
+        integral_abs_sub_pow_uIoc q τ hq, abs_of_nonneg (by positivity)]
 
 /-- `∫₀^τ |s|^(p-1)/(p-1)! ds = |τ|^p/p!` over the unordered interval, for `1 ≤ p`. -/
 lemma integral_abs_pow_sub_div_factorial_uIoc (p : ℕ) (τ : ℝ) (hp : 1 ≤ p) :

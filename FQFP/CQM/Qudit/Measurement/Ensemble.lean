@@ -15,6 +15,14 @@ public import FQFP.CQM.Qudit.Measurement.Instrument
 An instrument determines a finite ensemble of conditional outputs. A supplied fallback
 state fills zero-probability labels, where conditioning has no meaning; it does not affect
 the mixed output. Tensoring an instrument with an independent channel retains the labels.
+
+## Main definitions and results
+
+* `Qudit.Instrument.outputEnsemble`: the ensemble of conditional outputs, with a zero-weight
+  fallback.
+* `Qudit.Instrument.mix_outputEnsemble`: mixing outputs agrees with forgetting the instrument
+  outcome.
+* `Qudit.Instrument.tensorLeft`: parallel composition of an instrument with a channel.
 -/
 
 @[expose] public section

@@ -18,6 +18,13 @@ A pure ensemble mixes to a pure state exactly when every positive-weight compone
 has that same density operator. Zero-weight components remain unrestricted.
 These are coordinate-free versions of physlib's `MState.pure_eq_pure_iff` and
 `Ensemble.mix_pEnsemble_pure_iff_pure`, together with `MState.pure_iff_rank_eq_one`.
+
+## Main definitions and results
+
+* `Qudit.Density.IsPure`: densities arising from unit vectors.
+* `Qudit.Density.isPure_iff_finrank_range_eq_one`: purity is equivalent to operator rank one.
+* `Qudit.Density.pure_eq_pure_iff`: pure vectors determine the same density exactly up to phase.
+* `Qudit.Ensemble.mix_ofPure_eq_pure_iff`: purity of a mixture of pure states.
 -/
 
 @[expose] public section

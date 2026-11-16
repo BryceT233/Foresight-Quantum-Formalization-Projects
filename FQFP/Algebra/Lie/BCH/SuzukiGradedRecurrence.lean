@@ -12,6 +12,12 @@ public import FQFP.Algebra.Lie.BCH.SuzukiCubicArithmetic
 
 This file records the paper's BCH update as finite scalar arithmetic. Its
 five-step result is checked exactly at the canonical cubic parameter.
+
+## Main definitions and results
+
+* `FQFP.BCH.SuzukiGradedCoeff.append` updates the five coordinates for one Strang stage.
+* `FQFP.BCH.SuzukiGradedCoeff.fiveStages_eq_target` computes the five-stage result at any real root
+  of the Suzuki cubic.
 -/
 
 @[expose] public noncomputable section

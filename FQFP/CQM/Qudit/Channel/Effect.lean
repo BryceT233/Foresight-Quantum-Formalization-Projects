@@ -15,6 +15,14 @@ to `Tr(EA)` on the scalar system. Trace-nonincreasing effects correspond to `E â
 deterministic effects correspond to the identity operator, hence to discarding.
 Composing a density preparation with an effect evaluates the Born pairing directly,
 without squaring an already probabilistic scalar.
+
+## Main definitions and results
+
+* `Qudit.CPQudit.effectEquiv`: positive operators correspond to categorical CP effects.
+* `Qudit.CPQudit.boundedEffectEquiv`: bounded positive operators correspond to subnormalized
+  effects.
+* `Qudit.CPQudit.scalarValue`: the nonnegative real value of a CP scalar.
+* `Qudit.Density.scalarValue_comp_effect`: the preparation-effect pairing gives the expectation.
 -/
 
 @[expose] public section

@@ -16,6 +16,13 @@ Positive operators are states of `CPQudit`; density operators are states of `Cau
 The preparation associated to `A` sends a scalar operator `B` to `Tr(B) • A`.
 These equivalences preserve sequential action and parallel preparation, including in
 dimension zero. They do not identify non-product mixed states with entangled states.
+
+## Main definitions and results
+
+* `Qudit.CPQudit.stateEquiv`: positive operators correspond to categorical CP preparations.
+* `Qudit.Density.toState`: a normalized state in the causal channel category.
+* `Qudit.Density.causalCPStateEquiv`: densities correspond to causal CP preparations.
+* `Qudit.Density.toCPState_comp`: sequential composition agrees with channel evolution.
 -/
 
 @[expose] public section

@@ -12,9 +12,13 @@ public import FQFP.Algebra.Lie.IteratedCommutator
 
 The eight degree-five right-nested commutators are indexed by `Fin 8`.
 They form a redundant family, as used in Childs et al., Appendix J, Proposition J.1.
-Their definition and eight evaluation
-lemmas require only a ring with its associative Lie bracket. The weighted norm
-sums are developed separately in `Analysis.Normed.Algebra.BCH.CommutatorWeights`.
+The definition and eight evaluation lemmas require only a ring with its associative Lie bracket.
+Weighted sums of their norms are developed in `FQFP.Analysis.Normed.Algebra.BCH.CommutatorWeights`.
+
+## Main definitions
+
+* `FQFP.BCH.binaryQuinticCommutator` indexes the eight right-nested degree-five commutators built
+  from two letters.
 -/
 
 @[expose] public section

@@ -14,6 +14,12 @@ The three coordinates represent `c₀ + c₁ u + c₂ u²`. Multiplication reduc
 the cubic and quartic terms using `60u³ - 48u² + 12u - 1 = 0`.
 The evaluation theorem makes the finite calculation valid for the canonical
 real parameter; no field structure on the quotient is asserted.
+
+## Main definitions and results
+
+* `FQFP.BCH.SuzukiCubicCoord` stores the three rational coordinates of a quadratic representative.
+* `FQFP.BCH.SuzukiCubicCoord.mul` reduces multiplication using the cubic relation.
+* `FQFP.BCH.SuzukiCubicCoord.eval_mul` shows that multiplication agrees with evaluation at a root.
 -/
 
 @[expose] public noncomputable section

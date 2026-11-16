@@ -12,10 +12,18 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 /-!
 # Norm bounds for commutators and iterated adjoints
 
-This common API bounds a single commutator, an adjoint power, a sequence of
-adjoints, and nested commutators indexed by lists or finite tuples. It is shared
-by BCH estimates and product-formula error bounds. Existing declaration names
-in `TrotterError` and `FQFP.BCH` are preserved.
+The bounds cover a single commutator, an adjoint power, a sequence of adjoints, and
+nested commutators indexed by lists or finite tuples. They apply to BCH estimates and
+product-formula error bounds.
+
+## Main results
+
+* `TrotterError.norm_commutator_le` bounds the commutator norm by twice the product of the argument
+  norms.
+* `TrotterError.norm_adSequence_le` bounds a sequence of iterated adjoint actions by a product of
+  norm estimates.
+* `FQFP.BCH.norm_nestedComm_le` bounds a nested commutator with `p` brackets by `2 ^ p` times the
+  product of the argument norms.
 -/
 
 @[expose] public section

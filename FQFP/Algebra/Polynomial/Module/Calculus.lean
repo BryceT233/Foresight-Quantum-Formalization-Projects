@@ -14,6 +14,13 @@ public import Mathlib.LinearAlgebra.Finsupp.LSum
 Coefficientwise differentiation and the primitive with zero constant coefficient
 for rational vector-valued polynomials, together with linear-map compatibility.
 These are algebraic operations on the auxiliary polynomial variable.
+
+## Main definitions and results
+
+* `PolynomialModule.integralZero` gives the primitive with zero constant coefficient.
+* `PolynomialModule.derivative_integralZero` recovers a polynomial by differentiating its primitive.
+* `PolynomialModule.ext_derivative` establishes equality from equal derivatives and constant
+  coefficients.
 -/
 
 @[expose] public noncomputable section

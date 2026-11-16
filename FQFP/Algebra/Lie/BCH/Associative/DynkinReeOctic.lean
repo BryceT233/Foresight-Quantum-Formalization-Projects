@@ -20,6 +20,13 @@ This is the identity called `nonic_pure_identity` in
 `Lean-BCH/BCH/SmallSDischarge.lean`: the source name refers to the following remainder
 order. Its ring expression is preserved, with the rational coefficients interpreted
 in an arbitrary rational algebra. No norm or completeness assumptions are needed.
+
+## Main results
+
+* `FQFP.BCH.dynkin8Tab_isZero` certifies that all degree-8 word coefficients of the difference
+  vanish.
+* `FQFP.BCH.bchOcticTerm_eq` identifies the degree-8 logarithm coefficient with the explicit BCH
+  term.
 -/
 
 @[expose] public section

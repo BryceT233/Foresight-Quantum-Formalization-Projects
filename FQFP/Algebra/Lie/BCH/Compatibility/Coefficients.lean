@@ -16,6 +16,12 @@ public import FQFP.RingTheory.PowerSeries.Noncommutative.ExponentialProduct
 The ordinary exponential product is conjugate to the symmetric product by
 `exp(t a / 2)`. Formal logarithm equivariance and the exponential adjoint action
 identify the coefficients in every degree, without finite word certificates.
+
+## Main results
+
+* `FQFP.expListLogCoeff_eq_sum_ad_symmetric` expresses ordinary logarithm coefficients using
+  iterated adjoints of symmetric coefficients.
+* `FQFP.bchLieCoeff_eq_expListLogCoeff` identifies the ordinary Lie and logarithm coefficients.
 -/
 
 @[expose] public noncomputable section

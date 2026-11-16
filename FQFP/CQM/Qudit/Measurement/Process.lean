@@ -17,6 +17,13 @@ its unnormalized CP branches, and discarding each branch gives its induced POVM.
 Preparation and effect composition recovers the existing Born probabilities. Recorded
 measurements are deterministic, but selecting an individual outcome need not be.
 Conditional density states are used only at strictly positive probability.
+
+## Main definitions and results
+
+* `Qudit.POVM.effect`: a POVM outcome as a categorical CP effect.
+* `Qudit.Instrument.branchCPMap`: an instrument outcome as a completely positive process.
+* `Qudit.Instrument.toPOVM`: the POVM obtained by discarding each branch output.
+* `Qudit.POVM.toPOVM_luders`: the Lüders instrument realizes its original POVM.
 -/
 
 @[expose] public section

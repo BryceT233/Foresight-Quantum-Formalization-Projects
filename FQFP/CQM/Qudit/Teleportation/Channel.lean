@@ -16,6 +16,13 @@ Each branch sends an arbitrary operator to one quarter of itself. Branch outputs
 unnormalized positive operators; only the sum of the four branches is trace preserving.
 Consequently the protocol transmits every mixed state, including states entangled with
 an arbitrary finite-dimensional reference system.
+
+## Main definitions and results
+
+* `Qudit.teleportationChannel`: the channel obtained by summing corrected Bell branches.
+* `Qudit.teleportationChannel_eq_id`: corrected teleportation is the identity channel.
+* `Qudit.teleportationChannel_tensor_map`: teleportation preserves states entangled with a
+  reference.
 -/
 
 @[expose] public section

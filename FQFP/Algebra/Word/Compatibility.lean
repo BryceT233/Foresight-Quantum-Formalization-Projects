@@ -15,6 +15,12 @@ The integer operations agree with the integer specialization of coefficient tabl
 as lists, including their collection order and retained zero coefficients.
 Scaled evaluation is general coefficient evaluation on inversely scaled letters.
 No nonzero-scale hypothesis is needed, even for the empty word.
+
+## Main results
+
+* `FQFP.WordTable.collapse_eq_coeffWordTable` identifies the two coefficient-collection operations.
+* `FQFP.WordTable.eval_eq_coeffWordTable` expresses scaled integer evaluation using general
+  coefficient tables.
 -/
 
 @[expose] public section

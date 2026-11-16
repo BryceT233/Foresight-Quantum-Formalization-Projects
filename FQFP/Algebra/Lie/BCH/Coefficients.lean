@@ -14,6 +14,11 @@ public import FQFP.Algebra.Lie.Hom
 The ordinary coefficients are obtained by applying `exp(ad_x / 2)` to the
 symmetric series. The definition and its naturality need only a rational Lie
 algebra. Compatibility with the associative logarithm is proved separately.
+
+## Main definitions and results
+
+* `FQFP.bchLieCoeff` defines ordinary BCH coefficients from the symmetric Lie coefficients.
+* `FQFP.map_bchLieCoeff` shows that Lie homomorphisms preserve these coefficients.
 -/
 
 @[expose] public noncomputable section

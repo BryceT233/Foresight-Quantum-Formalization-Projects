@@ -13,6 +13,12 @@ public import FQFP.CQM.Qudit.Basic
 `Qudit.UnitState` bundles a vector with the existing normalization predicate.
 It does not identify vectors differing by a global phase. Isometric morphisms act on
 unit states, and every orthonormal basis supplies unit states.
+
+## Main definitions
+
+* `Qudit.UnitState`: unit vectors in a qudit, retaining their global phase.
+* `Qudit.UnitState.map`: transport of unit vectors along an isometry.
+* `Qudit.UnitState.phase`: multiplication by a scalar of norm one.
 -/
 
 @[expose] public section

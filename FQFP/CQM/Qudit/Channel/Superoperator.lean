@@ -14,6 +14,13 @@ public import Mathlib.LinearAlgebra.Contraction
 Superoperators act on operators, separately from the pure processes of `Qudit`.
 Their tensor product is transported through Mathlib's canonical `homTensorHomEquiv`.
 No basis or positivity assumption is needed for these algebraic constructions.
+
+## Main definitions and results
+
+* `Qudit.Superoperator`: complex-linear maps between qudit operator spaces.
+* `Qudit.Superoperator.tensor`: the canonical tensor product of superoperators.
+* `Qudit.Superoperator.conjugate`: conjugation by a linear map and its adjoint.
+* `Qudit.Superoperator.tensor_comp`: tensor products respect sequential composition.
 -/
 
 @[expose] public section
@@ -75,6 +82,16 @@ lemma tensor_apply (Φ : Superoperator H K) (Ψ : Superoperator L M)
     (TensorProduct.map Φ Ψ ((Operator.tensorEquiv H L).symm
       (Operator.tensorEquiv H L (A ⊗ₜ B)))) = _
   rw [LinearEquiv.symm_apply_apply, TensorProduct.map_tmul, Operator.tensorEquiv_tmul]
+
+/-- Applying a superoperator on the retained factor commutes with discarding the other factor. -/
+lemma partialTraceRight_tensor_id (Φ : Superoperator H K) (R : Qudit) :
+    (Operator.partialTraceRight : Superoperator (K ⊗ R) K) ∘ₗ
+        tensor Φ (LinearMap.id : Superoperator R R) =
+      Φ ∘ₗ (Operator.partialTraceRight : Superoperator (H ⊗ R) H) := by
+  apply Operator.tensor_ext
+  intro A B
+  simp only [LinearMap.comp_apply, tensor_apply, LinearMap.id_apply,
+    Operator.partialTraceRight_tensor, map_smul]
 
 /-- Tensoring identity superoperators gives the identity. -/
 lemma tensor_id_id (H K : Qudit) :
@@ -186,6 +203,40 @@ lemma relabel_assoc_tensor (A : Operator H) (B : Operator K) (C : Operator L) :
       TensorProduct.map_tmul, TensorProduct.assoc_tmul]
     rfl
   | add u v hu hv => simp_all [TensorProduct.tmul_add]
+
+/-- Discarding a composite right factor agrees with two successive partial traces. -/
+lemma partialTraceRight_relabel_assoc (H K L : Qudit) :
+    (Operator.partialTraceRight : Superoperator (H ⊗ (K ⊗ L)) H) ∘ₗ
+        relabel (TensorProduct.assocIsometry ℂ H.state K.state L.state) =
+      (Operator.partialTraceRight : Superoperator (H ⊗ K) H) ∘ₗ
+        (Operator.partialTraceRight : Superoperator ((H ⊗ K) ⊗ L) (H ⊗ K)) := by
+  apply Operator.tensor_ext
+  intro A C
+  induction A using Operator.tensor_induction_on with
+  | htensor A B =>
+    simp only [LinearMap.comp_apply, relabel_assoc_tensor,
+      Operator.partialTraceRight_tensor, Operator.trace_tensor, map_smul,
+      smul_smul, mul_comm]
+  | hadd A B hA hB =>
+    simpa only [Operator.tensor, ← TensorProduct.mapBilinear_apply, map_add,
+      LinearMap.add_apply] using congrArg₂ (· + ·) hA hB
+
+/-- Discarding the first factor after reassociation retains the other two factors. -/
+lemma partialTraceLeft_relabel_assoc (H K L : Qudit) :
+    (Operator.partialTraceLeft : Superoperator (H ⊗ (K ⊗ L)) (K ⊗ L)) ∘ₗ
+        relabel (TensorProduct.assocIsometry ℂ H.state K.state L.state) =
+      tensor (Operator.partialTraceLeft : Superoperator (H ⊗ K) K)
+        (LinearMap.id : Superoperator L L) := by
+  apply Operator.tensor_ext
+  intro A C
+  induction A using Operator.tensor_induction_on with
+  | htensor A B =>
+    simp only [LinearMap.comp_apply, relabel_assoc_tensor, tensor_apply,
+      Operator.partialTraceLeft_tensor, LinearMap.id_apply]
+    exact (TensorProduct.map_smul_left _ _ _).symm
+  | hadd A B hA hB =>
+    simpa only [Operator.tensor, ← TensorProduct.mapBilinear_apply, map_add,
+      LinearMap.add_apply] using congrArg₂ (· + ·) hA hB
 
 /-- Inverse reassociation of operator products. -/
 lemma relabel_assoc_symm_tensor (A : Operator H) (B : Operator K) (C : Operator L) :

@@ -156,6 +156,12 @@ lemma IsUnitary.dagger_inv_eq_hom {c₁ c₂ : C} (e : c₁ ≅ c₂) [IsUnitary
     e.inv† = e.hom := by
   rw [← ‹IsUnitary e.hom›.dagger_hom_eq_inv, involutive_dagger]
 
+/-- The inverse of a unitary isomorphism is unitary. -/
+instance IsUnitary.iso_inv {c₁ c₂ : C} (e : c₁ ≅ c₂) [IsUnitary e.hom] :
+    IsUnitary e.inv := by
+  rw [← IsUnitary.dagger_hom_eq_inv e]
+  infer_instance
+
 /-- An endomorphism of the form `g ≫ g†` for some morphism `g`, i.e. a positive morphism. -/
 @[mk_iff]
 class IsPositive {c : C} (f : c ⟶ c) where

@@ -13,6 +13,12 @@ public import FQFP.Algebra.Word.CoeffTable
 The degree-five binary alphabet has 32 positions, including zero coefficient
 positions. The degree-seven ternary probe checks the 2187-position scale of
 the same concrete word enumeration used by finite coefficient tables.
+
+## Main definitions and results
+
+* `FQFP.CoeffWordTable.fixedWords` enumerates the words of a given length on a finite alphabet.
+* `FQFP.CoeffWordTable.mem_fixedWords_iff_length` characterizes membership by word length.
+* `FQFP.CoeffWordTable.fixedWords_nodup` establishes that each position occurs only once.
 -/
 
 @[expose] public section
@@ -63,25 +69,32 @@ theorem fixedWords_nodup (alphabetSize n : ℕ) :
         obtain ⟨b, _, hab⟩ := List.mem_map.mp hy
         exact hne (List.cons.inj hab).2.symm
 
+/-- An alphabet with `alphabetSize` letters has `alphabetSize ^ n` words of length `n`. -/
+theorem length_fixedWords (alphabetSize n : ℕ) : (fixedWords alphabetSize n).length =
+    alphabetSize ^ n := by
+  induction n with
+  | zero => simp [fixedWords]
+  | succ n ih => simp [fixedWords, List.length_flatMap, ih, pow_succ]
+
 /-- All 32 positions of the binary quintic word table are enumerated. -/
-theorem binary_quintic_position_count : (fixedWords 2 5).length = 32 := by
-  decide +kernel
+theorem binary_quintic_position_count : (fixedWords 2 5).length = 32 :=
+  length_fixedWords 2 5
 
 /-- Binary quintic positions are pairwise distinct. -/
-theorem binary_quintic_positions_nodup : (fixedWords 2 5).Nodup := by
-  exact fixedWords_nodup 2 5
+theorem binary_quintic_positions_nodup : (fixedWords 2 5).Nodup :=
+  fixedWords_nodup 2 5
 
 /-- The ternary septic enumeration reaches all 2187 ordered positions. -/
-theorem ternary_septic_position_count : (fixedWords 3 7).length = 2187 := by
-  decide +kernel
+theorem ternary_septic_position_count : (fixedWords 3 7).length = 2187 :=
+  length_fixedWords 3 7
 
 /-- The 2187 enumerated words each have degree seven. -/
 theorem ternary_septic_position_lengths :
-    (fixedWords 3 7).all (fun w ↦ w.length == 7) = true := by
-  decide +kernel
+    (fixedWords 3 7).all (fun w ↦ w.length == 7) = true :=
+  List.all_eq_true.mpr fun w hw ↦ beq_iff_eq.mpr ((mem_fixedWords_iff_length 3 7 w).mp hw)
 
 /-- The ternary septic scale probe contains no repeated word positions. -/
-theorem ternary_septic_positions_nodup : (fixedWords 3 7).Nodup := by
-  exact fixedWords_nodup 3 7
+theorem ternary_septic_positions_nodup : (fixedWords 3 7).Nodup :=
+  fixedWords_nodup 3 7
 
 end FQFP.CoeffWordTable

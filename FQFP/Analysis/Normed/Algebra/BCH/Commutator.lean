@@ -11,8 +11,10 @@ public import Mathlib.Algebra.Lie.OfAssociative
 /-!
 # The commutator expansion of the BCH element
 
-How far `bch a b` is from `a + b`, and what the leading correction is. Two estimates, both for
-`s = ‖a‖ + ‖b‖ < log 2` (a sufficient convergence range for the logarithm):
+The following estimates give the error in approximating `bch a b` by `a + b` and identify its
+leading correction. Both hold for `s = ‖a‖ + ‖b‖ < log 2`, where the logarithm converges.
+
+## Main results
 
 * `norm_bch_sub_add_le` — **quadratic**: `‖bch a b - (a + b)‖ ≤ 3 s² / (2 - eˢ)`, i.e. the linear
   part of `bch a b` is `a + b`.
@@ -21,8 +23,8 @@ How far `bch a b` is from `a + b`, and what the leading correction is. Two estim
   non-commutative correction as the Lie bracket `½[a, b]`. Mathlib identifies
   `⁅a, b⁆ = a * b - b * a` and `norm_bch_sub_add_sub_lie_le` is the same bound in `⁅·,·⁆` notation.
 
-The symmetric (Strang) refinement of the cubic bound — where `½[a, b]` cancels — is in
-`BCHSymmetric.lean`.
+In the symmetric Strang product the leading commutator cancels.
+See `FQFP.Analysis.Normed.Algebra.BCH.Symmetric` for the resulting cubic bound.
 
 ## Provenance and design
 
@@ -463,12 +465,8 @@ end CubicBound
 
 /-! ### The Lie bracket
 
-`⁅a, b⁆ = a * b - b * a` in an associative ring, via Mathlib's `LieRing.ofAssociativeRing`. The
-instance is installed locally, as in `ChildsBasis.lean` and `NestedCommNorm.lean`. The Lie-form
-restatements of the BCH bounds (`norm_bch_sub_add_sub_lie_le`, `norm_symmetric_bch_sub_add_lie_le`)
-belong next to those bounds.
-
-The bracket identity is `Ring.lie_def`; no project-specific conversion is needed. -/
+The local instance `LieRing.ofAssociativeRing` gives the bracket
+`⁅a, b⁆ = a * b - b * a` by `Ring.lie_def`. -/
 
 end
 

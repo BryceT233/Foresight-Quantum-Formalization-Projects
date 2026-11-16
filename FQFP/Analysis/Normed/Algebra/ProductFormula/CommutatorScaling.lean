@@ -15,11 +15,11 @@ public import FQFP.Analysis.Normed.Algebra.ProductFormula.Basic
 /-!
 # Commutator scaling bridge
 
-The bridge from the additive kernel `𝒯(τ)` to the commutator expansion:
-`additiveKernel = Σ multiConj − multiConj` (`papers/rep.tex` lines 5-12) and the
-order-condition cancellation `𝒯 = Σ commutatorRemainder − commutatorRemainder`
-(`papers/theory.tex` lines 251-266). These are shared by the anti-Hermitian and
-general-operator branches of `thm:trotter_error_comm_scaling`.
+The identity `additiveKernel = Σ multiConj − multiConj` expresses the additive kernel
+as a sum of conjugations (`artifacts/trotter/refs/TrotterError/rep.tex`, lines 5–12).
+The order condition cancels the polynomial terms in their commutator expansions
+(`artifacts/trotter/refs/TrotterError/theory.tex`, lines 251–266). Both identities apply to
+the anti-Hermitian and general-operator branches of `thm:trotter_error_comm_scaling`.
 
 The ordering-removal estimates bound the multinomial-weighted conjugation scaling by
 `p! * Υ^p * αComm p H`, using the product formula's stage permutations.

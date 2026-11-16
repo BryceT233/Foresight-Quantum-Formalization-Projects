@@ -15,6 +15,15 @@ For a Kraus family `f` and an environment basis `b`, the dilation sends `x` to
 on the right. Completeness makes this map isometric, and taking the right partial
 trace recovers the channel on all operators. No nonzero-dimension assumption or
 chosen normalized environment input is required.
+
+## Main definitions and results
+
+* `Qudit.Superoperator.krausDilation`: a coherent dilation from a Kraus family and environment
+  basis.
+* `Qudit.Superoperator.partialTraceRight_conjugate_krausDilation`: discarding recovers the Kraus
+  map.
+* `Qudit.QuantumChannel.exists_dilation_finrank`: an isometric dilation with a standard environment.
+* `Qudit.QuantumChannel.exists_dilation_map`: the induced density-state dilation identity.
 -/
 
 @[expose] public section

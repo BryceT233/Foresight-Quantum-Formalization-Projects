@@ -15,6 +15,14 @@ The measurement instrument uses the actual Bell resource and Bell effects before
 Recording its result and applying a classically controlled correction is proved equal to the
 corrected instrument. Each result has probability one quarter and conditional output equal
 to the input state. Forgetting the result recovers the existing teleportation channel.
+
+## Main definitions and results
+
+* `Qudit.teleportationMeasurement`: the uncorrected Bell measurement instrument.
+* `Qudit.teleportationInstrument`: Bell branches with outcome-dependent corrections.
+* `Qudit.conditional_teleportationInstrument`: every conditional corrected state is the input.
+* `Qudit.teleportationInstrument_record`: recording and controlled correction implement
+  teleportation.
 -/
 
 @[expose] public section

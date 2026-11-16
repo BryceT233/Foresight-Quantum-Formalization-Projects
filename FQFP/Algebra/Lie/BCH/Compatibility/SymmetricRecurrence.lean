@@ -14,6 +14,12 @@ The existing logarithm coefficients satisfy the same initial values and
 triangular differential equation as the Lie recursion. Uniqueness therefore
 identifies them in every homogeneous degree over an arbitrary rational algebra.
 The proof imports no finite BCH coefficient certificate or word table.
+
+## Main results
+
+* `FQFP.symmetricBchLieCoeff_eq_expListLogCoeff` identifies the recursive Lie coefficient with the
+  symmetric logarithm coefficient in every degree.
+* `FQFP.expListLogCoeff_symmetric_eq_zero_of_even` gives vanishing of the even coefficients.
 -/
 
 @[expose] public noncomputable section

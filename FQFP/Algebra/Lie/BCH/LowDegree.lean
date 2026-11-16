@@ -15,6 +15,12 @@ import Mathlib.Tactic.Module
 
 The first coefficients follow by the finite conjugation sum. The sixth-degree
 expression uses only the already identified cubic and quintic symmetric terms.
+
+## Main results
+
+* `FQFP.bchLieCoeff_two` computes the quadratic BCH coefficient.
+* `FQFP.bchLieCoeff_four` computes the quartic coefficient.
+* `FQFP.bchLieCoeff_six` identifies the sixth coefficient with its Lie expression.
 -/
 
 @[expose] public noncomputable section

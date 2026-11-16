@@ -15,6 +15,13 @@ public import FQFP.RingTheory.PowerSeries.Noncommutative.ExponentialProduct
 The ordered-list and triple-product conventions agree by associativity of
 Cauchy multiplication. Finite logarithms therefore use the homogeneous Lie
 coefficients without importing any finite word certificate.
+
+## Main results
+
+* `FQFP.sum_logCoeff_positivePowerTrunc_eq_sum_symmetricBchLieCoeff` expands any finite symmetric
+  logarithm into recursive Lie coefficients.
+* `FQFP.sum_logCoeff_positivePowerTrunc_eq_symmetricLie_septic` specializes the expansion through
+  degree eight.
 -/
 
 @[expose] public noncomputable section

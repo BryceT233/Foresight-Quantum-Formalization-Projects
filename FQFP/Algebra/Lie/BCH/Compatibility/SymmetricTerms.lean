@@ -16,6 +16,11 @@ import Mathlib.Tactic.Module
 The cubic and quintic Lie polynomials agree with the existing associative
 presentations. These equalities depend only on the polynomial definitions,
 without importing a finite logarithm identity or the homogeneous recursion.
+
+## Main results
+
+* `FQFP.BCH.symmetricBchCubicTerm_eq_lieTerm` identifies the associative and Lie cubic terms.
+* `FQFP.BCH.symmetricBchQuinticTerm_eq_lieTerm` identifies the corresponding quintic terms.
 -/
 
 @[expose] public section

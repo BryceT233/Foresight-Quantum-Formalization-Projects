@@ -15,15 +15,16 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 # Main theorem: commutator scaling of Trotter error
 
 The main theorems of *A Theory of Trotter Error* (arXiv:1912.08854): the norm bound for the
-additive kernel `𝒯(τ)` and the commuting-scaling bounds for the Trotter error
+additive kernel `𝒯(τ)` and the commutator-scaling bounds for the Trotter error
 `thm:trotter_error_comm_scaling`.
 
 Real scalars are supplied by the canonical extension of the complete normed `ℚ`-algebra
 (`open scoped RealScalar`), rather than a separate real-algebra hypothesis.
 
-`CommutatorScaling.lean` supplies `αCommConj_sum_le_αComm` (`papers/rep.tex` lines 129–139),
-the additive-kernel expansion, and the order-condition cancellation
-`additiveKernel_eq_commutatorRemainder_sum` (`papers/theory.tex` lines 251–266).
+`CommutatorScaling.lean` supplies `αCommConj_sum_le_αComm`
+(`artifacts/trotter/refs/TrotterError/rep.tex`, lines 129–139), the additive-kernel expansion,
+and the order-condition cancellation `additiveKernel_eq_commutatorRemainder_sum`
+(`artifacts/trotter/refs/TrotterError/theory.tex`, lines 251–266).
 The explicit multi-step bounds and sufficient step counts are proved below.
 
 ## Main results

@@ -15,7 +15,7 @@ import FQFP.Analysis.ODE.TimeOrderedExp
 # Error bounds with small prefactors (§5.1)
 
 Tight-constant Trotter error bounds for the first-order Lie-Trotter and second-order Suzuki
-formulas, following `papers/prefactor.tex` `sec:prefactor_pf12`.
+formulas, following `sec:prefactor_pf12` in `artifacts/trotter/refs/TrotterError/prefactor.tex`.
 
 Bounds assuming a complete normed `ℚ`-algebra use its canonical real scalar structure
 through `open scoped RealScalar`.

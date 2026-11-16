@@ -17,6 +17,15 @@ public import Mathlib.Data.List.ProdSigma
 
 Splitting and telescoping rules for noncommutative products, reindexing by list
 positions, and products of finite-index lists. No calculus is needed.
+
+## Main results
+
+* `TrotterError.List.prod_map_eq_take_mul_get_mul_drop` splits an ordered product at the first
+  occurrence of a chosen element.
+* `TrotterError.List.prod_mul_rev_eq_one_of_mul_eq_one` cancels an ordered product against its
+  pointwise right inverses in reverse order.
+* `TrotterError.List.sum_get_eq_sum_idxOf` reindexes a sum along a list containing each element
+  exactly once.
 -/
 
 @[expose] public section
@@ -32,6 +41,7 @@ lemma sum_map_sum {ι κ M : Type*} [AddCommMonoid M]
 /-! ### Products over sublists -/
 
 /-- The product over `l.drop k` splits as `f (l.get k)` times the product over `l.drop (k + 1)`. -/
+@[to_additive /-- The sum over a suffix splits into its first summand and the remaining sum. -/]
 lemma prod_drop_eq_get_mul {ι M : Type*} [Monoid M] (l : List ι) (f : ι → M) (k : Fin l.length) :
     ((l.drop (k : ℕ)).map f).prod = f (l.get k) * ((l.drop ((k : ℕ) + 1)).map f).prod := by
   rw [← List.cons_get_drop_succ (l := l) (n := k)]
@@ -44,23 +54,10 @@ lemma prod_map_eq_take_mul_get_mul_drop {ι M : Type*} [BEq ι] [LawfulBEq ι] [
     (l : List ι) (f : ι → M) (i : ι) (hi : i ∈ l) :
     (l.map f).prod = ((l.take (l.idxOf i)).map f).prod * f i *
       ((l.drop (l.idxOf i + 1)).map f).prod := by
-  have hidx : l.idxOf i < l.length := List.idxOf_lt_length_iff.mpr hi
-  have hcons : i :: l.drop (l.idxOf i + 1) = l.drop (l.idxOf i) := by
-    calc
-      _ = l[l.idxOf i] :: l.drop (l.idxOf i + 1) := by
-          rw [List.getElem_idxOf hidx]
-      _ = l.drop (l.idxOf i) := List.cons_getElem_drop_succ (l := l) (n := l.idxOf i) (h := hidx)
-  calc
-    (l.map f).prod = ((l.take (l.idxOf i) ++ l.drop (l.idxOf i)).map f).prod := by
-        rw [List.take_append_drop (l.idxOf i) l]
-    _ = ((l.take (l.idxOf i)).map f).prod * ((l.drop (l.idxOf i)).map f).prod := by
-        rw [List.map_append, List.prod_append]
-    _ = ((l.take (l.idxOf i)).map f).prod * ((i :: l.drop (l.idxOf i + 1)).map f).prod := by
-        rw [← hcons]
-    _ = ((l.take (l.idxOf i)).map f).prod * (f i * ((l.drop (l.idxOf i + 1)).map f).prod) := by
-        rw [List.map_cons, List.prod_cons]
-    _ = ((l.take (l.idxOf i)).map f).prod * f i * ((l.drop (l.idxOf i + 1)).map f).prod := by
-        rw [mul_assoc]
+  let k : Fin l.length := ⟨l.idxOf i, List.idxOf_lt_length_iff.mpr hi⟩
+  have h := (l.map f).prod_take_mul_prod_drop (l.idxOf i)
+  rw [← List.map_take, ← List.map_drop, prod_drop_eq_get_mul l f k, List.idxOf_get k.isLt] at h
+  simpa only [mul_assoc] using h.symm
 
 /-- If `g i` is a right inverse of `f i` for every `i`, then the product of `f` over `l` times the
 product of `g` over `l.reverse` is `1`. -/

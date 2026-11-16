@@ -51,6 +51,16 @@ namespace CategoryTheory.MonoidalDaggerCategory
 
 variable [MonoidalDaggerCategory C]
 
+/-- The tensor product of isometries is an isometry. -/
+instance isIsometry_tensorHom {X₁ X₂ Y₁ Y₂ : C} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂)
+    [IsIsometry f] [IsIsometry g] : IsIsometry (f ⊗ₘ g) where
+  comp_dagger_eq_id := by rw [dagger_tensor, tensorHom_comp_tensorHom]; simp
+
+/-- The tensor product of unitaries is unitary. -/
+instance isUnitary_tensorHom {X₁ X₂ Y₁ Y₂ : C} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂)
+    [IsUnitary f] [IsUnitary g] : IsUnitary (f ⊗ₘ g) where
+  dagger_comp_eq_id := by rw [dagger_tensor, tensorHom_comp_tensorHom]; simp
+
 /-- The dagger of a left whiskering is the left whiskering of the dagger. -/
 @[simp]
 lemma dagger_whiskerLeft {X Y₁ Y₂ : C} (f : Y₁ ⟶ Y₂) : (X ◁ f)† = X ◁ f† := by

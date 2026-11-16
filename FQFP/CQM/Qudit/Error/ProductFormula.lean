@@ -16,6 +16,14 @@ The existing commutator-scaling theorem is instantiated in the C*-algebra of con
 linear operators on a qudit's complex Hilbert space. Its original order, stage-count,
 skew-adjointness and nonnegative-time hypotheses and constants are retained.
 The resulting operator error controls both trace distance and measurement probabilities.
+
+## Main definitions and results
+
+* `Qudit.exactEvolution`: exact unitary evolution from the sum of skew-adjoint generators.
+* `Qudit.productFormulaEvolution`: the unitary evolution of a product formula.
+* `Qudit.traceDistance_productFormula_le`: a product-formula error bound for density states.
+* `Qudit.abs_probability_channel_productFormula_sub_le`: the resulting probability bound after a
+  channel.
 -/
 
 @[expose] public section

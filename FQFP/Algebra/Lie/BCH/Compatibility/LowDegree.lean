@@ -17,6 +17,12 @@ import Mathlib.Tactic.Module
 The cubic and quartic coefficients use the existing polynomial definitions.
 The sixth-degree logarithm also has a fixed Lie expression obtained from the
 known symmetric coefficients, without a new word certificate.
+
+## Main results
+
+* `FQFP.BCH.bchLieCoeff_three_eq_bchCubicTerm` identifies the cubic Lie and associative polynomials.
+* `FQFP.BCH.bchLieCoeff_four_eq_bchQuarticTerm` identifies the quartic polynomials.
+* `FQFP.BCH.expListLogCoeff_pair_six_eq_lieTerm` evaluates the sixth logarithm coefficient.
 -/
 
 @[expose] public noncomputable section

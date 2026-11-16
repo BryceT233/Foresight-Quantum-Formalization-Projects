@@ -18,6 +18,13 @@ from Mathlib rather than importing a second state representation.
 Pure states, convex mixtures and expectations are provided here. Positivity retains the
 self-adjointness requirement of `LinearMap.IsPositive`. No inhabitant is chosen for every
 state space: a zero-dimensional space has no density operators.
+
+## Main definitions
+
+* `Qudit.Density`: positive operators of trace one.
+* `Qudit.Density.map`: transport of density operators along isometries.
+* `Qudit.Density.mixture`: finite probabilistic mixtures of density operators.
+* `Qudit.Density.expectation`: the real expectation of an operator in a density state.
 -/
 
 @[expose] public section
@@ -92,15 +99,19 @@ def map {K : Qudit} (f : H ⟶ K) [IsIsometry f] (ρ : Density H) : Density K wh
   positive := ρ.positive.conj_adjoint f.hom
   trace_one := by
     rw [Operator.trace, LinearMap.trace_comp_comm', LinearMap.comp_assoc]
-    have hf : f.hom.adjoint ∘ₗ f.hom = LinearMap.id :=
-      congrArg Hom.hom (IsIsometry.comp_dagger_eq_id f)
-    rw [hf, LinearMap.comp_id]
+    rw [hom_adjoint_comp_of_isIsometry, LinearMap.comp_id]
     exact ρ.trace_one
 
 /-- The operator of an isometric image is the conjugated operator. -/
 @[simp]
 lemma op_map {K : Qudit} (f : H ⟶ K) [IsIsometry f] (ρ : Density H) :
     (map f ρ).op = f.hom ∘ₗ ρ.op ∘ₗ f.hom.adjoint := rfl
+
+/-- An isometrically transported density intertwines with the original operator. -/
+lemma op_map_apply {K : Qudit} (ρ : Density H) (U : H ⟶ K) [IsIsometry U] (v : H.state) :
+    (ρ.map U).op (U.hom v) = U.hom (ρ.op v) := by
+  change U.hom (ρ.op (U.hom.adjoint (U.hom v))) = _
+  rw [hom_adjoint_apply_of_isIsometry]
 
 /-- Pure-state embedding commutes with isometric evolution. -/
 lemma map_pure {K : Qudit} (f : H ⟶ K) [IsIsometry f] (v : UnitState H) :
@@ -134,6 +145,12 @@ lemma mix_one (ρ σ : Density H) : mix 1 (by positivity) (by norm_num) ρ σ = 
   ext
   simp
 
+/-- Exchanging the states complements the mixing probability. -/
+lemma mix_comm (p : ℝ) (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) (ρ σ : Density H) :
+    mix p hp₀ hp₁ ρ σ = mix (1 - p) (sub_nonneg.mpr hp₁) (by linarith) σ ρ := by
+  apply Density.ext
+  simp only [op_mix, sub_sub_cancel, add_comm]
+
 /-- A finite probabilistic mixture of density operators. -/
 def mixture {ι : Type*} [Fintype ι] (w : ι → ℝ) (hw : ∀ i, 0 ≤ w i)
     (hsum : ∑ i, w i = 1) (ρ : ι → Density H) : Density H where
@@ -149,6 +166,16 @@ def mixture {ι : Type*} [Fintype ι] (w : ι → ℝ) (hw : ∀ i, 0 ≤ w i)
 lemma op_mixture {ι : Type*} [Fintype ι] (w : ι → ℝ) (hw : ∀ i, 0 ≤ w i)
     (hsum : ∑ i, w i = 1) (ρ : ι → Density H) :
     (mixture w hw hsum ρ).op = ∑ i, (w i : ℂ) • (ρ i).op := rfl
+
+/-- A two-label probability mixture agrees with binary mixing, including both endpoints. -/
+lemma mixture_fin_two (p : ℝ) (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) (ρ σ : Density H) :
+    mixture ![p, 1 - p] (by
+      intro i
+      fin_cases i
+      · exact hp₀
+      · exact sub_nonneg.mpr hp₁) (by simp) ![ρ, σ] = mix p hp₀ hp₁ ρ σ := by
+  apply Density.ext
+  simp only [op_mixture, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, op_mix]
 
 /-- The operator of a finite mixture, expressed using the real scalar action. -/
 lemma op_mixture_real {ι : Type*} [Fintype ι]
@@ -178,8 +205,8 @@ lemma expectationComplex_im_eq_zero (ρ : Density H) {A : Operator H}
 /-- The expectation in a pure state is its vector matrix coefficient. -/
 @[simp]
 lemma expectationComplex_pure (v : UnitState H) (A : Operator H) :
-    (pure v).expectationComplex A = inner ℂ (v : H.state) (A v) := by
-  exact Operator.trace_mul_outer A v v
+    (pure v).expectationComplex A = inner ℂ (v : H.state) (A v) :=
+  Operator.trace_mul_outer A v v
 
 /-- The real expectation in a pure state. -/
 @[simp]

@@ -16,6 +16,13 @@ any bipartite input, with an arbitrary finite-dimensional reference system. This
 than preserving already separable states. Measurement followed by preparation has this
 property: the reference's conditional states give an explicit finite product decomposition.
 Zero-probability outcomes are handled by the instrument ensemble API without division by zero.
+
+## Main definitions and results
+
+* `Qudit.QuantumChannel.IsEntanglementBreaking`: separable outputs for every reference system.
+* `Qudit.POVM.isEntanglementBreaking_measurePrepare`: measurement and preparation break
+  entanglement.
+* `Qudit.QuantumChannel.IsEntanglementBreaking.comp_left`: closure under channel postprocessing.
 -/
 
 @[expose] public section

@@ -22,6 +22,13 @@ Definition 2.34 and equations (2.199)-(2.201). The corresponding upstream defini
 are physlib's `POVM` and `POVM.measure` at commit
 `76e1b4f0171d27a0d35334a633263a40ecf24fd5`. This implementation uses FQFP operators
 and Mathlib positivity directly. A POVM specifies outcome probabilities, not an instrument.
+
+## Main definitions and results
+
+* `Qudit.POVM`: finite positive operator-valued measurements summing to the identity.
+* `Qudit.POVM.probability`: Born probabilities for density states.
+* `Qudit.POVM.ofBasis`: the projective POVM of an orthonormal basis.
+* `Qudit.POVM.sum_probability`: outcome probabilities sum to one.
 -/
 
 @[expose] public section

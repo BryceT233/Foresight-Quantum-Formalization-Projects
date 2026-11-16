@@ -15,6 +15,13 @@ public import FQFP.Algebra.Lie.BCH.SymmetricProduct
 The positive adjoint convolution is the coefficient of an actual iterated
 adjoint in the formal series algebra. The range pruning follows from its
 minimum homogeneous degree, without expanding associative words.
+
+## Main results
+
+* `FQFP.toPolynomial_positiveAdCoeff` realizes positive convolution as a coefficient of iterated
+  adjoint action.
+* `FQFP.coeff_adjointSeriesApply_eq_symmetricBchRhs` extracts the finite homogeneous recurrence from
+  the Bernoulli series.
 -/
 
 @[expose] public noncomputable section

@@ -14,6 +14,13 @@ public import FQFP.Analysis.InnerProductSpace.TraceNorm
 An instrument is a finite family of completely positive maps whose sum preserves trace.
 Individual branches remain unnormalized. Conditioning requires strictly positive probability;
 no default density state is assigned to an impossible outcome.
+
+## Main definitions
+
+* `Qudit.Instrument`: finite completely positive branches whose sum preserves trace.
+* `Qudit.Instrument.toChannel`: the channel obtained by forgetting the outcome.
+* `Qudit.Instrument.conditional`: the output state conditioned on positive probability.
+* `Qudit.Instrument.postprocess`: outcome-dependent channel postprocessing.
 -/
 
 @[expose] public section

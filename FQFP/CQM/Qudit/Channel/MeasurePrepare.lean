@@ -16,6 +16,13 @@ physlib's `CPTPMap.replacement`. More generally, a POVM and a family of density 
 define an instrument whose branches are CP effects followed by CP preparations.
 Forgetting the outcome gives the channel `A ↦ ∑ i, Tr(Eᵢ A) • σᵢ`.
 The concrete state, instrument, and categorical process APIs agree on this construction.
+
+## Main definitions and results
+
+* `Qudit.QuantumChannel.replacement`: the channel that prepares a fixed density.
+* `Qudit.POVM.measurePrepare`: measurement followed by outcome-dependent state preparation.
+* `Qudit.POVM.measurePrepareInstrument`: the corresponding instrument with outcomes retained.
+* `Qudit.POVM.map_measurePrepare`: the output is the ensemble mixed with Born probabilities.
 -/
 
 @[expose] public section

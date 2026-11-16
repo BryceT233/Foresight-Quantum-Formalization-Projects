@@ -22,9 +22,10 @@ representations of the product formula `𝒮(t) = P.eval H t` relative to the id
 * *exponentiated*: `𝒮(t) = exp_T(∫₀ᵗ (H + ℰ(τ)) dτ)` (`errorType_exponentiated`);
 * *multiplicative*: `𝒮(t) = e^{tH} (1 + ℳ(t))` (`errorType_multiplicative`).
 
-The lexicographic order `(υ,γ) ≻ (υ',γ')` of the paper (`papers/type.tex`) is exactly the
-left-to-right order of `evalIndexList`, so the prefix / suffix products
-`∏_{j ≻ i}`, `∏_{j ≤ i}` are implemented with `List.take` / `List.drop` at `List.idxOf i`.
+The paper's lexicographic order `(υ,γ) ≻ (υ',γ')`
+(`artifacts/trotter/refs/TrotterError/type.tex`) is the left-to-right order of `evalIndexList`.
+The prefix and suffix products `∏_{j ≻ i}` and `∏_{j ≤ i}` use `List.take` and `List.drop`
+at `List.idxOf i`.
 
 ## Main results
 

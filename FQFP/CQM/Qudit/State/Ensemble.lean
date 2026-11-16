@@ -15,6 +15,13 @@ An ensemble retains both its classical probability distribution and its labelled
 Its mixture uses the existing density operator representation. Pure ensembles are obtained
 from unit vectors; no choice of global phase is made. This adapts the finite ensemble API
 of physlib's `QuantumInfo/States/Ensemble` to qudits and Mathlib's probability simplex.
+
+## Main definitions and results
+
+* `Qudit.Ensemble`: a finite probability distribution with a density at each label.
+* `Qudit.Ensemble.mix`: the density obtained by forgetting the label.
+* `Qudit.Ensemble.ofPure`: ensembles whose component states come from unit vectors.
+* `Qudit.Ensemble.mix_tensor`: mixing commutes with tensor products of independent ensembles.
 -/
 
 @[expose] public section
@@ -74,6 +81,15 @@ def ofPure (w : Convexity.StdSimplex ℝ ι) (v : ι → UnitState H) : Ensemble
 /-- Pure ensembles are mixtures of outer squares. -/
 lemma op_mix_ofPure (w : Convexity.StdSimplex ℝ ι) (v : ι → UnitState H) :
     (ofPure w v).mix.op = ∑ i, (w.weights i : ℂ) • Operator.outer (v i) (v i) := rfl
+
+/-- Mixing basis states acts diagonally, with the probabilities as eigenvalues. -/
+lemma op_mix_ofPure_ofBasis_apply (b : OrthonormalBasis ι ℂ H.state)
+    (p : Convexity.StdSimplex ℝ ι) (i : ι) :
+    (ofPure p (UnitState.ofBasis b)).mix.op (b i) = (p.weights i : ℂ) • b i := by
+  classical
+  simp only [op_mix_ofPure, LinearMap.sum_apply, LinearMap.smul_apply,
+    UnitState.coe_ofBasis, Operator.outer_apply, b.inner_eq_ite]
+  simp
 
 /-- Relabel an ensemble by an equivalence, without changing its probabilities. -/
 def reindex (e : Ensemble H ι) (f : κ ≃ ι) : Ensemble H κ :=

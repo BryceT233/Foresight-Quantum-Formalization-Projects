@@ -32,8 +32,6 @@ namespace TrotterError
 open Asymptotics Finset
 open scoped Topology BigOperators
 
-variable {𝔸 : Type*} [NormedRing 𝔸]
-
 /-- The absolute value is at most one in a neighborhood of zero. -/
 lemma eventually_abs_le_one_nhds_zero : ∀ᶠ τ in 𝓝 (0 : ℝ), |τ| ≤ 1 := by
   refine Filter.mem_of_superset
@@ -51,7 +49,7 @@ lemma isBigO_abs_pow_abs_pow_of_le {m n : ℕ} (hmn : m ≤ n) :
   exact pow_le_pow_of_le_one hnn hτ hmn
 
 /-- Addition rule (order.tex:80): `F = O(τ^p)` and `G = O(τ^q)` imply `F + G = O(τ^{min p q})`. -/
-theorem orderCond_add (F G : ℝ → 𝔸) (p q : ℕ)
+theorem orderCond_add {𝔸 : Type*} [SeminormedAddCommGroup 𝔸] (F G : ℝ → 𝔸) (p q : ℕ)
     (hF : (fun τ => ‖F τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p))
     (hG : (fun τ => ‖G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ q)) :
     (fun τ => ‖F τ + G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ min p q) := by
@@ -66,7 +64,7 @@ theorem orderCond_add (F G : ℝ → 𝔸) (p q : ℕ)
 
 /-- Multiplication rule (order.tex:81): `F = O(τ^p)` and `G = O(τ^q)` imply
 `F * G = O(τ^{p+q})`. -/
-theorem orderCond_mul (F G : ℝ → 𝔸) (p q : ℕ)
+theorem orderCond_mul {𝔸 : Type*} [NormedRing 𝔸] (F G : ℝ → 𝔸) (p q : ℕ)
     (hF : (fun τ => ‖F τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p))
     (hG : (fun τ => ‖G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ q)) :
     (fun τ => ‖F τ * G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ (p + q)) :=
@@ -75,12 +73,13 @@ theorem orderCond_mul (F G : ℝ → 𝔸) (p q : ℕ)
       (fun τ => (pow_add τ p q).symm))
 
 /-- A continuous function is `O(1)` at `0` (bounded in a neighbourhood of `0`). -/
-lemma isBigO_norm_one_of_continuous {F : ℝ → 𝔸} (hF : Continuous F) :
+lemma isBigO_norm_one_of_continuous {𝔸 : Type*} [SeminormedAddCommGroup 𝔸]
+    {F : ℝ → 𝔸} (hF : Continuous F) :
     (fun τ => ‖F τ‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) :=
   hF.norm.continuousAt.isBigO_one (F := ℝ)
 
 /-- Left-multiplying an `O(τ^p)` function by an `O(1)` function stays `O(τ^p)`. -/
-lemma orderCond_mul_left {F G : ℝ → 𝔸} (p : ℕ)
+lemma orderCond_mul_left {𝔸 : Type*} [NormedRing 𝔸] {F G : ℝ → 𝔸} (p : ℕ)
     (hF : (fun τ => ‖F τ‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)))
     (hG : (fun τ => ‖G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p)) :
     (fun τ => ‖F τ * G τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) := by

@@ -13,6 +13,15 @@ public import FQFP.CQM.Qudit.State.Pure
 A bipartite unit vector is a product vector exactly when either reduced density operator
 is pure. The tensor factors may have different dimensions. No Schmidt basis is chosen:
 a pure marginal forces the vector into the range of its local rank-one projection.
+
+## Main results
+
+* `Qudit.UnitState.exists_eq_tensor_of_partialTraceRight_eq_pure`: factorization from a pure
+  marginal.
+* `Qudit.UnitState.isProduct_iff_isPure_partialTraceRight`: products are exactly pure left
+  marginals.
+* `Qudit.UnitState.isProduct_iff_isPure_partialTraceLeft`: the corresponding right-marginal
+  criterion.
 -/
 
 @[expose] public section

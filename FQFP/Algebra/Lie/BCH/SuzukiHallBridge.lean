@@ -14,6 +14,11 @@ public import FQFP.Algebra.Lie.BCH.SuzukiGradedRecurrence
 
 The coefficients here use the paper's `E₃ = [b,a]` convention. The identity
 is a polynomial identity in every real associative algebra.
+
+## Main results
+
+* `FQFP.BCH.suzukiQuinticTerm_eq_hallSum` expresses the Suzuki quintic in Hall coordinates.
+* `FQFP.BCH.suzukiQuinticTerm_eq_rightSum` expresses the same term in right-nested commutators.
 -/
 
 @[expose] public noncomputable section

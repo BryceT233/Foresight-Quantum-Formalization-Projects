@@ -10,9 +10,10 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Nat.Factorial.Basic
 
 /-!
-# Central real scalar identities
+# Central scalar identities
 
-Real algebra scalars commute with coefficients and powers.
+Scalars act by right multiplication in any algebra over a commutative semiring.
+Specializing to real scalars gives the factorial weights in the Taylor expansion.
 
 ## Main results
 
@@ -25,25 +26,23 @@ Real algebra scalars commute with coefficients and powers.
 
 namespace TrotterError
 
-open scoped BigOperators
-
 open scoped algebraMap
 
-/-- In an ℝ-algebra, the scalar action `r • a` equals right multiplication `a * (r : 𝔸)`. -/
-lemma smul_eq_mul_right {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] (r : ℝ) (a : 𝔸) :
-    r • a = a * (r : 𝔸) := by
+/-- Scalar multiplication is right multiplication by the image of the scalar. -/
+lemma smul_eq_mul_right {𝔸 R : Type*} [CommSemiring R] [Semiring 𝔸] [Algebra R 𝔸] (r : R) (a : 𝔸) :
+    r • a = a * algebraMap R 𝔸 r := by
   rw [Algebra.smul_def, Algebra.commutes]
 
 /-- The Taylor coefficient `(j! : ℝ)⁻¹ * τ^j` acting by `•` equals the paper's form
 `(j! : ℝ)⁻¹ • x * (τ : 𝔸)^j`. -/
-lemma pow_smul_eq_smul_mul {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] (j : ℕ) (x : 𝔸) (τ : ℝ) :
+lemma pow_smul_eq_smul_mul {𝔸 : Type*} [Semiring 𝔸] [Algebra ℝ 𝔸] (j : ℕ) (x : 𝔸) (τ : ℝ) :
     ((Nat.factorial j : ℝ)⁻¹ * τ ^ j) • x = (Nat.factorial j : ℝ)⁻¹ • x * (τ : 𝔸) ^ j := by
   rw [mul_smul, smul_eq_mul_right (τ ^ j) x]
   simp
 
-/-- `(r • a) * (c : 𝔸) = (r * c) • a` for scalars `r, c : ℝ`. -/
-lemma smul_mul_cast {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] (r c : ℝ) (a : 𝔸) :
-    (r • a) * (c : 𝔸) = (r * c) • a := by
-  rw [smul_eq_mul_right r a, smul_eq_mul_right (r * c) a, mul_assoc, ← map_mul (algebraMap ℝ 𝔸) r c]
+/-- Right multiplication by a scalar combines the two scalar factors. -/
+lemma smul_mul_cast {𝔸 R : Type*} [CommSemiring R] [Semiring 𝔸] [Algebra R 𝔸]
+    (r c : R) (a : 𝔸) : (r • a) * algebraMap R 𝔸 c = (r * c) • a := by
+  rw [smul_eq_mul_right r a, smul_eq_mul_right (r * c) a, map_mul, mul_assoc]
 
 end TrotterError

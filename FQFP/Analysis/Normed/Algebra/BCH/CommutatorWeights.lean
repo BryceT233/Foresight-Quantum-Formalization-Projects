@@ -17,6 +17,13 @@ This file defines their unit-weight norm sum, the displayed two-summand weights 
 Childs et al., Appendix J, Proposition J.1, and rational upper bounds for the absolute
 Suzuki quintic coefficients at the standard parameter.
 
+## Main definitions
+
+* `FQFP.BCH.binaryQuinticCommutatorNormSum` sums the norms of the eight binary quintic commutators.
+* `FQFP.BCH.suzukiFourthOrderCommutatorBoundWeight` records the published two-summand error weights.
+* `FQFP.BCH.suzukiQuinticCoeffUpperBound` gives rational upper bounds for the absolute quintic
+  coefficients at the standard Suzuki parameter.
+
 The family is redundant. With zero-based `Fin 8` indices, Jacobi identifies entries
 `1` and `2`, and entries `5` and `6`. The reduced Suzuki representation sets coefficients
 `2` and `6` to zero. These are a commutator family and bound weights, not a basis or
@@ -60,7 +67,7 @@ lemma suzukiFourthOrderCommutatorBoundWeight_nonneg (i : Fin 8) :
 
 /-- Rational upper bounds for the absolute Suzuki quintic coefficients at `suzukiP`.
 The nonzero bounds round upward to the `1 / 10⁶` grid; indices `2` and `6` are zero.
-Componentwise domination is proved in `SuzukiQuinticBounds`. No optimality is claimed. -/
+The componentwise estimate is `FQFP.BCH.abs_suzukiQuinticCoeff_suzukiP_le`. -/
 noncomputable def suzukiQuinticCoeffUpperBound : Fin 8 → ℝ :=
   ![260 / 1000000, 663 / 1000000, 0, 132 / 1000000,
     376 / 1000000, 1128 / 1000000, 0, 442 / 1000000]

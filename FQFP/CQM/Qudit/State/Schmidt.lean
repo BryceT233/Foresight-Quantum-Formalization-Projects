@@ -18,6 +18,14 @@ orthonormal even for singular states and systems of different dimensions.
 The nonzero spectra of the two marginals agree as multisets. The rectangular-matrix
 proof adapts the characteristic-polynomial argument in physlib's
 `QuantumInfo/Entropy/VonNeumann.lean`, revision `76e1b4f0171d27a0d35334a633263a40ecf24fd5`.
+
+## Main definitions and results
+
+* `Qudit.UnitState.schmidtCoefficient`: positive square roots of the marginal eigenvalues.
+* `Qudit.UnitState.schmidt_decomposition`: expansion in orthonormal left and right Schmidt vectors.
+* `Qudit.UnitState.exists_schmidt_decomposition`: a finite-indexed Schmidt decomposition.
+* `Qudit.Density.nonzeroEigenvalues_partialTraceRight_eq_partialTraceLeft`: the pure marginals have
+  equal nonzero spectra with multiplicities.
 -/
 
 @[expose] public section
@@ -78,7 +86,7 @@ lemma inner_contractLeft_eigenbasis (ψ : UnitState (H ⊗ K))
 
 /-- The labels with strictly positive Schmidt coefficients. -/
 abbrev SchmidtIndex (ψ : UnitState (H ⊗ K)) :=
-  {i : Fin (Module.finrank ℂ H.state) // 0 < (Density.pure ψ).partialTraceRight.eigenvalue i}
+  (Density.pure ψ).partialTraceRight.PositiveEigenIndex
 
 /-- A strictly positive Schmidt coefficient, the square root of a marginal eigenvalue. -/
 def schmidtCoefficient (ψ : UnitState (H ⊗ K)) (i : ψ.SchmidtIndex) : ℝ :=

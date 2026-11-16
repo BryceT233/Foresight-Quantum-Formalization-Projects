@@ -15,6 +15,13 @@ The quantities `αComm` and `αCommConj` are the nested-commutator norm sums of
 arXiv:1912.08854. Their original multiplicities, multinomial weights, and ordering
 are preserved. Algebraic commutator identities and general norm estimates are
 provided by the shared modules imported above.
+
+## Main definitions and results
+
+* `TrotterError.αComm` sums the norms of nested commutators over all tuples of summand indices.
+* `TrotterError.αCommConj` sums multinomial-weighted norms of iterated adjoint actions.
+* `TrotterError.αCommConj_smul_fun_le` shows that scaling each conjugating generator by a real
+  scalar of absolute value at most one cannot increase this sum.
 -/
 
 @[expose] public section

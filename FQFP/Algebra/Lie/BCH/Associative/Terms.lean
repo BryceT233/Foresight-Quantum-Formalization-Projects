@@ -262,7 +262,8 @@ Denominators and the constants behind the `s ^ k` bounds: `28 · 24/1440 = 7/15`
 `126 · 216/30240 = 9/10` and `124 · 432/120960 = 31/70`, all `≤ 1`.
 
 The cancellation identities through degree eight are proved in `DynkinReeSextic`,
-`DynkinReeSeptic`, and `DynkinReeOctic`. The norm bounds are in `BCHTerms`. -/
+`DynkinReeSeptic`, and `DynkinReeOctic`. The norm bounds are in
+`FQFP.Analysis.Normed.Algebra.BCH.TermBounds`. -/
 
 /-- **The degree-6 table**: the 28 monomials of the source's `bch_sextic_term`, in the source's
 order (`0` is the letter `a`).

@@ -14,6 +14,15 @@ public import Mathlib.Tactic.NoncommRing
 Positive-length words are bounded without `NormOneClass`. Weighted coefficient tables
 are handled directly by `FQFP.Analysis.Normed.Algebra.WordTable`; this file supplies binary word
 bounds, unweighted finite sums, and telescoping differences of ordered products.
+
+## Main results
+
+* `FQFP.BCH.norm_binWord_le_of_pos` bounds a nonempty word by the sum of the letter norms raised to
+  the word length.
+* `FQFP.BCH.norm_prod_sub_prod_le` bounds the difference of products of length `n + 1` by `M ^ n`
+  times the sum of the factorwise errors when each factor has norm at most `M`.
+* `FQFP.BCH.norm_sum_binWord_diff_le` bounds the change in a sum of binary words when one letter is
+  replaced, counting each occurrence of that letter.
 -/
 
 @[expose] public section

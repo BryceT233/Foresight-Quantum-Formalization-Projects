@@ -16,6 +16,12 @@ The construction direction of Theorem 5.36 of the 2019 CQM notes: copy and delet
 an arbitrary finite orthonormal basis. Multiplication and unit are their daggers.
 The basis remains explicit, including in dimension zero; no classification or
 bijection of indexed bases is asserted.
+
+## Main definitions and results
+
+* `Qudit.basisCopy`: copying the vectors of a chosen orthonormal basis.
+* `Qudit.classicalStructureOfOrthonormalBasis`: the classical structure associated to a basis.
+* `Qudit.classicalStructure_measurement`: the induced measurement selects basis components.
 -/
 
 @[expose] public section

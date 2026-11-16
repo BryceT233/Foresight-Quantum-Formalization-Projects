@@ -14,6 +14,12 @@ public import Mathlib.Algebra.Module.Rat
 
 Definitions of the integer representation. Operation and evaluation compatibility
 with general coefficient tables is provided by `FQFP.Algebra.Word.Compatibility`.
+
+## Main definitions
+
+* `FQFP.WordTable.Table` stores ordered words and their integer coefficients.
+* `FQFP.WordTable.eval` divides each coefficient by the scale raised to its word length.
+* `FQFP.WordTable.collapse` collects equal words in order of first occurrence.
 -/
 
 @[expose] public section

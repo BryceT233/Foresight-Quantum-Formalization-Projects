@@ -17,6 +17,13 @@ Finite Kraus sums satisfy CP; the usual sum of adjoint squares suffices for TP.
 
 The conventions follow Watrous, *The Theory of Quantum Information*, Section 2.2,
 in particular Definition 2.13 and Theorems 2.22 and 2.26 (sufficiency directions).
+
+## Main definitions and results
+
+* `Qudit.Superoperator.IsCompletelyPositive`: positivity under every finite reference extension.
+* `Qudit.Superoperator.IsTracePreserving`: preservation of the operator trace.
+* `Qudit.Superoperator.kraus`: the superoperator of a finite Kraus family.
+* `Qudit.Superoperator.isTracePreserving_kraus_iff`: trace preservation is Kraus normalization.
 -/
 
 @[expose] public section

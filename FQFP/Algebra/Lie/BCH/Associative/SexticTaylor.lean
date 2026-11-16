@@ -84,10 +84,8 @@ lemma bchSexticTermLinDiff_smul (x V y : A) (c : ℚ) :
 /-- The sextic polynomial at a perturbed input is the sum of all its Taylor components. -/
 theorem bchSexticTerm_add_eq_sum_pieces (x V y : A) :
     bchSexticTerm (x + V) y = ∑ k ∈ range 5, bchSexticSubsetPiece k x V y := by
-  have hu : Function.update (![x, y] : Fin 2 → A) 0 (x + V) = ![x + V, y] := by
-    ext i
-    fin_cases i <;> simp
-  simpa only [Matrix.cons_val_zero, hu, bchSexticTerm, bchSexticSubsetPiece] using
+  simpa only [Matrix.vecCons, Fin.cons_zero, Fin.update_cons_zero, bchSexticTerm,
+    bchSexticSubsetPiece] using
     eval_update_add_eq_sum_taylorPiece coefficientScale bchSexticTermTable 0 ![x, y] V 4
       card_wordPositions_bchSexticTermTable
 
@@ -111,11 +109,8 @@ theorem bchSexticTermTaylor2Decomp (x V y : A) :
 theorem bchSexticTermLinDiffShiftDecomp (x V W y : A) :
     bchSexticTermLinDiff (x + V) W y - bchSexticTermLinDiff x W y =
       bchSexticTermLinDiffShift x V W y := by
-  have hu : Function.update (![x, y] : Fin 2 → A) 0 (x + V) = ![x + V, y] := by
-    ext i
-    fin_cases i <;> simp
   have h := taylorPiece_one_update_add coefficientScale bchSexticTermTable 0 ![x, y] V W
-  simp only [Matrix.cons_val_zero, hu] at h
+  simp only [Matrix.vecCons, Fin.cons_zero, Fin.update_cons_zero] at h
   exact sub_eq_iff_eq_add.mpr (h.trans (add_comm _ _))
 
 /-- **Mixed second-difference matching** through the sextic Taylor remainder. -/

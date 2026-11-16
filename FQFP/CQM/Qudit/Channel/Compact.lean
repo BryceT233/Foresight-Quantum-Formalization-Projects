@@ -14,6 +14,12 @@ public import FQFP.CQM.Qudit.Rigid
 The CP image of the existing Hilbert-space cup and cap satisfies both snake identities
 and dagger compatibility. The basis is explicit: these are self-dual pairings, not a
 new construction of the canonical conjugate Hilbert space.
+
+## Main definitions and results
+
+* `Qudit.CPQudit.exactPairingOfOrthonormalBasis`: the CP self-dual pairing of a chosen basis.
+* `Qudit.CPQudit.dagger_basisCup`: the cap is the dagger of the cup.
+* `Qudit.CPQudit.discard_dual`: discarding is compatible with the chosen self-dual pairing.
 -/
 
 @[expose] public section

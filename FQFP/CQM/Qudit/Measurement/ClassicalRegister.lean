@@ -15,6 +15,13 @@ An explicit orthonormal basis encodes the finite outcomes. Recording an instrume
 a channel with block-diagonal output `∑ i, Iᵢ(A) ⊗ |bᵢ⟩⟨bᵢ|`. Its two marginals recover
 the unread quantum output and the classical probability distribution. Classical control
 reads this register, applies an outcome-dependent channel, and retains the result label.
+
+## Main definitions and results
+
+* `Qudit.Instrument.record`: the channel retaining the output and an orthogonal outcome register.
+* `Qudit.Instrument.read`: reading and discarding a classical register.
+* `Qudit.Instrument.read_record`: reading a recorded outcome recovers the original branch.
+* `Qudit.QuantumChannel.controlled`: a channel controlled by the classical basis label.
 -/
 
 @[expose] public section

@@ -171,7 +171,7 @@ theorem norm_fiveStageStrangProduct_sub_exp_le_septic_of_skewAdjoint
   apply norm_fiveStageStrangProduct_sub_exp_le_septic a b p hp
     (norm_exp_smul_le_one_of_skewAdjoint ha) (norm_exp_smul_le_one_of_skewAdjoint hb)
   exact norm_exp_smul_le_one_of_skewAdjoint
-    (by simp only [star_add, ha, hb, neg_add_rev, add_comm])
+    ((skewAdjoint A).add_mem ha hb)
 
 /-- Skew-adjoint inputs supply all norm bounds in the centered refined estimate. -/
 theorem norm_fiveStageStrangProduct_centered_sub_septic_le_of_skewAdjoint
@@ -186,7 +186,7 @@ theorem norm_fiveStageStrangProduct_centered_sub_septic_le_of_skewAdjoint
   norm_fiveStageStrangProduct_centered_sub_septic_le a b p hp
     (norm_exp_smul_le_one_of_skewAdjoint ha) (norm_exp_smul_le_one_of_skewAdjoint hb)
     (norm_exp_smul_le_one_of_skewAdjoint
-      (by simp only [star_add, ha, hb, neg_add_rev, add_comm])) h hh
+      ((skewAdjoint A).add_mem ha hb)) h hh
 
 /-- The canonical parameter gives the refined local bound for all real steps. -/
 theorem norm_suzukiProduct_sub_exp_le_septic_of_skewAdjoint

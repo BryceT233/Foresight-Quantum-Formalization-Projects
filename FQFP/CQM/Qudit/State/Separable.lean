@@ -21,6 +21,14 @@ Spectral refinement gives the equivalent convex hull of pure product states. For
 density operator, separability is equivalent to its unit vector being a product vector,
 as in physlib's `MState.pure_separable_iff_IsProd`. This is also equivalent to purity of
 either marginal, extending `MState.pure_separable_iff_traceLeft_pure` to both factors.
+
+## Main definitions and results
+
+* `Qudit.Density.IsSeparable`: membership in the convex hull of product densities.
+* `Qudit.Density.isSeparable_iff_exists_mixture`: separability as a finite mixture of products.
+* `Qudit.Density.isSeparable_iff_exists_pure_ensemble`: separability as an ensemble of pure
+  products.
+* `Qudit.Density.isSeparable_pure_iff`: a pure density is separable exactly for product vectors.
 -/
 
 @[expose] public section

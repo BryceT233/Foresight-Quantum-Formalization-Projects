@@ -15,6 +15,12 @@ The ordered six-factor half-product and its reversed counterpart multiply to the
 eleven-factor Suzuki product. The central pair of equal exponentials is merged.
 This identity uses only the complete normed algebra structure, with no
 small-step or matrix assumptions.
+
+## Main definitions and results
+
+* `FQFP.BCH.fiveStageStrangHalfProduct` forms the ordered six-factor half of the Suzuki product.
+* `FQFP.BCH.fiveStageStrangProduct_eq_half_mul_reverse` factors the full product into this half
+  followed by the same factors in reverse order.
 -/
 
 @[expose] public noncomputable section

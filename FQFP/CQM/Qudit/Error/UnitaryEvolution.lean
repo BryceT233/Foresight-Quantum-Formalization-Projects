@@ -12,6 +12,14 @@ public import FQFP.CQM.Qudit.Error.TraceDistance
 
 This module connects unitary elements of the continuous operator algebra to qudit morphisms
 and density-state evolution. The operator norm is the Hilbert-space operator norm throughout.
+
+## Main definitions and results
+
+* `Qudit.Density.evolve`: evolution by a unitary continuous operator.
+* `Qudit.Density.traceDistance_evolve_le_opNorm`: operator-norm error bounds the evolved trace
+  distance.
+* `Qudit.POVM.abs_probability_evolve_sub_le`: a bound on the resulting measurement-probability
+  error.
 -/
 
 @[expose] public section

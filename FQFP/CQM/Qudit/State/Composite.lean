@@ -16,6 +16,13 @@ Tensor products use the existing Hilbert tensor product of `Qudit`.
 `partialTraceRight` discards the right factor, and `partialTraceLeft` discards the left.
 Both are basis-independent linear maps on all operators and preserve positivity and trace.
 Their restrictions to density operators therefore require no additional normalization.
+
+## Main definitions
+
+* `Qudit.UnitState.tensor`: tensor products of unit vectors.
+* `Qudit.Density.tensor`: independent products of density states.
+* `Qudit.Density.partialTraceRight`: discarding the right subsystem.
+* `Qudit.Density.partialTraceLeft`: discarding the left subsystem.
 -/
 
 @[expose] public section

@@ -13,7 +13,7 @@ public import FQFP.Algebra.Lie.BCH.Associative.Terms
 Write `z = a + b` and let `T_k` be the degree-`k` part of `y = exp a * exp b - 1`. The Dynkin/Ree
 form of `log (exp a * exp b)` expresses the degree-`k` part of `log (1 + y)` through the `y_j`, and
 the *pure identity* of degree `k` says that this expression agrees with the explicit word formula of
-`BCHTerms.lean`:
+`FQFP.Algebra.Lie.BCH.Associative.Terms`:
 
     ½·W_k + ⅓·(y³)_k - ¼·(y⁴)_k + … ± (1/k)·z^k - bch⟨k⟩Term = 0.
 
@@ -21,6 +21,14 @@ This file is the toolbox every degree shares: the `z` and `T₂, …, T₈` of t
 form `bchTTable`, and the bridge saying the table evaluates to the ring expression. The identities
 themselves live one degree to a file (`DynkinReeQuintic.lean` … `DynkinReeOctic.lean`), because
 each is a self-contained computation whose only shared input is what is below.
+
+## Main definitions and results
+
+* `FQFP.BCH.bchTTable` stores the homogeneous coefficients of the exponential product through degree
+  eight.
+* `FQFP.BCH.quintic_pure_identity_cleared` proves the degree-four cancellation over an arbitrary
+  ring.
+* `FQFP.BCH.quintic_pure_identity` gives the corresponding rationally scaled identity.
 
 ## Why the pieces are `def`s and not `let`s
 

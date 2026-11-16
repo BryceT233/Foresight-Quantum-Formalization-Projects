@@ -12,6 +12,10 @@ public import Mathlib.Algebra.Lie.OfAssociative
 
 Lie homomorphisms preserve iterated adjoint actions over any commutative ring.
 No associative realization or rational scalar structure is required.
+
+## Main results
+
+* `LieHom.map_ad_pow_apply` shows that Lie homomorphisms preserve iterated adjoint actions.
 -/
 
 @[expose] public section

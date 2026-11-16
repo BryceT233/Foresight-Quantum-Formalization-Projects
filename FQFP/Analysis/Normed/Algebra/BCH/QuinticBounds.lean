@@ -231,14 +231,7 @@ private lemma norm_bchQuinticSubsetPiece_le {𝔸 : Type*}
   have h4 := norm_bchQuinticGroupSubsets_le bchQuinticGroup4Words k x V y hx hV hy
   have h6 := norm_bchQuinticGroupSubsets_le bchQuinticGroup6Words k x V y hx hV hy
   have h24 := norm_bchQuinticGroupSubsets_le bchQuinticGroup24Words k x V y hx hV hy
-  rw [show (∑ i : Fin 4, (((wordPositions (bchQuinticGroup1Words i) 0).card
-      ).choose k : ℝ)) = n1 by rw [← Nat.cast_sum, hc1]] at h1
-  rw [show (∑ i : Fin 10, (((wordPositions (bchQuinticGroup4Words i) 0).card
-      ).choose k : ℝ)) = n4 by rw [← Nat.cast_sum, hc4]] at h4
-  rw [show (∑ i : Fin 14, (((wordPositions (bchQuinticGroup6Words i) 0).card
-      ).choose k : ℝ)) = n6 by rw [← Nat.cast_sum, hc6]] at h6
-  rw [show (∑ i : Fin 2, (((wordPositions (bchQuinticGroup24Words i) 0).card
-      ).choose k : ℝ)) = n24 by rw [← Nat.cast_sum, hc24]] at h24
+  simp only [← Nat.cast_sum, hc1, hc4, hc6, hc24] at h1 h4 h6 h24
   have hbr := norm_bchQuinticBracket_le (bchQuinticGroupSubsets bchQuinticGroup1Words k x V y)
     (bchQuinticGroupSubsets bchQuinticGroup4Words k x V y)
     (bchQuinticGroupSubsets bchQuinticGroup6Words k x V y)

@@ -10,8 +10,13 @@ public import FQFP.Algebra.Lie.BCH.SymmetricQuintic
 /-!
 # Low-degree symmetric BCH Lie polynomials
 
-The cubic and quintic Lie presentations are defined independently of the
-homogeneous recursion and of associative word certificates.
+This module defines the cubic Lie polynomial and re-exports the quintic polynomial from
+`FQFP.Algebra.Lie.BCH.SymmetricQuintic`.
+
+## Main definitions
+
+* `FQFP.symmetricBchCubicLieTerm` gives the cubic Lie coefficient of the symmetric exponential
+  product.
 -/
 
 @[expose] public section

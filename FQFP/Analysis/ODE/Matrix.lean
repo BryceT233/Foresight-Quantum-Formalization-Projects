@@ -40,12 +40,11 @@ lemma dualTrajectory_matrix_exp (B : Module.Basis ι ℝ E) (T : Module.End ℝ 
     intro i
     simpa only [L, LinearMap.coe_toContinuousLinearMap', Matrix.mulVecLin_apply,
       A, dualMap_coordinates] using hode s (B i)
-  have heq := ODE_solution_unique_univ (s := fun _ => Set.univ)
-    (v := fun _ v => L v) (K := ‖L‖₊) (t₀ := 0)
-    (fun _ => L.lipschitzWith.lipschitzOnWith)
-    (fun s => ⟨hY s, Set.mem_univ _⟩)
-    (fun s => ⟨Matrix.hasDerivAt_exp_smul_mulVec A (fun i => ℓ₀ (B i)) s,
-      Set.mem_univ _⟩) (by simp [hinit])
+  have heq : (fun s i ↦ Y s (B i)) =
+      (fun s ↦ (NormedSpace.exp (s • A)).mulVec (fun i ↦ ℓ₀ (B i))) := by
+    apply (L.existsUnique_trajectory (fun i ↦ ℓ₀ (B i))).unique
+    · exact ⟨by simp [hinit], hY⟩
+    · exact ⟨by simp, Matrix.hasDerivAt_exp_smul_mulVec A (fun i ↦ ℓ₀ (B i))⟩
   exact congrFun heq t
 
 end LinearMap

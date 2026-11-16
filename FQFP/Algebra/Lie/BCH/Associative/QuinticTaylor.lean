@@ -16,6 +16,14 @@ public import FQFP.Algebra.Word.Taylor
 (`bchQuinticTermTaylor2Remainder`), and the remainder splits further by the number of `V` letters
 (`bchQuinticTermTaylor2Remainder{2V,3V,4V}`).
 
+## Main definitions and results
+
+* `FQFP.BCH.bchQuinticSubsetPiece` collects the terms with a prescribed number of substituted
+  letters.
+* `FQFP.BCH.bchQuinticTermLinDiff` collects the terms linear in the increment.
+* `FQFP.BCH.bchQuinticTermTaylor2Decomp` splits the change into a linear part and the higher-order
+  remainder.
+
 ## How the split is organised
 
 `bchQuinticTerm a b` is `(1/720)` times a combination of **four groups** of binary words, and every
@@ -159,14 +167,11 @@ private lemma group_add_eq_sum_subsets [Semiring 𝔸] {m : ℕ} (words : Fin m 
     (hcard : ∀ i : Fin m, (wordPositions (words i) 0).card ≤ 4) (x V y : 𝔸) :
     (∑ i : Fin m, ((List.ofFn (words i)).map ![x + V, y]).prod)
       = ∑ k ∈ Finset.range 5, bchQuinticGroupSubsets words k x V y := by
-  have hu : Function.update (![x, y] : Fin 2 → 𝔸) 0 (x + V) = ![x + V, y] := by
-    ext j
-    fin_cases j <;> simp
   calc
     _ = ∑ i : Fin m, ∑ k ∈ Finset.range 5,
         wordTaylorPiece (words i) 0 ![x, y] V k :=
       Finset.sum_congr rfl fun i _ ↦ by
-        simpa only [Matrix.cons_val_zero, hu, wordEval] using
+        simpa only [Matrix.vecCons, Fin.cons_zero, Fin.update_cons_zero, wordEval] using
           word_update_add_eq_sum_taylorPiece (words i) 0 ![x, y] V (hcard i)
     _ = _ := by
       rw [Finset.sum_comm]

@@ -13,6 +13,13 @@ public import FQFP.CQM.Qudit.Channel.Environment
 The dual is characterized by the trace pairing on all operators. Its construction uses
 Kraus completeness, but uniqueness makes the result independent of that representation.
 It defines a dagger on `CPQudit`. Trace preservation is dual to unitality.
+
+## Main definitions and results
+
+* `Qudit.CPMap.dual`: the Heisenberg dual of a completely positive map.
+* `Qudit.CPMap.trace_dual`: duality for the bilinear trace pairing.
+* `Qudit.CPMap.dual_dual`: duality is involutive.
+* `Qudit.CPMap.isTracePreserving_iff_dual_one`: trace preservation is unitality of the dual.
 -/
 
 @[expose] public section

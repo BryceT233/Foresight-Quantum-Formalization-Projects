@@ -14,6 +14,13 @@ public import FQFP.CQM.Qudit.Channel.Dilation
 Discarding is the complex trace, encoded as an operator on the tensor unit. Causality
 is exactly trace preservation. Every CP process admits a pure dilation, without any
 normalization assumption. The environment is on the right throughout this API.
+
+## Main definitions and results
+
+* `Qudit.CPQudit.discard`: discarding as a completely positive process.
+* `Qudit.CPQudit.IsCausal`: preservation of discarding.
+* `Qudit.CPQudit.isCausal_iff`: causality is trace preservation.
+* `Qudit.CPQudit.exists_pure_comp_discard`: every CP process has a pure dilation.
 -/
 
 @[expose] public section

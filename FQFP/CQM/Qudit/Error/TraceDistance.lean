@@ -18,6 +18,13 @@ physlib's `TrDistance`, without importing its matrix/Schatten hierarchy.
 
 Every operator effect and every event in a finite POVM has probability difference at most
 the trace distance. These estimates include singular states and zero-probability outcomes.
+
+## Main definitions and results
+
+* `Qudit.Density.traceDistance`: half the trace norm of the difference of density operators.
+* `Qudit.Density.traceDistance_triangle`: the triangle inequality for trace distance.
+* `Qudit.Density.abs_expectation_sub_le_traceDistance`: trace distance bounds bounded-effect error.
+* `Qudit.POVM.abs_sum_probability_sub_le_traceDistance`: trace distance bounds outcome-event error.
 -/
 
 @[expose] public section

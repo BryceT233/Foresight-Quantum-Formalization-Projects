@@ -7,9 +7,7 @@ module
 
 public import FQFP.CQM.Qudit.Measurement.Instrument
 public import FQFP.CQM.Qudit.Measurement.POVM
-public import Mathlib.Analysis.InnerProductSpace.StarOrder
-public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+public import FQFP.CQM.Qudit.State.OperatorSqrt
 
 /-!
 # The Lüders instrument of a POVM
@@ -17,6 +15,13 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpo
 The positive square roots of the effects give one particular instrument realizing a POVM.
 The construction retains the quantum output, with branches `sqrt(Eᵢ) A sqrt(Eᵢ)`.
 It does not assert that outcome probabilities uniquely determine post-measurement states.
+
+## Main definitions and results
+
+* `Qudit.POVM.luders`: the instrument with positive square roots as its Kraus operators.
+* `Qudit.POVM.luders_branch_apply`: the unnormalized square-root update.
+* `Qudit.POVM.probability_luders`: the instrument recovers the original Born probabilities.
+* `Qudit.POVM.conditional_luders_ofBasis`: basis measurement prepares the observed basis state.
 -/
 
 @[expose] public section
@@ -26,44 +31,6 @@ open scoped ComplexOrder BigOperators
 namespace Qudit
 
 noncomputable section
-
-namespace Operator
-
-variable {H : Qudit}
-
-/-- Positive square root, transported from the continuous functional calculus. -/
-def sqrt (A : Operator H) : Operator H :=
-  (CFC.sqrt (LinearMap.toContinuousLinearMap A)).toLinearMap
-
-/-- The functional-calculus square root is positive, including at singular operators. -/
-lemma sqrt_positive (A : Operator H) : A.sqrt.IsPositive :=
-  (ContinuousLinearMap.nonneg_iff_isPositive.mp
-    (CFC.sqrt_nonneg (LinearMap.toContinuousLinearMap A))).toLinearMap
-
-/-- The positive square root is self-adjoint. -/
-lemma adjoint_sqrt (A : Operator H) : A.sqrt.adjoint = A.sqrt :=
-  A.sqrt_positive.adjoint_eq
-
-/-- Squaring the positive square root recovers a positive operator. -/
-lemma sqrt_mul_sqrt (A : Operator H) (hA : A.IsPositive) : A.sqrt * A.sqrt = A := by
-  exact congrArg ContinuousLinearMap.toLinearMap
-    (CFC.sqrt_mul_sqrt_self (LinearMap.toContinuousLinearMap A)
-      (ContinuousLinearMap.nonneg_iff_isPositive.mpr hA))
-
-/-- A positive operator whose square is `A` is the positive square root of `A`. -/
-lemma sqrt_unique {A B : Operator H} (hsq : B * B = A) (hB : B.IsPositive) :
-    A.sqrt = B := by
-  have h : CFC.sqrt (LinearMap.toContinuousLinearMap A) =
-      LinearMap.toContinuousLinearMap B :=
-    CFC.sqrt_unique (congrArg LinearMap.toContinuousLinearMap hsq)
-      (ContinuousLinearMap.nonneg_iff_isPositive.mpr hB)
-  exact congrArg ContinuousLinearMap.toLinearMap h
-
-/-- A positive projection is its own positive square root. -/
-lemma sqrt_eq_self (A : Operator H) (hA : A.IsPositive) (hsq : A * A = A) :
-    A.sqrt = A := sqrt_unique hsq hA
-
-end Operator
 
 namespace POVM
 

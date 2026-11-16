@@ -19,6 +19,12 @@ Powers and sequences of adjoint maps, nested brackets, and their list and tuple
 representations. The first layer is innermost. These constructions and identities
 require no norm or topology. The existing `TrotterError` names are retained.
 `adSequenceLinear` supplies a linear-map view of the unchanged sequence definition.
+
+## Main definitions and results
+
+* `TrotterError.adSequence` applies a sequence of adjoint powers, starting with the innermost layer.
+* `TrotterError.adSequence_eq_nestedCommOfList` rewrites that action as a nested bracket of a list.
+* `TrotterError.adSequence_eq_nestedComm_expandTuple` gives the corresponding finite-tuple formula.
 -/
 
 @[expose] public section
@@ -156,19 +162,18 @@ lemma nestedComm_ofFn_cons {𝔸 : Type*} [Ring 𝔸] {n : ℕ} (b : 𝔸) (tail
 lemma nestedComm_listIndexed {𝔸 : Type*} [Ring 𝔸] {ι : Type*} (b : 𝔸) (L : List ι)
     (f : ι → 𝔸) :
     nestedComm (listIndexed b L f) = nestedCommOfList b (L.map f) := by
-  rw [listIndexed, nestedComm_ofFn_cons]
-  congr 1
-  rw [List.ofFn_eq_map]
-  rw [show (List.finRange L.length).map (fun t => f (L[t.val]'t.2)) =
-      ((List.finRange L.length).map (fun t => L[t.val]'t.2)).map f by
-    rw [List.map_map]
-    rfl]
-  rw [List.map_getElem_finRange]
+  rw [listIndexed, nestedComm_ofFn_cons, List.ofFn_getElem_eq_map]
 
 /-- The list of the non-innermost operators of `expandTuple f q b`, each `f i` repeated `q i`
 times, in increasing order of `i`. -/
 def layersOf {α} {s : ℕ} (f : Fin s → α) (q : Fin s → ℕ) : List α :=
   (List.finRange s).flatMap fun i => List.replicate (q i) (f i)
+
+/-- Prepending a multiplicity places that many copies of the first layer at the head. -/
+lemma layersOf_cons {α : Type*} {s : ℕ} (f : Fin (s + 1) → α) (q : Fin s → ℕ) (k : ℕ) :
+    layersOf f (Fin.cons k q) = List.replicate k (f 0) ++ layersOf (fun i ↦ f i.succ) q := by
+  simp only [layersOf, List.finRange_succ, List.flatMap_cons, List.flatMap_map,
+    Fin.cons_zero, Fin.cons_succ]
 
 /-- `layersOf f q` has length `∑ q`. -/
 lemma layersOf_length {α} {s : ℕ} (f : Fin s → α) (q : Fin s → ℕ) :
@@ -258,13 +263,7 @@ lemma expandTuple_succ {α : Type*} {s : ℕ} (f : Fin s → α) (q : Fin s → 
 lemma expandTuple_nat {α β : Type*} {s : ℕ} (g : α → β) (f : Fin s → α) (q : Fin s → ℕ) (b : α) :
     expandTuple (g ∘ f) q (g b) = g ∘ expandTuple f q b := by
   funext j
-  refine Fin.cases ?zero ?succ j
-  · simp [Function.comp_apply, expandTuple_zero]
-  · intro t
-    change expandTuple (g ∘ f) q (g b) ⟨t.val + 1, by exact Nat.succ_lt_succ t.isLt⟩ =
-      g (expandTuple f q b ⟨t.val + 1, by exact Nat.succ_lt_succ t.isLt⟩)
-    rw [expandTuple_succ (g ∘ f) q (g b) t.val t.isLt]
-    simp [expandTuple_succ f q b t.val t.isLt]
+  cases j using Fin.cases <;> rfl
 
 /-- `adSequence A q B` equals the list nested commutator of the layers. -/
 lemma adSequence_eq_nestedCommOfList {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] {s : ℕ} (A : Fin s → 𝔸)
@@ -341,12 +340,8 @@ lemma adSequence_cons {A : Type*} [Ring A] [Algebra ℝ A] {s : ℕ}
     (Z : Fin (s + 1) → A) (q : Fin s → ℕ) (k : ℕ) (B : A) :
     adSequence Z (Fin.cons k q) B =
       adSequence (fun i ↦ Z i.succ) q (adPow (Z 0) k B) := by
-  rw [adSequence_eq_nestedCommOfList, adSequence_eq_nestedCommOfList]
-  have hlayers : layersOf Z (Fin.cons k q) =
-      List.replicate k (Z 0) ++ layersOf (fun i ↦ Z i.succ) q := by
-    simp only [layersOf, List.finRange_succ, List.flatMap_cons, List.flatMap_map,
-      Fin.cons_zero, Fin.cons_succ]
-  rw [hlayers, nestedCommOfList, List.foldl_append]
+  rw [adSequence_eq_nestedCommOfList, adSequence_eq_nestedCommOfList, layersOf_cons,
+    nestedCommOfList, List.foldl_append]
   have hrepl := nestedCommOfList_append_replicate B (Z 0) [] k
   simpa only [List.nil_append, nestedCommOfList, List.foldl_nil] using
     congrArg (fun b ↦ (layersOf (fun i ↦ Z i.succ) q).foldl (fun b z ↦ ⁅z, b⁆) b) hrepl
@@ -355,20 +350,13 @@ lemma adSequence_cons {A : Type*} [Ring A] [Algebra ℝ A] {s : ℕ}
 each `f (i.succ)` becomes the `i`-th layer. -/
 lemma layersOf_cons_zero {α : Type*} {s : ℕ} (f : Fin (s + 1) → α) (q : Fin s → ℕ) :
     layersOf f (Fin.cons 0 q) = layersOf (fun i : Fin s => f i.succ) q := by
-  rw [layersOf, layersOf, List.finRange_succ]
-  simp only [List.flatMap_cons, List.flatMap_map, Fin.cons_zero, List.replicate_zero,
-    List.nil_append]
-  apply List.flatMap_congr
-  intro j _
-  simp
+  rw [layersOf_cons, List.replicate_zero, List.nil_append]
 
 /-- `adSequence A (Fin.cons 0 q) B = adSequence (fun i => A i.succ) q B`: a zero innermost
 multiplicity lets the innermost `A ⟨0⟩` drop out. -/
 lemma adSequence_cons_zero {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] {s : ℕ} (A : Fin (s + 1) → 𝔸)
     (q : Fin s → ℕ) (B : 𝔸) :
     adSequence A (Fin.cons 0 q) B = adSequence (fun i : Fin s => A i.succ) q B := by
-  rw [adSequence_eq_nestedCommOfList A (Fin.cons 0 q) B,
-    adSequence_eq_nestedCommOfList (fun i : Fin s => A i.succ) q B]
-  rw [layersOf_cons_zero A q]
+  simpa only [adPow, pow_zero, Module.End.one_apply] using adSequence_cons A q 0 B
 
 end TrotterError

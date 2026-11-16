@@ -20,6 +20,13 @@ where `z = a + b`, `T_k` is the degree-`k` part of `y = exp a * exp b - 1`, `W6 
 and `(y^m)_d6` is the degree-6 part of `y^m` — the sum over the positive compositions of `6` into
 `m` parts, in lexicographic order.
 
+## Main results
+
+* `FQFP.BCH.collapse_dynkin6Tab_all_zero` certifies that all degree-6 word coefficients of the
+  difference vanish.
+* `FQFP.BCH.septic_pure_identity` identifies the degree-6 logarithm coefficient with the explicit
+  BCH term.
+
 ## How it is proved
 
 By computation, exactly as at degree 5. Each of the six pieces is a table (`w6Tab`, `y36Tab`,

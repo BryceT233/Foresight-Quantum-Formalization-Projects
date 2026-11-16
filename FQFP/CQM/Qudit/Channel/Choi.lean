@@ -18,6 +18,14 @@ The proof strategy follows the Choi criterion and positive spectral decompositio
 physlib `QuantumInfo/Channels/Unbundled.lean`, revision
 `29215bb5263ad514047bab124c379d3a01ea1e90`. The implementation uses local coordinate-free
 operators and Mathlib's rank-one decomposition, without importing physlib.
+
+## Main definitions and results
+
+* `Qudit.Superoperator.choi`: the Choi operator relative to an orthonormal input basis.
+* `Qudit.Superoperator.isCompletelyPositive_iff_choi_positive`: the Choi positivity criterion.
+* `Qudit.Superoperator.isCompletelyPositive_iff_exists_kraus`: completeness of finite Kraus
+  families.
+* `Qudit.QuantumChannel.exists_kraus_finrank`: a normalized Kraus family with a dimension bound.
 -/
 
 @[expose] public section

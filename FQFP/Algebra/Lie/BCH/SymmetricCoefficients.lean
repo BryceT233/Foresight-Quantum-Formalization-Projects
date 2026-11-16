@@ -16,6 +16,13 @@ import Mathlib.Tactic.DefEqTransformations
 
 These identities are derived by Lie convolution and Jacobi, with no conversion
 to associative words. The auxiliary polynomial retains its actual powers.
+
+## Main results
+
+* `FQFP.symmetricBchLieCoeff_three` identifies the recursive cubic coefficient with its Lie
+  polynomial.
+* `FQFP.symmetricBchLieCoeff_five` identifies the quintic coefficient.
+* `FQFP.symmetricBchLieCoeff_eq_zero_of_even` gives vanishing in even degrees.
 -/
 
 @[expose] public noncomputable section

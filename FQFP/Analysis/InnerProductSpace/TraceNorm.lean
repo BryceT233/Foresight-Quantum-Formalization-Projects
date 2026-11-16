@@ -14,6 +14,16 @@ The trace norm is the dual of the Hilbert-space operator norm under the trace pa
 (Watrous, *The Theory of Quantum Information*, equation (1.173), with `p = 1`).
 This avoids imposing a second norm instance on linear endomorphisms. All operator
 norms below are those of continuous linear maps on the given inner product space.
+
+## Main definitions and results
+
+* `LinearMap.traceNorm` defines the trace norm as the dual norm of the trace pairing.
+* `LinearMap.sum_abs_re_inner_le_traceNorm` bounds the sum of absolute real diagonal entries in an
+  orthonormal basis by the trace norm.
+* `LinearMap.IsSymmetric.traceNorm_eq_sum_abs_eigenvalues` computes the trace norm of a self-adjoint
+  operator from its eigenvalues.
+* `LinearMap.IsSymmetric.traceNorm_map_le` bounds the trace norm after a positive trace-preserving
+  map acts on a self-adjoint operator.
 -/
 
 @[expose] public section
@@ -237,49 +247,47 @@ lemma opNorm_le_one_of_diagonal {ι : Type*} [Fintype ι]
   exact pow_le_pow_left₀ (by positivity)
     (mul_le_of_le_one_left (norm_nonneg _) (hc i)) 2
 
-/-- On self-adjoint operators the dual trace norm is the sum of absolute eigenvalues. -/
-lemma IsSymmetric.traceNorm_eq_sum_abs_eigenvalues {A : E →ₗ[ℂ] E} (hA : A.IsSymmetric) :
-    traceNorm A = ∑ i, |hA.eigenvalues rfl i| := by
+/-- The sum of absolute real diagonal entries in any orthonormal basis is bounded
+by the trace norm, without any self-adjointness assumption. -/
+lemma sum_abs_re_inner_le_traceNorm {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℂ E) (A : E →ₗ[ℂ] E) :
+    ∑ i, |(inner ℂ (b i) (A (b i))).re| ≤ traceNorm A := by
   classical
-  apply le_antisymm hA.traceNorm_le_sum_abs_eigenvalues
-  let b := hA.eigenvectorBasis rfl
-  let c : Fin (Module.finrank ℂ E) → ℂ := fun i =>
-    if 0 ≤ hA.eigenvalues rfl i then 1 else -1
-  let S : E →ₗ[ℂ] E := b.toBasis.constr ℂ (fun i => c i • b i)
+  let c : ι → ℂ := fun i ↦ if 0 ≤ (inner ℂ (b i) (A (b i))).re then 1 else -1
+  let S := b.toBasis.constr ℂ (fun i ↦ c i • b i)
   have hS (i) : S (b i) = c i • b i := b.toBasis.constr_basis ℂ _ i
   have hn : ‖S.toContinuousLinearMap‖ ≤ 1 :=
-    opNorm_le_one_of_diagonal b S c hS (fun i => by dsimp [c]; split <;> simp)
-  have ht : trace ℂ E (S * A) = (∑ i, |hA.eigenvalues rfl i| : ℝ) := by
-    rw [trace_eq_sum_inner _ b, Complex.ofReal_sum]
+    opNorm_le_one_of_diagonal b S c hS (fun i ↦ by
+      dsimp [c]
+      split <;> simp)
+  have ht : (trace ℂ E (A * S)).re = ∑ i, |(inner ℂ (b i) (A (b i))).re| := by
+    rw [trace_eq_sum_inner _ b, Complex.re_sum]
     apply Finset.sum_congr rfl
     intro i _
-    change inner ℂ (b i) (S (A (b i))) = _
-    rw [hA.apply_eigenvectorBasis, map_smul, hS, inner_smul_right, inner_smul_right]
-    rw [b.inner_eq_ite]
-    simp only [ite_true, mul_one]
-    dsimp [c]
+    rw [Module.End.mul_apply, hS, map_smul, inner_smul_right]
+    dsimp only [c]
     split_ifs with hi
     · simp [abs_of_nonneg hi]
     · simp [abs_of_neg (lt_of_not_ge hi)]
-  calc
-    ∑ i, |hA.eigenvalues rfl i| = ‖trace ℂ E (S * A)‖ := by
-      rw [ht, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_nonneg (Finset.sum_nonneg fun _ _ => abs_nonneg _)]
-    _ ≤ ‖S.toContinuousLinearMap‖ * traceNorm A := norm_trace_mul_le A S
-    _ ≤ traceNorm A := mul_le_of_le_one_left (traceNorm_nonneg A) hn
+  rw [← ht, trace_mul_comm ℂ A S]
+  exact (Complex.re_le_norm _).trans
+    ((norm_trace_mul_le A S).trans (mul_le_of_le_one_left (traceNorm_nonneg A) hn))
+
+/-- On self-adjoint operators the dual trace norm is the sum of absolute eigenvalues. -/
+lemma IsSymmetric.traceNorm_eq_sum_abs_eigenvalues {A : E →ₗ[ℂ] E} (hA : A.IsSymmetric) :
+    traceNorm A = ∑ i, |hA.eigenvalues rfl i| := by
+  apply le_antisymm hA.traceNorm_le_sum_abs_eigenvalues
+  simpa only [hA.apply_eigenvectorBasis, inner_smul_right, OrthonormalBasis.inner_eq_one,
+    mul_one, Complex.coe_algebraMap, Complex.ofReal_re] using
+    sum_abs_re_inner_le_traceNorm (hA.eigenvectorBasis rfl) A
 
 /-- On positive operators the trace norm is the real trace. -/
 lemma IsPositive.traceNorm_eq_re_trace {A : E →ₗ[ℂ] E} (hA : A.IsPositive) :
     traceNorm A = (trace ℂ E A).re := by
-  apply le_antisymm
-  · calc
-      traceNorm A ≤ ∑ i, |hA.isSymmetric.eigenvalues rfl i| :=
-        hA.isSymmetric.traceNorm_le_sum_abs_eigenvalues
-      _ = (trace ℂ E A).re := by
-        change _ = RCLike.re (trace ℂ E A)
-        rw [hA.isSymmetric.re_trace_eq_sum_eigenvalues rfl]
-        exact Finset.sum_congr rfl fun i _ => abs_of_nonneg (hA.nonneg_eigenvalues rfl i)
-  · exact (Complex.re_le_norm _).trans (norm_trace_le_traceNorm A)
+  rw [hA.isSymmetric.traceNorm_eq_sum_abs_eigenvalues]
+  change _ = RCLike.re (trace ℂ E A)
+  rw [hA.isSymmetric.re_trace_eq_sum_eigenvalues rfl]
+  exact Finset.sum_congr rfl fun i _ ↦ abs_of_nonneg (hA.nonneg_eigenvalues rfl i)
 
 /-- Spectral decomposition of a self-adjoint operator into rank-one orthogonal projections. -/
 lemma IsSymmetric.eq_sum_smul_rankOne {A : E →ₗ[ℂ] E} (hA : A.IsSymmetric) :

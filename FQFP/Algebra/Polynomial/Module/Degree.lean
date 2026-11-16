@@ -14,6 +14,11 @@ public import Mathlib.Tactic.Linarith
 `DegreeLE p n` means that coefficients above `n` vanish, including when the
 coefficient space is trivial. The integral bound is independent of Lie brackets
 and associative multiplication.
+
+## Main definitions and results
+
+* `PolynomialModule.DegreeLE` bounds the degree by requiring higher coefficients to vanish.
+* `PolynomialModule.DegreeLE.integralZero` bounds the degree of a zero-constant primitive.
 -/
 
 @[expose] public noncomputable section

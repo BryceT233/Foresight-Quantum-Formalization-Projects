@@ -21,6 +21,13 @@ measurement. Its idempotent CP map represents the diagonal classical sector. Rec
 instrument outputs are fixed by this map on the register. This realizes classical
 interfaces inside full matrix algebras; it does not identify arbitrary quantum maps
 with maps of classical algebras, or construct the general `CP[C]` category.
+
+## Main definitions and results
+
+* `Qudit.QuantumChannel.dephase`: dephasing in a chosen orthonormal basis.
+* `Qudit.QuantumChannel.dephase_idempotent`: dephasing twice is dephasing once.
+* `Qudit.POVM.outcomeChannel`: the classical register of measurement outcomes.
+* `Qudit.teleportation_causal_composite`: corrected teleportation in causal CP semantics.
 -/
 
 @[expose] public section

@@ -15,6 +15,13 @@ Positive trace-preserving maps contract the trace norm of self-adjoint operators
 quantum channels therefore contract trace distance. Sequential errors add when each
 step's error is bounded uniformly over all input density states. Reference systems
 are explicit: unextended error bounds are not asserted to be diamond-norm bounds.
+
+## Main definitions and results
+
+* `Qudit.QuantumChannel.traceDistance_map_le`: contractivity of trace distance under a channel.
+* `Qudit.QuantumChannel.traceDistance_comp_map_le`: error bounds for sequential channel composition.
+* `Qudit.QuantumChannel.trajectory`: states evolving along a sequence of channels.
+* `Qudit.QuantumChannel.traceDistance_trajectory_le`: accumulated error along a channel trajectory.
 -/
 
 @[expose] public section

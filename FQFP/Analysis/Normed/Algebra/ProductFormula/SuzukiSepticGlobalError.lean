@@ -147,7 +147,7 @@ theorem norm_suzukiProduct_pow_sub_septic_midpoint_le_of_skewAdjoint
     isSuzukiCubic_suzukiP (norm_exp_smul_le_one_of_skewAdjoint ha)
     (norm_exp_smul_le_one_of_skewAdjoint hb) _ t ht r hr
   exact norm_exp_smul_le_one_of_skewAdjoint
-    (by simp only [star_add, ha, hb, neg_add_rev, add_comm])
+    ((skewAdjoint A).add_mem ha hb)
 
 /-- The canonical C*-algebra splitting has the refined two-sided error enclosure. -/
 theorem abs_norm_suzukiProduct_pow_error_sub_septic_midpoint_le_of_skewAdjoint
@@ -161,6 +161,6 @@ theorem abs_norm_suzukiProduct_pow_error_sub_septic_midpoint_le_of_skewAdjoint
     isSuzukiCubic_suzukiP (norm_exp_smul_le_one_of_skewAdjoint ha)
     (norm_exp_smul_le_one_of_skewAdjoint hb) _ t ht r hr
   exact norm_exp_smul_le_one_of_skewAdjoint
-    (by simp only [star_add, ha, hb, neg_add_rev, add_comm])
+    ((skewAdjoint A).add_mem ha hb)
 
 end FQFP.BCH

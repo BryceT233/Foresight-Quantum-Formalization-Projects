@@ -14,6 +14,11 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 The pointwise product of finitely many algebra-valued functions satisfies the
 ordered product rule and preserves differentiability classes.
+
+## Main results
+
+* `TrotterError.List.hasDerivAt_list_prod_at` gives the ordered product rule at a point.
+* `TrotterError.List.contDiff_list_prod` shows that finite ordered products preserve smoothness.
 -/
 
 @[expose] public section

@@ -14,6 +14,13 @@ public import Mathlib.CategoryTheory.Monoidal.Braided.Transport
 The arrows are exactly the existing `QuantumChannel` structures. The faithful inclusion
 in `CPQudit` identifies them with causal CP processes. This category is symmetric
 monoidal, but has no dagger instance: the adjoint of a TP map is unital, not generally TP.
+
+## Main definitions and results
+
+* `Qudit.CausalQudit`: the category with quantum channels as morphisms.
+* `Qudit.CausalQudit.inclusion`: the faithful inclusion into completely positive processes.
+* `Qudit.CausalQudit.discard`: discarding as a deterministic process.
+* `Qudit.CausalQudit.eq_discard`: discarding is the unique deterministic effect.
 -/
 
 @[expose] public section

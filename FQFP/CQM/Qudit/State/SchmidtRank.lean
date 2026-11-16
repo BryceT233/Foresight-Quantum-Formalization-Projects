@@ -15,6 +15,13 @@ The Schmidt rank counts the positive coefficients in the existing Schmidt decomp
 It equals the rank of either marginal, in coordinate-free or matrix form. A pure state is
 separable exactly when this rank is one. Swapping subsystems or changing global phase
 does not change the Schmidt rank.
+
+## Main definitions and results
+
+* `Qudit.UnitState.schmidtRank`: the number of positive Schmidt coefficients.
+* `Qudit.UnitState.schmidtRank_eq_finrank_range_partialTraceRight`: rank of the left marginal.
+* `Qudit.UnitState.schmidtRank_eq_rank_coefficientMatrix`: rank in arbitrary local bases.
+* `Qudit.Density.isSeparable_pure_iff_schmidtRank_eq_one`: pure separability is Schmidt rank one.
 -/
 
 @[expose] public section
@@ -35,17 +42,18 @@ def schmidtRank (ψ : UnitState (H ⊗ K)) : ℕ := Fintype.card ψ.SchmidtIndex
 
 /-- The Schmidt rank counts the nonzero eigenvalues of the left marginal, with multiplicity. -/
 lemma schmidtRank_eq_card_nonzeroEigenvalues (ψ : UnitState (H ⊗ K)) :
-    ψ.schmidtRank = (Density.pure ψ).partialTraceRight.nonzeroEigenvalues.card := by
-  classical
-  simp only [schmidtRank, Fintype.card_subtype, Density.nonzeroEigenvalues,
-    Multiset.filter_map, Multiset.card_map]
-  change (Finset.univ.filter (fun i => 0 < (Density.pure ψ).partialTraceRight.eigenvalue i)).card =
-    (Finset.univ.filter (fun i => (Density.pure ψ).partialTraceRight.eigenvalue i ≠ 0)).card
-  congr 1
-  apply Finset.filter_congr
-  intro i _
-  exact (lt_iff_le_and_ne).trans (by
-    simp [(Density.pure ψ).partialTraceRight.eigenvalue_nonneg i, ne_comm])
+    ψ.schmidtRank = (Density.pure ψ).partialTraceRight.nonzeroEigenvalues.card :=
+  (Density.pure ψ).partialTraceRight.card_positiveEigenIndex_eq_card_nonzeroEigenvalues
+
+/-- The Schmidt rank is bounded by the left subsystem's dimension. -/
+lemma schmidtRank_le_finrank_left (ψ : UnitState (H ⊗ K)) :
+    ψ.schmidtRank ≤ Module.finrank ℂ H.state :=
+  ψ.orthonormal_schmidtLeft.linearIndependent.fintype_card_le_finrank
+
+/-- The Schmidt rank is bounded by the right subsystem's dimension. -/
+lemma schmidtRank_le_finrank_right (ψ : UnitState (H ⊗ K)) :
+    ψ.schmidtRank ≤ Module.finrank ℂ K.state :=
+  ψ.orthonormal_schmidtRight.linearIndependent.fintype_card_le_finrank
 
 /-- The Schmidt rank equals the dimension of the range of the left marginal. -/
 lemma schmidtRank_eq_finrank_range_partialTraceRight (ψ : UnitState (H ⊗ K)) :
