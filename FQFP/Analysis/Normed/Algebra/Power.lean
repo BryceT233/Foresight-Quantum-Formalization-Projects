@@ -61,6 +61,23 @@ lemma norm_pow_sub_pow_le_of_le (x y : A) {X Y d : ℝ}
         rw [hgeom]
         ring
 
+/-- With a common norm bound, every term of the telescoping sum has the same majorant. -/
+lemma norm_pow_sub_pow_le_of_common_bound (x y : A) {M : ℝ}
+    (hx : ‖x‖ ≤ M) (hy : ‖y‖ ≤ M) (n : ℕ) :
+    ‖x ^ n - y ^ n‖ ≤ n * M ^ (n - 1) * ‖x - y‖ := by
+  cases n with
+  | zero => simp
+  | succ k =>
+    have hsum : ∑ i ∈ range (k + 1), M ^ i * M ^ (k - i) = (k + 1 : ℕ) * M ^ k := by
+      calc
+        _ = ∑ _i ∈ range (k + 1), M ^ k := by
+          apply sum_congr rfl
+          intro i hi
+          rw [← pow_add, Nat.add_sub_of_le (Nat.le_of_lt_succ (mem_range.mp hi))]
+        _ = _ := by simp
+    simpa only [hsum, Nat.add_one_sub_one, mul_comm ‖x - y‖] using
+      norm_pow_sub_pow_le_of_le x y hx hy le_rfl k
+
 /-- A noncommutative square difference is controlled by the difference of its inputs. -/
 lemma norm_sq_sub_sq_le {𝔸 : Type*} [NormedRing 𝔸] (x y : 𝔸) :
     ‖x ^ 2 - y ^ 2‖ ≤ (‖x‖ + ‖y‖) * ‖x - y‖ := by

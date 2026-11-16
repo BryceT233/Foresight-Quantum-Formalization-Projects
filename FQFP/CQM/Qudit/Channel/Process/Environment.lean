@@ -5,8 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Qudit.Channel.Category
-public import FQFP.CQM.Qudit.Channel.Dilation
+public import FQFP.CQM.Qudit.Channel.Process.Category
+public import FQFP.CQM.Qudit.Channel.Dilation.Basic
 
 /-!
 # Discarding and purification of finite-dimensional CP processes

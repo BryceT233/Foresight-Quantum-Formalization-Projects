@@ -7,7 +7,7 @@ module
 
 public import FQFP.CQM.Qudit.Entropy.Channel
 public import FQFP.CQM.Qudit.Entropy.Subadditivity
-public import FQFP.CQM.Qudit.Channel.Complementary
+public import FQFP.CQM.Qudit.Channel.Dilation.Complementary
 
 /-!
 # Entropy exchange and complementary coherent information

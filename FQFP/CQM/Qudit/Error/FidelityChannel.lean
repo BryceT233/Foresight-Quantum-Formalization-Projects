@@ -6,7 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.Error.Fidelity
-public import FQFP.CQM.Qudit.Channel.Purification
+public import FQFP.CQM.Qudit.Channel.Dilation.Purification
 
 /-!
 # Fidelity is monotone under quantum channels

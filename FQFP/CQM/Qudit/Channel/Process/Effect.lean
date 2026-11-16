@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Qudit.Channel.State
+public import FQFP.CQM.Qudit.Channel.Process.State
 
 /-!
 # Positive effects in the CP process category

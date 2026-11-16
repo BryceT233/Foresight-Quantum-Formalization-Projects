@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Qudit.Channel.Effect
+public import FQFP.CQM.Qudit.Channel.Process.Effect
 public import FQFP.CQM.Qudit.Measurement.Luders
 public import FQFP.CQM.Qudit.Measurement.ClassicalRegister
 

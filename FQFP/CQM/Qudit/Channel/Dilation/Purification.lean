@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Qudit.Channel.Complementary
+public import FQFP.CQM.Qudit.Channel.Dilation.Complementary
 
 /-!
 # Quantum channels acting on purifications

@@ -6,7 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.Channel.Ensemble
-public import FQFP.CQM.Qudit.Channel.Category
+public import FQFP.CQM.Qudit.Channel.Process.Category
 public import FQFP.CQM.Qudit.Measurement.Instrument
 
 /-!

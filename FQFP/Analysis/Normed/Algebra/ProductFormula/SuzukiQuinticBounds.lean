@@ -67,6 +67,13 @@ theorem norm_suzukiQuinticTerm_suzukiP_le (a b : A) :
   norm_suzukiQuinticTerm_le_of_coeff_le a b suzukiP suzukiQuinticCoeffUpperBound
     (fun i ↦ by simpa only [Real.norm_eq_abs] using abs_suzukiQuinticCoeff_suzukiP_le i)
 
+/-- The leading Suzuki error coefficient has at most one eighth of the Appendix J norm sum. -/
+theorem norm_suzukiQuinticTerm_suzukiP_le_div_eight (a b : A) :
+    ‖suzukiQuinticTerm a b suzukiP‖ ≤
+      (∑ i, suzukiFourthOrderCommutatorBoundWeight i * ‖binaryQuinticCommutator a b i‖) / 8 :=
+  (norm_suzukiQuinticTerm_suzukiP_le a b).trans
+    (suzukiQuinticCoeffUpperBound_sum_mul_norm_le_div_eight a b)
+
 /-- Under real cubic cancellation, every signed quintic coefficient is bounded by one. -/
 theorem abs_suzukiQuinticCoeff_le_one (p : ℝ) (hp : IsSuzukiCubic p) (i : Fin 8) :
     |suzukiQuinticCoeff p i| ≤ 1 := by

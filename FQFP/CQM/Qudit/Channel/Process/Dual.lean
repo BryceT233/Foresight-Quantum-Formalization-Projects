@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Qudit.Channel.Environment
+public import FQFP.CQM.Qudit.Channel.Process.Environment
 
 /-!
 # Heisenberg duality of completely positive processes

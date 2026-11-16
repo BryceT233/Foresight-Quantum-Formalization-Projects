@@ -1,0 +1,83 @@
+/-
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Foresight Quantum
+-/
+module
+
+public import FQFP.CQM.Qudit.Channel.Degradation.Basic
+
+/-!
+# Recovering an isometrically embedded system
+
+Compression by the adjoint recovers the input on the image of an isometry. On its orthogonal
+complement one may apply any channel going back to the input space. This completes compression
+to a trace-preserving channel on all operators, including coherences between the two subspaces.
+-/
+
+@[expose] public section
+
+open CategoryTheory MonoidalCategory DaggerCategory
+
+namespace Qudit.QuantumChannel
+
+noncomputable section
+
+variable {H K : Qudit}
+
+/-- An isometric channel admits a CPTP left inverse whenever a channel in the reverse
+direction exists. The latter condition also covers zero-dimensional systems exactly. -/
+theorem exists_leftInverse_ofIsometry (J : H ⟶ K) [IsIsometry J] (Γ : QuantumChannel K H) :
+    ∃ D : QuantumChannel K H, D.comp (ofIsometry J) = id H := by
+  let P : Operator K := J.hom ∘ₗ J.hom.adjoint
+  let Q : Operator K := 1 - P
+  have hP : P * P = P := by
+    change (J.hom ∘ₗ J.hom.adjoint) ∘ₗ (J.hom ∘ₗ J.hom.adjoint) = _
+    rw [LinearMap.comp_assoc, ← LinearMap.comp_assoc J.hom.adjoint,
+      hom_adjoint_comp_of_isIsometry, LinearMap.id_comp]
+  have hQadj : Q.adjoint = Q := by
+    simp [Q, P, LinearMap.adjoint_comp]
+  have hQ : Q * Q = Q := by simp [Q, mul_sub, sub_mul, hP]
+  have hQJ : Q ∘ₗ J.hom = 0 := by
+    dsimp only [Q, P]
+    rw [LinearMap.sub_comp, LinearMap.comp_assoc, hom_adjoint_comp_of_isIsometry,
+      LinearMap.comp_id, Module.End.one_eq_id, LinearMap.id_comp, sub_self]
+  let S : Superoperator K H := Superoperator.conjugate J.hom.adjoint +
+    Γ.toSuperoperator ∘ₗ Superoperator.conjugate Q
+  have hcp : S.IsCompletelyPositive := by
+    let b := stdOrthonormalBasis ℂ K.state
+    apply (Superoperator.isCompletelyPositive_iff_choi_positive b S).mpr
+    rw [show S = _ + _ from rfl, map_add]
+    exact ((Superoperator.isCompletelyPositive_conjugate J.hom.adjoint).choi_positive b).add
+      ((Γ.completelyPositive.comp (Superoperator.isCompletelyPositive_conjugate Q)).choi_positive b)
+  have htp : S.IsTracePreserving := by
+    intro A
+    have h₁ := Superoperator.trace_conjugate_adjoint J.hom (1 : Operator H) A
+    have h₂ := Superoperator.trace_conjugate_adjoint Q (1 : Operator K) A
+    simp only [Superoperator.conjugate_apply, Module.End.one_eq_id,
+      LinearMap.id_comp] at h₁ h₂
+    change (Superoperator.conjugate J.hom.adjoint A).trace = (A * P).trace at h₁
+    rw [hQadj] at h₂
+    change (Superoperator.conjugate Q A).trace = (A * (Q * Q)).trace at h₂
+    rw [hQ] at h₂
+    change (LinearMap.trace ℂ H.state) (_ + _) = _
+    rw [map_add]
+    change (Superoperator.conjugate J.hom.adjoint A).trace +
+      (Γ.toSuperoperator (Superoperator.conjugate Q A)).trace = _
+    rw [Γ.tracePreserving, h₁, h₂]
+    simp only [Q, mul_sub, mul_one, Operator.trace, map_sub]
+    abel
+  refine ⟨⟨S, hcp, htp⟩, QuantumChannel.ext ?_⟩
+  change S ∘ₗ Superoperator.conjugate J.hom = LinearMap.id
+  dsimp only [S]
+  rw [LinearMap.add_comp, LinearMap.comp_assoc, ← Superoperator.conjugate_comp,
+    ← Superoperator.conjugate_comp, hom_adjoint_comp_of_isIsometry, hQJ,
+    Superoperator.conjugate_id]
+  have hz : Superoperator.conjugate (0 : H.state →ₗ[ℂ] K.state) = 0 := by
+    ext A x
+    simp [Superoperator.conjugate_apply]
+  rw [hz, LinearMap.comp_zero, add_zero]
+
+end
+
+end Qudit.QuantumChannel

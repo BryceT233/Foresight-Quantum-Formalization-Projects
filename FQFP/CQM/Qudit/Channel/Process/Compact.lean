@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Qudit.Channel.Dual
+public import FQFP.CQM.Qudit.Channel.Process.Dual
 public import FQFP.CQM.Qudit.Rigid
 
 /-!

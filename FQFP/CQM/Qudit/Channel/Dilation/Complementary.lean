@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Qudit.Channel.Dilation
+public import FQFP.CQM.Qudit.Channel.Dilation.Basic
 public import FQFP.CQM.Qudit.Channel.Composite
 
 /-!

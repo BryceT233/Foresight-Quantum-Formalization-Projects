@@ -77,6 +77,20 @@ lemma suzukiQuinticCoeffUpperBound_nonneg (i : Fin 8) : 0 ≤ suzukiQuinticCoeff
 
 /-! ### Weighted norm estimates -/
 
+/-- Each rounded quintic coefficient is at most one eighth of its Appendix J weight. -/
+theorem suzukiQuinticCoeffUpperBound_le_div_eight (i : Fin 8) :
+    suzukiQuinticCoeffUpperBound i ≤ suzukiFourthOrderCommutatorBoundWeight i / 8 := by
+  fin_cases i <;> norm_num [suzukiQuinticCoeffUpperBound, suzukiFourthOrderCommutatorBoundWeight]
+
+/-- The eightfold comparison survives weighting by arbitrary binary commutator norms. -/
+theorem suzukiQuinticCoeffUpperBound_sum_mul_norm_le_div_eight (a b : 𝔸) :
+    ∑ i, suzukiQuinticCoeffUpperBound i * ‖binaryQuinticCommutator a b i‖ ≤
+      (∑ i, suzukiFourthOrderCommutatorBoundWeight i * ‖binaryQuinticCommutator a b i‖) / 8 := by
+  rw [Finset.sum_div]
+  refine sum_le_sum fun i _ ↦ ?_
+  simpa only [div_mul_eq_mul_div] using mul_le_mul_of_nonneg_right
+    (suzukiQuinticCoeffUpperBound_le_div_eight i) (norm_nonneg (binaryQuinticCommutator a b i))
+
 /-- A weighted sum of commutator norms with nonnegative weights is nonnegative. -/
 theorem sum_mul_norm_binaryQuinticCommutator_nonneg {γ : Fin 8 → ℝ} (hγ : ∀ i, 0 ≤ γ i) (A B : 𝔸) :
     0 ≤ ∑ i : Fin 8, γ i * ‖binaryQuinticCommutator A B i‖ :=

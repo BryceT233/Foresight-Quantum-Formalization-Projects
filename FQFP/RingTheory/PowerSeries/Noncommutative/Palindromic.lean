@@ -70,4 +70,11 @@ theorem expListLogCoeff_eq_zero_of_reverse_eq (l : List A) (hl : l.reverse = l)
     simpa only [two_smul] using (neg_eq_iff_add_eq_zero.mp h.symm)
   exact (smul_eq_zero.mp htwo).resolve_left (by norm_num)
 
+/-- A palindromic exponential product agrees quadratically with the exponential of its sum. -/
+theorem expListTerm_two_of_reverse_eq (l : List A) (hl : l.reverse = l) :
+    expListTerm l 2 = (2 : ℚ)⁻¹ • l.sum ^ 2 := by
+  have he := expListLogCoeff_eq_zero_of_reverse_eq l hl 2 (by decide)
+  norm_num [expListLogCoeff, Finset.sum_range_succ, positivePowerCoeff, ← sq] at he
+  exact sub_eq_zero.mp (by simpa [sub_eq_add_neg] using he)
+
 end FQFP
