@@ -72,6 +72,7 @@ public import FQFP.Analysis.Calculus.ListProd
 public import FQFP.Analysis.Calculus.MidpointQuadrature
 public import FQFP.Analysis.Calculus.Taylor
 public import FQFP.Analysis.Calculus.TaylorAsymptotics
+public import FQFP.Analysis.Complex.SpectralInterpolation
 public import FQFP.Analysis.InnerProductSpace.Orthonormal
 public import FQFP.Analysis.InnerProductSpace.PartialTrace
 public import FQFP.Analysis.InnerProductSpace.PositiveTrace
@@ -218,6 +219,7 @@ public import FQFP.CQM.Qudit.Channel.EntanglementBreaking.Basic
 public import FQFP.CQM.Qudit.Channel.EntanglementBreaking.MeasurePrepare
 public import FQFP.CQM.Qudit.Channel.EntanglementBreaking.RankOneKraus
 public import FQFP.CQM.Qudit.Channel.MeasurePrepare
+public import FQFP.CQM.Qudit.Channel.Pinching
 public import FQFP.CQM.Qudit.Channel.Process.Category
 public import FQFP.CQM.Qudit.Channel.Process.Causal
 public import FQFP.CQM.Qudit.Channel.Process.Classical
@@ -229,13 +231,21 @@ public import FQFP.CQM.Qudit.Channel.Process.State
 public import FQFP.CQM.Qudit.Channel.Superoperator
 public import FQFP.CQM.Qudit.Classical
 public import FQFP.CQM.Qudit.Dagger
+public import FQFP.CQM.Qudit.Entropy.ArakiLieb
 public import FQFP.CQM.Qudit.Entropy.Basic
 public import FQFP.CQM.Qudit.Entropy.Channel
 public import FQFP.CQM.Qudit.Entropy.Composite
 public import FQFP.CQM.Qudit.Entropy.Concavity
+public import FQFP.CQM.Qudit.Entropy.DataProcessing
 public import FQFP.CQM.Qudit.Entropy.Exchange
+public import FQFP.CQM.Qudit.Entropy.JointConvexity
+public import FQFP.CQM.Qudit.Entropy.Pinching
 public import FQFP.CQM.Qudit.Entropy.Relative
+public import FQFP.CQM.Qudit.Entropy.RelativePartialTrace
 public import FQFP.CQM.Qudit.Entropy.RelativeTensor
+public import FQFP.CQM.Qudit.Entropy.RenyiPartialTrace
+public import FQFP.CQM.Qudit.Entropy.SandwichedRenyi
+public import FQFP.CQM.Qudit.Entropy.StrongSubadditivity
 public import FQFP.CQM.Qudit.Entropy.Subadditivity
 public import FQFP.CQM.Qudit.Error.Channel
 public import FQFP.CQM.Qudit.Error.Fidelity

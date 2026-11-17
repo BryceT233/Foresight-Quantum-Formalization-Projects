@@ -87,25 +87,33 @@ lemma eigenvalue_le_one (ρ : Density H) (i : Fin (Module.finrank ℂ H.state)) 
   exact Finset.single_le_sum (fun j _ => ρ.eigenvalue_nonneg j) (Finset.mem_univ i)
 
 /-- Any orthonormal diagonalization gives the same eigenvalues with multiplicities. -/
-lemma eigenvalues_eq_of_eigenbasis {ι : Type*} [Fintype ι] (ρ : Density H)
+lemma _root_.Qudit.Operator.eigenvalues_eq_of_eigenbasis {ι : Type*} [Fintype ι]
+    {A : Operator H} (hA : A.IsSymmetric)
     (b : OrthonormalBasis ι ℂ H.state) (w : ι → ℝ)
-    (hw : ∀ i, ρ.op (b i) = (w i : ℂ) • b i) :
-    Finset.univ.val.map ρ.eigenvalue = Finset.univ.val.map w := by
+    (hw : ∀ i, A (b i) = (w i : ℂ) • b i) :
+    Finset.univ.val.map (hA.eigenvalues rfl) = Finset.univ.val.map w := by
   classical
   apply Multiset.map_injective Complex.ofReal_injective
-  have hm : LinearMap.toMatrix b.toBasis b.toBasis ρ.op =
+  have hm : LinearMap.toMatrix b.toBasis b.toBasis A =
       Matrix.diagonal (fun i => (w i : ℂ)) := by
     ext i j
     rw [LinearMap.toMatrix_apply]
-    change b.repr (ρ.op (b j)) i = _
+    change b.repr (A (b j)) i = _
     rw [b.repr_apply_apply, hw, inner_smul_right, b.inner_eq_ite]
     by_cases hij : i = j <;> simp [hij]
-  have hr := ρ.positive.isSymmetric.roots_charpoly_eq_eigenvalues rfl
-  change ρ.op.charpoly.roots = Finset.univ.val.map (Complex.ofReal ∘ ρ.eigenvalue) at hr
+  have hr := hA.roots_charpoly_eq_eigenvalues rfl
+  change A.charpoly.roots = Finset.univ.val.map (Complex.ofReal ∘ (hA.eigenvalues rfl)) at hr
   simp only [Multiset.map_map]
-  rw [← hr, ← LinearMap.charpoly_toMatrix ρ.op b.toBasis, hm, Matrix.charpoly_diagonal,
+  rw [← hr, ← LinearMap.charpoly_toMatrix A b.toBasis, hm, Matrix.charpoly_diagonal,
     Polynomial.roots_prod _ _ (by simp [Finset.prod_ne_zero_iff, Polynomial.X_sub_C_ne_zero])]
   simp
+
+/-- Any orthonormal diagonalization gives the same eigenvalues with multiplicities. -/
+lemma eigenvalues_eq_of_eigenbasis {ι : Type*} [Fintype ι] (ρ : Density H)
+    (b : OrthonormalBasis ι ℂ H.state) (w : ι → ℝ)
+    (hw : ∀ i, ρ.op (b i) = (w i : ℂ) • b i) :
+    Finset.univ.val.map ρ.eigenvalue = Finset.univ.val.map w :=
+  Operator.eigenvalues_eq_of_eigenbasis ρ.positive.isSymmetric b w hw
 
 /-- Spectral sums can be evaluated using any orthonormal diagonalization. -/
 lemma sum_eigenvalue_eq_of_eigenbasis {ι : Type*} [Fintype ι] (ρ : Density H)

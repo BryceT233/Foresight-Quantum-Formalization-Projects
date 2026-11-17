@@ -33,6 +33,38 @@ namespace Qudit
 
 noncomputable section
 
+namespace Density
+
+variable {H C : Qudit} {ι : Type*} [Fintype ι]
+
+/-- A mixture with its classical label retained as an orthogonal state in the right register. -/
+def flaggedMixture (b : OrthonormalBasis ι ℂ C.state) (w : ι → ℝ) (hw : ∀ i, 0 ≤ w i)
+    (hs : ∑ i, w i = 1) (ρ : ι → Density H) : Density (H ⊗ C) :=
+  mixture w hw hs fun i => (ρ i).tensor (pure (UnitState.ofBasis b i))
+
+/-- Discarding the classical register recovers the original mixture. -/
+lemma partialTraceRight_flaggedMixture (b : OrthonormalBasis ι ℂ C.state)
+    (w : ι → ℝ) (hw : ∀ i, 0 ≤ w i) (hs : ∑ i, w i = 1) (ρ : ι → Density H) :
+    (flaggedMixture b w hw hs ρ).partialTraceRight = mixture w hw hs ρ := by
+  apply Density.ext
+  simp [flaggedMixture, Operator.partialTraceRight_tensor]
+
+/-- On label `i` the flagged density acts as its weighted quantum block `w i • (ρ i).op`. -/
+lemma flaggedMixture_apply_tmul (b : OrthonormalBasis ι ℂ C.state)
+    (w : ι → ℝ) (hw : ∀ i, 0 ≤ w i) (hs : ∑ i, w i = 1) (ρ : ι → Density H)
+    (i : ι) (x : H.state) :
+    (flaggedMixture b w hw hs ρ).op (x ⊗ₜ[ℂ] b i) = (w i : ℂ) • ((ρ i).op x ⊗ₜ[ℂ] b i) := by
+  classical
+  simp only [flaggedMixture, op_mixture, LinearMap.sum_apply, LinearMap.smul_apply, op_tensor,
+    Operator.tensor_apply, pure_apply, UnitState.coe_ofBasis, b.inner_eq_ite]
+  rw [Finset.sum_eq_single i]
+  · simp
+  · intro j _ hji
+    simp [hji]
+  · simp
+
+end Density
+
 namespace Superoperator
 
 variable {H C : Qudit}

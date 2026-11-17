@@ -29,14 +29,22 @@ open scoped BigOperators
 
 namespace Real
 
+/-- The strict scalar logarithmic inequality for unequal arguments, including a zero source. -/
+lemma sub_lt_mul_log_sub {a b : ℝ} (ha : 0 ≤ a) (hb : 0 < b) (hab : a ≠ b) :
+    a - b < a * (log a - log b) := by
+  rcases ha.eq_or_lt with h | ha
+  · simp [← h, hb]
+  · have hr : a / b ≠ 1 := fun e => hab ((div_eq_one_iff_eq hb.ne').mp e)
+    have h := mul_lt_mul_of_pos_right (self_sub_one_lt_mul_log (div_nonneg ha.le hb.le) hr) hb
+    rwa [sub_mul, one_mul, div_mul_cancel₀ _ hb.ne', mul_right_comm _ (log _) b,
+      div_mul_cancel₀ _ hb.ne', log_div ha.ne' hb.ne'] at h
+
 /-- The scalar logarithmic inequality underlying Gibbs and Klein inequalities. -/
 lemma sub_le_mul_log_sub {a b : ℝ} (ha : 0 ≤ a) (hb : 0 < b) :
     a - b ≤ a * (log a - log b) := by
-  rcases ha.eq_or_lt with h | ha
-  · simp [← h, hb.le]
-  · have h := mul_le_mul_of_nonneg_right (self_sub_one_le_mul_log (div_nonneg ha.le hb.le)) hb.le
-    rwa [sub_mul, one_mul, div_mul_cancel₀ _ hb.ne', mul_right_comm _ (log _) b,
-      div_mul_cancel₀ _ hb.ne', log_div ha.ne' hb.ne'] at h
+  rcases eq_or_ne a b with rfl | hab
+  · simp
+  · exact (sub_lt_mul_log_sub ha hb hab).le
 
 /-- The scalar inequality remains valid at zero when the support condition is imposed. -/
 lemma sub_le_mul_log_sub_of_support {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b)

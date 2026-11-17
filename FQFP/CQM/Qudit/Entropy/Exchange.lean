@@ -59,6 +59,20 @@ lemma Dilation.entropyExchange_eq {Φ : QuantumChannel H K}
   rw [Density.partialTraceRight_pure_purify] at h
   exact h.symm
 
+/-- A finite Kraus representation bounds entropy exchange by the log of the family size:
+one orthonormal environment label suffices for each Kraus operator. -/
+lemma entropyExchange_le_log_card_of_kraus {ι : Type*} [Fintype ι] (Φ : QuantumChannel H K)
+    (f : ι → H.state →ₗ[ℂ] K.state) (hf : Φ.toSuperoperator = Superoperator.kraus f)
+    (ρ : Density H) : Φ.entropyExchange ρ ≤ Real.log (Fintype.card ι) := by
+  let E := std (Fintype.card ι)
+  let b : OrthonormalBasis ι ℂ E.state := (ZBasis _).reindex (Fintype.equivFin ι).symm
+  have htp := (Superoperator.isTracePreserving_kraus_iff f).mp (hf ▸ Φ.tracePreserving)
+  let d : Φ.Dilation E :=
+    ⟨ofHom (Superoperator.krausDilation b f), Superoperator.isIsometry_krausDilation b f htp,
+      hf.trans (Superoperator.partialTraceRight_conjugate_krausDilation b f).symm⟩
+  rw [d.entropyExchange_eq]
+  simpa only [E, finrank_std] using (d.complementary.map ρ).vonNeumannEntropy_le_log_finrank
+
 /-- The chosen complementary channel computes entropy exchange. -/
 lemma entropyExchange_eq_complementary (Φ : QuantumChannel H K) (ρ : Density H) :
     Φ.entropyExchange ρ = (Φ.complementary.map ρ).vonNeumannEntropy :=

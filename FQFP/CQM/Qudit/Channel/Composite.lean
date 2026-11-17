@@ -98,6 +98,28 @@ lemma partialTraceLeft_map_tensor (Φ : QuantumChannel H K) (Ψ : QuantumChannel
   have h := congrArg (fun Γ => Γ.map ρ) (partialTraceLeft_comp_tensor Φ Ψ)
   simpa only [map_comp, map_partialTraceLeft] using h
 
+/-- Reassociate `H ⊗ (K ⊗ L)` and discard `L`, equivalently discard it inside `K ⊗ L`. -/
+lemma partialTraceRight_map_associator_inv (ρ : Density (H ⊗ (K ⊗ L))) :
+    (ρ.map (α_ H K L).inv).partialTraceRight =
+      ((id H).tensor (partialTraceRight K L)).map ρ := by
+  let e := (TensorProduct.assocIsometry ℂ H.state K.state L.state).symm
+  have h : (Operator.partialTraceRight : Superoperator ((H ⊗ K) ⊗ L) (H ⊗ K)) ∘ₗ
+      Superoperator.relabel e = Superoperator.tensor (LinearMap.id : Superoperator H H)
+        (Operator.partialTraceRight : Superoperator (K ⊗ L) K) := by
+    apply Operator.tensor_ext
+    intro A D
+    induction D using Operator.tensor_induction_on with
+    | htensor B C =>
+      simp only [e, LinearMap.comp_apply, Superoperator.relabel_assoc_symm_tensor,
+        Superoperator.tensor_apply, LinearMap.id_apply, Operator.partialTraceRight_tensor]
+      exact (TensorProduct.map_smul_right _ _ _).symm
+    | hadd B C hB hC =>
+      simpa only [Operator.tensor, TensorProduct.map_add_right, map_add] using
+        congrArg₂ (· + ·) hB hC
+  apply Density.ext
+  rw [Superoperator.relabel_eq_conjugate] at h
+  exact DFunLike.congr_fun h ρ.op
+
 /-- Swapping before discarding the right output retains the original right output. -/
 lemma partialTraceRight_comp_swap (H K : Qudit) :
     (partialTraceRight K H).comp (ofIsometry (β_ H K).hom) = partialTraceLeft H K := by

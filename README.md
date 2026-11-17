@@ -1,60 +1,52 @@
 # Foresight Quantum Formalization Projects (FQFP)
 
-This repository collects Lean 4 formalization projects developed at
-**Foresight Quantum** using Mathlib. The projects live under `FQFP/`;
-`FQFP.lean` is the umbrella import.
+This repository collects results formalized in Lean 4 by a research group at
+**Foresight Quantum**. The library builds on Mathlib and loosely follows its
+directory structure, grouping results under `FQFP/` by mathematical subject.
+
+## Project history
+
+Bingyu Xia started this repository to formalize the opening chapters of
+Chris Heunen and Jamie Vicary’s [*Categorical Quantum Mechanics: An Introduction*][cqm].
+
+The group later used DeepSeek V4 Pro through the DeepSeek harness to formalize
+the product-formula error bounds in [*A Theory of Trotter Error*][childs] by
+Andrew M. Childs, Yuan Su, Minh C. Tran, Nathan Wiebe, and Shuchen Zhu.
+Along the way, the group incorporated selected results from two of Jue Xu’s
+Lean 4 repositories. [Lean-BCH][bch] formalizes the Baker–Campbell–Hausdorff
+formula in complete normed algebras and gives explicit bounds on its remainder.
+[Lean-Trotter][trotter] proves convergence rates and error bounds for the
+Lie–Trotter product formula, Strang splitting, and the fourth-order Suzuki formula.
+
+The group then took on the formalization of the main results in *Trotter Error
+Bounds in Lean 4 with a Cancellation-Aware Analysis of the Fourth-Order Suzuki
+Formula*. With help from GPT-Astra, the group is now incorporating results from
+[Physlib’s `QuantumInfo` directory][quantuminfo].
+
+[cqm]: https://www.cs.ox.ac.uk/files/7051/notes.pdf
+[childs]: https://arxiv.org/abs/1912.08854
+[bch]: https://github.com/Jue-Xu/Lean-BCH
+[trotter]: https://github.com/Jue-Xu/Lean-Trotter
+[quantuminfo]: https://github.com/leanprover-community/physlib/tree/master/QuantumInfo
 
 ## Library structure
 
-- **`FQFP/Algebra`** — Ordered word products and certificates, list-product
-  identities, polynomial evaluation, polynomial-module calculus, and iterated Lie brackets.
-  `Algebra/Lie/BCH/` develops homogeneous Lie recursion, associative BCH
-  coefficients, finite truncations, and compatibility between representations.
-- **`FQFP/Basic/Rel`** — Set-theoretic relations, composition, inverses and graphs,
-  independently of any category structure.
-- **`FQFP/RingTheory/PowerSeries/Noncommutative`** — Formal power series over
-  noncommutative coefficient algebras, scalar substitution, exponential and
-  logarithm, and formal differentiation. These results require no analytic
-  convergence assumptions.
-- **`FQFP/RingTheory/MvPolynomial`** — Polynomial derivations and degree bounds,
-  total-degree projections with monomial bases, compressed derivations, and
-  augmentation-ideal stability. `RingTheory/Derivation/Ideal` treats stable
-  ideals and quotient derivations over general commutative algebras.
-- **`FQFP/LinearAlgebra`** — Derivations of symmetric algebras and matrix
-  coordinates for algebraic dual endomorphisms.
-- **`FQFP/Topology/Algebra/MvPolynomial`** — Polynomial identity on a nonempty
-  open set.
-- **`FQFP/Data/Nat/Choose`** — Additional multinomial coefficient lemmas.
-- **`FQFP/Analysis`** — List-product calculus, interval-integral bounds, and
-  time-ordered evolution in `ODE/`. `Normed/Algebra/` supplies shared word,
-  commutator, exponential, and logarithm estimates. Its `BCH/` directory proves
-  BCH remainder bounds; `ProductFormula/` develops Trotter–Suzuki formulas,
-  order conditions, and error estimates based on *A Theory of Trotter Error*
-  (Childs–Su–Tran–Wiebe–Zhu). The main error results are in
-  `FQFP.Analysis.Normed.Algebra.ProductFormula.ErrorBounds`. See the
-  [formalization site](https://brycet233.github.io/TrotterError/).
-  `ODE/` also develops autonomous and forced linear evolution, matrix formulas,
-  and coordinate nonuniqueness. `PDE/Carleman/` develops multipoint fields,
-  their infinite linear hierarchy, and exact finite-level truncation residuals.
-  Taylor vanishing orders, iterated product derivatives, polynomial coefficient
-  cancellation and general power-order asymptotics have independent calculus
-  and asymptotics modules.
-- **`FQFP/Carleman`** — Polynomial ODE Carleman approximants, their matrix
-  formulas and conditional error bounds, and the scalar quadratic example.
-  `TwoModeBurgers/` proves monomial and energy
-  iterate results, polynomial closure obstructions, and the energy Krylov
-  dichotomy. General convergence of
-  the finite truncations requires further analytic estimates.
-- **`FQFP/CategoryTheory`** — Dagger categories and their projections, isometries,
-  unitaries, positive morphisms, kernels and biproducts; semiadditive categories;
-  monoidal dagger structures, braidings and duals; scalars, states, effects and
-  measurement. Basic dagger, monoidal dagger and dagger kernels have separate
-  modules. States and scalars require only a monoidal category.
-  Ordinary bicone maps and semiadditive biproducts have their own modules.
-  `Category/RelCat/` extends Mathlib's standard category of relations with its
-  dagger, tensor, biproduct, kernel, duality and measurement structures.
-- **`FQFP/CQM`** — Concrete `Qudit` and `HilbCat` models, the teleportation
-  protocol, and its qubit and Boolean-relation examples.
+- [CategoryTheory](FQFP/CategoryTheory) develops the categorical foundations of
+  quantum mechanics, including dagger categories, monoidal structure, states,
+  and measurements. The category of relations provides a concrete model.
+- [CQM](FQFP/CQM) formalizes quantum teleportation and finite-dimensional
+  quantum information. Its qudit modules cover states and measurements, quantum
+  channels and their dilations, and bounds involving fidelity, trace distance,
+  and entropy.
+- [Algebra](FQFP/Algebra) develops the Baker–Campbell–Hausdorff expansion and
+  uses identities between noncommutative words to verify commutator coefficients
+  for the fourth-order Suzuki formula.
+- [Analysis](FQFP/Analysis) proves BCH remainder bounds and Trotter–Suzuki
+  error bounds, including estimates that account for cancellation in the
+  fourth-order formula. See the [Trotter error formalization](https://brycet233.github.io/TrotterError/).
+- [Carleman](FQFP/Carleman) studies finite truncations of the Carleman
+  linearization of polynomial ODEs, with conditional error bounds, a scalar
+  quadratic example, and results on polynomial closure for a two-mode Burgers system.
 
 Import `FQFP` for the whole library, or import individual modules such as
 `FQFP.Algebra.Lie.BCH.Coefficients`,
@@ -67,8 +59,7 @@ namespaces, are unchanged. Paper provenance remains in module documentation.
 New shared results belong under the mathematical subject they extend. Algebraic
 foundations must not import this project's analysis or application modules.
 
-Build the umbrella library with `lake build FQFP`. See [AGENTS.md](AGENTS.md)
-for the full development and lint workflow.
+Build the umbrella library with `lake build FQFP`.
 
 Run `python scripts/check.py` for the unified build, declaration/style lint,
 tool tests and all `FQFPTest/` Lean regressions. CI runs the same command.

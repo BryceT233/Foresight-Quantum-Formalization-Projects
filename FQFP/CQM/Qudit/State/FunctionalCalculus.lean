@@ -79,6 +79,22 @@ lemma spectralMap_eq_sum_of_eigenbasis {ι : Type*} [Fintype ι] (ρ : Density H
   rw [← Operator.sum_outer_basis b (ρ.spectralMap f)]
   simp only [ρ.spectralMap_apply_of_eigenvector f (hw _), Operator.outer_smul_left]
 
+/-- Real spectral functions of a density operator are self-adjoint. -/
+lemma adjoint_spectralMap (ρ : Density H) (f : ℝ → ℝ) :
+    (ρ.spectralMap f).adjoint = ρ.spectralMap f := by
+  simp only [spectralMap, map_sum, map_smulₛₗ, Complex.conj_ofReal, Operator.adjoint_outer]
+
+/-- An operator commuting with a density preserves its eigenspaces and hence commutes
+with every spectral function of that density. -/
+lemma commute_spectralMap (ρ : Density H) {A : Operator H} (h : Commute A ρ.op) (f : ℝ → ℝ) :
+    Commute A (ρ.spectralMap f) := by
+  apply ρ.eigenbasis.toBasis.ext
+  intro i
+  have hi := DFunLike.congr_fun h.eq.symm (ρ.eigenbasis i)
+  simp only [Module.End.mul_apply, ρ.apply_eigenbasis, map_smul] at hi
+  change A (ρ.spectralMap f (ρ.eigenbasis i)) = ρ.spectralMap f (A (ρ.eigenbasis i))
+  rw [spectralMap_apply_eigenbasis, map_smul, ρ.spectralMap_apply_of_eigenvector f hi]
+
 /-- The identity scalar function recovers the density operator. -/
 @[simp]
 lemma spectralMap_id (ρ : Density H) : ρ.spectralMap id = ρ.op :=
@@ -137,6 +153,30 @@ lemma logOp_apply_of_eigenvector (ρ : Density H) {v : H.state} {a : ℝ}
     (hv : ρ.op v = (a : ℂ) • v) : ρ.logOp v = (Real.log a : ℂ) • v :=
   ρ.spectralMap_apply_of_eigenvector Real.log hv
 
+/-- Spectral calculus intertwines an isometry on its image for every scalar function. -/
+lemma spectralMap_comp_isometry {K : Qudit} (ρ : Density H) (f : ℝ → ℝ)
+    (V : H ⟶ K) [IsIsometry V] :
+    (ρ.map V).spectralMap f ∘ₗ V.hom = V.hom ∘ₗ ρ.spectralMap f := by
+  apply ρ.eigenbasis.toBasis.ext
+  intro i
+  change (ρ.map V).spectralMap f (V.hom (ρ.eigenbasis i)) = V.hom (ρ.spectralMap f (ρ.eigenbasis i))
+  rw [spectralMap_apply_eigenbasis, map_smul]
+  apply spectralMap_apply_of_eigenvector
+  rw [op_map_apply, apply_eigenbasis, map_smul]
+
+/-- A spectral function vanishing at zero commutes with isometric embedding, including
+on the orthogonal complement of the image. -/
+lemma spectralMap_map_isometry {K : Qudit} (ρ : Density H) (f : ℝ → ℝ) (hf : f 0 = 0)
+    (V : H ⟶ K) [IsIsometry V] :
+    (ρ.map V).spectralMap f = V.hom ∘ₗ ρ.spectralMap f ∘ₗ V.hom.adjoint := by
+  ext x
+  let y := V.hom (V.hom.adjoint x)
+  have hk : (ρ.map V).op (x - y) = (0 : ℂ) • (x - y) := by
+    simp [op_map, y, hom_adjoint_apply_of_isIsometry]
+  have hz := (ρ.map V).spectralMap_apply_of_eigenvector f (a := 0) hk
+  rw [map_sub, hf, Complex.ofReal_zero, zero_smul, sub_eq_zero] at hz
+  exact hz.trans (LinearMap.congr_fun (ρ.spectralMap_comp_isometry f V) (V.hom.adjoint x))
+
 /-- Spectral functions commute with unitary transport between Hilbert spaces. -/
 lemma spectralMap_map_unitary {K : Qudit} (ρ : Density H) (f : ℝ → ℝ)
     (U : H ⟶ K) [IsUnitary U] :
@@ -145,9 +185,8 @@ lemma spectralMap_map_unitary {K : Qudit} (ρ : Density H) (f : ℝ → ℝ)
   intro i
   change (ρ.map U).spectralMap f (U.hom (ρ.eigenbasis i)) =
     U.hom (ρ.spectralMap f (U.hom.adjoint (U.hom (ρ.eigenbasis i))))
-  rw [hom_adjoint_apply_of_isIsometry, spectralMap_apply_eigenbasis, map_smul]
-  apply spectralMap_apply_of_eigenvector
-  rw [op_map_apply, apply_eigenbasis, map_smul]
+  rw [hom_adjoint_apply_of_isIsometry]
+  exact LinearMap.congr_fun (ρ.spectralMap_comp_isometry f U) (ρ.eigenbasis i)
 
 /-- Transporting both the state and an observable isometrically preserves its expectation. -/
 lemma expectation_map_conj {K : Qudit} (ρ : Density H) (A : Operator H)
@@ -168,6 +207,11 @@ lemma expectation_map_conj {K : Qudit} (ρ : Density H) (A : Operator H)
     _ = _ := by
       simp only [LinearMap.comp_assoc, hom_adjoint_comp_of_isIsometry, LinearMap.comp_id]
       rfl
+
+/-- The supported logarithm commutes with isometric embedding, including added zero modes. -/
+lemma logOp_map_isometry {K : Qudit} (ρ : Density H) (V : H ⟶ K) [IsIsometry V] :
+    (ρ.map V).logOp = V.hom ∘ₗ ρ.logOp ∘ₗ V.hom.adjoint :=
+  ρ.spectralMap_map_isometry Real.log Real.log_zero V
 
 /-- The supported logarithm commutes with unitary transport. -/
 lemma logOp_map_unitary {K : Qudit} (ρ : Density H) (U : H ⟶ K) [IsUnitary U] :
