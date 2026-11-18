@@ -114,6 +114,16 @@ lemma sandwichedRenyiRelativeEntropy_map_isometry (ρ σ : Density H) (α : Set.
   simp only [sandwichedRenyiRelativeEntropy, absolutelyContinuous_map_iff,
     sandwichedTraceFunctional_map_isometry _ _ α.property]
 
+/-- Evaluate the trace functional in an orthonormal eigenbasis of the sandwich. -/
+lemma sandwichedTraceFunctional_eq_sum_of_eigenbasis {ι : Type*} [Fintype ι]
+    (ρ σ : Density H) (α : ℝ) (b : OrthonormalBasis ι ℂ H.state) (w : ι → ℝ)
+    (hw : ∀ i, ρ.renyiSandwich σ (1 - α⁻¹) (b i) = (w i : ℂ) • b i) :
+    ρ.sandwichedTraceFunctional σ α = ∑ i, w i ^ α := by
+  have he := Operator.eigenvalues_eq_of_eigenbasis
+    (ρ.renyiSandwich_positive σ (1 - α⁻¹)).isSymmetric b w hw
+  simpa only [sandwichedTraceFunctional, Finset.sum, Multiset.map_map, Function.comp_def] using
+    congrArg (fun m : Multiset ℝ => (m.map (fun r => r ^ α)).sum) he
+
 /-- Evaluate the trace functional in any common eigenbasis of the two states. -/
 lemma sandwichedTraceFunctional_eq_sum_of_common_eigenbasis {ι : Type*} [Fintype ι]
     (ρ σ : Density H) (α : ℝ) (b : OrthonormalBasis ι ℂ H.state) (p q : ι → ℝ)
@@ -126,9 +136,7 @@ lemma sandwichedTraceFunctional_eq_sum_of_common_eigenbasis {ι : Type*} [Fintyp
     simp only [renyiSandwich, adjoint_spectralMap, LinearMap.comp_apply,
       σ.spectralMap_apply_of_eigenvector _ (hq i), map_smul, hp, smul_smul, w, Complex.ofReal_mul,
       mul_assoc]
-  have he := Operator.eigenvalues_eq_of_eigenbasis (ρ.renyiSandwich_positive σ s).isSymmetric b w hw
-  simpa only [sandwichedTraceFunctional, Finset.sum, Multiset.map_map, Function.comp_def] using
-    congrArg (fun m : Multiset ℝ => (m.map (fun r => r ^ α)).sum) he
+  exact ρ.sandwichedTraceFunctional_eq_sum_of_eigenbasis σ α b w hw
 
 /-- Identical densities have unit sandwiched trace functional at every order above one. -/
 lemma sandwichedTraceFunctional_self (ρ : Density H) {α : ℝ} (hα : 1 < α) :

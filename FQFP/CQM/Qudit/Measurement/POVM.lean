@@ -105,6 +105,19 @@ lemma probability_pure (M : POVM H ι) (v : UnitState H) (i : ι) :
     M.probability (Density.pure v) i = (inner ℂ (v : H.state) (M.op i v)).re :=
   Density.expectation_pure v (M.op i)
 
+/-- The binary projective measurement testing membership in a subspace.
+The outcome `true` corresponds to the projection onto `S`. -/
+def ofSubmodule (S : Submodule ℂ H.state) : POVM H Bool where
+  op b := if b then S.starProjection.toLinearMap else 1 - S.starProjection.toLinearMap
+  positive := by
+    intro b
+    cases b
+    · change (1 - S.starProjection.toLinearMap).IsPositive
+      have h := Sᗮ.isSymmetricProjection_starProjection.isPositive
+      rwa [S.starProjection_orthogonal'] at h
+    · exact S.isSymmetricProjection_starProjection.isPositive
+  sum_op := by simp
+
 /-- The projective POVM associated with any explicit orthonormal basis. -/
 def ofBasis (b : OrthonormalBasis ι ℂ H.state) : POVM H ι where
   op i := Operator.outer (b i) (b i)

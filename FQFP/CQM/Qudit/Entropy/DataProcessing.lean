@@ -5,8 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Qudit.Entropy.RelativePartialTrace
-public import FQFP.CQM.Qudit.Entropy.RenyiPartialTrace
+public import FQFP.CQM.Qudit.Entropy.Relative.PartialTrace
+public import FQFP.CQM.Qudit.Entropy.SandwichedRenyi.PartialTrace
 public import FQFP.CQM.Qudit.Channel.Dilation.Basic
 public import FQFP.CQM.Qudit.Channel.MeasurePrepare
 

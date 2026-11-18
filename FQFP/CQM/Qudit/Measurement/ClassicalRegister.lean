@@ -109,13 +109,22 @@ lemma record_apply (I : Instrument H K ι) (b : OrthonormalBasis ι ℂ C.state)
   by simp only [record, LinearMap.sum_apply, LinearMap.comp_apply,
     Superoperator.conjugate_tensorInsertion]
 
+/-- Recording an outcome and discarding its register implements the unread instrument channel. -/
+lemma partialTraceRight_comp_record (I : Instrument H K ι) (b : OrthonormalBasis ι ℂ C.state) :
+    (QuantumChannel.partialTraceRight K C).comp (I.record b) = I.toChannel := by
+  apply QuantumChannel.ext
+  apply LinearMap.ext
+  intro A
+  change Operator.partialTraceRight ((I.record b).toSuperoperator A) = I.toChannel.toSuperoperator A
+  simp only [record_apply, map_sum,
+    Operator.partialTraceRight_tensor, Operator.trace_outer, b.inner_eq_one, one_smul]
+  exact (LinearMap.sum_apply _ _ _).symm
+
 /-- Discarding the classical register gives the unread instrument channel. -/
 lemma partialTraceRight_record (I : Instrument H K ι) (b : OrthonormalBasis ι ℂ C.state)
     (ρ : Density H) : ((I.record b).map ρ).partialTraceRight = I.toChannel.map ρ := by
-  apply Density.ext
-  simp only [Density.op_partialTraceRight, QuantumChannel.op_map, record_apply, map_sum,
-    Operator.partialTraceRight_tensor, Operator.trace_outer, b.inner_eq_one, one_smul]
-  exact (LinearMap.sum_apply _ _ _).symm
+  rw [← I.partialTraceRight_comp_record b, QuantumChannel.map_comp,
+    QuantumChannel.map_partialTraceRight]
 
 /-- The classical outcome distribution as a diagonal density operator in the chosen basis. -/
 def outcomeState (I : Instrument H K ι) (b : OrthonormalBasis ι ℂ C.state)

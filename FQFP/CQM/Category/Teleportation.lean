@@ -5,7 +5,7 @@ Authors: Bingyu Xia
 -/
 module
 
-public import FQFP.CategoryTheory.Dagger.Basic
+public import FQFP.CategoryTheory.Monoidal.Dagger.Basic
 public import FQFP.CategoryTheory.Monoidal.Rigid.Basic
 
 /-!
@@ -74,6 +74,19 @@ universe u v
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
 
+/-- Attach a bipartite resource to an input and group the input with the resource's
+first factor for measurement. The second factor is the receiver's system. -/
+def attachTeleportationResource (A : C) {R B : C} (η : 𝟙_ C ⟶ R ⊗ B) :
+    A ⟶ (A ⊗ R) ⊗ B :=
+  (ρ_ A).inv ≫ (𝟙 A ⊗ₘ η) ≫ (α_ A R B).inv
+
+/-- A normalized resource, expressed as an isometry from the tensor unit, gives an
+isometric preparation on every input. -/
+instance {D : Type*} [Category D] [MonoidalDaggerCategory D] (A : D) {R B : D}
+    (η : 𝟙_ D ⟶ R ⊗ B) [IsIsometry η] : IsIsometry (attachTeleportationResource A η) := by
+  unfold attachTeleportationResource
+  infer_instance
+
 /-- The branch of the teleportation protocol with resource state `η : 𝟙_ C ⟶ R ⊗ L`, branch
 effect `x : L ⊗ R ⟶ 𝟙_ C` and correction `U : L ⟶ L`.
 
@@ -81,7 +94,7 @@ Reading the composite in order: the input `L` is paired with the unit and the re
 `R ⊗ L` is inserted; the associator brings the input next to `R`, the effect `x` contracts that
 pair, and the correction `U` is applied to the remaining `L`. -/
 def teleportationBranch {L R : C} (η : 𝟙_ C ⟶ R ⊗ L) (x : L ⊗ R ⟶ 𝟙_ C) (U : L ⟶ L) : L ⟶ L :=
-  (ρ_ L).inv ≫ (L ◁ η) ≫ (α_ L R L).inv ≫ (x ▷ L) ≫ (λ_ L).hom ≫ U
+  attachTeleportationResource L η ≫ (x ▷ L) ≫ (λ_ L).hom ≫ U
 
 /-- Appending a morphism after a branch is the same as extending the correction. -/
 lemma teleportationBranch_comp {L R : C} (η : 𝟙_ C ⟶ R ⊗ L) (x : L ⊗ R ⟶ 𝟙_ C)
@@ -100,8 +113,8 @@ theorem teleportationBranch_evaluation (V : L ⟶ L) :
   have h := tensorRightHomEquiv_whiskerRight_comp_evaluation_pairing (L := L) (R := R) V
   have key : teleportationBranch (η_ R L) ((V ▷ R) ≫ ε_ R L) (𝟙 L)
       = (tensorRightHomEquiv L R L (𝟙_ C)) ((V ▷ R) ≫ ε_ R L) ≫ (λ_ L).hom := by
-    simp only [teleportationBranch, Category.comp_id, tensorRightHomEquiv, Equiv.coe_fn_mk,
-      Category.assoc]
+    simp only [teleportationBranch, attachTeleportationResource, id_tensorHom, Category.comp_id,
+      tensorRightHomEquiv, Equiv.coe_fn_mk, Category.assoc]
   rw [key, h]
   simp
 

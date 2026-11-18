@@ -6,7 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.Channel.Basic
-public import FQFP.CQM.Qudit.State.Separable
+public import FQFP.CQM.Qudit.State.Composite.Separable
 
 /-!
 # Channels acting on finite ensembles and separable states

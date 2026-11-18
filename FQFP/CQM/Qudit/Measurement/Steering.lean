@@ -6,9 +6,9 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.Measurement.POVM
-public import FQFP.CQM.Qudit.State.MinimalPurification
+public import FQFP.CQM.Qudit.State.Purification.Minimal
 public import FQFP.CQM.Qudit.State.Ensemble
-public import FQFP.CQM.Qudit.State.PurificationMixture
+public import FQFP.CQM.Qudit.State.Purification.Mixture
 public import FQFP.Analysis.InnerProductSpace.TraceNorm
 
 /-!

@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Qudit.State.Spectral
+public import FQFP.CQM.Qudit.State.Spectral.Basic
 public import Mathlib.LinearAlgebra.Matrix.Rank
 
 /-!

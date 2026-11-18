@@ -6,7 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.State.Pure
-public import FQFP.CQM.Qudit.State.OperatorSqrt
+public import FQFP.CQM.Qudit.State.Spectral.OperatorSqrt
 
 /-!
 # Support inclusion for density operators
@@ -33,6 +33,29 @@ variable {H : Qudit}
 
 /-- The support of a density operator is its range. -/
 def support (ρ : Density H) : Submodule ℂ H.state := LinearMap.range ρ.op
+
+/-- A positive observable has zero expectation exactly when it annihilates the state's support. -/
+lemma expectation_eq_zero_iff (ρ : Density H) {A : Operator H} (hA : A.IsPositive) :
+    ρ.expectation A = 0 ↔ ρ.support ≤ LinearMap.ker A := by
+  rw [support, LinearMap.range_le_ker_iff, ← Module.End.mul_eq_comp]
+  change (A * ρ.op).trace.re = 0 ↔ A * ρ.op = 0
+  refine ⟨fun h => ?_, fun h => by simp [h]⟩
+  obtain ⟨v, hv⟩ := Operator.exists_sum_outer_of_isPositive ρ.op ρ.positive
+  rw [hv, Finset.mul_sum] at h ⊢
+  simp only [map_sum, Operator.trace_mul_outer, Complex.re_sum] at h
+  have hz (i) : A (v i) = 0 :=
+    (A.apply_eq_zero_iff_re_inner_eq_zero hA _).mpr
+      ((Finset.sum_eq_zero_iff_of_nonneg (fun j _ => hA.re_inner_nonneg_right (v j))).mp h i
+        (Finset.mem_univ i))
+  ext x
+  simp only [LinearMap.sum_apply, Module.End.mul_apply, Operator.outer_apply, map_smul, hz,
+    smul_zero, Finset.sum_const_zero, LinearMap.zero_apply]
+
+/-- An observable bounded above by one has expectation one exactly when it fixes the support. -/
+lemma expectation_eq_one_iff (ρ : Density H) {A : Operator H} (hA : A ≤ 1) :
+    ρ.expectation A = 1 ↔ ρ.support ≤ LinearMap.ker (1 - A) := by
+  rw [← ρ.expectation_eq_zero_iff (LinearMap.le_def.mp hA), expectation_sub, expectation_one,
+    sub_eq_zero, eq_comm]
 
 /-- Quantum absolute continuity, expressed by reverse inclusion of kernels. -/
 def AbsolutelyContinuous (ρ σ : Density H) : Prop := LinearMap.ker σ.op ≤ LinearMap.ker ρ.op

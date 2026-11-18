@@ -5,15 +5,18 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.CQM.Category.Operator
 public import FQFP.CQM.Qudit.Dagger
+public import FQFP.CQM.Qudit.Monoidal
 public import FQFP.Analysis.InnerProductSpace.PositiveTrace
+public import Mathlib.CategoryTheory.Linear.Basic
 
 /-!
 # Operators on a qudit
 
-`Operator H` uses Mathlib's linear endomorphisms, with their existing algebra, adjoint
-and positivity APIs. The category-to-operator bridge is `Hom.hom` in one direction and
-`ofHom` in the other. `outer v w` is the linear map `x ↦ inner ℂ w x • v`.
+`Qudit.endAlgEquiv` interprets a categorical operator as a linear endomorphism of
+the underlying complex space. The qudit operator API uses this linear representation.
+`outer v w` is the linear map `x ↦ inner ℂ w x • v`.
 Its trace is `inner ℂ w v`, and `outer v v` is positive without any normalization assumption.
 
 Coordinates use Mathlib's `LinearMap.toMatrixOrthonormal`; no second matrix algebra is defined.
@@ -37,6 +40,38 @@ namespace Qudit
 /-- The algebra of linear operators on a qudit. -/
 abbrev Operator (H : Qudit) := Module.End ℂ H.state
 
+noncomputable section
+
+instance {H K : Qudit} : SMul ℂ (H ⟶ K) where
+  smul c f := ofHom (c • f.hom)
+
+/-- Scalar multiplication of qudit arrows acts on their underlying linear maps. -/
+@[simp] lemma hom_smul {H K : Qudit} (c : ℂ) (f : H ⟶ K) : (c • f).hom = c • f.hom := rfl
+
+instance : Linear ℂ Qudit where
+  homModule H K := Function.Injective.module ℂ
+    (⟨⟨Hom.hom, hom_zero⟩, hom_add⟩ : (H ⟶ K) →+ (H.state →ₗ[ℂ] K.state))
+    hom_injective hom_smul
+  smul_comp _ _ _ c f g := hom_ext (g.hom.comp_smul c f.hom)
+  comp_smul _ _ _ _ _ _ := hom_ext rfl
+
+/-- Categorical operators on a qudit form the complex algebra of linear endomorphisms. -/
+def endAlgEquiv (H : Qudit) : CQM.Operator H ≃ₐ[ℂ] Operator H :=
+  AlgEquiv.ofLinearEquiv
+    { toEquiv := End.homEquiv.trans homEquiv
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl } rfl (fun _ _ ↦ rfl)
+
+/-- The linear operator represented by a categorical endomorphism. -/
+@[simp] lemma endAlgEquiv_apply {H : Qudit} (A : CQM.Operator H) :
+    endAlgEquiv H A = A.asHom.hom := rfl
+
+/-- The categorical star is represented by the Hilbert space adjoint. -/
+lemma endAlgEquiv_star {H : Qudit} (A : CQM.Operator H) :
+    endAlgEquiv H (star A) = (endAlgEquiv H A).adjoint := rfl
+
+end
+
 namespace Operator
 
 variable {H : Qudit}
@@ -54,11 +89,16 @@ lemma outer_apply (v w x : H.state) : outer v w x = inner ℂ w x • v := rfl
 /-- An outer product is the composite of a bra followed by a ket. -/
 lemma outer_eq_ket_comp_bra (v w : H.state) : outer v w = ket v ∘ₗ bra w := rfl
 
+/-- Interpreting a categorical outer product of kets gives the linear outer product. -/
+lemma endAlgEquiv_outer (v w : H.state) :
+    endAlgEquiv H (CQM.Operator.outer (ketArrow v) (ketArrow w)) = outer v w := by
+  simp only [endAlgEquiv_apply, CQM.Operator.outer_asHom, ketArrow_dagger, hom_comp]
+  rfl
+
 /-- The adjoint of an outer product exchanges its vectors. -/
 @[simp]
 lemma adjoint_outer (v w : H.state) : (outer v w).adjoint = outer w v := by
-  simp only [outer_eq_ket_comp_bra, LinearMap.adjoint_comp,
-    bra, ket, LinearMap.adjoint_innerₛₗ_apply, LinearMap.adjoint_toSpanSingleton]
+  rw [← endAlgEquiv_outer, ← endAlgEquiv_star, CQM.Operator.star_outer, endAlgEquiv_outer]
 
 /-- The trace of an outer product is the corresponding inner product. -/
 @[simp]
@@ -67,10 +107,8 @@ lemma trace_outer (v w : H.state) : (outer v w).trace = inner ℂ w v :=
 
 /-- The outer square of any vector is positive. -/
 lemma isPositive_outer (v : H.state) : (outer v v).IsPositive := by
-  rw [outer_eq_ket_comp_bra]
-  have h : (ket v).adjoint = bra v := LinearMap.adjoint_toSpanSingleton v
-  rw [← h]
-  exact LinearMap.isPositive_self_comp_adjoint (ket v)
+  rw [← endAlgEquiv_outer]
+  exact hom_isPositive_of_isPositive (CQM.Operator.outer (ketArrow v) (ketArrow v)).asHom
 
 /-- Multiplying an outer product on the left applies the operator to its ket. -/
 lemma mul_outer (A : Operator H) (v w : H.state) : A * outer v w = outer (A v) w := by
@@ -146,6 +184,18 @@ lemma sum_outer_basis (b : OrthonormalBasis ι ℂ H.state) (A : Operator H) :
   ext x
   simpa only [LinearMap.sum_apply, outer_apply, ← map_smul, ← map_sum] using
     congrArg A (b.sum_repr' x)
+
+/-- The quadratic form of an operator with a real orthonormal diagonalization. -/
+lemma re_inner_apply_eq_sum_of_eigenbasis (b : OrthonormalBasis ι ℂ H.state) (A : Operator H)
+    (w : ι → ℝ) (hw : ∀ i, A (b i) = (w i : ℂ) • b i) (v : H.state) :
+    (inner ℂ v (A v)).re = ∑ i, w i * ‖inner ℂ (b i) v‖ ^ 2 := by
+  rw [← sum_outer_basis b A]
+  simp only [LinearMap.sum_apply, hw, outer_smul_left, LinearMap.smul_apply, outer_apply,
+    inner_sum, inner_smul_right, Complex.re_sum]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [← inner_conj_symm v (b i), Complex.mul_conj']
+  simp only [← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.ofReal_re]
 
 /-- A linear map on operators is determined on basis matrix units. -/
 lemma basis_outer_ext {V : Type*} [AddCommGroup V] [Module ℂ V]

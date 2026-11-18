@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Qudit.State.Composite
+public import FQFP.CQM.Qudit.State.Composite.Basic
 public import FQFP.CQM.Qudit.Teleportation.Basic
 
 /-!

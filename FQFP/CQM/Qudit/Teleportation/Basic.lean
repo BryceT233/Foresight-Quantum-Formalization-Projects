@@ -292,7 +292,7 @@ lemma branch_no_correction (U : Qubit ⟶ Qubit) (x : Qubit.state) :
           congr 1
           conv_rhs => rw [← (ZBasis 2).sum_repr' (U† x)]
           exact Finset.sum_congr rfl fun i _ => by rw [basisForm_apply_basis, bra_apply]
-  rw [teleportationBranch]
+  rw [teleportationBranch, attachTeleportationResource, id_tensorHom]
   simp only [comp_apply, Category.comp_id]
   rw [rightUnitor_inv_apply, whiskerLeft_apply, bellState_apply, one_smul,
     tmul_smul_sum_tmul]

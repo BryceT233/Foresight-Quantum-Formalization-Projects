@@ -7,7 +7,7 @@ module
 
 public import FQFP.CQM.Qudit.Measurement.Instrument
 public import FQFP.CQM.Qudit.Measurement.POVM
-public import FQFP.CQM.Qudit.State.OperatorSqrt
+public import FQFP.CQM.Qudit.State.Spectral.OperatorSqrt
 
 /-!
 # The Lüders instrument of a POVM

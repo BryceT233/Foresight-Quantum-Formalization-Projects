@@ -5,8 +5,9 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Qudit.State.OperatorSqrt
-public import FQFP.CQM.Qudit.State.MinimalPurification
+public import FQFP.CQM.Qudit.State.Spectral.OperatorSqrt
+public import FQFP.CQM.Qudit.State.Support
+public import FQFP.CQM.Qudit.State.Purification.Minimal
 public import FQFP.CQM.Qudit.Channel.Choi
 public import FQFP.Analysis.InnerProductSpace.Gram
 public import FQFP.Analysis.InnerProductSpace.TraceNorm
@@ -412,6 +413,15 @@ lemma fidelity_comm (ρ σ : Density H) : ρ.fidelity σ = σ.fidelity ρ := by
     rw [← he, norm_inner_symm]
     exact b.norm_inner_le_fidelity a φ a.purify hφ a.partialTraceRight_pure_purify
   exact le_antisymm (h ρ σ) (h σ ρ)
+
+/-- Two densities have zero fidelity exactly when their supports are orthogonal. -/
+lemma fidelity_eq_zero_iff (ρ σ : Density H) : ρ.fidelity σ = 0 ↔ ρ.support ⟂ σ.support := by
+  have hr (τ : Density H) : LinearMap.range τ.op.sqrt = τ.support := by
+    simpa only [support, Operator.adjoint_sqrt, ← Module.End.mul_eq_comp,
+      Operator.sqrt_mul_sqrt _ τ.positive] using τ.op.sqrt.range_self_comp_adjoint.symm
+  rw [fidelity_comm, fidelity, LinearMap.traceNorm_eq_zero_iff, Module.End.mul_eq_comp,
+    ← LinearMap.range_le_ker_iff, ← σ.op.sqrt_positive.isSymmetric.orthogonal_range, hr, hr]
+  rfl
 
 /-- Fidelity against a pure density is the square root of its projector expectation.
 This uses the unsquared convention and includes zero expectations and singular densities. -/

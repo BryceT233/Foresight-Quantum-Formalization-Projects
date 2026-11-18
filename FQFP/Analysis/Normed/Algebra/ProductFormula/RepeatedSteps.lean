@@ -59,6 +59,19 @@ theorem norm_lieTrotter_pow_sub_exp_le [NormedAlgebra ℚ A] (K : Fin Γ → A)
       (firstOrder_bound Γ K hK (t / r) (div_nonneg ht (Nat.cast_nonneg r)))
       (Nat.cast_nonneg r)).trans_eq (by field_simp)
 
+/-- The ordered exponential product satisfies the first-order bound for either sign of time. -/
+theorem norm_ordered_exp_pow_sub_exp_le [NormedAlgebra ℚ A] (K : Fin Γ → A)
+    (hK : ∀ i, star (K i) = -K i) (t : ℝ) {r : ℕ} (hr : 0 < r) :
+    ‖((List.finRange Γ).reverse.map fun i => exp ((t / r) • K i)).prod ^ r -
+      exp (t • ∑ i, K i)‖ ≤ (t ^ 2 / 2) * (∑ i, ‖⁅upperSum K i, K i⁆‖) / r := by
+  obtain rfl : normedAlgebraReal A = ‹NormedAlgebra ℝ A› := Subsingleton.elim _ _
+  by_cases ht : 0 ≤ t
+  · simpa only [← lieTrotter_eq_prod] using norm_lieTrotter_pow_sub_exp_le K hK ht hr
+  · have hneg (i : Fin Γ) : star (-K i) = -(-K i) := by rw [star_neg, hK]
+    have h := norm_lieTrotter_pow_sub_exp_le (fun i => -K i) hneg (t := -t) (by linarith) hr
+    simpa only [lieTrotter_eq_prod, neg_div, neg_smul, smul_neg, neg_neg, upperSum,
+      Finset.sum_neg_distrib, neg_lie, lie_neg, neg_sq] using h
+
 /-- The repeated Strang bound retains the constants `1/12` and `1/24` of the two
 double commutators and decreases quadratically with the step count. -/
 theorem norm_suzuki2_pow_sub_exp_le (K : Fin Γ → A) (hK : ∀ i, star (K i) = -K i)

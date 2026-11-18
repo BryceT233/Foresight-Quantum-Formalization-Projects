@@ -6,7 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.Channel.Process.Classical
-public import FQFP.CQM.Qudit.State.FunctionalCalculus
+public import FQFP.CQM.Qudit.State.Spectral.FunctionalCalculus
 import Mathlib.Algebra.Order.Chebyshev
 
 /-!

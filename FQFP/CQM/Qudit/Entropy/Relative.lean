@@ -6,7 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.Entropy.Basic
-public import FQFP.CQM.Qudit.State.FunctionalCalculus
+public import FQFP.CQM.Qudit.State.Spectral.FunctionalCalculus
 public import FQFP.CQM.Qudit.State.Support
 public import FQFP.Analysis.SpecialFunctions.RelativeEntropy
 
