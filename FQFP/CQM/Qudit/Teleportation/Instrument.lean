@@ -34,7 +34,7 @@ namespace Qudit
 noncomputable section
 
 /-- The actual Bell measurement branch, with the resource attached but no correction yet. -/
-def teleportationMeasurementKraus (i : Fin 4) : Qubit.state →ₗ[ℂ] Qubit.state :=
+def teleportationMeasurementKraus (i : Fin 4) : Operator Qubit :=
   (teleportationBranch bellState (qubitBellEffects i) (𝟙 Qubit)).hom
 
 /-- The corrected branch factors into the observed measurement branch and its correction. -/

@@ -30,13 +30,18 @@ open Qudit
 namespace QuantumProgram
 
 /-- A classical store and a positive quantum operator whose trace carries its weight. -/
-structure CQState (Store : Type*) (H : Qudit) where
+@[ext] structure CQState (Store : Type*) (H : Qudit) where
   /-- Values of the classical variables. -/
   store : Store
   /-- The unnormalized quantum state on the whole system. -/
   op : Operator H
   /-- The quantum operator is positive, also for a zero-weight branch. -/
   positive : op.IsPositive
+
+/-- Apply a quantum channel to a weighted branch while retaining the classical store. -/
+def CQState.map {Store : Type*} {H K : Qudit} (s : CQState Store H) (Φ : QuantumChannel H K) :
+    CQState Store K :=
+  ⟨s.store, Φ.toSuperoperator s.op, Φ.completelyPositive.isPositive _ s.positive⟩
 
 variable {Store Cell : Type*} {H : Qudit} {m k : ℕ}
 

@@ -96,8 +96,12 @@ lemma dagger_cup : A.cup† = A.cap := by
   simp [FrobeniusObj.cup, FrobeniusObj.cap, h, A.dagger_one]
 
 /-- The elementary two-input, two-output spider is self-adjoint. -/
-lemma dagger_mul_comul : (A.mul ≫ A.comul)† = A.mul ≫ A.comul := by
-  rw [dagger_comp, ← A.dagger_mul, involutive_dagger]
+instance isSelfAdjoint_mul_comul : DaggerCategory.IsSelfAdjoint (A.mul ≫ A.comul) := by
+  rw [← A.dagger_mul]
+  infer_instance
+
+lemma dagger_mul_comul : (A.mul ≫ A.comul)† = A.mul ≫ A.comul :=
+  IsSelfAdjoint.dagger_eq _
 
 end DaggerFrobeniusObj
 

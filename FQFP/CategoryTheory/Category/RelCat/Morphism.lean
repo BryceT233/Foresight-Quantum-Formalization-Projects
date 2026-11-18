@@ -54,6 +54,12 @@ theorem isIsometry_iff_leftTotal_leftUnique (f : X ⟶ Y) : DaggerCategory.IsIso
   · intro h
     exact ⟨Hom.ext _ _ (by simpa only [Hom.rel_comp, rel_dagger, Hom.rel_id] using h)⟩
 
+/-- In `RelCat`, a self-adjoint endomorphism is exactly a symmetric relation. -/
+theorem isSelfAdjoint_iff_isSymm (f : X ⟶ X) : DaggerCategory.IsSelfAdjoint f ↔
+    f.rel.IsSymm := by
+  exact ⟨fun h ↦ SetRel.inv_eq_self_iff.1 (congrArg Hom.rel h.dagger_eq),
+    fun h ↦ ⟨Hom.ext _ _ (SetRel.inv_eq_self_iff.2 h)⟩⟩
+
 /-- In `RelCat`, a projection is exactly a symmetric and transitive relation, i.e. a partial
 equivalence relation. -/
 theorem isProj_iff_symm_trans (f : X ⟶ X) : DaggerCategory.IsProj f ↔
@@ -61,7 +67,7 @@ theorem isProj_iff_symm_trans (f : X ⟶ X) : DaggerCategory.IsProj f ↔
   constructor
   · intro h
     constructor
-    · exact SetRel.inv_eq_self_iff.1 (congrArg Hom.rel h.selfAdjoint)
+    · exact (isSelfAdjoint_iff_isSymm f).1 inferInstance
     · apply SetRel.isTrans_iff_comp_subset_self.2
       exact (congrArg Hom.rel h.idem : f.rel.comp f.rel = f.rel).le
   · rintro ⟨hsymm, htrans⟩
@@ -77,8 +83,7 @@ theorem isPositive_iff_isSymm_reflOnDom (f : X ⟶ X) : DaggerCategory.IsPositiv
   · intro h
     obtain ⟨Y, g, hfg⟩ := h.out
     constructor
-    · rw [hfg, Hom.rel_comp, rel_dagger]
-      exact SetRel.comp_inv_isSymm g.rel
+    · exact (isSelfAdjoint_iff_isSymm f).1 inferInstance
     · rintro x ⟨x', hxx'⟩
       rw [hfg, Hom.rel_comp] at hxx' ⊢
       rcases hxx' with ⟨y, hxy, _⟩

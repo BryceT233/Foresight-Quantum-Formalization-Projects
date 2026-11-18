@@ -8,6 +8,7 @@ module
 public import FQFP.Analysis.InnerProductSpace.PartialTrace
 public import FQFP.CQM.Qudit.State.Density
 public import FQFP.CQM.Qudit.Monoidal
+public import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
 # Composite systems and reduced density operators
@@ -93,6 +94,27 @@ def tensor (A : Operator H) (B : Operator K) : Operator (H ⊗ K) := TensorProdu
 @[simp]
 lemma tensor_apply (A : Operator H) (B : Operator K) (x : H.state) (y : K.state) :
     tensor A B (x ⊗ₜ[ℂ] y) = A x ⊗ₜ[ℂ] B y := rfl
+
+/-- Tensor a qudit operator with the identity on the right, preserving products and adjoints. -/
+def tensorOneHom (H K : Qudit) : Operator H →⋆ₐ[ℂ] Operator (H ⊗ K) where
+  toAlgHom := Module.End.rTensorAlgHom ℂ H.state K.state
+  map_star' A := (LinearMap.adjoint_rTensor (G := K.state) A).symm
+
+/-- Tensor a qudit operator with the identity on the left, preserving products and adjoints. -/
+def oneTensorHom (H K : Qudit) : Operator K →⋆ₐ[ℂ] Operator (H ⊗ K) where
+  toAlgHom := Module.End.lTensorAlgHom ℂ K.state H.state
+  map_star' A := (LinearMap.adjoint_lTensor (G := H.state) A).symm
+
+/-- The right identity extension is the existing operator tensor product. -/
+lemma tensorOneHom_apply (A : Operator H) : tensorOneHom H K A = tensor A 1 := rfl
+
+/-- The left identity extension is the existing operator tensor product. -/
+lemma oneTensorHom_apply (B : Operator K) : oneTensorHom H K B = tensor 1 B := rfl
+
+/-- Operators on opposite tensor factors commute. -/
+lemma commute_tensor_one_one_tensor (A : Operator H) (B : Operator K) :
+    Commute (tensor A (1 : Operator K)) (tensor (1 : Operator H) B) :=
+  (LinearMap.rTensor_comp_lTensor _ A B).trans (LinearMap.lTensor_comp_rTensor _ A B).symm
 
 /-- The trace of a product operator is the product of its traces. -/
 @[simp]

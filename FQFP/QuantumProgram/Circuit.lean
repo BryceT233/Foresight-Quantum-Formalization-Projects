@@ -71,6 +71,11 @@ theorem Register.dagger_liftHom (r : Register H S) (f : S ⟶ S) :
     (r.liftHom f)† = r.liftHom f† := by
   induction r <;> simp [liftHom, *]
 
+/-- A self-adjoint register operation remains self-adjoint on the entire memory. -/
+instance Register.isSelfAdjoint_liftHom (r : Register H S) (f : S ⟶ S)
+    [DaggerCategory.IsSelfAdjoint f] : DaggerCategory.IsSelfAdjoint (r.liftHom f) :=
+  ⟨by rw [r.dagger_liftHom, IsSelfAdjoint.dagger_eq f]⟩
+
 /-- Extending an operator commutes with taking its adjoint. -/
 theorem Register.liftEnd_star (r : Register H S) (A : CQM.Operator S) :
     r.liftEnd (star A) = star (r.liftEnd A) := End.ext (r.dagger_liftHom A.asHom).symm

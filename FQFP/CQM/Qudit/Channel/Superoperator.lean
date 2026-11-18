@@ -150,7 +150,7 @@ lemma conjugate_apply (f : H.state →ₗ[ℂ] K.state) (A : Operator H) :
 
 /-- Conjugation by the identity is the identity superoperator. -/
 lemma conjugate_id (H : Qudit) :
-    conjugate (LinearMap.id : H.state →ₗ[ℂ] H.state) = LinearMap.id := by
+    conjugate (LinearMap.id : Operator H) = LinearMap.id := by
   ext A x
   simp [conjugate]
 
@@ -174,6 +174,18 @@ lemma conjugate_tensor (f : H.state →ₗ[ℂ] K.state) (g : L.state →ₗ[ℂ
 /-- Isometric change of coordinates on operator spaces. -/
 def relabel (e : H.state ≃ₗᵢ[ℂ] K.state) : Superoperator H K :=
   e.toLinearEquiv.conj.toLinearMap
+
+/-- Isometric relabeling as an equivalence of operator star algebras. -/
+def relabelEquiv (e : H.state ≃ₗᵢ[ℂ] K.state) : Operator H ≃⋆ₐ[ℂ] Operator K :=
+  .ofAlgEquiv (e.toLinearEquiv.conjAlgEquiv ℂ) fun A => by
+    change e.toLinearMap ∘ₗ A.adjoint ∘ₗ e.symm.toLinearMap =
+      (e.toLinearMap ∘ₗ A ∘ₗ e.symm.toLinearMap).adjoint
+    simp only [LinearMap.adjoint_comp, LinearIsometryEquiv.adjoint_toLinearMap_eq_symm,
+      LinearIsometryEquiv.symm_symm, LinearMap.comp_assoc]
+
+/-- Forgetting the multiplicative and adjoint structure gives the relabeling superoperator. -/
+lemma relabelEquiv_apply (e : H.state ≃ₗᵢ[ℂ] K.state) (A : Operator H) :
+    relabelEquiv e A = relabel e A := rfl
 
 /-- Isometric relabeling agrees with conjugation by the isometry. -/
 lemma relabel_eq_conjugate (e : H.state ≃ₗᵢ[ℂ] K.state) :

@@ -133,7 +133,7 @@ lemma traceNorm_sandwich_le (A : Operator H) (f : H.state →ₗ[ℂ] K.state)
     rw [← LinearMap.comp_assoc, ← LinearMap.comp_assoc, LinearMap.trace_comp_comm']
     rfl
   rw [ht]
-  have hn : ‖(g ∘ₗ B.toLinearMap ∘ₗ f).toContinuousLinearMap‖ ≤ ‖B‖ := by
+  have hn : ‖(g ∘ₗ B.toLinearMap ∘ₗ f : Operator H)‖ ≤ ‖B‖ := by
     change ‖g.toContinuousLinearMap.comp (B.comp f.toContinuousLinearMap)‖ ≤ ‖B‖
     calc
       _ ≤ ‖g.toContinuousLinearMap‖ * ‖B.comp f.toContinuousLinearMap‖ :=

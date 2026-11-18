@@ -17,8 +17,8 @@ A dagger reverses composition, fixes identities, and is involutive.
 ## Main definitions
 
 * `DaggerCategory`: a category with a dagger.
-* `DaggerCategory.IsProj`, `DaggerCategory.IsIsometry`, `DaggerCategory.IsUnitary`,
-  and `DaggerCategory.IsPositive`: the corresponding classes of morphisms.
+* `DaggerCategory.IsSelfAdjoint`, `DaggerCategory.IsProj`, `DaggerCategory.IsIsometry`,
+  `DaggerCategory.IsUnitary`, and `DaggerCategory.IsPositive`: classes of morphisms.
 
 ## Main results
 
@@ -67,13 +67,27 @@ def daggerEquiv (c c' : C) : (c ⟶ c') ≃ (c' ⟶ c) where
   left_inv _ := involutive_dagger _
   right_inv _ := involutive_dagger _
 
+/-- An endomorphism fixed by the dagger. -/
+@[mk_iff]
+class IsSelfAdjoint {c : C} (f : c ⟶ c) : Prop where
+  /-- Taking the dagger of a self-adjoint endomorphism fixes it. -/
+  dagger_eq (f) : f† = f
+
+attribute [simp low] IsSelfAdjoint.dagger_eq
+
+instance IsSelfAdjoint.id (c : C) : IsSelfAdjoint (𝟙 c) := ⟨dagger_id c⟩
+
+instance IsSelfAdjoint.dagger {c : C} (f : c ⟶ c) [IsSelfAdjoint f] : IsSelfAdjoint f† :=
+  ⟨(involutive_dagger f).trans (IsSelfAdjoint.dagger_eq f).symm⟩
+
 /-- An idempotent self-adjoint endomorphism, i.e. a projection. -/
 @[mk_iff]
 class IsProj {c : C} (f : c ⟶ c) where
   idem (f) : f ≫ f = f
   selfAdjoint (f) : f† = f
 
-attribute [simp] IsProj.selfAdjoint
+instance IsProj.isSelfAdjoint {c : C} (f : c ⟶ c) [IsProj f] : IsSelfAdjoint f :=
+  ⟨IsProj.selfAdjoint f⟩
 
 @[simp]
 lemma IsProj.comp_self {c : C} (f : c ⟶ c) [IsProj f] : f ≫ f = f := IsProj.idem f
@@ -180,10 +194,12 @@ instance IsPositive.dagger {c : C} (f : c ⟶ c) [IsPositive f] : IsPositive f�
   simpa
 
 /-- A positive endomorphism is self-adjoint. -/
-@[simp low]
-lemma IsPositive.selfAdjoint {c : C} (f : c ⟶ c) [IsPositive f] : f† = f := by
+instance IsPositive.isSelfAdjoint {c : C} (f : c ⟶ c) [IsPositive f] : IsSelfAdjoint f := by
   rcases IsPositive.out f with ⟨c', g, rfl⟩
-  simp
+  exact ⟨by rw [DaggerCategory.dagger_comp, involutive_dagger]⟩
+
+lemma IsPositive.selfAdjoint {c : C} (f : c ⟶ c) [IsPositive f] : f† = f :=
+  IsSelfAdjoint.dagger_eq f
 
 open Limits
 
@@ -193,6 +209,9 @@ lemma dagger_zero [HasZeroMorphisms C] {c c' : C} : (0 : c ⟶ c')† = 0 := by
   have hd := congrArg dagger h
   rw [dagger_comp, dagger_comp, involutive_dagger] at hd
   simpa only [comp_zero, zero_comp] using hd.symm
+
+instance IsSelfAdjoint.zero [HasZeroMorphisms C] (c : C) : IsSelfAdjoint (0 : c ⟶ c) :=
+  ⟨dagger_zero⟩
 
 lemma isZero_of_isInitial {c : C} (init : IsInitial c) : IsZero c where
   unique_to c' := ⟨isInitialEquivUnique _ _ init c'⟩

@@ -6,8 +6,8 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.State.Composite.Basic
-public import Mathlib.Analysis.InnerProductSpace.StarOrder
-public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import FQFP.CQM.Qudit.State.OperatorNorm
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 
 /-!
@@ -36,14 +36,13 @@ namespace Operator
 
 variable {H : Qudit}
 
-/-- Positive square root, transported from the continuous functional calculus. -/
+/-- Positive square root in the operator algebra. -/
 def sqrt (A : Operator H) : Operator H :=
-  (CFC.sqrt (LinearMap.toContinuousLinearMap A)).toLinearMap
+  CFC.sqrt A
 
 /-- The functional-calculus square root is positive, including at singular operators. -/
 lemma sqrt_positive (A : Operator H) : A.sqrt.IsPositive :=
-  (ContinuousLinearMap.nonneg_iff_isPositive.mp
-    (CFC.sqrt_nonneg (LinearMap.toContinuousLinearMap A))).toLinearMap
+  LinearMap.nonneg_iff_isPositive.mp (CFC.sqrt_nonneg A)
 
 /-- The positive square root is self-adjoint. -/
 lemma adjoint_sqrt (A : Operator H) : A.sqrt.adjoint = A.sqrt :=
@@ -51,9 +50,7 @@ lemma adjoint_sqrt (A : Operator H) : A.sqrt.adjoint = A.sqrt :=
 
 /-- Squaring the positive square root recovers a positive operator. -/
 lemma sqrt_mul_sqrt (A : Operator H) (hA : A.IsPositive) : A.sqrt * A.sqrt = A :=
-  congrArg ContinuousLinearMap.toLinearMap
-    (CFC.sqrt_mul_sqrt_self (LinearMap.toContinuousLinearMap A)
-      (ContinuousLinearMap.nonneg_iff_isPositive.mpr hA))
+  CFC.sqrt_mul_sqrt_self A (LinearMap.nonneg_iff_isPositive.mpr hA)
 
 /-- A qudit arrow is dagger-positive exactly when its linear map is positive. -/
 theorem _root_.Qudit.isPositive_iff_hom_isPositive (f : H ⟶ H) :
@@ -85,12 +82,8 @@ lemma apply_eq_zero_iff_re_inner_eq_zero (A : Operator H) (hA : A.IsPositive) (v
 
 /-- A positive operator whose square is `A` is the positive square root of `A`. -/
 lemma sqrt_unique {A B : Operator H} (hsq : B * B = A) (hB : B.IsPositive) :
-    A.sqrt = B := by
-  have h : CFC.sqrt (LinearMap.toContinuousLinearMap A) =
-      LinearMap.toContinuousLinearMap B :=
-    CFC.sqrt_unique (congrArg LinearMap.toContinuousLinearMap hsq)
-      (ContinuousLinearMap.nonneg_iff_isPositive.mpr hB)
-  exact congrArg ContinuousLinearMap.toLinearMap h
+    A.sqrt = B :=
+  CFC.sqrt_unique hsq (LinearMap.nonneg_iff_isPositive.mpr hB)
 
 /-- A positive projection is its own positive square root. -/
 lemma sqrt_eq_self (A : Operator H) (hA : A.IsPositive) (hsq : A * A = A) :

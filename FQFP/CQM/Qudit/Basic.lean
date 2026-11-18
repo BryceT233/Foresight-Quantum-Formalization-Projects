@@ -229,6 +229,18 @@ open DaggerCategory
 @[simp]
 lemma hom_dagger {H₁ H₂ : Qudit} (f : H₁ ⟶ H₂) : f†.hom = f.hom.adjoint := rfl
 
+/-- A qudit arrow is self-adjoint exactly when its underlying linear map is self-adjoint. -/
+theorem isSelfAdjoint_iff_hom {H : Qudit} (f : H ⟶ H) :
+    DaggerCategory.IsSelfAdjoint f ↔ _root_.IsSelfAdjoint f.hom := by
+  rw [DaggerCategory.isSelfAdjoint_iff, LinearMap.isSelfAdjoint_iff']
+  exact ⟨congrArg Hom.hom, hom_ext⟩
+
+/-- Self-adjointness of a qudit arrow passes to its continuous linear operator. -/
+theorem isSelfAdjoint_toContinuousLinearMap {H : Qudit} (f : H ⟶ H)
+    [DaggerCategory.IsSelfAdjoint f] : _root_.IsSelfAdjoint f.hom.toContinuousLinearMap :=
+  (LinearMap.isSelfAdjoint_toContinuousLinearMap_iff _).2
+    ((isSelfAdjoint_iff_hom f).1 inferInstance)
+
 /-- The adjoint of an isometry is a left inverse of its underlying linear map. -/
 lemma hom_adjoint_comp_of_isIsometry {H K : Qudit} (f : H ⟶ K) [IsIsometry f] :
     f.hom.adjoint ∘ₗ f.hom = LinearMap.id :=
@@ -328,7 +340,7 @@ lemma isUnitary_isoMk_coe_LIEquiv {H₁ H₂ : Qudit} (e : H₁.state ≃ₗᵢ[
 /-- A projection `f` has a self-adjoint underlying linear map. -/
 lemma hom_adjoint_of_isProj {H : Qudit} (f : H ⟶ H) [IsProj f] :
     LinearMap.adjoint f.hom = f.hom :=
-  congrArg (fun g : H ⟶ H ↦ g.hom) (IsProj.selfAdjoint f)
+  ((isSelfAdjoint_iff_hom f).1 inferInstance).star_eq
 
 /-- A projection `f` has an idempotent underlying linear map. -/
 lemma hom_idem_of_isProj {H : Qudit} (f : H ⟶ H) [IsProj f] :
@@ -345,7 +357,7 @@ lemma hom_isPositive_of_isPositive {H : Qudit} (f : H ⟶ H) [IsPositive f] :
 /-- A positive morphism `f` has a self-adjoint underlying linear map. -/
 lemma hom_adjoint_of_isPositive {H : Qudit} (f : H ⟶ H) [IsPositive f] :
     LinearMap.adjoint f.hom = f.hom :=
-  congrArg (fun g : H ⟶ H ↦ g.hom) ‹IsPositive f›.selfAdjoint
+  ((isSelfAdjoint_iff_hom f).1 inferInstance).star_eq
 
 /-- A positive morphism `f` is positive semidefinite. -/
 lemma inner_self_nonneg_of_isPositive {H : Qudit} (f : H ⟶ H) [IsPositive f] (x : H.state) :
@@ -448,6 +460,13 @@ lemma dagger_matrixToEnd {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) :
   rw [hom_dagger, hom_matrixToEnd, hom_matrixToEnd,
     Matrix.toLin_conjTranspose (ZBasis n) (ZBasis n)]
 
+/-- An endomorphism in the computational basis is self-adjoint exactly for Hermitian matrices. -/
+theorem isSelfAdjoint_matrixToEnd_iff {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) :
+    DaggerCategory.IsSelfAdjoint (matrixToEnd M).asHom ↔ M.IsHermitian := by
+  rw [DaggerCategory.isSelfAdjoint_iff, dagger_matrixToEnd]
+  exact ⟨fun h ↦ (Matrix.toLin (ZBasis n).toBasis (ZBasis n).toBasis).injective
+    (congrArg Hom.hom h), fun h ↦ congrArg (fun N ↦ (matrixToEnd N).asHom) h.eq⟩
+
 theorem isUnitary_matrixToEnd_iff {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) :
     DaggerCategory.IsUnitary (matrixToEnd M).asHom ↔ M * star M = 1 := by
   constructor
@@ -473,6 +492,14 @@ theorem isUnitary_matrixToEnd_iff {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) :
       exact congrArg (Matrix.toLin (ZBasis n).toBasis (ZBasis n).toBasis) h
 
 open ComplexConjugate Complex
+
+/-- A two-by-two Hermitian matrix has real diagonal entries and conjugate off-diagonals. -/
+theorem isSelfAdjoint_matrixToEnd_fin_two {a b c d : ℂ} :
+    DaggerCategory.IsSelfAdjoint (matrixToEnd !![a, b; c, d]).asHom ↔
+      conj a = a ∧ conj b = c ∧ conj d = d := by
+  rw [isSelfAdjoint_matrixToEnd_iff]
+  have h : conj c = b ↔ conj b = c := star_eq_iff_star_eq
+  simp [Matrix.IsHermitian.ext_iff, Fin.forall_fin_succ, h, and_assoc]
 
 theorem isUnitary_matrixToEnd_of_iff_fin_two {a b c d : ℂ} :
     DaggerCategory.IsUnitary (matrixToEnd !![a, b; c, d]).asHom ↔
@@ -507,6 +534,18 @@ def pauliY : End Qubit := matrixToEnd !![0, -I; I, 0]
 
 /-- Pauli-Z gate as an endomorphism of `Qubit`. -/
 def pauliZ : End Qubit := matrixToEnd !![1, 0; 0, -1]
+
+instance isSelfAdjoint_pauliX : DaggerCategory.IsSelfAdjoint pauliX.asHom := by
+  rw [pauliX, isSelfAdjoint_matrixToEnd_fin_two]
+  simp
+
+instance isSelfAdjoint_pauliY : DaggerCategory.IsSelfAdjoint pauliY.asHom := by
+  rw [pauliY, isSelfAdjoint_matrixToEnd_fin_two]
+  simp
+
+instance isSelfAdjoint_pauliZ : DaggerCategory.IsSelfAdjoint pauliZ.asHom := by
+  rw [pauliZ, isSelfAdjoint_matrixToEnd_fin_two]
+  simp
 
 /-- The Pauli-X gate is unitary. -/
 instance isUnitary_pauliX : IsUnitary pauliX.asHom := by

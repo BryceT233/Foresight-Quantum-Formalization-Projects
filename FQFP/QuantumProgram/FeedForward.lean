@@ -23,11 +23,6 @@ open CategoryTheory MonoidalCategory Qudit
 
 namespace QuantumProgram
 
-/-- Apply a quantum channel to a weighted branch while retaining the classical store. -/
-def CQState.map {Store : Type*} {H K : Qudit} (s : CQState Store H) (Φ : QuantumChannel H K) :
-    CQState Store K :=
-  ⟨s.store, Φ.toSuperoperator s.op, Φ.completelyPositive.isPositive _ s.positive⟩
-
 /-- A preparation, a measurement with write-back, and a unitary continuation for each label. -/
 structure FeedForwardProgram (H M K : Qudit) (m : ℕ) where
   /-- Prepare the memory on which the instrument acts. -/

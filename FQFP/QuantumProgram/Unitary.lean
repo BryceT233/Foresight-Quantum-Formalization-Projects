@@ -24,17 +24,14 @@ namespace QuantumProgram.Register
 variable {H S : Qudit}
 
 /-- Extending a register into the left tensor factor tensors its operator with the identity. -/
-theorem toContinuousLinearMap_liftEnd_left (r : Register H S) (K : Qudit) (A : CQM.Operator S) :
-    LinearMap.toContinuousLinearMap (endAlgEquiv (H ⊗ K) (r.left.liftEnd A)) =
-      (LinearMap.toContinuousLinearMap (endAlgEquiv H (r.liftEnd A))).rTensor K.state := rfl
+theorem endAlgEquiv_liftEnd_left (r : Register H S) (K : Qudit) (A : CQM.Operator S) :
+    endAlgEquiv (H ⊗ K) (r.left.liftEnd A) =
+      Operator.tensorOneHom H K (endAlgEquiv H (r.liftEnd A)) := rfl
 
 /-- Extending a register into the right tensor factor tensors the identity with its operator. -/
-theorem toContinuousLinearMap_liftEnd_right (r : Register H S) (K : Qudit) (A : CQM.Operator S) :
-    LinearMap.toContinuousLinearMap (endAlgEquiv (K ⊗ H) (r.right.liftEnd A)) =
-      (LinearMap.toContinuousLinearMap (endAlgEquiv H (r.liftEnd A))).lTensor K.state := by
-  apply ContinuousLinearMap.coe_injective
-  exact (ContinuousLinearMap.toLinearMap_lTensor K.state
-    (LinearMap.toContinuousLinearMap (endAlgEquiv H (r.liftEnd A)))).symm
+theorem endAlgEquiv_liftEnd_right (r : Register H S) (K : Qudit) (A : CQM.Operator S) :
+    endAlgEquiv (K ⊗ H) (r.right.liftEnd A) =
+      Operator.oneTensorHom K H (endAlgEquiv H (r.liftEnd A)) := rfl
 
 end QuantumProgram.Register
 
@@ -50,6 +47,22 @@ noncomputable def toChannel (p : UnitaryProgram H) : QuantumChannel H H :=
 noncomputable def toOperator (p : UnitaryProgram H) : Qudit.Operator H :=
   endAlgEquiv H p.denoteEnd
 
+/-- Lift a local unitary through a unital star-algebra embedding of operator algebras. -/
+noncomputable def liftGate {S H : Qudit} (F : Operator S →⋆ₐ[ℂ] Operator H)
+    (U : S ⟶ S) [DaggerCategory.IsUnitary U] : UnitaryProgram H :=
+  let e (K : Qudit) : CQM.Operator K ≃⋆ₐ[ℂ] Operator K :=
+    .ofAlgEquiv (endAlgEquiv K) endAlgEquiv_star
+  let A := (e H).symm (F (e S (.of U)))
+  have hA : A ∈ unitary (CQM.Operator H) :=
+    Unitary.map_mem (e H).symm (Unitary.map_mem F (Unitary.map_mem (e S)
+      ((End.mem_unitary_iff (.of U)).mpr inferInstance)))
+  haveI : DaggerCategory.IsUnitary A.asHom := (End.mem_unitary_iff A).mp hA
+  .gateHom .whole A.asHom
+
+/-- A lifted gate acts by its specified operator embedding. -/
+theorem toOperator_liftGate {S H : Qudit} (F : Operator S →⋆ₐ[ℂ] Operator H)
+    (U : S ⟶ S) [DaggerCategory.IsUnitary U] : (liftGate F U).toOperator = F U.hom := rfl
+
 /-- Interpret a gate on a register as a linear operator on memory. -/
 theorem toOperator_gateHom {S : Qudit} (r : Register H S) (U : S ⟶ S)
     [DaggerCategory.IsUnitary U] :
@@ -61,14 +74,6 @@ theorem toOperator_sequence (ps : List (UnitaryProgram H)) :
     (sequence ps).toOperator = (ps.reverse.map toOperator).prod := by
   change endAlgEquiv H (sequence ps).denoteEnd = _
   rw [denoteEnd_sequence, map_list_prod, List.map_map]
-  rfl
-
-/-- Continuous operator form of the ordered product, for use with exponentials and norms. -/
-theorem toContinuousLinearMap_toOperator_sequence (ps : List (UnitaryProgram H)) :
-    LinearMap.toContinuousLinearMap (sequence ps).toOperator =
-      (ps.reverse.map fun p => LinearMap.toContinuousLinearMap p.toOperator).prod := by
-  change Module.End.toContinuousLinearMap H.state (sequence ps).toOperator = _
-  rw [toOperator_sequence, map_list_prod, List.map_map]
   rfl
 
 /-- Sequential execution composes the two channels in execution order. -/

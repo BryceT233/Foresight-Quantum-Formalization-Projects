@@ -31,6 +31,11 @@ instance instStarMulOfDaggerCategory : StarMul (End X) where
 /-- The underlying arrow of the star is the dagger of the underlying arrow. -/
 @[simp] theorem star_asHom (A : End X) : (star A).asHom = A.asHom† := rfl
 
+/-- Self-adjoint elements of the endomorphism monoid correspond to self-adjoint arrows. -/
+theorem isSelfAdjoint_iff (A : End X) : _root_.IsSelfAdjoint A ↔
+    DaggerCategory.IsSelfAdjoint A.asHom := by
+  rw [_root_.isSelfAdjoint_iff, DaggerCategory.isSelfAdjoint_iff, End.ext_iff, star_asHom]
+
 /-- Unitary elements of the endomorphism monoid correspond to unitary arrows. -/
 theorem mem_unitary_iff (A : End X) : A ∈ unitary (End X) ↔ IsUnitary A.asHom := by
   rw [Unitary.mem_iff, isUnitary_iff]

@@ -7,6 +7,7 @@ module
 
 public import FQFP.Analysis.InnerProductSpace.TraceNorm
 public import FQFP.CQM.Qudit.Measurement.POVM
+public import FQFP.CQM.Qudit.State.OperatorNorm
 
 /-!
 # Trace distance and measurement errors
@@ -119,19 +120,20 @@ lemma traceDistance_mix_le (p : ℝ) (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1)
 /-- Isometric endomorphisms with nearby operators produce nearby density operators. -/
 lemma traceNorm_map_sub_le (ρ : Density H) (U V : H ⟶ H) [IsIsometry U] [IsIsometry V] :
     LinearMap.traceNorm ((ρ.map U).op - (ρ.map V).op) ≤
-      2 * ‖(U.hom - V.hom).toContinuousLinearMap‖ := by
-  have hU : ‖U.hom.toContinuousLinearMap‖ ≤ 1 :=
+      2 * ‖U.hom - V.hom‖ := by
+  have hU : ‖U.hom‖ ≤ 1 :=
     (LIOfIsIsometry U).norm_toContinuousLinearMap_le
-  have hV : ‖V.hom.toContinuousLinearMap‖ ≤ 1 :=
+  have hV : ‖V.hom‖ ≤ 1 :=
     (LIOfIsIsometry V).norm_toContinuousLinearMap_le
   simp only [op_map]
-  simpa only [ρ.traceNorm_op, mul_one, Module.End.mul_eq_comp, LinearMap.comp_assoc] using
+  simpa only [ρ.traceNorm_op, mul_one, Module.End.mul_eq_comp, LinearMap.comp_assoc,
+    Operator.norm_toContinuousLinearMap] using
     LinearMap.traceNorm_conjugate_sub_le ρ.op U.hom V.hom hU hV
 
 /-- Operator-norm error bounds trace distance for isometric, in particular unitary, evolution. -/
 lemma traceDistance_map_le_opNorm (ρ : Density H) (U V : H ⟶ H)
     [IsIsometry U] [IsIsometry V] :
-    traceDistance (ρ.map U) (ρ.map V) ≤ ‖(U.hom - V.hom).toContinuousLinearMap‖ := by
+    traceDistance (ρ.map U) (ρ.map V) ≤ ‖U.hom - V.hom‖ := by
   have h := ρ.traceNorm_map_sub_le U V
   unfold traceDistance
   linarith
@@ -139,7 +141,7 @@ lemma traceDistance_map_le_opNorm (ρ : Density H) (U V : H ⟶ H)
 /-- An explicit operator error bound transfers to density-state trace distance. -/
 lemma traceDistance_map_le (ρ : Density H) (U V : H ⟶ H)
     [IsIsometry U] [IsIsometry V] {ε : ℝ}
-    (hε : ‖(U.hom - V.hom).toContinuousLinearMap‖ ≤ ε) :
+    (hε : ‖U.hom - V.hom‖ ≤ ε) :
     traceDistance (ρ.map U) (ρ.map V) ≤ ε :=
   (ρ.traceDistance_map_le_opNorm U V).trans hε
 
@@ -157,7 +159,7 @@ lemma abs_probability_sub_le_traceDistance (M : POVM H ι) (ρ σ : Density H) (
 /-- Operator error bounds every outcome-probability error after unitary evolution. -/
 lemma abs_probability_map_sub_le (M : POVM H ι) (ρ : Density H) (U V : H ⟶ H)
     [IsIsometry U] [IsIsometry V] {ε : ℝ}
-    (hε : ‖(U.hom - V.hom).toContinuousLinearMap‖ ≤ ε) (i : ι) :
+    (hε : ‖U.hom - V.hom‖ ≤ ε) (i : ι) :
     |M.probability (ρ.map U) i - M.probability (ρ.map V) i| ≤ ε :=
   (M.abs_probability_sub_le_traceDistance _ _ i).trans (ρ.traceDistance_map_le U V hε)
 

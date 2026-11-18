@@ -35,7 +35,7 @@ open Classical in
 the operator norm of the sandwich by the inverse square root of the reference. -/
 def maxRelativeEntropy (ρ σ : Density H) : ENNReal :=
   if ρ.AbsolutelyContinuous σ then
-    ENNReal.ofReal (Real.log ‖LinearMap.toContinuousLinearMap (ρ.renyiSandwich σ 1)‖)
+    ENNReal.ofReal (Real.log ‖ρ.renyiSandwich σ 1‖)
   else ⊤
 
 /-- Max-relative entropy is infinite precisely when support inclusion fails. -/
@@ -49,13 +49,13 @@ private lemma tendsto_inv_order :
 
 private lemma tendsto_sandwich_norm_atTop (ρ σ : Density H) :
     Tendsto (fun a : Set.Ioi (1 : ℝ) =>
-      ‖LinearMap.toContinuousLinearMap (ρ.renyiSandwich σ (1 - a.val⁻¹))‖) atTop
-      (𝓝 ‖LinearMap.toContinuousLinearMap (ρ.renyiSandwich σ 1)‖) := by
-  let W (s : ℝ) := LinearMap.toContinuousLinearMap (σ.spectralMap (fun x => x ^ (-s / 2)))
+      ‖ρ.renyiSandwich σ (1 - a.val⁻¹)‖) atTop
+      (𝓝 ‖ρ.renyiSandwich σ 1‖) := by
+  let W (s : ℝ) := σ.spectralMap (fun x => x ^ (-s / 2))
   have hs : Tendsto (fun a : Set.Ioi (1 : ℝ) => 1 - a.val⁻¹) atTop (𝓝 1) := by
     simpa using tendsto_const_nhds.sub tendsto_inv_order
   have hw : Tendsto (fun a : Set.Ioi (1 : ℝ) => W (1 - a.val⁻¹)) atTop (𝓝 (W 1)) := by
-    simp only [W, spectralMap, map_sum, map_smul]
+    simp only [W, spectralMap]
     apply tendsto_finsetSum
     intro i _
     apply Filter.Tendsto.smul _ tendsto_const_nhds
@@ -69,17 +69,15 @@ private lemma tendsto_sandwich_norm_atTop (ρ σ : Density H) :
         (inv_lt_one_of_one_lt₀ a.property)).ne') (by norm_num))).symm
     · exact (Real.continuous_const_rpow hi).continuousAt.tendsto.comp he
   simp only [renyiSandwich, adjoint_spectralMap]
-  exact (hw.mul (tendsto_const_nhds (x := LinearMap.toContinuousLinearMap ρ.op) |>.mul hw)).norm
+  exact (hw.mul (tendsto_const_nhds (x := ρ.op) |>.mul hw)).norm
 
 private lemma norm_rpow_bounds [Nontrivial H.state] (A : Operator H) (hA : A.IsPositive)
     {p : ℝ} (hp : 0 < p) :
     let S := ∑ i, (hA.isSymmetric.eigenvalues rfl i) ^ p
-    let M := ‖LinearMap.toContinuousLinearMap A‖
+    let M := ‖A‖
     M ^ p ≤ S ∧ S ≤ (Module.finrank ℂ H.state : ℝ) * M ^ p := by
-  let B := LinearMap.toContinuousLinearMap A
-  have hmem : (‖B‖ : ℂ) ∈ _root_.spectrum ℂ B := spectrum.algebraMap_mem ℂ
-    (CStarAlgebra.norm_mem_spectrum_of_nonneg B (ContinuousLinearMap.nonneg_iff_isPositive.mpr hA))
-  rw [ContinuousLinearMap.spectrum_eq] at hmem
+  have hmem : (‖A‖ : ℂ) ∈ _root_.spectrum ℂ A := spectrum.algebraMap_mem ℂ
+    (CStarAlgebra.norm_mem_spectrum_of_nonneg A (LinearMap.nonneg_iff_isPositive.mpr hA))
   obtain ⟨j, hj⟩ := hA.isSymmetric.exists_eigenvalues_eq rfl
     (Module.End.hasEigenvalue_iff_mem_spectrum.mpr hmem)
   have hj' := Complex.ofReal_injective hj
@@ -87,20 +85,18 @@ private lemma norm_rpow_bounds [Nontrivial H.state] (A : Operator H) (hA : A.IsP
   · rw [← hj']
     exact Finset.single_le_sum (fun i _ => Real.rpow_nonneg (hA.nonneg_eigenvalues rfl i) p)
       (Finset.mem_univ j)
-  · have hle (i) : hA.isSymmetric.eigenvalues rfl i ≤ ‖B‖ := by
+  · have hle (i) : hA.isSymmetric.eigenvalues rfl i ≤ ‖A‖ := by
       have hm := (hA.isSymmetric.hasEigenvalue_eigenvalues rfl i).mem_spectrum
-      change _ ∈ _root_.spectrum ℂ B.toLinearMap at hm
-      rw [← ContinuousLinearMap.spectrum_eq] at hm
       simpa only [RCLike.ofReal_eq_complex_ofReal, Complex.norm_real, Real.norm_eq_abs,
         abs_of_nonneg (hA.nonneg_eigenvalues rfl i)] using spectrum.norm_le_norm_of_mem hm
-    simpa [B] using Finset.sum_le_sum (s := Finset.univ) fun i _ =>
+    simpa using Finset.sum_le_sum (s := Finset.univ) fun i _ =>
       Real.rpow_le_rpow (hA.nonneg_eigenvalues rfl i) (hle i) hp.le
 
 /-- The trace functional to the reciprocal order converges to the operator norm
 of the inverse-square-root sandwich, including for singular reference states. -/
 theorem tendsto_sandwichedTraceFunctional_rpow_inv_atTop (ρ σ : Density H) :
     Tendsto (fun a : Set.Ioi (1 : ℝ) => (ρ.sandwichedTraceFunctional σ a) ^ a.val⁻¹) atTop
-      (𝓝 ‖LinearMap.toContinuousLinearMap (ρ.renyiSandwich σ 1)‖) := by
+      (𝓝 ‖ρ.renyiSandwich σ 1‖) := by
   have : Nontrivial H.state := not_subsingleton_iff_nontrivial.mp fun _ =>
     ρ.op_ne_zero (Subsingleton.elim _ _)
   let d : ℝ := Module.finrank ℂ H.state
@@ -131,7 +127,7 @@ theorem tendsto_sandwichedRenyiRelativeEntropy_atTop (ρ σ : Density H) :
   change Tendsto (fun a => ρ.sandwichedRenyiRelativeEntropy σ a) _ _
   by_cases h : ρ.AbsolutelyContinuous σ
   · have hroot := ρ.tendsto_sandwichedTraceFunctional_rpow_inv_atTop σ
-    have hnorm : 1 ≤ ‖LinearMap.toContinuousLinearMap (ρ.renyiSandwich σ 1)‖ := by
+    have hnorm : 1 ≤ ‖ρ.renyiSandwich σ 1‖ := by
       apply ge_of_tendsto hroot
       exact .of_forall fun a => Real.one_le_rpow (ρ.one_le_sandwichedTraceFunctional σ a.property h)
         (inv_nonneg.mpr (zero_lt_one.trans a.property).le)

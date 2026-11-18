@@ -6,6 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.Measurement.HypothesisTesting
+public import FQFP.CQM.Qudit.State.OperatorNorm
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Topology.Semicontinuity.Basic
 
@@ -26,42 +27,40 @@ namespace Qudit.Density
 
 variable {H : Qudit}
 
-private lemma continuous_expectation_toLinearMap (ρ : Density H) :
-    Continuous (fun A : H.state →L[ℂ] H.state => ρ.expectation A.toLinearMap) :=
+private lemma continuous_expectation (ρ : Density H) :
+    Continuous (fun A : Operator H => ρ.expectation A) :=
   Complex.continuous_re.comp <| LinearMap.continuous_of_finiteDimensional
-    ((LinearMap.trace ℂ H.state) ∘ₗ LinearMap.mulRight ℂ ρ.op ∘ₗ ContinuousLinearMap.coeLM ℂ)
+    ((LinearMap.trace ℂ H.state) ∘ₗ LinearMap.mulRight ℂ ρ.op)
 
 private lemma exists_minimizing_effect (ρ : Density H) (ε : unitInterval) (S : Set (Density H)) :
     ∃ T : Set.Icc (0 : Operator H) 1, ρ.expectation (1 - T.val) ≤ ε ∧
       worstCaseTypeIIError T S = ρ.optimalTypeIIError ε S := by
-  let B := Set.Icc (0 : H.state →L[ℂ] H.state) 1
-  let effect (T : B) : Set.Icc (0 : Operator H) 1 := ⟨T.val.toLinearMap, T.property⟩
-  have : ProperSpace (H.state →L[ℂ] H.state) := FiniteDimensional.proper ℂ _
+  let B := Set.Icc (0 : Operator H) 1
+  have : ProperSpace (Operator H) := FiniteDimensional.proper ℂ _
   have hB : IsCompact B := Metric.isCompact_of_isClosed_isBounded isClosed_Icc
     (CStarAlgebra.isBounded_of_bddAbove_of_bddBelow ⟨1, fun _ h => h.2⟩ ⟨0, fun _ h => h.1⟩)
   let : CompactSpace B := isCompact_iff_compactSpace.mp hB
-  let F := {T : B | ρ.expectation (1 - (effect T).val) ≤ ε}
+  let F := {T : B | ρ.expectation (1 - T.val) ≤ ε}
   have hF : IsCompact F := by
     apply IsClosed.isCompact
     simp only [F, expectation_sub, expectation_one]
     exact isClosed_le (continuous_const.sub
-      ((continuous_expectation_toLinearMap ρ).comp continuous_subtype_val)) continuous_const
+      ((continuous_expectation ρ).comp continuous_subtype_val)) continuous_const
   have hne : F.Nonempty := by
     refine ⟨⟨1, LinearMap.nonneg_iff_isPositive.mpr LinearMap.isPositive_one, le_rfl⟩, ?_⟩
     change ρ.expectation (1 - 1) ≤ ε
     rw [expectation_sub, expectation_one, sub_self]
     exact ε.2.1
-  have hsc : LowerSemicontinuous fun T : B => worstCaseTypeIIError (effect T) S := by
+  have hsc : LowerSemicontinuous fun T : B => worstCaseTypeIIError T S := by
     apply lowerSemicontinuous_biSup
     intro σ _
-    exact (((continuous_expectation_toLinearMap σ).comp continuous_subtype_val).subtype_mk
-      (fun T => σ.expectation_mem_Icc (effect T).2.1 (effect T).2.2)).lowerSemicontinuous
+    exact (((continuous_expectation σ).comp continuous_subtype_val).subtype_mk
+      (fun T => σ.expectation_mem_Icc T.2.1 T.2.2)).lowerSemicontinuous
   obtain ⟨T, hT, hmin⟩ := (hsc.lowerSemicontinuousOn F).exists_isMinOn hne hF
-  refine ⟨effect T, hT, le_antisymm ?_ (ρ.optimalTypeIIError_le ε S _ hT)⟩
+  refine ⟨T, hT, le_antisymm ?_ (ρ.optimalTypeIIError_le ε S _ hT)⟩
   apply le_iInf
   rintro ⟨U, hU⟩
-  let V : B := ⟨LinearMap.toContinuousLinearMap U.val, U.property⟩
-  exact isMinOn_iff.mp hmin V hU
+  exact isMinOn_iff.mp hmin U hU
 
 /-- An optimal test exists and can use the entire type I error budget. -/
 theorem exists_test_attaining_optimalTypeIIError (ρ : Density H) (ε : unitInterval)

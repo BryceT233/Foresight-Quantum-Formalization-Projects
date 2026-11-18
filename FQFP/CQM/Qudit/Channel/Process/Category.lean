@@ -261,7 +261,7 @@ instance : pure.Monoidal := Functor.CoreMonoidal.toMonoidal
       rw [Category.comp_id, Category.id_comp]
       apply hom_ext
       change Superoperator.tensor (Superoperator.conjugate f.hom) LinearMap.id =
-        Superoperator.conjugate (TensorProduct.map f.hom (LinearMap.id : Y.state →ₗ[ℂ] Y.state))
+        Superoperator.conjugate (TensorProduct.map f.hom (LinearMap.id : Operator Y))
       rw [Superoperator.conjugate_tensor, Superoperator.conjugate_id]
     μIso_hom_natural_right := fun X f => by
       dsimp only [pure]
@@ -269,7 +269,7 @@ instance : pure.Monoidal := Functor.CoreMonoidal.toMonoidal
       rw [Category.comp_id, Category.id_comp]
       apply hom_ext
       change Superoperator.tensor LinearMap.id (Superoperator.conjugate f.hom) =
-        Superoperator.conjugate (TensorProduct.map (LinearMap.id : X.state →ₗ[ℂ] X.state) f.hom)
+        Superoperator.conjugate (TensorProduct.map (LinearMap.id : Operator X) f.hom)
       rw [Superoperator.conjugate_tensor, Superoperator.conjugate_id]
     associativity := fun _ _ _ => by
       dsimp only [pure]

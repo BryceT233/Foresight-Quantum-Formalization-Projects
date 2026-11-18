@@ -34,7 +34,7 @@ namespace Qudit
 noncomputable section
 
 /-- The linear operator of the existing corrected Bell-protocol branch. -/
-def teleportationKraus (i : Fin 4) : Qubit.state →ₗ[ℂ] Qubit.state :=
+def teleportationKraus (i : Fin 4) : Operator Qubit :=
   (teleportationBranch bellState (qubitBellEffects i) (corrections i)).hom
 
 /-- Every corrected branch operator is one half of the identity. -/
