@@ -9,6 +9,11 @@ Physlib reference for von Neumann entropy and its spectral formula.
 leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
 QuantumInfo/Entropy/VonNeumann.lean
 
+QuantumInfo/States/Entanglement.lean: entropy as the trace of the spectral function.
+Copyright (c) 2025 Leonardo A Lessa. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Leonardo A Lessa
+
 Modified by Foresight Quantum in 2026
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
@@ -17,6 +22,7 @@ module
 
 public import FQFP.Analysis.SpecialFunctions.Entropy
 public import FQFP.CQM.Qudit.State.Pure
+public import FQFP.CQM.Qudit.State.Spectral.FunctionalCalculus
 
 /-!
 # Von Neumann entropy
@@ -123,6 +129,11 @@ lemma vonNeumannEntropy_map_unitary (ρ : Density H) (U : H ⟶ K) [IsUnitary U]
   change (ρ.map U).op (U.hom (ρ.eigenbasis i)) =
     (ρ.eigenvalue i : ℂ) • U.hom (ρ.eigenbasis i)
   rw [op_map_apply, ρ.apply_eigenbasis, map_smul]
+
+/-- Von Neumann entropy is the trace of the spectral function `x ↦ -x log x`. -/
+lemma vonNeumannEntropy_eq_trace_spectralMap (ρ : Density H) :
+    ρ.vonNeumannEntropy = (ρ.spectralMap Real.negMulLog).trace.re := by
+  simp [vonNeumannEntropy_eq_sum, spectralMap, Operator.trace_outer, Complex.re_sum]
 
 /-- A maximally mixed state has entropy equal to the logarithm of the dimension. -/
 @[simp]

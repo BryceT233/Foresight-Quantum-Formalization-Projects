@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Qedia contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Qedia contributors, Foresight Quantum
+Authors: Qedia contributors
 -/
 
 /-
@@ -14,6 +14,7 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
+public import FQFP.CQM.Qudit.State.Pure.Qubit
 public import FQFP.QuantumProgram.Unitary
 public import FQFP.CQM.Qudit.Teleportation.BellDensity
 
@@ -34,22 +35,16 @@ namespace QuantumProgram
 
 noncomputable section
 
-/-- Controlled NOT permutes the computational basis by adding the control to the target mod two. -/
-def controlledNot : Qubit ⊗ Qubit ⟶ Qubit ⊗ Qubit :=
-  let b := (ZBasis 2).tensorProduct (ZBasis 2)
-  (isoMk (b.equiv b (Equiv.prodCongrRight fun a => Equiv.addLeft a)).toLinearEquiv).hom
+/-- Controlled NOT on the two-qubit program memory. -/
+def controlledNot : Qubit ⊗ Qubit ⟶ Qubit ⊗ Qubit := Qubit.CNOT
 
-instance : IsUnitary controlledNot :=
-  isUnitary_isoMk_coe_LIEquiv (H₁ := Qubit ⊗ Qubit) (H₂ := Qubit ⊗ Qubit) _
+instance : IsUnitary controlledNot := inferInstanceAs (IsUnitary Qubit.CNOT)
 
-/-- Action of controlled NOT on every computational basis input, with the left qubit as control. -/
+/-- Action of the program's controlled NOT in the computational basis. -/
 theorem controlledNot_basis (a b : Fin 2) :
     controlledNot.hom (ZBasis 2 a ⊗ₜ[ℂ] ZBasis 2 b) =
-      ZBasis 2 a ⊗ₜ[ℂ] ZBasis 2 (a + b) := by
-  let e := (ZBasis 2).tensorProduct (ZBasis 2)
-  have h : controlledNot.hom (e (a, b)) = e (a, a + b) :=
-    e.equiv_apply_basis e (Equiv.prodCongrRight fun i => Equiv.addLeft i) (a, b)
-  simpa only [e, OrthonormalBasis.tensorProduct_apply] using h
+      ZBasis 2 a ⊗ₜ[ℂ] ZBasis 2 (a + b) :=
+  Qubit.CNOT_basis a b
 
 /-- Hadamard on the first qubit, followed by controlled NOT on the ordered pair. -/
 def bellPreparation : UnitaryProgram (Qubit ⊗ Qubit) :=

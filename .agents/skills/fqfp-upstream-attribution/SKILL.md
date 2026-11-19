@@ -22,7 +22,15 @@ Modified by Foresight Quantum in 2026
 ## 仓库中的实例
 
 - **Physlib / QuantumInfo** 使用逐文件署名。`FQFP/CQM/Qudit/State/Pure.lean` 分别记录 `MState.lean` 和 `Ensemble.lean` 的版权人与作者名单。
-- **Qedia / Qhl** 的迁移版本在 README 中统一声明 `Copyright 2026 Qedia contributors.`。`FQFP/QuantumProgram/Measurement.lean` 保留了这句原文，在作者行列出 Qedia contributors 和 Foresight Quantum，并指明所吸收的三个源文件。后续迁移从对应版本重新核对。
+- **Qedia / Qhl** 的迁移版本在 README 中统一声明 `Copyright 2026 Qedia contributors.`。`FQFP/QuantumProgram` 中从该版本移植的文件统一使用以下文件头。随后在独立的来源注释中保留上游版权原文、源文件路径及适用的 `Modified by Foresight Quantum in 2026` 修改说明。可参见 `FQFP/QuantumProgram/Measurement.lean`。后续迁移从对应版本重新核对。
+
+```lean
+/-
+Copyright (c) 2026 Qedia contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Qedia contributors
+-/
+```
 
 ## 验证
 

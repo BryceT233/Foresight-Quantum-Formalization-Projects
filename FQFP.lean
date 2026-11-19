@@ -232,9 +232,13 @@ public import FQFP.CQM.Qudit.Channel.Process.Environment
 public import FQFP.CQM.Qudit.Channel.Process.State
 public import FQFP.CQM.Qudit.Channel.Superoperator
 public import FQFP.CQM.Qudit.Classical
+public import FQFP.CQM.Qudit.Classical.Channel
+public import FQFP.CQM.Qudit.Classical.Code
+public import FQFP.CQM.Qudit.Classical.QuantumChannel
 public import FQFP.CQM.Qudit.Dagger
 public import FQFP.CQM.Qudit.Entropy.Basic
 public import FQFP.CQM.Qudit.Entropy.DataProcessing
+public import FQFP.CQM.Qudit.Entropy.EntanglementOfFormation
 public import FQFP.CQM.Qudit.Entropy.Relative
 public import FQFP.CQM.Qudit.Entropy.Relative.JointConvexity
 public import FQFP.CQM.Qudit.Entropy.Relative.PartialTrace
@@ -285,6 +289,7 @@ public import FQFP.CQM.Qudit.State.Composite.Schmidt
 public import FQFP.CQM.Qudit.State.Composite.SchmidtRank
 public import FQFP.CQM.Qudit.State.Composite.Separable
 public import FQFP.CQM.Qudit.State.Composite.Support
+public import FQFP.CQM.Qudit.State.ConvexRoof
 public import FQFP.CQM.Qudit.State.Density
 public import FQFP.CQM.Qudit.State.Ensemble
 public import FQFP.CQM.Qudit.State.Operator
@@ -292,6 +297,7 @@ public import FQFP.CQM.Qudit.State.OperatorNorm
 public import FQFP.CQM.Qudit.State.Pure
 public import FQFP.CQM.Qudit.State.Pure.BargmannInvariant
 public import FQFP.CQM.Qudit.State.Pure.BlochSphere
+public import FQFP.CQM.Qudit.State.Pure.Qubit
 public import FQFP.CQM.Qudit.State.Purification.Basic
 public import FQFP.CQM.Qudit.State.Purification.Minimal
 public import FQFP.CQM.Qudit.State.Purification.Mixture

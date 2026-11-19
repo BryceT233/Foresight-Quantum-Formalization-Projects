@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Qedia contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Qedia contributors, Foresight Quantum
+Authors: Qedia contributors
 -/
 
 /-
@@ -40,7 +40,7 @@ noncomputable section
 abbrev phase : ℂ := exp (((Real.pi / 4 : ℝ) : ℂ) * I)
 
 /-- The ancilla T gate. -/
-def tGate : Qubit ⟶ Qubit := (Qubit.phaseShift (Real.pi / 4)).asHom
+def tGate : Qubit ⟶ Qubit := Qubit.T.asHom
 
 instance : IsUnitary tGate := by
   unfold tGate
@@ -81,12 +81,7 @@ theorem failProb : ‖retryAmplitude‖ ^ 2 = 1 / 4 := by
   norm_num [retryAmplitude, norm_div, phase]
 
 private theorem phase_eq : phase = bellFactor * (1 + I) := by
-  rw [phase, exp_ofReal_mul_I, Real.cos_pi_div_four, Real.sin_pi_div_four]
-  push_cast
-  rw [bellFactor, Complex.ofReal_inv]
-  field_simp
-  have h : (Real.sqrt 2 : ℂ) ^ 2 = 2 := by norm_cast; norm_num
-  linear_combination (1 + I) * h
+  simpa [phase, bellFactor, div_eq_inv_mul] using Qubit.exp_pi_div_four_mul_I
 
 private theorem h_basis (j : Fin 2) :
     Qubit.H.asHom (ZBasis 2 j) = bellFactor •
