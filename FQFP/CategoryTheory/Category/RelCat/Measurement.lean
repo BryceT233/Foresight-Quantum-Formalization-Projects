@@ -37,18 +37,18 @@ namespace CategoryTheory.RelCat
 
 universe u
 
-variable {X : RelCat.{u}}
+variable {X : Type u}
 
 /-- The subset denoted by a relational state. -/
-def stateSet (a : State X) : Set X := {x | (PUnit.unit, x) ∈ a.rel}
+def stateSet (a : State (C := RelCat) X) : Set X := {x | (PUnit.unit, x) ∈ a.rel}
 
 /-- The subset denoted by a relational effect. -/
-def effectSet (x : Effect X) : Set X := {a | (a, PUnit.unit) ∈ x.rel}
+def effectSet (x : Effect (C := RelCat) X) : Set X := {a | (a, PUnit.unit) ∈ x.rel}
 
 /-- Relational states are precisely subsets of the object. -/
-def stateEquivSet : State X ≃ Set X where
+def stateEquivSet : State (C := RelCat) X ≃ Set X where
   toFun := stateSet
-  invFun s := .ofRel {p | s p.2}
+  invFun s := .ofRel {p | p.2 ∈ s}
   left_inv a := by
     apply Hom.ext
     ext ⟨p, x⟩
@@ -57,9 +57,9 @@ def stateEquivSet : State X ≃ Set X where
   right_inv _ := rfl
 
 /-- Relational effects are precisely subsets of the object. -/
-def effectEquivSet : Effect X ≃ Set X where
+def effectEquivSet : Effect (C := RelCat) X ≃ Set X where
   toFun := effectSet
-  invFun s := .ofRel {p | s p.1}
+  invFun s := .ofRel {p | p.1 ∈ s}
   left_inv x := by
     apply Hom.ext
     ext ⟨a, p⟩
@@ -68,14 +68,14 @@ def effectEquivSet : Effect X ≃ Set X where
   right_inv _ := rfl
 
 /-- An isometric relational state is exactly a nonempty subset. -/
-theorem isIsometry_state_iff_nonempty (a : State X) :
-    IsIsometry a ↔ ∃ z : X, stateSet a z := by
+theorem isIsometry_state_iff_nonempty (a : State (C := RelCat) X) :
+    IsIsometry a ↔ ∃ z : X, z ∈ stateSet a := by
   constructor
   · intro ha
     have hmem : (PUnit.unit, PUnit.unit) ∈ (a ≫ a†).rel := by
       rw [ha.comp_dagger_eq_id]
       rfl
-    change (∃ z : X, stateSet a z ∧ stateSet a z) at hmem
+    change (∃ z : X, z ∈ stateSet a ∧ z ∈ stateSet a) at hmem
     obtain ⟨z, hz, _⟩ := hmem
     exact ⟨z, hz⟩
   · rintro ⟨z, hz⟩
@@ -84,13 +84,13 @@ theorem isIsometry_state_iff_nonempty (a : State X) :
     ext ⟨p, q⟩
     cases p
     cases q
-    change (∃ w : X, stateSet a w ∧ stateSet a w) ↔ PUnit.unit = PUnit.unit
+    change (∃ w : X, w ∈ stateSet a ∧ w ∈ stateSet a) ↔ PUnit.unit = PUnit.unit
     exact ⟨fun _ ↦ rfl, fun _ ↦ ⟨z, hz, hz⟩⟩
 
 /-- A relational Born scalar holds exactly when the state meets the effect. -/
-theorem probability_nonempty_intersection (a : State X) (x : Effect X) :
+theorem probability_nonempty_intersection (a : State (C := RelCat) X) (x : Effect (C := RelCat) X) :
     (PUnit.unit, PUnit.unit) ∈ (probability a x).asHom.rel ↔
-      ∃ z : X, stateSet a z ∧ effectSet x z := by
+      ∃ z : X, z ∈ stateSet a ∧ z ∈ effectSet x := by
   change (∃ z : X, (PUnit.unit, z) ∈ a.rel ∧
     ∃ p : PUnit, (z, p) ∈ x.rel ∧
       ∃ w : X, (w, p) ∈ x.rel ∧ (PUnit.unit, w) ∈ a.rel) ↔
@@ -98,21 +98,21 @@ theorem probability_nonempty_intersection (a : State X) (x : Effect X) :
   grind
 
 /-- A family of relational effects is complete exactly when its subsets cover the object. -/
-theorem complete_iff_cover {ι : Type*} (x : ι → Effect X) :
-    Effect.Complete x ↔ ∀ z : X, ∃ i : ι, effectSet (x i) z := by
+theorem complete_iff_cover {ι : Type*} (x : ι → Effect (C := RelCat) X) :
+    Effect.Complete x ↔ ∀ z : X, ∃ i : ι, z ∈ effectSet (x i) := by
   constructor
   · intro hc z
     by_contra hn
-    have hnone : ∀ i : ι, ¬ effectSet (x i) z := by
+    have hnone : ∀ i : ι, z ∉ effectSet (x i) := by
       simpa using hn
-    let f : State X := .ofRel {p | p.2 = z}
+    let f : State (C := RelCat) X := .ofRel {p | p.2 = z}
     have hf : ∀ i, f ≫ x i = 0 := by
       intro i
       apply Hom.ext
       ext ⟨p, q⟩
       cases p
       cases q
-      change (∃ w : (X : Type u), w = z ∧ effectSet (x i) w) ↔ False
+      change (∃ w : (X : Type u), w = z ∧ w ∈ effectSet (x i)) ↔ False
       constructor
       · rintro ⟨w, rfl, hw⟩
         exact hnone i hw
@@ -120,8 +120,7 @@ theorem complete_iff_cover {ι : Type*} (x : ι → Effect X) :
     have hzero := hc f hf
     have hz := congrArg (fun r : SetRel PUnit X ↦ (PUnit.unit, z) ∈ r)
       (congrArg Hom.rel hzero)
-    rw [rel_zero] at hz; revert hz
-    simpa [f] using Eq.refl z
+    exact Eq.mp hz rfl
   · intro hcover Y f hf
     apply Hom.ext
     ext ⟨y, z⟩
@@ -142,16 +141,16 @@ theorem complete_iff_cover {ι : Type*} (x : ι → Effect X) :
       exact False.elim h
 
 /-- A dagger-effect composite is true exactly when the two effect subsets meet. -/
-theorem effect_dagger_comp_effect_iff (x y : Effect X) :
+theorem effect_dagger_comp_effect_iff (x y : Effect (C := RelCat) X) :
     (PUnit.unit, PUnit.unit) ∈ (x† ≫ y).rel ↔
-      ∃ z : X, effectSet x z ∧ effectSet y z := by
+      ∃ z : X, z ∈ effectSet x ∧ z ∈ effectSet y := by
   change (∃ z : X, (z, PUnit.unit) ∈ x.rel ∧
     (z, PUnit.unit) ∈ y.rel) ↔ _
   rfl
 
 /-- The relational dagger composite is identity exactly for a nonempty effect subset. -/
-theorem effect_dagger_comp_self_eq_id_iff (x : Effect X) :
-    x† ≫ x = 𝟙 (𝟙_ RelCat.{u}) ↔ ∃ z : X, effectSet x z := by
+theorem effect_dagger_comp_self_eq_id_iff (x : Effect (C := RelCat) X) :
+    x† ≫ x = 𝟙 (𝟙_ RelCat.{u}) ↔ ∃ z : X, z ∈ effectSet x := by
   constructor
   · intro h
     have : (PUnit.unit, PUnit.unit) ∈ (x† ≫ x).rel := by
@@ -164,13 +163,13 @@ theorem effect_dagger_comp_self_eq_id_iff (x : Effect X) :
     ext ⟨p, q⟩
     cases p
     cases q
-    change (∃ w : X, effectSet x w ∧ effectSet x w) ↔
+    change (∃ w : X, w ∈ effectSet x ∧ w ∈ effectSet x) ↔
       PUnit.unit = PUnit.unit
     exact ⟨fun _ ↦ rfl, fun _ ↦ ⟨z, hz, hz⟩⟩
 
 /-- The relational dagger composite is zero exactly for disjoint effect subsets. -/
-theorem effect_dagger_comp_effect_eq_zero_iff (x y : Effect X) :
-    x† ≫ y = 0 ↔ ∀ z : X, ¬ (effectSet x z ∧ effectSet y z) := by
+theorem effect_dagger_comp_effect_eq_zero_iff (x y : Effect (C := RelCat) X) :
+    x† ≫ y = 0 ↔ ∀ z : X, ¬ (z ∈ effectSet x ∧ z ∈ effectSet y) := by
   constructor
   · intro h z hz
     have hh := (effect_dagger_comp_effect_iff x y).2 ⟨z, hz⟩
@@ -180,15 +179,15 @@ theorem effect_dagger_comp_effect_eq_zero_iff (x y : Effect X) :
     ext ⟨p, q⟩
     cases p
     cases q
-    change (∃ z : X, effectSet x z ∧ effectSet y z) ↔ False
+    change (∃ z : X, z ∈ effectSet x ∧ z ∈ effectSet y) ↔ False
     exact ⟨fun ⟨z, hz⟩ ↦ h z hz, False.elim⟩
 
 /-- Relational disjointness means nonempty, pairwise disjoint effect subsets. -/
-theorem disjoint_iff_nonempty_pairwise {ι : Type*} (x : ι → Effect X) :
+theorem disjoint_iff_nonempty_pairwise {ι : Type*} (x : ι → Effect (C := RelCat) X) :
     Effect.Disjoint x ↔
-      (∀ i, ∃ z : X, effectSet (x i) z) ∧
+      (∀ i, ∃ z : X, z ∈ effectSet (x i)) ∧
       _root_.Pairwise (fun i j ↦ ∀ z : X,
-        ¬ (effectSet (x i) z ∧ effectSet (x j) z)) := by
+        ¬ (z ∈ effectSet (x i) ∧ z ∈ effectSet (x j))) := by
   constructor
   · rintro ⟨hself, hother⟩
     refine ⟨fun i ↦ (effect_dagger_comp_self_eq_id_iff (x i)).1 (hself i), ?_⟩
@@ -203,14 +202,14 @@ theorem disjoint_iff_nonempty_pairwise {ι : Type*} (x : ι → Effect X) :
     exact hother hij z ⟨hz.2, hz.1⟩
 
 /-- The three set-theoretic conditions defining a partition of the effect subsets. -/
-def EffectSetsFormPartition {ι : Type*} (x : ι → Effect X) : Prop :=
-  (∀ z : X, ∃ i : ι, effectSet (x i) z) ∧
-  (∀ i, ∃ z : X, effectSet (x i) z) ∧
+def EffectSetsFormPartition {ι : Type*} (x : ι → Effect (C := RelCat) X) : Prop :=
+  (∀ z : X, ∃ i : ι, z ∈ effectSet (x i)) ∧
+  (∀ i, ∃ z : X, z ∈ effectSet (x i)) ∧
   _root_.Pairwise (fun i j ↦ ∀ z : X,
-    ¬ (effectSet (x i) z ∧ effectSet (x j) z))
+    ¬ (z ∈ effectSet (x i) ∧ z ∈ effectSet (x j)))
 
 /-- Example 2.54: complete, disjoint effects are exactly relational partitions. -/
-theorem complete_disjoint_iff_partition {ι : Type*} (x : ι → Effect X) :
+theorem complete_disjoint_iff_partition {ι : Type*} (x : ι → Effect (C := RelCat) X) :
     Effect.Complete x ∧ Effect.Disjoint x ↔ EffectSetsFormPartition x := by
   rw [complete_iff_cover, disjoint_iff_nonempty_pairwise]
   rfl
@@ -218,7 +217,7 @@ theorem complete_disjoint_iff_partition {ι : Type*} (x : ι → Effect X) :
 /-- A partition's relational measurement lift has an isometric dagger.
 This uses the explicit disjoint-union witness and needs no additive inverses. -/
 theorem isIsometry_dagger_sum_lift_of_partition {ι : Type*} [Small.{u} ι]
-    (x : ι → Effect X) (hx : EffectSetsFormPartition x) :
+    (x : ι → Effect (C := RelCat) X) (hx : EffectSetsFormPartition x) :
     IsIsometry ((sumBicone (fun _ : ι ↦ 𝟙_ RelCat.{u})).lift
       (sumBiconeIsBilimit _) x)† :=
   (Effect.disjoint_iff_isIsometry_dagger_lift
@@ -237,8 +236,8 @@ private theorem mem_rel_sum {ι : Type*} {Y Z : RelCat.{u}}
 
 /-- Boolean normalization for finite relational measurements, using coverage directly. -/
 theorem sum_probability_eq_one_of_cover {ι : Type*} [Fintype ι]
-    (x : ι → Effect X) (hx : Effect.Complete x)
-    (a : State X) [IsIsometry a] : ∑ i, probability a (x i) = 1 := by
+    (x : ι → Effect (C := RelCat) X) (hx : Effect.Complete x)
+    (a : State (C := RelCat) X) [IsIsometry a] : ∑ i, probability a (x i) = 1 := by
   apply End.ext
   rw [Semiadditive.end_sum_asHom]
   apply Hom.ext

@@ -340,12 +340,12 @@ lemma opNorm_add_self_sub_one_le {A : E →ₗ[ℂ] E} (h₀ : A.IsPositive) (h�
   have hupper (i) : h₀.isSymmetric.eigenvalues rfl i ≤ 1 := by
     have h := (le_def.mp h₁).inner_nonneg_right (b i)
     have hb : inner ℂ (b i) (b i) = 1 := by simp [inner_self_eq_norm_sq_to_K]
-    simp only [sub_apply, Module.End.one_apply, inner_sub_right,
+    simp only [LinearMap.sub_apply, one_apply_eq_self, inner_sub_right,
       heigen, inner_smul_right, hb, mul_one] at h
     exact_mod_cast (sub_nonneg.mp h)
   apply opNorm_le_one_of_diagonal b _ c
   · intro i
-    simp only [add_apply, sub_apply, Module.End.one_apply,
+    simp only [LinearMap.add_apply, LinearMap.sub_apply, one_apply_eq_self,
       heigen]
     simp [c, sub_smul, add_smul, two_mul]
   · intro i

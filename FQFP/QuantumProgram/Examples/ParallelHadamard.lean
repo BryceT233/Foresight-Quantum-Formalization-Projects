@@ -8,7 +8,7 @@ module
 public import FQFP.CQM.Qudit.Measurement.Basic
 public import FQFP.CQM.Qudit.TensorPower
 public import FQFP.QuantumProgram.CountedLoop
-public import FQFP.QuantumProgram.Correctness
+public import FQFP.QuantumProgram.Semantics.Correctness
 import FQFP.CQM.Qudit.Channel.Choi
 
 /-!

@@ -202,7 +202,7 @@ theorem coeff_middle_eq_of_lt_eq_zero (U T V : PowerSeries A)
     (hD : ∀ k < n, coeff k (U * T * V) = 0) :
     coeff n T = coeff n (U * T * V) := by
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
       have ht (k : ℕ) (hk : k < n) : coeff k T = 0 :=
         (ih k hk (fun j hj ↦ hD j (hj.trans hk))).trans (hD k hk)
       rw [coeff_mul_eq_left_of_lt_eq_zero _ _ _ hV (fun k hk ↦ by

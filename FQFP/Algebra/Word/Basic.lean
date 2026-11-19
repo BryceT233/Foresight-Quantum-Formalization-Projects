@@ -74,10 +74,7 @@ lemma mem_wordPositions {κ : Type*} [DecidableEq κ] {n : ℕ}
 @[simp]
 lemma card_wordPositions_get {κ : Type*} [DecidableEq κ] (w : List κ) (a : κ) :
     (wordPositions w.get a).card = w.count a := by
-  convert (Fin.card_filter_univ_eq_vector_get_eq_count a (⟨w, rfl⟩ : List.Vector κ w.length))
-    using 1
-  · congr 1
-  · rfl
+  simpa only [List.ofFn_get, wordPositions] using (List.count_ofFn w.get a).symm
 
 /-- Expand the sum of two inputs on a selected set, keeping the other positions fixed. -/
 theorem prod_piecewise_add_eq_sum {A : Type*} [Semiring A] {n : ℕ}

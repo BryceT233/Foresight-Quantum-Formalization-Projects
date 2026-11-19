@@ -87,7 +87,7 @@ lemma mem_bellEffect (U : X ⟶ X) (a b : X) :
 /-- The effect set of the Bell effect of `U`: it consists of the pairs `(a, b)` with `(b, a)` in
 the relation `U`. -/
 lemma effectSet_bellEffect (U : X ⟶ X) (a b : X) :
-    effectSet (bellEffect U) (a, b) ↔ (b, a) ∈ U.rel :=
+    (a, b) ∈ effectSet (bellEffect U) ↔ (b, a) ∈ U.rel :=
   mem_bellEffect U a b
 
 /-- The one-time-pad correction: boolean negation, as a unitary endomorphism of the two-element

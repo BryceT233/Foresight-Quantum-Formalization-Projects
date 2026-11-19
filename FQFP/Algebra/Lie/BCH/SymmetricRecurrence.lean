@@ -99,7 +99,7 @@ theorem symmetricBchHomogeneous_unique (x y : L) (u : ℕ → PolynomialModule �
     u = symmetricBchHomogeneous x y := by
   funext n
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     by_cases hn0 : n = 0
     · subst n
       simpa using hzero
@@ -119,7 +119,7 @@ theorem symmetricBchHomogeneous_eq_zero_of_even (x y : L) (n : ℕ) (he : Even n
     symmetricBchHomogeneous x y n = 0 := by
   have he' : n % 2 = 0 := Nat.even_iff.mp he
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     by_cases hn0 : n = 0
     · subst n
       simp
@@ -140,7 +140,7 @@ theorem symmetricBchHomogeneous_eq_zero_of_even (x y : L) (n : ℕ) (he : Even n
 theorem degreeLE_symmetricBchHomogeneous (x y : L) (n : ℕ) :
     DegreeLE (symmetricBchHomogeneous x y n) n := by
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     by_cases hn0 : n = 0
     · subst n
       rw [symmetricBchHomogeneous_zero]
@@ -166,7 +166,7 @@ theorem map_symmetricBchHomogeneous {L' : Type*} [LieRing L'] [LieAlgebra ℚ L'
     PolynomialModule.map ℚ f.toLinearMap (symmetricBchHomogeneous x y n) =
       symmetricBchHomogeneous (f x) (f y) n := by
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     by_cases hn0 : n = 0
     · subst n
       simp

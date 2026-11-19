@@ -6,7 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.TensorPower
-public import FQFP.QuantumProgram.TransverseFieldIsing
+public import FQFP.QuantumProgram.Examples.TransverseFieldIsing
 
 /-!
 # Physical gates of the open transverse-field Ising chain

@@ -39,7 +39,7 @@ lemma IsSymmetric.re_trace_mul_self_eq_sum_sq {A : E →ₗ[ℂ] E} (hA : A.IsSy
   rw [trace_eq_sum_inner _ (hA.eigenvectorBasis rfl), Complex.re_sum]
   apply Finset.sum_congr rfl
   intro i _
-  simp only [Module.End.mul_apply, hA.apply_eigenvectorBasis, map_smul,
+  simp only [mul_apply_eq_comp, hA.apply_eigenvectorBasis, map_smul,
     inner_smul_right, (hA.eigenvectorBasis rfl).inner_eq_ite, ite_true, mul_one]
   simp [Complex.mul_re, pow_two]
 
@@ -59,13 +59,13 @@ lemma IsPositive.re_trace_sub_mul_self_le_traceNorm {A B : E →ₗ[ℂ] E}
   have hd : (inner ℂ (b i) ((A * A - B * B) (b i))).re =
       c * ((inner ℂ (b i) (A (b i))).re + (inner ℂ (b i) (B (b i))).re) := by
     have hop : A * A - B * B = (A - B) * A + B * (A - B) := by noncomm_ring
-    rw [hop, add_apply, inner_add_right, Module.End.mul_apply,
-      ← hC _ _, he, inner_smul_left, Module.End.mul_apply, he, map_smul,
+    rw [hop, LinearMap.add_apply, inner_add_right, mul_apply_eq_comp,
+      ← hC _ _, he, inner_smul_left, mul_apply_eq_comp, he, map_smul,
       inner_smul_right]
     simp [Complex.mul_re, mul_add]
   have hc : (inner ℂ (b i) (A (b i))).re - (inner ℂ (b i) (B (b i))).re = c := by
     have h := congrArg (fun x ↦ (inner ℂ (b i) x).re) he
-    simpa only [sub_apply, inner_sub_right, inner_smul_right, b.inner_eq_ite,
+    simpa only [LinearMap.sub_apply, inner_sub_right, inner_smul_right, b.inner_eq_ite,
       ite_true, mul_one, Complex.sub_re, Complex.ofReal_re] using h
   have ha : 0 ≤ (inner ℂ (b i) (A (b i))).re := (hA.inner_nonneg_right _).1
   have hb : 0 ≤ (inner ℂ (b i) (B (b i))).re := (hB.inner_nonneg_right _).1
@@ -87,7 +87,7 @@ lemma IsSymmetric.traceNorm_mul_eq_re_trace_sq {A : E →ₗ[ℂ] E} (hA : A.IsS
   have he := congrArg (fun T : E →ₗ[ℂ] E ↦
     (inner ℂ (hA.eigenvectorBasis rfl i) (T (hA.eigenvectorBasis rfl i))).re) hc
   have hp : c * c * c = s ^ 2 * c := by
-    simp only [Module.End.mul_apply, hA.apply_eigenvectorBasis, map_smul, smul_apply,
+    simp only [mul_apply_eq_comp, hA.apply_eigenvectorBasis, map_smul, LinearMap.smul_apply,
       inner_smul_right, (hA.eigenvectorBasis rfl).inner_eq_ite, ite_true, mul_one] at he
     simpa [Complex.mul_re, c, mul_assoc, pow_two] using he
   change |c| * s = c ^ 2

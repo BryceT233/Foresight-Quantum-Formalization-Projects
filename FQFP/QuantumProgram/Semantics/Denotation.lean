@@ -5,8 +5,8 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.QuantumProgram.ExecutionMass
-public import FQFP.QuantumProgram.History
+public import FQFP.QuantumProgram.Semantics.ExecutionMass
+public import FQFP.QuantumProgram.Semantics.History
 
 /-!
 # Finite-depth output by classical store

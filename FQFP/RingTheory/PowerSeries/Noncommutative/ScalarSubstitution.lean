@@ -37,7 +37,7 @@ theorem coeff_aeval_positiveSeries (p : Polynomial ℚ) (u : ℕ → A) (n : ℕ
     simp only [map_add, hp, hq, Polynomial.coeff_add, add_smul, sum_add_distrib]
   | monomial j r =>
     rw [Polynomial.aeval_monomial, ← Algebra.smul_def, coeff_smul, coeff_positiveSeries_pow]
-    simp only [Polynomial.coeff_monomial, ite_smul, zero_smul]
+    simp only [Polynomial.coeff_monomial_apply, ite_smul, zero_smul]
     rw [sum_ite_eq]
     split_ifs with hj
     · rfl

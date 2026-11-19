@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.QuantumProgram.Approximation
+public import FQFP.QuantumProgram.Semantics.Approximation
 
 /-!
 # Terminal histories of a sequential composition
@@ -64,6 +64,20 @@ theorem terminalWeightAt_succ (n : ℕ) (w : CQState Store H → ℝ≥0∞) :
   | nil => simp
   | cons d l ih => simp only [List.flatMap_cons, List.filter_append, List.map_append,
       List.sum_append, List.map_cons, List.sum_cons, ih]
+
+/-- A running command's post-expectation is the sum over its one-step successors. -/
+theorem PostH_eq_sum_next {p : Command Store Cell H} (s : CQState Store H)
+    {A : Store → Operator H} (hA : ∀ σ, (A σ).IsPositive) :
+    (Configuration.mk (some p) s).PostH A =
+      ((Configuration.mk (some p) s).next.map (fun d => d.PostH A)).sum := by
+  let r := Configuration.mk (some p) s
+  let w (t : CQState Store H) := ENNReal.ofReal (t.expectation (A t.store))
+  simp only [PostH_eq_tsum_terminalWeightAt _ hA]
+  change (∑' n, r.terminalWeightAt n w) = _
+  rw [tsum_eq_zero_add' ENNReal.summable]
+  have hzero : r.terminalWeightAt 0 w = 0 := by simp [r, terminalWeightAt, frontier]
+  simp only [hzero, zero_add, terminalWeightAt_succ, ← List.ofFn_getElem_eq_map, List.sum_ofFn]
+  exact Summable.tsum_finsetSum fun _ _ => ENNReal.summable
 
 /-- At depth `n`, split a sequential execution at every possible handover depth. -/
 theorem terminalWeightAt_seqWith (n : ℕ) (w : CQState Store H → ℝ≥0∞) :

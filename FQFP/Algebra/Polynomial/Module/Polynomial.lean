@@ -28,8 +28,8 @@ variable {A : Type*} [Ring A] [Algebra ℚ A]
 
 /-- Realize a polynomial module over an associative algebra as a central-variable polynomial. -/
 def toPolynomial : PolynomialModule ℚ A →ₗ[ℚ] Polynomial A where
-  toFun p := Polynomial.ofFinsupp (AddMonoidAlgebra.ofCoeff p.coeff)
-  map_add' p q := by ext n; simp
+  toFun p := AddMonoidAlgebra.ofCoeff p.coeff
+  map_add' p q := by ext n; rfl
   map_smul' r p := by ext n; rfl
 
 @[simp]

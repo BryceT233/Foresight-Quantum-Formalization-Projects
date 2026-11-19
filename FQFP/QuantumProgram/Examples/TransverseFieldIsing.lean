@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.QuantumProgram.BellPreparation
+public import FQFP.QuantumProgram.Examples.BellPreparation
 public import FQFP.QuantumProgram.Trotter
 
 /-!

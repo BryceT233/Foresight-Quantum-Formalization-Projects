@@ -68,7 +68,7 @@ lemma IsPositive.tensorProduct {A : E →ₗ[𝕜] E} {B : F →ₗ[𝕜] F}
     (hA : A.IsPositive) (hB : B.IsPositive) : (TensorProduct.map A B).IsPositive := by
   obtain ⟨n, v, rfl⟩ := isPositive_iff_eq_sum_rankOne.mp hA
   obtain ⟨m, w, rfl⟩ := isPositive_iff_eq_sum_rankOne.mp hB
-  simp only [← TensorProduct.mapBilinear_apply, map_sum, sum_apply]
+  simp only [← TensorProduct.mapBilinear_apply, map_sum, LinearMap.sum_apply]
   simp only [TensorProduct.mapBilinear_apply, map_rankOne]
   exact isPositive_sum _ fun i _ => isPositive_sum _ fun j _ =>
     (InnerProductSpace.isPositive_rankOne_self (v j ⊗ₜ w i)).toLinearMap

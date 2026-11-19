@@ -54,6 +54,16 @@ structure Configuration (Store Cell : Type*) (H : Qudit) where
 
 variable {Store Cell : Type*} {H : Qudit}
 
+/-- Every assignment and measurement write-back in the command preserves the given
+classical parameter, including writes nested under conditionals and loops. -/
+def Command.PreservesParameters {P : Type*} (p : Command Store Cell H) (read : Store → P) : Prop :=
+  match p with
+  | .skip | .channel _ | .unitary _ _ => True
+  | .assign f => ∀ σ, read (f σ) = read σ
+  | .measure _ _ upd => ∀ i σ, read (upd i σ) = read σ
+  | .seq p q | .ite _ p q => p.PreservesParameters read ∧ q.PreservesParameters read
+  | .whileDo _ body => body.PreservesParameters read
+
 /-- Attach a continuation to the result of a step of the first command. -/
 def Configuration.seqWith (c : Configuration Store Cell H) (q : Command Store Cell H) :
     Configuration Store Cell H :=

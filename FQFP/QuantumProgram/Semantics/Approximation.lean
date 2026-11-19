@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.QuantumProgram.Correctness
+public import FQFP.QuantumProgram.Semantics.Correctness
 
 /-!
 # Finite-depth values for partial correctness
@@ -42,6 +42,11 @@ theorem terminalWeightAt_add (n : ℕ) (f g : CQState Store H → ℝ≥0∞) :
     c.terminalWeightAt n (fun s => f s + g s) = c.terminalWeightAt n f + c.terminalWeightAt n g :=
   List.sum_map_add
 
+/-- A constant factor can be pulled out of the sum over a terminal frontier. -/
+theorem terminalWeightAt_const_mul (n : ℕ) (a : ℝ≥0∞) (w : CQState Store H → ℝ≥0∞) :
+    c.terminalWeightAt n (fun s => a * w s) = a * c.terminalWeightAt n w := by
+  simp only [terminalWeightAt, ← List.ofFn_getElem_eq_map, List.sum_ofFn, Finset.mul_sum]
+
 /-- Using the trace as the branch weight recovers the exact-depth terminating mass. -/
 theorem terminalWeightAt_mass (n : ℕ) :
     c.terminalWeightAt n (fun s => s.mass) = c.terminalMassAt n := by
@@ -61,6 +66,11 @@ theorem postAtE_eq_ofReal_postAt (n : ℕ) {A : Store → Operator H}
   rw [postAtE, terminalWeightAt, postAt_eq_sum_frontier]
   simp only [← List.ofFn_getElem_eq_map, List.sum_ofFn]
   exact (ENNReal.ofReal_sum_of_nonneg fun i _ => CQState.expectation_nonneg _ (hA _)).symm
+
+/-- Accumulate a positive observable by summing its nonnegative branch weights at each depth. -/
+theorem PostH_eq_tsum_terminalWeightAt {A : Store → Operator H} (hA : ∀ σ, (A σ).IsPositive) :
+    c.PostH A = ∑' n, c.terminalWeightAt n (fun s => ENNReal.ofReal (s.expectation (A s.store))) :=
+  tsum_congr fun n => (c.postAtE_eq_ofReal_postAt n hA).symm
 
 /-- The post-weight at each depth is at most the trace terminating there for tests below one. -/
 theorem postAtE_le_terminalMassAt (n : ℕ) {A : Store → Operator H} (hA : ∀ σ, A σ ≤ 1) :

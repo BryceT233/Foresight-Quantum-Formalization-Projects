@@ -109,7 +109,7 @@ lemma timeOrderedExp_iteratedDeriv_eq_iff
   · constructor
     · intro hD j hj
       induction j using Nat.strong_induction_on with
-      | h j ih =>
+      | ind j ih =>
         cases j with
         | zero => simp [timeOrderedExp_initial]
         | succ k =>
@@ -130,7 +130,7 @@ lemma timeOrderedExp_iteratedDeriv_eq_iff
             · exact hD k hk
     · intro hDU j hj
       induction j using Nat.strong_induction_on with
-      | h j ih =>
+      | ind j ih =>
         cases j with
         | zero =>
             have h1 : iteratedDeriv 1 (fun t => timeOrderedExp F 0 t) 0 =

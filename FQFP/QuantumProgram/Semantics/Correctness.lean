@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.QuantumProgram.Denotation
+public import FQFP.QuantumProgram.Semantics.Denotation
 import FQFP.Analysis.InnerProductSpace.PositiveTrace
 import FQFP.CQM.Qudit.Channel.Choi
 import FQFP.CQM.Qudit.Channel.Process.Dual
@@ -45,6 +45,10 @@ theorem CQState.expectation_nonneg (s : CQState Store H) {A : Operator H} (h : A
 theorem CQState.expectation_one (s : CQState Store H) : s.expectation 1 = s.mass := by
   rw [expectation, one_mul]
   rfl
+
+/-- The zero observable contributes no expectation. -/
+theorem CQState.expectation_zero (s : CQState Store H) : s.expectation 0 = 0 := by
+  simp [expectation, Operator.trace]
 
 /-- Expectation respects the Löwner order on observables. -/
 theorem CQState.expectation_mono (s : CQState Store H) {A B : Operator H} (h : A ≤ B) :
@@ -93,6 +97,12 @@ theorem postAt_le_terminalMassAt (c : Configuration Store Cell H) (n : ℕ) {A :
 /-- The post-expectation across all terminating depths of the run. -/
 noncomputable def PostH (c : Configuration Store Cell H) (A : Store → Operator H) : ℝ≥0∞ :=
   ∑' n, ENNReal.ofReal (c.postAt n A)
+
+/-- Pointwise order of observables gives the same order of terminal post-expectations. -/
+theorem PostH_mono (c : Configuration Store Cell H) {A B : Store → Operator H}
+    (h : ∀ σ, A σ ≤ B σ) : c.PostH A ≤ c.PostH B :=
+  ENNReal.tsum_le_tsum fun _ => ENNReal.ofReal_le_ofReal <|
+    List.sum_le_sum fun p _ => p.1.state.expectation_mono (h _)
 
 /-- The post-expectation of an effect family is bounded by the total terminating trace. -/
 theorem PostH_le_terminatingMass (c : Configuration Store Cell H) {A : Store → Operator H}
@@ -189,6 +199,19 @@ noncomputable def Assertion.mask (A : Assertion Store H) (φ : Store → Prop) :
   open Classical in fun σ =>
     if φ σ then A σ else ⟨0, le_rfl, LinearMap.nonneg_iff_isPositive.mpr LinearMap.isPositive_one⟩
 
+/-- The everywhere-zero quantum effect. -/
+def Assertion.zero : Assertion Store H := fun _ =>
+  ⟨0, le_rfl, LinearMap.nonneg_iff_isPositive.mpr LinearMap.isPositive_one⟩
+
+/-- The zero effect is a lower bound for every assertion. -/
+theorem Assertion.zero_le (A : Assertion Store H) : Assertion.zero ≤ A := fun σ => (A σ).2.1
+
+/-- Restricting the zero effect to classical support still gives the zero effect. -/
+theorem Assertion.zero_mask (φ : Store → Prop) :
+    (Assertion.zero (H := H)).mask φ = Assertion.zero := by
+  funext σ
+  by_cases h : φ σ <;> simp [Assertion.zero, Assertion.mask, h]
+
 /-- The part of an assertion on which the Boolean guard holds. -/
 noncomputable def Assertion.mand (A : Assertion Store H) (b : Store → Bool) : Assertion Store H :=
   A.mask fun σ => b σ = true
@@ -204,6 +227,17 @@ theorem Assertion.mask_of_pos (A : Assertion Store H) {φ : Store → Prop} {σ 
 /-- The effect vanishes at every store outside the mask. -/
 theorem Assertion.mask_of_neg (A : Assertion Store H) {φ : Store → Prop} {σ : Store} (h : ¬ φ σ) :
     (A.mask φ σ : Operator H) = 0 := by simp [mask, h]
+
+/-- Masking is monotone both in the effect and in the classical predicate. -/
+theorem Assertion.mask_mono {A B : Assertion Store H} {φ χ : Store → Prop}
+    (hAB : A ≤ B) (hφ : ∀ σ, φ σ → χ σ) : A.mask φ ≤ B.mask χ := by
+  intro σ
+  by_cases h : φ σ
+  · rw [A.mask_of_pos h, B.mask_of_pos (hφ σ h)]
+    exact hAB σ
+  · change (A.mask φ σ : Operator H) ≤ _
+    rw [A.mask_of_neg h]
+    exact (B.mask χ σ).2.1
 
 /-- A true guard retains the invariant in the body precondition. -/
 theorem Assertion.mand_of_true (A : Assertion Store H) {b : Store → Bool} {σ : Store}
@@ -231,6 +265,45 @@ noncomputable def Assertion.pure (v : UnitState H) : Assertion Store H := fun _ 
     (LinearMap.IsSymmetricProjection.isPositive
       ⟨hp.one_sub, LinearMap.IsSymmetric.one.sub ρ.positive.isSymmetric⟩)⟩
 
+/-- A predicate and its complement partition the terminal contribution of any assertion. -/
+theorem Configuration.PostH_mask_split (c : Configuration Store Cell H) (A : Assertion Store H)
+    (φ : Store → Prop) : c.PostH (fun σ => A.mask φ σ) +
+      c.PostH (fun σ => A.mask (fun τ => ¬ φ τ) σ) = c.PostH (fun σ => A σ) := by
+  unfold PostH
+  rw [← ENNReal.tsum_add]
+  apply tsum_congr
+  intro n
+  rw [← ENNReal.ofReal_add (c.postAt_nonneg n (A.mask φ).isPositive)
+    (c.postAt_nonneg n (A.mask fun σ => ¬ φ σ).isPositive)]
+  apply congrArg ENNReal.ofReal
+  simp only [postAt, ← List.sum_map_add]
+  apply congrArg List.sum
+  apply List.map_congr_left
+  intro p _
+  by_cases hp : φ p.1.state.store <;> simp [Assertion.mask, hp, CQState.expectation_zero]
+
+/-- If the identity effect on a predicate collects the entire input trace, every assertion
+collects its full post-expectation on that predicate. -/
+theorem Configuration.PostH_mask_eq_of_mass_le (c : Configuration Store Cell H)
+    (A : Assertion Store H) {φ : Store → Prop}
+    (h : (c.state.mass : ℝ≥0∞) ≤ c.PostH (fun σ => (Assertion.identity (H := H)).mask φ σ)) :
+    c.PostH (fun σ => A.mask φ σ) = c.PostH (fun σ => A σ) := by
+  let I : Assertion Store H := Assertion.identity
+  let ψ := fun σ => ¬ φ σ
+  have hzero : c.PostH (fun σ => I.mask ψ σ) ≤ 0 := by
+    apply (ENNReal.add_le_add_iff_left (a := (c.state.mass : ℝ≥0∞)) ENNReal.coe_ne_top).mp
+    calc (c.state.mass : ℝ≥0∞) + c.PostH (fun σ => I.mask ψ σ)
+        ≤ c.PostH (fun σ => I.mask φ σ) + c.PostH (fun σ => I.mask ψ σ) := add_le_add h le_rfl
+      _ = c.PostH (fun σ => I σ) := c.PostH_mask_split I φ
+      _ ≤ c.state.mass + (0 : ℝ≥0∞) := by simpa using c.PostH_le_mass (fun σ => (I σ).2.2)
+  have heq : c.PostH (fun σ => A.mask ψ σ) = 0 := by
+    apply le_antisymm _ zero_le
+    refine (c.PostH_mono (B := fun σ => I.mask ψ σ) ?_).trans hzero
+    intro σ
+    by_cases hp : ψ σ <;> simp [Assertion.mask, hp, I, Assertion.identity, (A σ).2.2]
+  have hsplit := c.PostH_mask_split A φ
+  rwa [heq, add_zero] at hsplit
+
 /-- Total validity compares the initial expectation with the accumulated terminal expectation. -/
 def validTot (A : Assertion Store H) (p : Command Store Cell H) (B : Assertion Store H) : Prop :=
   ∀ s : CQState Store H, ENNReal.ofReal (s.expectation (A s.store)) ≤
@@ -245,6 +318,18 @@ def validPar (A : Assertion Store H) (p : Command Store Cell H) (B : Assertion S
 /-- Every totally valid triple is partially valid. -/
 theorem validTot.validPar {A B : Assertion Store H} {p : Command Store Cell H}
     (h : validTot A p B) : validPar A p B := fun s => (h s).trans le_self_add
+
+/-- Strengthen the precondition and weaken the postcondition of a totally valid triple. -/
+theorem validTot_conseq {A A' B' B : Assertion Store H} {p : Command Store Cell H}
+    (hA : A ≤ A') (h : validTot A' p B') (hB : B' ≤ B) : validTot A p B := fun s =>
+  (ENNReal.ofReal_le_ofReal (s.expectation_mono (hA s.store))).trans <|
+    (h s).trans ((Configuration.mk (some p) s).PostH_mono hB)
+
+/-- Strengthen the precondition and weaken the postcondition of a partially valid triple. -/
+theorem validPar_conseq {A A' B' B : Assertion Store H} {p : Command Store Cell H}
+    (hA : A ≤ A') (h : validPar A' p B') (hB : B' ≤ B) : validPar A p B := fun s =>
+  (ENNReal.ofReal_le_ofReal (s.expectation_mono (hA s.store))).trans <|
+    (h s).trans (add_le_add ((Configuration.mk (some p) s).PostH_mono hB) le_rfl)
 
 /-- Total validity of the identity triple means that all input mass terminates. -/
 theorem validTot_identity_iff (p : Command Store Cell H) :
