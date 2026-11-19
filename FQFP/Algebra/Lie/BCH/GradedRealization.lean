@@ -63,11 +63,11 @@ theorem toPolynomial_positiveAdCoeff (u : ℕ → PolynomialModule ℚ A) (a : A
           (linearSeries a)) := by
   induction j generalizing n with
   | zero =>
-    rw [pow_zero, Module.End.one_apply, linearSeries_eq_monomial]
+    rw [pow_zero, one_apply_eq_self, linearSeries_eq_monomial]
     simp only [positiveAdCoeff, PowerSeries.coeff_monomial]
     split_ifs <;> simp
   | succ j ih =>
-    rw [pow_succ', Module.End.mul_apply, ← seriesLinearAction_adjointSeries,
+    rw [pow_succ', mul_apply_eq_comp, ← seriesLinearAction_adjointSeries,
       coeff_seriesLinearAction, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk,
       sum_range_succ']
     simp only [coeff_adjointSeries, homogeneousLieSeries, coeff_positiveSeries_zero,

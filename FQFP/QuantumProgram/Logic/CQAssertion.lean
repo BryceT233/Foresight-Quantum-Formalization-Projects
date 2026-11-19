@@ -1,7 +1,17 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for classical-quantum assertions and history judgments.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/History/Correctness.lean
+Qhl/Logic/Soundness.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
@@ -44,6 +54,11 @@ def CQAssertion.effect (q : CQAssertion Store H) : Assertion Store H :=
 /-- Interpret a classical–quantum assertion in the proof system by masking its quantum component. -/
 noncomputable def CQAssertion.toAssn (q : CQAssertion Store H) : Assertion Store H :=
   q.effect.mask q.cls
+
+/-- Interpreting a total effect with an unconditional classical predicate recovers the effect. -/
+theorem CQAssertion.toAssn_ofEffect_true (A : Assertion Store H) :
+    (ofEffect A fun _ => True).toAssn = A :=
+  funext fun σ => A.mask_of_pos (φ := fun _ => True) (σ := σ) trivial
 
 /-- At an input satisfying the classical predicate, masking retains the original observable. -/
 theorem CQAssertion.toAssn_op_of_cls {q : CQAssertion Store H} {σ : Store} (h : q.cls σ) :

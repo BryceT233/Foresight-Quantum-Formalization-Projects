@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg
+-/
+
+/-
+Physlib reference for the replacement channel.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/Channels/CPTP.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -77,7 +87,7 @@ lemma measurePrepareInstrument_branch (M : POVM H ι) (σ : ι → Density K)
     (M.measurePrepareInstrument σ).branch i A = (M.op i * A).trace • (σ i).op := by
   change Superoperator.prepare (σ i).op ((M.effect i).toSuperoperator A) = _
   rw [Superoperator.prepare_apply, M.effect_apply, Operator.trace_scalar]
-  simp only [LinearMap.smul_apply, Module.End.one_apply, smul_eq_mul, mul_one]
+  simp only [LinearMap.smul_apply, one_apply_eq_self, smul_eq_mul, mul_one]
 
 /-- The instrument branch is the categorical effect followed by preparation. -/
 lemma branchCPMap_measurePrepareInstrument (M : POVM H ι) (σ : ι → Density K) (i : ι) :

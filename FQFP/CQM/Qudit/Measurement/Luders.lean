@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg
+-/
+
+/-
+Physlib reference for measurement with the positive square roots of the effects.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/Measurements/POVM.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -73,10 +83,10 @@ lemma luders_ofBasis_branch (b : OrthonormalBasis ι ℂ H.state) (i : ι) (A : 
     (ofBasis b).luders.branch i A = inner ℂ (b i) (A (b i)) • Operator.outer (b i) (b i) := by
   have hs : (ofBasis b).op i * (ofBasis b).op i = (ofBasis b).op i := by
     ext x
-    simp [ofBasis, Module.End.mul_apply]
+    simp [ofBasis]
   rw [luders_branch_of_idempotent _ _ hs]
   ext x
-  simp [ofBasis, Module.End.mul_apply, smul_smul, mul_comm]
+  simp [ofBasis, smul_smul, mul_comm]
 
 /-- Conditioning a basis measurement gives the observed pure basis state. -/
 lemma conditional_luders_ofBasis (b : OrthonormalBasis ι ℂ H.state) (ρ : Density H)

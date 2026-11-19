@@ -68,12 +68,6 @@ theorem selectedCircuit_spec (h : Fin (e + 1) → ℝ) (J : Fin e → ℝ) (t : 
   · exact (min_eq_left hc).symm
   · exact (min_eq_right (le_of_not_ge hc)).symm
 
-/-- Exact evolution of the entire signed Ising Hamiltonian, used as the measurement reference. -/
-def exactEvolution (h : Fin (e + 1) → ℝ) (J : Fin e → ℝ) (t : ℝ) :
-    UnitaryProgram (tensorPower Qubit e) :=
-  hamiltonianGate ⟨_, (isSelfAdjoint_fieldHamiltonian h).add
-    (isSelfAdjoint_interactionHamiltonian J)⟩ t
-
 /-- Every finite POVM outcome on any input density state has probability error at most `ε`. -/
 theorem selectedCircuit_probability_error_le {ι : Type*} [Fintype ι]
     (h : Fin (e + 1) → ℝ) (J : Fin e → ℝ) (t : ℝ) {ε : ℝ} (hε : 0 < ε)
@@ -81,15 +75,23 @@ theorem selectedCircuit_probability_error_le {ι : Type*} [Fintype ι]
     let gs := strangCandidate (selectedLayer h J t ε) h J t ε
     |M.probability (ρ.map (program gs).denoteHom) i -
       M.probability (ρ.map (exactEvolution h J t).denoteHom) i| ≤ ε := by
-  apply (M.abs_probability_sub_le_traceDistance _ _ i).trans
-  apply (ρ.traceDistance_map_le_opNorm _ _).trans
-  have href : (exactEvolution h J t).toOperator =
-      exp (((-Complex.I) * (t : ℂ)) • (fieldHamiltonian h + interactionHamiltonian J)) := by
-    change exp (t • ((-Complex.I) • _)) = _
-    rw [← Complex.coe_smul, smul_smul, mul_comm]
-  change ‖(program _).toOperator - (exactEvolution h J t).toOperator‖ ≤ ε
-  rw [href]
+  apply M.abs_probability_map_sub_le
+  change ‖(program _).toOperator - (exactEvolution h J t).toOperator‖ ≤ _
+  rw [toOperator_exactEvolution]
   exact (selectedCircuit_spec h J t hε).1
+
+/-- The operational post-expectation of each outcome in the selected native command
+approximates its probability under the exact evolution on an arbitrary input density. -/
+theorem abs_postH_selectedCircuit_sub_probability_le {Store ι : Type*} [Fintype ι]
+    (h : Fin (e + 1) → ℝ) (J : Fin e → ℝ) (t : ℝ) {ε : ℝ} (hε : 0 < ε)
+    (M : POVM (tensorPower Qubit e) ι) (ρ : Density (tensorPower Qubit e)) (i : ι) (σ : Store) :
+    let gs := strangCandidate (selectedLayer h J t ε) h J t ε
+    let c := Configuration.mk (some (command gs)) ⟨σ, ρ.op, ρ.positive⟩
+    |(c.PostH (fun _ => M.op i)).toReal - M.probability (ρ.map (exactEvolution h J t).denoteHom) i|
+      ≤ ε := by
+  dsimp only
+  rw [postH_command_probability _ M ρ i σ]
+  exact selectedCircuit_probability_error_le h J t hε M ρ i
 
 end
 

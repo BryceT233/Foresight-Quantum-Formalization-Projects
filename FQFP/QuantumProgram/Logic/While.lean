@@ -1,7 +1,17 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for masked assertions and the loop soundness rules.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/Logic/Assertion.lean
+Qhl/Logic/Soundness.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
@@ -90,12 +100,9 @@ theorem validTot_while {b : Store → Bool} {J : Assertion Store H} {p : Command
       have prem := h n s
       rw [(J.mand b).mask_of_pos (φ := fun σ => t σ = n) hn, J.mand_of_true hb] at prem
       apply prem.trans
-      apply ENNReal.tsum_le_tsum
-      intro j
       let c := Configuration.mk (some p) s
-      rw [← c.postAtE_eq_ofReal_postAt j (J.mask fun σ => t σ < n).isPositive]
-      apply c.terminalWeightAt_mono
-      intro u
+      rw [c.PostH_eq_tsum_terminalWeightAt (J.mask fun σ => t σ < n).isPositive]
+      refine tsum_le_tsum fun j => c.terminalWeightAt_mono j fun u => ?_
       by_cases hu : t u.store < n
       · simpa only [J.mask_of_pos (φ := fun σ => t σ < n) hu] using ih (t u.store) hu u rfl
       · simp [J.mask_of_neg (φ := fun σ => t σ < n) hu, CQState.expectation_zero]

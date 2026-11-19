@@ -1,6 +1,17 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg
+-/
+
+/-
+Physlib reference for the order-one limit of the sandwiched divergence.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/Entropy/Relative.lean
+QuantumInfo/Entropy/DPI.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -80,7 +91,7 @@ private lemma tendsto_weight_apply {ι : Type*} {l : Filter ι} {a : ι → ℝ}
       (Real.continuous_exp.continuousAt.tendsto.comp (tendsto_const_nhds.mul he))).smul
         ((Operator.outer (σ.eigenbasis j) (σ.eigenbasis j)).continuous_of_finiteDimensional
           |>.continuousAt.tendsto.comp hv)
-  simpa only [weight_one, Module.End.one_apply] using hw
+  simpa only [weight_one, one_apply_eq_self] using hw
 
 private lemma tendsto_sandwich_apply {ι : Type*} {l : Filter ι} {a : ι → ℝ} {v : ι → H.state}
     {u : H.state} (ρ σ : Density H) (h : ρ.AbsolutelyContinuous σ)

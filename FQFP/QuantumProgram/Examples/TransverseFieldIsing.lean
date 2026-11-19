@@ -1,19 +1,29 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for the transverse-field Ising slice and its ordered product specification.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/Register/TFIM.lean
+Qhl/Examples/TrotterTFIMTriple.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Examples.BellPreparation
-public import FQFP.QuantumProgram.Trotter
+public import FQFP.QuantumProgram.IsingChain.Instruction
 
 /-!
 # Two-qubit transverse-field Ising simulation
 
 For the signed Hamiltonian `a X⊗I + b I⊗X + J Z⊗Z`, one slice executes two local
 X rotations followed by a parity computation, a local Z rotation and parity uncomputation.
-The semantics is equality on amplitudes with the half-angle convention for rotations.
+The two-site native circuit and its Hoare command use the same instructions. Their
+specification uses the ordered Trotter product with the half-angle convention for rotations.
 -/
 
 @[expose] public section
@@ -29,26 +39,6 @@ theorem isSelfAdjoint_of_hermitian_qubit_matrix (M : Matrix (Fin 2) (Fin 2) ℂ)
     (hM : M.conjTranspose = M) :
     _root_.IsSelfAdjoint (matrixToEnd M).asHom.hom :=
   (isSelfAdjoint_iff_hom _).1 ((isSelfAdjoint_matrixToEnd_iff M).2 hM)
-
-/-- Pauli X as a self-adjoint single-qubit Hamiltonian. -/
-def pauliXHamiltonian : selfAdjoint (Operator Qubit) :=
-  ⟨_, (isSelfAdjoint_iff_hom Qubit.pauliX.asHom).1 inferInstance⟩
-
-/-- Pauli Z as a self-adjoint single-qubit Hamiltonian. -/
-def pauliZHamiltonian : selfAdjoint (Operator Qubit) :=
-  ⟨_, (isSelfAdjoint_iff_hom Qubit.pauliZ.asHom).1 inferInstance⟩
-
-/-- The rotation `exp(-i θ X/2)` on one qubit. -/
-def rx (θ : ℝ) : Qubit ⟶ Qubit :=
-  (hamiltonianGate (S := Qubit) pauliXHamiltonian (θ / 2)).denoteHom
-
-instance (θ : ℝ) : IsUnitary (rx θ) := by unfold rx; infer_instance
-
-/-- The rotation `exp(-i θ Z/2)` on one qubit. -/
-def rz (θ : ℝ) : Qubit ⟶ Qubit :=
-  (hamiltonianGate (S := Qubit) pauliZHamiltonian (θ / 2)).denoteHom
-
-instance (θ : ℝ) : IsUnitary (rz θ) := by unfold rz; infer_instance
 
 namespace TransverseFieldIsing
 
@@ -107,7 +97,7 @@ private theorem cnot_z :
   apply ((ZBasis 2).tensorProduct (ZBasis 2)).toBasis.ext
   rintro ⟨i, j⟩
   simp only [OrthonormalBasis.coe_toBasis, OrthonormalBasis.tensorProduct_apply,
-    Module.End.mul_apply, Operator.oneTensorHom_apply]
+    mul_apply_eq_comp, Operator.oneTensorHom_apply]
   change controlledNot.hom _ = Operator.tensor pauliZHamiltonian.val pauliZHamiltonian.val
     (controlledNot.hom _)
   rw [controlledNot_basis, Operator.tensor_apply]
@@ -168,16 +158,52 @@ theorem toOperator_step (a b J δ : ℝ) :
     ← mul_assoc, ← mul_assoc, hzz]
   rfl
 
+end TransverseFieldIsing
+
+namespace IsingChain
+
+/-- Two sites and one edge give the existing five-gate Ising slice. -/
+theorem toOperator_slice_pair (a b J δ : ℝ) :
+    (program (slice ![a, b] ![J] δ)).toOperator =
+      (TransverseFieldIsing.step a b J δ).toOperator := by
+  simp only [slice, fieldGates, interactionGates, List.ofFn_succ, List.ofFn_zero,
+    List.flatten_cons, List.flatten_nil,
+    List.append_nil, List.cons_append, List.nil_append, edgeGates, program,
+    TransverseFieldIsing.step, List.map_cons, List.map_nil, UnitaryProgram.toOperator_sequence]
+  rfl
+
+end IsingChain
+
+namespace TransverseFieldIsing
+
 /-- Repeat the physical slice at time `t/n` for `n` steps. -/
 def circuit (a b J t : ℝ) (n : ℕ) : UnitaryProgram (Qubit ⊗ Qubit) :=
-  .sequence (List.replicate n (step a b J (t / n)))
+  IsingChain.program (IsingChain.circuit ![a, b] ![J] t n)
 
 /-- The repeated circuit has the same operator as the generic product formula. -/
 theorem toOperator_circuit (a b J t : ℝ) (n : ℕ) :
     (circuit a b J t n).toOperator =
       (trotterProgram (S := Qubit ⊗ Qubit) (terms a b J) t n).toOperator := by
-  simp only [circuit, trotterProgram, UnitaryProgram.toOperator_sequence, List.reverse_replicate,
-    List.map_replicate, List.prod_replicate, toOperator_step]
+  let δ := t / n
+  have hs := (IsingChain.toOperator_slice_pair a b J δ).trans (toOperator_step a b J δ)
+  refine (IsingChain.toOperator_replicate n _).trans
+    ((congrArg (fun U : Operator (Qubit ⊗ Qubit) => U ^ n) hs).trans ?_)
+  simp [trotterProgram, UnitaryProgram.toOperator_sequence, δ]
+
+/-- Execute the two-site circuit as a sequence of native Hoare commands. -/
+def circuitCommand {Store : Type*} (a b J t : ℝ) (n : ℕ) : Command Store (Fin 2) (Qubit ⊗ Qubit) :=
+  IsingChain.command (IsingChain.circuit ![a, b] ![J] t n)
+
+/-- For any postcondition, the Trotter channel gives the precondition of the native commands. -/
+theorem derivTot_circuit {Store : Type*} (a b J t : ℝ) (n : ℕ)
+    (A : Assertion Store (Qubit ⊗ Qubit)) :
+    DerivTot (A.channelPre fun _ => (trotterProgram (terms a b J) t n).toChannel)
+      (circuitCommand a b J t n) A := by
+  have he : (circuit a b J t n).toChannel = (trotterProgram (terms a b J) t n).toChannel :=
+    QuantumChannel.ext (congrArg (Superoperator.conjugate (H := Qubit ⊗ Qubit) (K := Qubit ⊗ Qubit))
+      (toOperator_circuit a b J t n))
+  rw [← he]
+  exact IsingChain.derivTot_command (e := 1) _ A
 
 /-- Compile the transverse-field Ising evolution to a circuit at the requested tolerance. -/
 def simulation (a b J t ε : ℝ) : UnitaryProgram (Qubit ⊗ Qubit) :=

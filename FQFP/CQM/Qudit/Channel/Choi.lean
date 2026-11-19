@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg
+-/
+
+/-
+Physlib reference for the Choi positivity criterion and Kraus decomposition.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/Channels/Unbundled.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -202,7 +212,7 @@ theorem isTracePreserving_iff_partialTraceLeft_choi (b : OrthonormalBasis ι ℂ
     apply InnerProductSpace.ext_inner_left_basis b.toBasis
     intro i
     simp only [OrthonormalBasis.coe_toBasis, inner_partialTraceLeft_choi,
-      Module.End.one_apply]
+      one_apply_eq_self]
     rw [hΦ (Operator.outer (b i) (b j)), Operator.trace_outer]
     simp [b.inner_eq_ite, eq_comm]
   · intro h
@@ -210,7 +220,7 @@ theorem isTracePreserving_iff_partialTraceLeft_choi (b : OrthonormalBasis ι ℂ
       apply Operator.basis_outer_ext b
       intro i j
       change (Φ (Operator.outer (b i) (b j))).trace = (Operator.outer (b i) (b j)).trace
-      rw [← inner_partialTraceLeft_choi b Φ i j, h, Module.End.one_apply, Operator.trace_outer]
+      rw [← inner_partialTraceLeft_choi b Φ i j, h, one_apply_eq_self, Operator.trace_outer]
       simp [b.inner_eq_ite, eq_comm]
     intro A
     exact congrArg (fun f => f A) ht

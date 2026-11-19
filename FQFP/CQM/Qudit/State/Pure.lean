@@ -1,6 +1,21 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg, Leonardo A. Lessa
+-/
+
+/-
+Physlib reference for pure-state equality, rank and mixtures of pure ensembles.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/States/Mixed/MState.lean
+
+QuantumInfo/States/Ensemble.lean
+Copyright (c) 2025 Leonardo A Lessa. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Leonardo A Lessa
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -67,7 +82,7 @@ lemma eq_pure_of_range_le (ρ : Density H) (v : UnitState H)
   have hp : (pure v).op * ρ.op = ρ.op := by
     ext x
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp (h (LinearMap.mem_range_self ρ.op x))
-    simp only [Module.End.mul_apply, ← hc, pure_apply, inner_smul_right,
+    simp only [mul_apply_eq_comp, ← hc, pure_apply, inner_smul_right,
       v.inner_self, mul_one]
   have hq : ρ.op * (pure v).op = ρ.op := by
     have := congrArg LinearMap.adjoint hp
@@ -78,7 +93,7 @@ lemma eq_pure_of_range_le (ρ : Density H) (v : UnitState H)
     rw [← Operator.trace_outer, ← ho, ρ.trace_one]
   have hv : ρ.op v.val = v.val := by
     have := congrArg (fun A : Operator H => A v.val) hp
-    simpa only [Module.End.mul_apply, pure_apply, ht, one_smul] using this.symm
+    simpa only [mul_apply_eq_comp, pure_apply, ht, one_smul] using this.symm
   apply Density.ext
   rw [ho, hv, op_pure]
 

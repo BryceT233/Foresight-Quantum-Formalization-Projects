@@ -1,7 +1,16 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for soundness of the two derivation systems.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/Logic/Soundness.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
@@ -31,11 +40,8 @@ theorem validTot_seq {A B C : Assertion Store H} {p q : Command Store Cell H}
   apply (hp s).trans
   let c := Configuration.mk (some p) s
   change c.PostH _ ≤ (c.seqWith q).PostH _
-  rw [Configuration.PostH_seqWith _ _ C.isPositive]
-  apply ENNReal.tsum_le_tsum
-  intro j
-  rw [← c.postAtE_eq_ofReal_postAt j B.isPositive]
-  exact c.terminalWeightAt_mono j hq
+  rw [Configuration.PostH_seqWith _ _ C.isPositive, c.PostH_eq_tsum_terminalWeightAt B.isPositive]
+  exact tsum_le_tsum fun j => c.terminalWeightAt_mono j hq
 
 /-- Partial correctness composes with the residual mass of both execution phases. -/
 theorem validPar_seq {A B C : Assertion Store H} {p q : Command Store Cell H}
@@ -45,8 +51,8 @@ theorem validPar_seq {A B C : Assertion Store H} {p q : Command Store Cell H}
   let c := Configuration.mk (some p) s
   change c.PostH _ + c.nonterminatingMass ≤ (c.seqWith q).PostH _ + (c.seqWith q).nonterminatingMass
   rw [Configuration.PostH_seqWith _ _ C.isPositive, Configuration.nonterminatingMass_seqWith,
-    add_comm c.nonterminatingMass, ← add_assoc, ← ENNReal.tsum_add]
-  refine add_le_add (ENNReal.tsum_le_tsum fun j => ?_) le_rfl
+    add_comm c.nonterminatingMass, ← add_assoc, ← tsum_add]
+  refine add_le_add (tsum_le_tsum fun j => ?_) le_rfl
   rw [← c.postAtE_eq_ofReal_postAt j B.isPositive, ← c.terminalWeightAt_add]
   exact c.terminalWeightAt_mono j hq
 

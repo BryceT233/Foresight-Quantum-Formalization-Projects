@@ -1,14 +1,21 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for parallel Hadamard preparation and the amplitudes of the all-plus state.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/Examples/ParallelHadamardTriple.lean
+Qhl/Register/Qubits.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.CQM.Qudit.Measurement.Basic
-public import FQFP.CQM.Qudit.TensorPower
-public import FQFP.QuantumProgram.CountedLoop
-public import FQFP.QuantumProgram.Semantics.Correctness
+public import FQFP.QuantumProgram.Examples.ParallelHadamardOn
 import FQFP.CQM.Qudit.Channel.Choi
 
 /-!
@@ -76,9 +83,7 @@ theorem parallelHadamard_amplitude (n : ℕ) (bits : Fin (n + 1) → Fin 2) :
 
 /-- The register expression of the loop selects the site named by the classical counter. -/
 def hadamardBody (n : ℕ) : Command ℕ (Fin (n + 1)) (tensorPower Qubit n) :=
-  let cell := Fin.ofNat (n + 1)
-  .unitary (fun k (_ : Fin 1) => cell k)
-    (fun k _ => .liftGate (siteOp Qubit n (cell k)) Qubit.H.asHom)
+  hadamardBodyOn (Function.Embedding.refl _) CounterLens.nat
 
 /-- Reset the counter, then apply Hadamard and increment until all sites have been visited. -/
 def hadamardLoop (n : ℕ) : Command ℕ (Fin (n + 1)) (tensorPower Qubit n) :=
@@ -103,8 +108,9 @@ theorem frontier_hadamardLoop (n : ℕ) (input : CQState ℕ (tensorPower Qubit 
       Fin.ext (Nat.mod_eq_of_lt hk)
     let gate := UnitaryProgram.liftGate (siteOp Qubit n ⟨k, hk⟩) Qubit.H.asHom
     refine ⟨(s k hk.le).map gate.toChannel, ?_, ?_⟩
-    · simp only [hadamardBody, Command.step, s, dite_eq_left (Function.injective_of_subsingleton _),
-        hi, gate]
+    · simp only [hadamardBody, hadamardBodyOn, CounterLens.nat, id_eq,
+        Function.Embedding.refl_apply, Command.step, s,
+        dite_eq_left (Function.injective_of_subsingleton _), hi, gate]
     · simp only [s, hadamardPrefix, UnitaryProgram.toChannel_seq]
       rfl
 
@@ -129,6 +135,22 @@ theorem frontier_hadamardLoop_zero (n initialCounter : ℕ) :
   change Superoperator.conjugate (hadamardPrefix n (n + 1) le_rfl).toOperator _ = _
   rw [Superoperator.conjugate_outer, parallelHadamard_apply_zero]
 
+/-- The full-register source derivation prepares the all-plus projector and records the
+exact exit counter. It specializes the subregister loop to the identity placement. -/
+theorem sourceDeriv_hadamardLoop (n : ℕ) :
+    let zero := UnitState.ofBasis (ZBasis 2) 0
+    let plus := UnitState.map Qubit.H.asHom zero
+    SourceDerivTot (.ofEffect (Assertion.pure (UnitState.productVector n fun _ => zero))
+      fun _ => True) (hadamardLoop n)
+      (.ofEffect (Assertion.pure (UnitState.productVector n fun _ => plus))
+        fun k => k = n + 1) := by
+  intro zero plus
+  have h := sourceDeriv_hadamardLoopOn (Function.Embedding.refl (Fin (n + 1)))
+    (fun _ => zero) CounterLens.nat (fun _ => True) (fun _ _ => Iff.rfl)
+  simp only [hadamardFactors_zero, hadamardFactors_full, Function.Embedding.coe_refl,
+    Function.extend_id, true_and] at h
+  exact h
+
 /-- Semantic total correctness of parallel Hadamard from the all-zero to the all-plus projector
 (`phValid` in `Qhl/Examples/ParallelHadamardTriple.lean`). -/
 theorem validTot_hadamardLoop (n : ℕ) :
@@ -136,18 +158,10 @@ theorem validTot_hadamardLoop (n : ℕ) :
     let plus := UnitState.map Qubit.H.asHom zero
     validTot (Assertion.pure (UnitState.productVector n fun _ => zero)) (hadamardLoop n)
       (Assertion.pure (UnitState.productVector n fun _ => plus)) := by
-  intro zero plus input
-  let p := hadamardPrefix n (n + 1) le_rfl
-  let z := productVector Qubit n (fun _ => ZBasis 2 0)
-  let v := productVector Qubit n (fun _ => hadamardZero)
-  have hp : p.denoteHom z = v := parallelHadamard_apply_zero n
-  have he : (input.map p.toChannel).expectation (Operator.outer v v) =
-      input.expectation (Operator.outer z z) := by
-    rw [← hp]
-    exact input.expectation_outer_map p.denoteHom z
-  exact (congrArg ENNReal.ofReal he).symm.le.trans
-    (Configuration.ofReal_expectation_le_PostH_of_frontier (frontier_hadamardLoop n input)
-      (fun _ => Operator.outer v v))
+  intro zero plus
+  apply validTot_conseq _ (sourceDeriv_hadamardLoop n).sound (CQAssertion.toAssn_le _)
+  intro σ
+  exact (Assertion.mask_of_pos _ (φ := fun _ => True) (σ := σ) trivial).ge
 
 end
 

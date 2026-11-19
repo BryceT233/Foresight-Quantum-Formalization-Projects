@@ -41,7 +41,7 @@ theorem seriesLinearAction_mul (P Q : PowerSeries (Module.End ℚ A)) (V : Power
     seriesLinearAction (P * Q) V = seriesLinearAction P (seriesLinearAction Q V) := by
   ext n
   simp only [coeff_seriesLinearAction, coeff_mul, LinearMap.sum_apply,
-    Module.End.mul_apply, map_sum, sum_sigma']
+    mul_apply_eq_comp, map_sum, sum_sigma']
   apply sum_nbij' (fun ⟨⟨_i, j⟩, ⟨k, l⟩⟩ ↦ ⟨(k, l + j), (l, j)⟩)
     (fun ⟨⟨i, _j⟩, ⟨k, l⟩⟩ ↦ ⟨(i + k, l), (i, k)⟩) <;>
       aesop (add simp [mem_antidiagonal, add_assoc])

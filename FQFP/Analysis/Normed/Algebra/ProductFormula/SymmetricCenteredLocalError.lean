@@ -54,7 +54,7 @@ lemma conjCoeff_one {s : ℕ} (Z : Fin s → A) (B : A) :
       rw [conjCoeff_succ]
       simp only [Nat.reduceAdd, sum_range_succ, range_one, sum_singleton,
         Nat.factorial_zero, Nat.cast_one, inv_one, pow_zero, tsub_zero, ih,
-        Ring.lie_def, sum_mul, mul_sum, Module.End.one_apply, one_smul,
+        Ring.lie_def, sum_mul, mul_sum, one_apply_eq_self, one_smul,
         Nat.factorial_one, pow_one, tsub_self, conjCoeff_zero, LieAlgebra.ad_apply,
         Fin.sum_univ_castSucc]
       simp only [← Finset.sum_mul, ← Finset.mul_sum]

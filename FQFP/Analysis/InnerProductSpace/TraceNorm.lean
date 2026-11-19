@@ -154,7 +154,7 @@ lemma traceNorm_mul_le_traceNorm (A B : E →ₗ[ℂ] E) :
 /-- Taking adjoints preserves the Hilbert-space operator norm. -/
 lemma opNorm_adjoint (A : E →ₗ[ℂ] E) :
     ‖A.adjoint.toContinuousLinearMap‖ = ‖A.toContinuousLinearMap‖ := by
-  have := FiniteDimensional.complete ℂ E
+  have := FiniteDimensional.completeSpace ℂ E
   rw [adjoint_toContinuousLinearMap]
   exact norm_star A.toContinuousLinearMap
 
@@ -199,7 +199,7 @@ lemma traceNorm_eq_zero_iff (A : E →ₗ[ℂ] E) : traceNorm A = 0 ↔ A = 0 :=
     have hr : A * (InnerProductSpace.rankOne ℂ x (A x)).toLinearMap =
         (InnerProductSpace.rankOne ℂ (A x) (A x)).toLinearMap := by
       ext y
-      simp [InnerProductSpace.rankOne_apply, Module.End.mul_apply]
+      simp [InnerProductSpace.rankOne_apply]
     rw [hr, InnerProductSpace.trace_rankOne] at hx
     exact hx
   · rintro rfl
@@ -215,7 +215,7 @@ lemma IsSymmetric.traceNorm_le_sum_abs_eigenvalues {A : E →ₗ[ℂ] E} (hA : A
   apply (norm_sum_le _ _).trans
   apply Finset.sum_le_sum
   intro i _
-  rw [Module.End.mul_apply, hA.apply_eigenvectorBasis, map_smul, inner_smul_right,
+  rw [mul_apply_eq_comp, hA.apply_eigenvectorBasis, map_smul, inner_smul_right,
     norm_mul, RCLike.norm_ofReal]
   apply mul_le_mul_of_nonneg_left _ (abs_nonneg _)
   calc
@@ -264,7 +264,7 @@ lemma sum_abs_re_inner_le_traceNorm {ι : Type*} [Fintype ι]
     rw [trace_eq_sum_inner _ b, Complex.re_sum]
     apply Finset.sum_congr rfl
     intro i _
-    rw [Module.End.mul_apply, hS, map_smul, inner_smul_right]
+    rw [mul_apply_eq_comp, hS, map_smul, inner_smul_right]
     dsimp only [c]
     split_ifs with hi
     · simp [abs_of_nonneg hi]

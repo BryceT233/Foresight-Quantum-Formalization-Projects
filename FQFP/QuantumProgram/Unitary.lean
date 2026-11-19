@@ -76,6 +76,30 @@ theorem toOperator_sequence (ps : List (UnitaryProgram H)) :
   rw [denoteEnd_sequence, map_list_prod, List.map_map]
   rfl
 
+/-- Execute the gates with indices from zero up to the given bound, in increasing order. -/
+noncomputable def gatePrefix (gate : ℕ → UnitaryProgram H) (m : ℕ) : UnitaryProgram H :=
+  sequence ((List.range m).map gate)
+
+/-- The empty prefix acts as the identity. -/
+theorem toOperator_gatePrefix_zero (gate : ℕ → UnitaryProgram H) :
+    (gatePrefix gate 0).toOperator = 1 := rfl
+
+/-- The next gate acts on the output of the preceding prefix. -/
+theorem toOperator_gatePrefix_succ (gate : ℕ → UnitaryProgram H) (m : ℕ) :
+    (gatePrefix gate (m + 1)).toOperator =
+      (gate m).toOperator * (gatePrefix gate m).toOperator := by
+  simp [gatePrefix, toOperator_sequence, List.range_succ]
+
+/-- A gate sequence transports a vector family from its first to its last member. -/
+theorem toOperator_gatePrefix_apply (gate : ℕ → UnitaryProgram H) (m : ℕ) (v : ℕ → H.state)
+    (step : ∀ k < m, (gate k).toOperator (v k) = v (k + 1)) :
+    (gatePrefix gate m).toOperator (v 0) = v m := by
+  induction m with
+  | zero => rw [toOperator_gatePrefix_zero, one_apply_eq_self]
+  | succ m ih =>
+    rw [toOperator_gatePrefix_succ, mul_apply_eq_comp, ih (fun k hk => step k (by lia))]
+    exact step m (by lia)
+
 /-- Sequential execution composes the two channels in execution order. -/
 theorem toChannel_seq (p q : UnitaryProgram H) :
     (p.seq q).toChannel = q.toChannel.comp p.toChannel :=

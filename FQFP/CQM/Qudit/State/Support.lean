@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg, Leonardo A. Lessa
+-/
+
+/-
+Physlib reference for the zero and unit expectation criteria.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/States/Mixed/MState.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -48,7 +58,7 @@ lemma expectation_eq_zero_iff (ρ : Density H) {A : Operator H} (hA : A.IsPositi
       ((Finset.sum_eq_zero_iff_of_nonneg (fun j _ => hA.re_inner_nonneg_right (v j))).mp h i
         (Finset.mem_univ i))
   ext x
-  simp only [LinearMap.sum_apply, Module.End.mul_apply, Operator.outer_apply, map_smul, hz,
+  simp only [LinearMap.sum_apply, mul_apply_eq_comp, Operator.outer_apply, map_smul, hz,
     smul_zero, Finset.sum_const_zero, LinearMap.zero_apply]
 
 /-- An observable bounded above by one has expectation one exactly when it fixes the support. -/
@@ -136,7 +146,7 @@ lemma absolutelyContinuous_maximallyMixed (ρ : Density H)
     (hn : Module.finrank ℂ H.state ≠ 0) : ρ.AbsolutelyContinuous (maximallyMixed H hn) := by
   intro v hv
   change (maximallyMixed H hn).op v = 0 at hv
-  simp only [op_maximallyMixed, LinearMap.smul_apply, Module.End.one_apply, smul_eq_zero,
+  simp only [op_maximallyMixed, LinearMap.smul_apply, one_apply_eq_self, smul_eq_zero,
     inv_eq_zero, Nat.cast_eq_zero, hn, false_or] at hv
   simp [hv]
 

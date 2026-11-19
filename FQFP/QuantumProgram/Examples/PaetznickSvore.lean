@@ -1,7 +1,16 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for the two-T circuit and its heralded decomposition.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/Gate/PaetznickSvore.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
@@ -34,8 +43,8 @@ abbrev phase : ℂ := exp (((Real.pi / 4 : ℝ) : ℂ) * I)
 def tGate : Qubit ⟶ Qubit := (Qubit.phaseShift (Real.pi / 4)).asHom
 
 instance : IsUnitary tGate := by
-  rw [tGate, Qubit.phaseShift, isUnitary_matrixToEnd_iff_fin_two]
-  simp [-Complex.ofReal_div, norm_exp_ofReal_mul_I]
+  unfold tGate
+  infer_instance
 
 /-- The seven gates of the repeated circuit, in execution order. -/
 def circuit : UnitaryProgram Memory :=
@@ -87,8 +96,7 @@ private theorem h_basis (j : Fin 2) :
 
 private theorem t_basis (j : Fin 2) :
     tGate (ZBasis 2 j) = (if j = 0 then 1 else phase : ℂ) • ZBasis 2 j := by
-  rw [tGate, Qubit.phaseShift, matrixToEnd_apply_basis (n := 2), Fin.sum_univ_two]
-  fin_cases j <;> simp [phase]
+  exact Qubit.phaseShift_basis _ j
 
 private theorem target_basis (j : Fin 2) :
     target (ZBasis 2 j) = (Real.sqrt 3 : ℂ)⁻¹ •

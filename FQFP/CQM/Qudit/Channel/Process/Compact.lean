@@ -62,7 +62,7 @@ lemma cap_tensor_one (b : OrthonormalBasis ι ℂ H.state) (A : Operator H) :
   rw [← Qudit.hom_dagger, ← dagger_basisCoevaluation b, involutive_dagger, dagger_basisCoevaluation]
   change basisEvaluation b (Operator.tensor A 1 (basisCoevaluation b (1 : ℂ))) = _
   rw [basisCoevaluation_apply, one_smul, map_sum, map_sum, mul_one]
-  simp only [Operator.tensor_apply, Module.End.one_apply, basisEvaluation_apply,
+  simp only [Operator.tensor_apply, one_apply_eq_self, basisEvaluation_apply,
     basisForm_apply_basis]
   exact (LinearMap.trace_eq_sum_inner A b).symm
 

@@ -1,7 +1,16 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for the contracting-loop rule for total correctness.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/Logic/AlmostSure.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
@@ -85,10 +94,10 @@ theorem validTot_while_of_contraction {b : Store → Bool} {p : Command Store Ce
         apply body.trans
         calc (∑' j, c.terminalWeightAt j (fun t => ENNReal.ofReal (t.expectation (J t.store))))
             ≤ ∑' j, c.terminalWeightAt j (fun t => exitWeight t + (a : ℝ≥0∞) ^ n * retry t) :=
-              ENNReal.tsum_le_tsum fun j => c.terminalWeightAt_mono j ih
+              tsum_le_tsum fun j => c.terminalWeightAt_mono j ih
           _ = exitWeight s + (a : ℝ≥0∞) ^ n * c.PostH (fun σ => J.mand b σ) := by
               simp only [Configuration.terminalWeightAt_add,
-                Configuration.terminalWeightAt_const_mul, ENNReal.tsum_add, ENNReal.tsum_mul_left,
+                Configuration.terminalWeightAt_const_mul, tsum_add, ENNReal.tsum_mul_left,
                 ← step]
               rw [c.PostH_eq_tsum_terminalWeightAt (J.mand b).isPositive]
           _ ≤ exitWeight s + (a : ℝ≥0∞) ^ n *

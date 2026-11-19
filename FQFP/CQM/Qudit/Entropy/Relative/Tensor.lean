@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg
+-/
+
+/-
+Physlib reference for additivity of relative entropy.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/Entropy/Relative.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -46,13 +56,13 @@ lemma expectation_logOp_tensor (ρ : Density (H ⊗ K)) (σ : Density H) (τ : D
       (Real.log (σ.eigenvalue i.1) : ℂ) • b i := by
     rcases i with ⟨i, j⟩
     simp only [b, OrthonormalBasis.tensorProduct_apply, Operator.tensor_apply,
-      σ.logOp_apply_of_eigenvector (σ.apply_eigenbasis i), Module.End.one_apply,
+      σ.logOp_apply_of_eigenvector (σ.apply_eigenbasis i), one_apply_eq_self,
       ← TensorProduct.smul_tmul']
   have hr (i) : Operator.tensor (1 : Operator H) τ.logOp (b i) =
       (Real.log (τ.eigenvalue i.2) : ℂ) • b i := by
     rcases i with ⟨i, j⟩
     simp only [b, OrthonormalBasis.tensorProduct_apply, Operator.tensor_apply,
-      τ.logOp_apply_of_eigenvector (τ.apply_eigenbasis j), Module.End.one_apply,
+      τ.logOp_apply_of_eigenvector (τ.apply_eigenbasis j), one_apply_eq_self,
       TensorProduct.tmul_smul]
   rw [expectation_partialTraceRight, expectation_partialTraceLeft,
     ρ.expectation_eq_sum_of_diagonal b _ _ (fun i =>

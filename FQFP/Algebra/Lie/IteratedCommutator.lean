@@ -69,7 +69,7 @@ lemma adSequenceLinear_apply {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] {s : 
   induction s with
   | zero => rfl
   | succ s ih =>
-      simp only [adSequenceLinear, Module.End.mul_apply, adSequence, ih]
+      simp only [adSequenceLinear, mul_apply_eq_comp, adSequence, ih]
 
 /-- The nested commutator `[H ⟨p⟩, [H ⟨p-1⟩, ⋯ [H ⟨1⟩, H ⟨0⟩] ⋯]]` with exactly `p`
 brackets: `H ⟨0⟩` is innermost and `H ⟨p⟩` is outermost. -/
@@ -357,6 +357,6 @@ multiplicity lets the innermost `A ⟨0⟩` drop out. -/
 lemma adSequence_cons_zero {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] {s : ℕ} (A : Fin (s + 1) → 𝔸)
     (q : Fin s → ℕ) (B : 𝔸) :
     adSequence A (Fin.cons 0 q) B = adSequence (fun i : Fin s => A i.succ) q B := by
-  simpa only [adPow, pow_zero, Module.End.one_apply] using adSequence_cons A q 0 B
+  simpa only [adPow, pow_zero, one_apply_eq_self] using adSequence_cons A q 0 B
 
 end TrotterError

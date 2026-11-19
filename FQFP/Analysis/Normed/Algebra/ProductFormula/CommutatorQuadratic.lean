@@ -51,7 +51,7 @@ lemma αCommConj_cons {s : ℕ} (Z : Fin (s + 1) → A) (B : A) (p : ℕ) :
   | succ s ih =>
       rw [αCommConj_cons]
       simpa only [sum_range_succ, sum_range_zero, zero_add, Nat.choose_zero_right,
-        Nat.cast_one, one_mul, Nat.sub_zero, pow_zero, Module.End.one_apply] using
+        Nat.cast_one, one_mul, Nat.sub_zero, pow_zero, one_apply_eq_self] using
         ih (fun i ↦ Z i.succ)
 
 /-- The first-order commutator constant is the sum of the individual bracket norms. -/
@@ -63,7 +63,7 @@ lemma αCommConj_one {s : ℕ} (Z : Fin s → A) (B : A) :
       rw [αCommConj_cons]
       simp only [sum_range_succ, sum_range_zero, zero_add, Nat.choose_zero_right,
         Nat.choose_self, Nat.cast_one, one_mul, Nat.sub_zero, Nat.sub_self,
-        pow_zero, pow_one, Module.End.one_apply, LieAlgebra.ad_apply,
+        pow_zero, pow_one, one_apply_eq_self, LieAlgebra.ad_apply,
         αCommConj_zero, ih, Fin.sum_univ_succ]
       rw [add_comm]
 
@@ -78,7 +78,7 @@ theorem αCommConj_two_eq_sum {s : ℕ} (Z : Fin s → A) (B : A) :
       rw [αCommConj_cons]
       simp only [sum_range_succ, sum_range_zero, zero_add]
       norm_num only [Nat.choose, Nat.sub_self, Nat.reduceSub, Nat.sub_zero,
-        Nat.cast_ofNat, Nat.cast_one, one_mul, pow_zero, Module.End.one_apply,
+        Nat.cast_ofNat, Nat.cast_one, one_mul, pow_zero, one_apply_eq_self,
         ad_pow_succ, LieAlgebra.ad_apply]
       rw [ih, αCommConj_one, αCommConj_zero]
       simp only [sum_filter, Fin.sum_univ_succ, Fin.succ_pos, Fin.not_lt_zero,

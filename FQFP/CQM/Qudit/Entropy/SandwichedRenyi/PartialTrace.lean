@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg
+-/
+
+/-
+Physlib reference for the sandwiched divergence under a partial trace.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/Entropy/DPI.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -71,7 +81,7 @@ private lemma diag_tensor (b : OrthonormalBasis ι ℂ H.state) (e : Orthonormal
   rintro ⟨i, k⟩
   change Operator.tensor _ _ ((b.tensorProduct e) (i, k)) = diag _ _ ((b.tensorProduct e) (i, k))
   rw [diag_basis, OrthonormalBasis.tensorProduct_apply, Operator.tensor_apply, diag_basis,
-    Module.End.one_apply, TensorProduct.smul_tmul']
+    one_apply_eq_self, TensorProduct.smul_tmul']
 
 private def phase (σ : Density H) (z : ℂ) : Operator H :=
   diag σ.eigenbasis (fun i => spectralFactor (σ.eigenvalue i) z)
@@ -139,7 +149,7 @@ private lemma transfer_adjoint (σ : Density (H ⊗ K)) (z : ℂ) (c : H.state) 
   have he : (Operator.tensor A (1 : Operator K)).adjoint = Operator.tensor A.adjoint 1 := by
     change (TensorProduct.map A (1 : Operator K)).adjoint = TensorProduct.map A.adjoint 1
     rw [TensorProduct.adjoint_map, LinearMap.adjoint_one]
-  rw [he, Operator.tensor_apply, Module.End.one_apply]
+  rw [he, Operator.tensor_apply, one_apply_eq_self]
 
 private lemma transfer_entire (σ : Density (H ⊗ K)) (c : H.state) (e : K.state)
     (v : (H ⊗ K).state) : StripBoundedEntire (fun z => transfer σ z c e v) := by

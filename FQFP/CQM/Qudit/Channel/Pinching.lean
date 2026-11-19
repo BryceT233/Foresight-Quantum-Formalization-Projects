@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Leonardo A Lessa. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Leonardo A Lessa, Alex Meiburg
+-/
+
+/-
+Physlib reference for spectral pinching and the pinching bound.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/Channels/Pinching.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -114,11 +124,11 @@ theorem le_card_smul_pinching (σ : Density H) (A : Operator H) (hA : A.IsPositi
     sub_nonneg]
   let v (a : ℝ) := A.sqrt (σ.spectralProjection a x)
   have hsum : ∑ a ∈ σ.spectralValues, v a = A.sqrt x := by
-    simp only [v, ← map_sum, ← LinearMap.sum_apply, sum_spectralProjection, Module.End.one_apply]
+    simp only [v, ← map_sum, ← LinearMap.sum_apply, sum_spectralProjection, one_apply_eq_self]
   have hinner (a : ℝ) (y : H.state) :
       inner ℂ x (σ.spectralProjection a y) = inner ℂ (σ.spectralProjection a x) y := by
     rw [← LinearMap.adjoint_inner_left, adjoint_spectralProjection]
-  simp only [pinching_apply, LinearMap.sum_apply, Module.End.mul_apply, inner_sum, Complex.re_sum,
+  simp only [pinching_apply, LinearMap.sum_apply, mul_apply_eq_comp, inner_sum, Complex.re_sum,
     hinner, A.re_inner_apply_eq_norm_sqrt_sq hA]
   rw [← hsum]
   exact (pow_le_pow_left₀ (norm_nonneg _) (norm_sum_le _ _) 2).trans
@@ -183,7 +193,7 @@ lemma pinching_outer_of_eigenvectors (σ : Density H) {x y : H.state} {a b : ℝ
             σ.spectralProjection_apply_of_eigenvector _ hy, h]
       _ = Operator.outer x y := by
         rw [← Operator.outer_sum_left, ← LinearMap.sum_apply, Finset.sum_coe_sort,
-          σ.sum_spectralProjection, Module.End.one_apply]
+          σ.sum_spectralProjection, one_apply_eq_self]
   · rw [ite_eq_right hab]
     refine Finset.sum_eq_zero fun k _ => ?_
     by_cases ha : a = k.val

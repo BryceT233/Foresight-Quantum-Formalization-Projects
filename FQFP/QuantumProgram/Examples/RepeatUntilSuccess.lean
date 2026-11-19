@@ -1,11 +1,22 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for the one-shot block and the repeat-until-success triple.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/Gate/RUSBlock.lean
+Qhl/Examples/RUSTriple.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
 public import FQFP.QuantumProgram.Logic.AlmostSure
+public import FQFP.QuantumProgram.ControlledPhase
 public import FQFP.CQM.Qudit.Teleportation.Basic
 import FQFP.CQM.Qudit.Channel.Process.Dual
 
@@ -47,41 +58,18 @@ private theorem proj_adjoint (i : Fin 2) : (proj i).adjoint = proj i := Operator
 
 /-- Coherently apply an operator on the one sector of the ancilla. -/
 def controlOp (T : Operator Qubit) : Operator Memory :=
-  Operator.tensor (proj 0) 1 + Operator.tensor (proj 1) T
+  Qubit.controlledOp T
 
 private theorem controlOp_basis (T : Operator Qubit) (i : Fin 2) (x : Qubit.state) :
-    controlOp T (ket i ⊗ₜ[ℂ] x) = ket i ⊗ₜ[ℂ] (if i = 0 then x else T x) := by
-  fin_cases i <;> simp [controlOp, proj_basis]
-
-private theorem controlOp_adjoint (T : Operator Qubit) :
-    (controlOp T).adjoint = controlOp T.adjoint := by
-  unfold controlOp Operator.tensor
-  rw [map_add, TensorProduct.adjoint_map, TensorProduct.adjoint_map, proj_adjoint, proj_adjoint]
-  rw [LinearMap.adjoint_one]
+    controlOp T (ket i ⊗ₜ[ℂ] x) = ket i ⊗ₜ[ℂ] (if i = 0 then x else T x) :=
+  Qubit.controlledOp_basis T i x
 
 /-- The coherent controlled unitary acts as the identity on zero and as the target gate on one. -/
-def controlledGate (V : Qubit ⟶ Qubit) : Memory ⟶ Memory := ofHom (controlOp V.hom)
+def controlledGate (V : Qubit ⟶ Qubit) : Memory ⟶ Memory := Qubit.controlled V
 
 instance (V : Qubit ⟶ Qubit) [IsUnitary V] : IsUnitary (controlledGate V) := by
-  have inverse (f g : Operator Qubit) (h : ∀ x, g (f x) = x) :
-      controlOp g ∘ₗ controlOp f = LinearMap.id := by
-    apply ((ZBasis 2).tensorProduct (ZBasis 2)).toBasis.ext
-    rintro ⟨i, j⟩
-    simp only [OrthonormalBasis.coe_toBasis, OrthonormalBasis.tensorProduct_apply]
-    change controlOp g (controlOp f (ket i ⊗ₜ[ℂ] ket j)) = _
-    rw [controlOp_basis, controlOp_basis]
-    split <;> simp_all
-  rw [isUnitary_iff]
-  constructor
-  · apply hom_ext
-    change (controlOp V.hom).adjoint ∘ₗ controlOp V.hom = _
-    rw [controlOp_adjoint]
-    exact inverse _ _ (hom_adjoint_apply_of_isIsometry V)
-  · apply hom_ext
-    change controlOp V.hom ∘ₗ (controlOp V.hom).adjoint = _
-    rw [controlOp_adjoint]
-    exact inverse _ _ fun x => LinearMap.congr_fun
-      (congrArg Hom.hom (IsUnitary.dagger_comp_eq_id V)) x
+  unfold controlledGate
+  infer_instance
 
 /-- The RUS block in execution order: Hadamard, controlled target, then ancilla bit flip. -/
 def block (V : Qubit ⟶ Qubit) [IsUnitary V] : UnitaryProgram Memory :=

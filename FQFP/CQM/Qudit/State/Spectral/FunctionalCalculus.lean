@@ -91,7 +91,7 @@ lemma commute_spectralMap (ρ : Density H) {A : Operator H} (h : Commute A ρ.op
   apply ρ.eigenbasis.toBasis.ext
   intro i
   have hi := DFunLike.congr_fun h.eq.symm (ρ.eigenbasis i)
-  simp only [Module.End.mul_apply, ρ.apply_eigenbasis, map_smul] at hi
+  simp only [mul_apply_eq_comp, ρ.apply_eigenbasis, map_smul] at hi
   change A (ρ.spectralMap f (ρ.eigenbasis i)) = ρ.spectralMap f (A (ρ.eigenbasis i))
   rw [spectralMap_apply_eigenbasis, map_smul, ρ.spectralMap_apply_of_eigenvector f hi]
 
@@ -126,7 +126,7 @@ lemma expectation_eq_sum_of_diagonal {ι : Type*} [Fintype ι] (ρ : Density H)
     ρ.expectation A = ∑ i, a i * (inner ℂ (b i) (ρ.op (b i))).re := by
   rw [expectation, expectationComplex, Operator.trace, LinearMap.trace_mul_comm,
     LinearMap.trace_eq_sum_inner _ b]
-  simp only [Module.End.mul_apply, hA, map_smul, inner_smul_right, Complex.re_sum,
+  simp only [mul_apply_eq_comp, hA, map_smul, inner_smul_right, Complex.re_sum,
     Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero]
 
 /-- Expectations of spectral functions in another state are overlap-weighted spectral sums. -/

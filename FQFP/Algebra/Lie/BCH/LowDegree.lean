@@ -51,7 +51,7 @@ theorem bchLieCoeff_three (x y : L) :
       (1 / 12 : ℚ) • ⁅⁅y, x⁆, x⁆ - (1 / 12 : ℚ) • ⁅⁅y, x⁆, y⁆ := by
   norm_num [-lie_lie, bchLieCoeff, sum_range_succ,
     symmetricBchLieCoeff_eq_zero_of_even x y 2 (by decide), symmetricBchLieCoeff_three,
-    symmetricBchCubicLieTerm, pow_succ, Module.End.mul_apply, LieAlgebra.ad,
+    symmetricBchCubicLieTerm, pow_succ, mul_apply_eq_comp, LieAlgebra.ad,
     LieModule.toEnd, lie_add, add_lie, lie_self, lie_smul, smul_lie, smul_smul]
   rw [← lie_skew x y, lie_neg, ← lie_skew x ⁅y, x⁆]
   module
@@ -65,7 +65,7 @@ theorem bchLieCoeff_four (x y : L) :
   norm_num [-lie_lie, bchLieCoeff, sum_range_succ,
     symmetricBchLieCoeff_eq_zero_of_even x y 2 (by decide),
     symmetricBchLieCoeff_eq_zero_of_even x y 4 (by decide), symmetricBchLieCoeff_three,
-    symmetricBchCubicLieTerm, Nat.factorial, pow_succ, Module.End.mul_apply, LieAlgebra.ad,
+    symmetricBchCubicLieTerm, Nat.factorial, pow_succ, mul_apply_eq_comp, LieAlgebra.ad,
     LieModule.toEnd, lie_add, add_lie, lie_self, lie_smul, smul_lie, smul_smul]
   simp only [← lie_skew x y, lie_neg, ← lie_skew x ⁅y, x⁆, lie_neg, neg_neg,
     ← lie_skew x ⁅⁅y, x⁆, x⁆, ← lie_skew x ⁅⁅y, x⁆, y⁆, hcyx]

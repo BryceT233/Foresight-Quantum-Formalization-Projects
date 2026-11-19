@@ -34,7 +34,7 @@ instance : NormedRing (Operator H) :=
 instance : NormedAlgebra ℂ (Operator H) :=
   NormedAlgebra.induced ℂ _ _ (Module.End.toContinuousLinearMap H.state)
 
-instance : CompleteSpace (Operator H) := FiniteDimensional.complete ℂ _
+instance : CompleteSpace (Operator H) := FiniteDimensional.completeSpace ℂ _
 
 instance : CStarRing (Operator H) where
   norm_mul_self_le A := CStarRing.norm_mul_self_le (LinearMap.toContinuousLinearMap A)

@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg
+-/
+
+/-
+Physlib reference for POVMs and the outcome distribution.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/Measurements/POVM.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -124,7 +134,7 @@ def ofBasis (b : OrthonormalBasis ι ℂ H.state) : POVM H ι where
   positive i := Operator.isPositive_outer (b i)
   sum_op := by
     ext x
-    simpa only [LinearMap.sum_apply, Operator.outer_apply, Module.End.one_apply]
+    simpa only [LinearMap.sum_apply, Operator.outer_apply, one_apply_eq_self]
       using b.sum_repr' x
 
 /-- The computational basis POVM, including the empty basis in dimension zero. -/

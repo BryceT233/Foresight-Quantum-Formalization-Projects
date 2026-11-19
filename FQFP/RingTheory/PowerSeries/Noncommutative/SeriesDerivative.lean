@@ -96,7 +96,7 @@ theorem coeff_of_seriesDerivative_eq_linear (T : M →ₗ[ℚ] M) (F : PowerSeri
     have hi := congrArg (fun x : M ↦ (n + 1 : ℚ)⁻¹ • x) h
     simp only [inv_smul_smul₀ (show (n + 1 : ℚ) ≠ 0 by positivity), smul_smul] at hi
     rw [hi, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add_one, mul_inv_rev,
-      mul_comm ((n + 1 : ℚ)⁻¹), pow_succ', Module.End.mul_apply]
+      mul_comm ((n + 1 : ℚ)⁻¹), pow_succ', mul_apply_eq_comp]
 
 /-- Coefficients of a constant-forced linear equation with zero initial value. -/
 theorem coeff_succ_of_seriesDerivative_eq_const_add_linear (T : M →ₗ[ℚ] M)
@@ -118,7 +118,7 @@ theorem coeff_succ_of_seriesDerivative_eq_const_add_linear (T : M →ₗ[ℚ] M)
         (Nat.factorial (n + 1 + 1) : ℚ)⁻¹ := by
       rw [Nat.factorial_succ (n + 1), Nat.cast_mul, Nat.cast_add_one, mul_inv_rev]
       simp only [Nat.cast_add, Nat.cast_one, mul_comm]
-    rw [hi, hs, pow_succ', Module.End.mul_apply]
+    rw [hi, hs, pow_succ', mul_apply_eq_comp]
 
 variable {A : Type*} [Ring A] [Algebra ℚ A]
 

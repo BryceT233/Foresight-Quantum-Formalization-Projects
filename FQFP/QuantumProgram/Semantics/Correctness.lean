@@ -1,7 +1,17 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for expectations, terminal post-expectations and the two validity judgments.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/History/Correctness.lean
+Qhl/Logic/Assertion.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
@@ -101,13 +111,13 @@ noncomputable def PostH (c : Configuration Store Cell H) (A : Store → Operator
 /-- Pointwise order of observables gives the same order of terminal post-expectations. -/
 theorem PostH_mono (c : Configuration Store Cell H) {A B : Store → Operator H}
     (h : ∀ σ, A σ ≤ B σ) : c.PostH A ≤ c.PostH B :=
-  ENNReal.tsum_le_tsum fun _ => ENNReal.ofReal_le_ofReal <|
+  tsum_le_tsum fun _ => ENNReal.ofReal_le_ofReal <|
     List.sum_le_sum fun p _ => p.1.state.expectation_mono (h _)
 
 /-- The post-expectation of an effect family is bounded by the total terminating trace. -/
 theorem PostH_le_terminatingMass (c : Configuration Store Cell H) {A : Store → Operator H}
     (hA : ∀ σ, A σ ≤ 1) : c.PostH A ≤ c.terminatingMass := by
-  apply ENNReal.tsum_le_tsum
+  apply tsum_le_tsum
   intro n
   exact (ENNReal.ofReal_le_ofReal (c.postAt_le_terminalMassAt n hA)).trans_eq
     ENNReal.ofReal_coe_nnreal
@@ -132,7 +142,7 @@ theorem ofReal_expectation_le_PostH_of_frontier {c : Configuration Store Cell H}
     ENNReal.ofReal (s.expectation (A s.store)) ≤ c.PostH A := by
   have hn : c.postAt n A = s.expectation (A s.store) := by simp [postAt_eq_sum_frontier, h]
   rw [← hn]
-  exact ENNReal.le_tsum (f := fun k => ENNReal.ofReal (c.postAt k A)) n
+  exact le_tsum (fun k => ENNReal.ofReal (c.postAt k A)) n
 
 /-- A running command with one successor has the same post-expectation as that successor. -/
 theorem PostH_singleton {p : Command Store Cell H} {s : CQState Store H}
@@ -142,7 +152,7 @@ theorem PostH_singleton {p : Command Store Cell H} {s : CQState Store H}
   have h₁ : c.frontier 1 = [d] := by simpa [c, frontier] using h
   have hz : c.postAt 0 A = 0 := by simp [c, postAt_eq_sum_frontier, frontier]
   change (∑' n, ENNReal.ofReal (c.postAt n A)) = _
-  rw [tsum_eq_zero_add' ENNReal.summable, hz, ENNReal.ofReal_zero, zero_add]
+  rw [tsum_eq_zero_add' CompleteLattice.summable, hz, ENNReal.ofReal_zero, zero_add]
   apply tsum_congr
   intro n
   rw [postAt_eq_sum_frontier, Nat.add_comm n 1, frontier_add_of_singleton h₁,
@@ -228,16 +238,21 @@ theorem Assertion.mask_of_pos (A : Assertion Store H) {φ : Store → Prop} {σ 
 theorem Assertion.mask_of_neg (A : Assertion Store H) {φ : Store → Prop} {σ : Store} (h : ¬ φ σ) :
     (A.mask φ σ : Operator H) = 0 := by simp [mask, h]
 
-/-- Masking is monotone both in the effect and in the classical predicate. -/
-theorem Assertion.mask_mono {A B : Assertion Store H} {φ χ : Store → Prop}
-    (hAB : A ≤ B) (hφ : ∀ σ, φ σ → χ σ) : A.mask φ ≤ B.mask χ := by
+/-- Masked order only requires the effect inequality on the antecedent support. -/
+theorem Assertion.mask_mono_on {A B : Assertion Store H} {φ χ : Store → Prop}
+    (hφ : ∀ σ, φ σ → χ σ) (hAB : ∀ σ, φ σ → A σ ≤ B σ) : A.mask φ ≤ B.mask χ := by
   intro σ
   by_cases h : φ σ
   · rw [A.mask_of_pos h, B.mask_of_pos (hφ σ h)]
-    exact hAB σ
+    exact hAB σ h
   · change (A.mask φ σ : Operator H) ≤ _
     rw [A.mask_of_neg h]
     exact (B.mask χ σ).2.1
+
+/-- Masking is monotone both in the effect and in the classical predicate. -/
+theorem Assertion.mask_mono {A B : Assertion Store H} {φ χ : Store → Prop}
+    (hAB : A ≤ B) (hφ : ∀ σ, φ σ → χ σ) : A.mask φ ≤ B.mask χ :=
+  Assertion.mask_mono_on hφ fun σ _ => hAB σ
 
 /-- A true guard retains the invariant in the body precondition. -/
 theorem Assertion.mand_of_true (A : Assertion Store H) {b : Store → Bool} {σ : Store}
@@ -270,7 +285,7 @@ theorem Configuration.PostH_mask_split (c : Configuration Store Cell H) (A : Ass
     (φ : Store → Prop) : c.PostH (fun σ => A.mask φ σ) +
       c.PostH (fun σ => A.mask (fun τ => ¬ φ τ) σ) = c.PostH (fun σ => A σ) := by
   unfold PostH
-  rw [← ENNReal.tsum_add]
+  rw [← tsum_add]
   apply tsum_congr
   intro n
   rw [← ENNReal.ofReal_add (c.postAt_nonneg n (A.mask φ).isPositive)

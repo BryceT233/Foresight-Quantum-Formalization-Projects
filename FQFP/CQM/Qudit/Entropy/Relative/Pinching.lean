@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Leonardo A Lessa. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Leonardo A Lessa, Alex Meiburg
+-/
+
+/-
+Physlib reference for the relative entropy identity for pinching.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/Channels/Pinching.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -64,7 +74,7 @@ lemma absolutelyContinuous_pinching_iff (ρ σ : Density H) :
   rw [pinching_apply, LinearMap.sum_apply]
   refine Finset.sum_eq_zero fun a _ => ?_
   by_cases ha : (0 : ℝ) = a <;>
-    simp [Module.End.mul_apply, σ.spectralProjection_apply_of_eigenvector _ hx', ha, hρ]
+    simp [σ.spectralProjection_apply_of_eigenvector _ hx', ha, hρ]
 
 /-- The Umegaki relative entropy splits into the cost of pinching the source and the
 relative entropy of its pinched state to the reference, also for infinite values. -/

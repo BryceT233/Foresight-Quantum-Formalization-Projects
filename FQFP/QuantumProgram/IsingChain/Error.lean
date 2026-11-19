@@ -1,7 +1,18 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for the commutator locality and coefficient-only first-order error bound.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/Register/TFIMLocality.lean
+Qhl/Register/TFIMApprox.lean
+Qhl/Examples/TrotterTFIMTriple.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
@@ -142,6 +153,19 @@ theorem circuit_error_le (h : Fin (e + 1) → ℝ) (J : Fin e → ℝ) (t : ℝ)
       exact norm_commutator_le_coefficients h J
     _ = _ := by ring
 
+/-- Exact evolution of the entire signed Ising Hamiltonian, used as the measurement reference. -/
+def exactEvolution (h : Fin (e + 1) → ℝ) (J : Fin e → ℝ) (t : ℝ) :
+    UnitaryProgram (tensorPower Qubit e) :=
+  hamiltonianGate ⟨_, (isSelfAdjoint_fieldHamiltonian h).add
+    (isSelfAdjoint_interactionHamiltonian J)⟩ t
+
+/-- The reference program acts by the exponential of the complete signed Hamiltonian. -/
+theorem toOperator_exactEvolution (h : Fin (e + 1) → ℝ) (J : Fin e → ℝ) (t : ℝ) :
+    (exactEvolution h J t).toOperator =
+      exp (((-Complex.I) * (t : ℂ)) • (fieldHamiltonian h + interactionHamiltonian J)) := by
+  change exp (t • ((-Complex.I) • _)) = _
+  rw [← Complex.coe_smul, smul_smul, mul_comm]
+
 /-- A positive step count selected directly from the time, tolerance, and input coefficients. -/
 def steps (h : Fin (e + 1) → ℝ) (J : Fin e → ℝ) (t ε : ℝ) : ℕ :=
   max 1 ⌈t ^ 2 * couplingBound h J / ε⌉₊
@@ -160,6 +184,20 @@ theorem circuit_spec (h : Fin (e + 1) → ℝ) (J : Fin e → ℝ) (t : ℝ) {ε
     (Nat.le_ceil _).trans (Nat.cast_le.mpr (le_max_right ..))
   rw [div_mul_eq_mul_div, div_le_iff₀ (Nat.cast_pos.mpr hr)]
   simpa [mul_comm] using (div_le_iff₀ hε).mp hc
+
+/-- Each terminal outcome of the first-order command inherits the commutator error bound. -/
+theorem abs_postH_circuit_sub_probability_le {Store ι : Type*} [Fintype ι]
+    (h : Fin (e + 1) → ℝ) (J : Fin e → ℝ) (t : ℝ) {r : ℕ} (hr : 0 < r)
+    (M : POVM (tensorPower Qubit e) ι) (ρ : Density (tensorPower Qubit e)) (i : ι) (σ : Store) :
+    let c := Configuration.mk (some (command (circuit h J t r))) ⟨σ, ρ.op, ρ.positive⟩
+    |(c.PostH (fun _ => M.op i)).toReal - M.probability (ρ.map (exactEvolution h J t).denoteHom) i|
+      ≤ t ^ 2 / r * couplingBound h J := by
+  dsimp only
+  rw [postH_command_probability _ M ρ i σ]
+  apply M.abs_probability_map_sub_le
+  change ‖(program _).toOperator - (exactEvolution h J t).toOperator‖ ≤ _
+  rw [toOperator_exactEvolution]
+  exact circuit_error_le h J t hr
 
 end
 

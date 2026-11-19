@@ -30,7 +30,7 @@ lemma map_ad_pow_apply {R L M : Type*} [CommRing R]
   induction n with
   | zero => simp
   | succ n ih =>
-      simp only [pow_succ', Module.End.mul_apply]
+      simp only [pow_succ', mul_apply_eq_comp]
       change f ⁅x, (LieAlgebra.ad R L x ^ n) z⁆ =
         ⁅f x, (LieAlgebra.ad R M (f x) ^ n) (f z)⁆
       rw [LieHom.map_lie, ih]

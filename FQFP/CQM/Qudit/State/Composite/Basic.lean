@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg, Leonardo A. Lessa
+-/
+
+/-
+Physlib reference for product states and partial traces.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/States/Mixed/MState.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -182,7 +192,7 @@ lemma partialTraceRight_outer_sum_basis {ι : Type*} [Fintype ι]
     partialTraceRight (outer (∑ i, b i ⊗ₜ[ℂ] b i) (∑ i, b i ⊗ₜ[ℂ] b i)) =
       (1 : Operator H) := by
   rw [partialTraceRight_outer_sum_tmul]
-  simpa only [Module.End.one_apply] using sum_outer_basis b (1 : Operator H)
+  simpa only [one_apply_eq_self] using sum_outer_basis b (1 : Operator H)
 
 /-- The left marginal of the unnormalized maximally entangled vector is the identity. -/
 lemma partialTraceLeft_outer_sum_basis {ι : Type*} [Fintype ι]

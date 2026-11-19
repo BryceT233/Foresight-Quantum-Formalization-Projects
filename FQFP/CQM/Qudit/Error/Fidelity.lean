@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg
+-/
+
+/-
+Physlib reference for the unsquared fidelity and its trace-norm formula.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/States/Mixed/Fidelity.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -447,7 +457,7 @@ lemma fidelity_pure (ρ : Density H) (v : UnitState H) :
     rw [adjoint_op, Operator.adjoint_sqrt, mul_assoc,
       ← mul_assoc ρ.op.sqrt, Operator.sqrt_mul_sqrt _ ρ.positive]
     ext x
-    simp only [Module.End.mul_apply, pure_apply, map_smul,
+    simp only [mul_apply_eq_comp, pure_apply, map_smul,
       LinearMap.smul_apply, smul_smul, hc]
     rw [mul_comm]
   have hroot : Operator.sqrt (H := H) ((r : ℂ) • (pure v).op) =

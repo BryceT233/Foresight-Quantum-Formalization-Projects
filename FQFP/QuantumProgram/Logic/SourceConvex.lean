@@ -1,11 +1,21 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for convex source rules and their derived forms.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/Logic/Source/Convex.lean
+Qhl/Logic/Source/ConvexDerived.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Logic.CQAssertion
+public import FQFP.QuantumProgram.Logic.SourceAssertion
 public import FQFP.QuantumProgram.Logic.Convex
 
 /-!
@@ -23,27 +33,9 @@ open scoped NNReal ComplexOrder
 
 namespace QuantumProgram
 
-/-- A source quantum effect together with the stores where it is defined. -/
-structure SourceEffect (Store : Type*) (H : Qudit) where
-  /-- Definedness of the quantum predicate. -/
-  defined : Store → Prop
-  /-- The quantum observable, used on its domain. -/
-  effect : Assertion Store H
-
 namespace SourceEffect
 
 variable {Store Cell ι : Type*} {H : Qudit} [Fintype ι]
-
-/-- An evaluated effect is defined at every store. -/
-def total (A : Assertion Store H) : SourceEffect Store H := ⟨fun _ => True, A⟩
-
-/-- Evaluate a source predicate on its domain under the indicated classical condition. -/
-def under (A : SourceEffect Store H) (φ : Store → Prop) : CQAssertion Store H :=
-  .ofEffect A.effect fun σ => φ σ ∧ A.defined σ
-
-/-- Total operands recover the evaluated source assertion. -/
-theorem total_under (A : Assertion Store H) (φ : Store → Prop) :
-    (total A).under φ = .ofEffect A φ := by simp [under, total]
 
 /-- Strict source combination. Even a zero-weight child contributes its domain. -/
 noncomputable def convex (w : ι → ℝ≥0) (hw : ∑ i, w i ≤ 1) (A : ι → SourceEffect Store H) :

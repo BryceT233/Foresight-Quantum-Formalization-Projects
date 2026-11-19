@@ -1,7 +1,16 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for weighted sums of effects and validity under subprobability mixtures.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/Logic/Source/Convex.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
@@ -74,7 +83,7 @@ theorem Configuration.PostH_convex (c : Configuration Store Cell H) (w : ι → 
       ∑ i, (w i : ℝ≥0∞) * c.PostH (fun σ => A i σ) := by
   rw [c.PostH_eq_tsum_terminalWeightAt (Assertion.convex w hw A).isPositive]
   simp_rw [CQState.ofReal_expectation_convex, c.terminalWeightAt_sum, c.terminalWeightAt_const_mul]
-  rw [Summable.tsum_finsetSum (fun _ _ => ENNReal.summable)]
+  rw [Summable.tsum_finsetSum (fun _ _ => CompleteLattice.summable)]
   simp_rw [ENNReal.tsum_mul_left, ← c.PostH_eq_tsum_terminalWeightAt ((A _).isPositive)]
 
 /-- Total validity is closed under finite subprobability combinations. -/

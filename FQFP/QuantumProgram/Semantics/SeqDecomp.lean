@@ -1,7 +1,16 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for decomposition at the handover in a sequential command.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/History/SeqDecomp.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
@@ -74,10 +83,10 @@ theorem PostH_eq_sum_next {p : Command Store Cell H} (s : CQState Store H)
   let w (t : CQState Store H) := ENNReal.ofReal (t.expectation (A t.store))
   simp only [PostH_eq_tsum_terminalWeightAt _ hA]
   change (∑' n, r.terminalWeightAt n w) = _
-  rw [tsum_eq_zero_add' ENNReal.summable]
+  rw [tsum_eq_zero_add' CompleteLattice.summable]
   have hzero : r.terminalWeightAt 0 w = 0 := by simp [r, terminalWeightAt, frontier]
   simp only [hzero, zero_add, terminalWeightAt_succ, ← List.ofFn_getElem_eq_map, List.sum_ofFn]
-  exact Summable.tsum_finsetSum fun _ _ => ENNReal.summable
+  exact Summable.tsum_finsetSum fun _ _ => CompleteLattice.summable
 
 /-- At depth `n`, split a sequential execution at every possible handover depth. -/
 theorem terminalWeightAt_seqWith (n : ℕ) (w : CQState Store H → ℝ≥0∞) :
@@ -173,9 +182,9 @@ private theorem tsum_triangle (f : ℕ → ℕ → ℝ≥0∞) :
       ∑' p : (Finset.antidiagonal d : Finset (ℕ × ℕ)), f p.val.1 p.val.2 := by
     rw [Finset.tsum_subtype _ fun p : ℕ × ℕ => f p.1 p.2]
     exact (Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk (fun p => f p.1 p.2) d).symm
-  rw [tsum_congr diag, ← ENNReal.tsum_sigma'
+  rw [tsum_congr diag, ← tsum_sigma'
     (fun p : (Σ d : ℕ, (Finset.antidiagonal d : Finset (ℕ × ℕ))) => f p.2.val.1 p.2.val.2),
-    ← ENNReal.tsum_prod (f := f)]
+    ← tsum_prod (f := f)]
   exact Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.tsum_eq fun p : ℕ × ℕ => f p.1 p.2
 
 private theorem tsum_terminalWeightAt_seqWith (w : CQState Store H → ℝ≥0∞) :
@@ -188,7 +197,7 @@ private theorem tsum_terminalWeightAt_seqWith (w : CQState Store H → ℝ≥0�
   apply tsum_congr
   intro j
   simp only [terminalWeightAt, ← List.ofFn_getElem_eq_map, List.sum_ofFn]
-  exact Summable.tsum_finsetSum fun _ _ => ENNReal.summable
+  exact Summable.tsum_finsetSum fun _ _ => CompleteLattice.summable
 
 /-- Over all depths, each first-phase exit contributes the continuation's post-expectation. -/
 theorem PostH_seqWith {A : Store → Operator H} (hA : ∀ σ, (A σ).IsPositive) :
@@ -209,7 +218,7 @@ theorem nonterminatingMass_seqWith : (c.seqWith q).nonterminatingMass = c.nonter
   have split : (c.seqWith q).terminatingMass +
       ∑' j, c.terminalWeightAt j (fun t => (Configuration.mk (some q) t).nonterminatingMass) =
         c.terminatingMass := by
-    rw [terminatingMass_seqWith, ← ENNReal.tsum_add]
+    rw [terminatingMass_seqWith, ← tsum_add]
     apply tsum_congr
     intro j
     rw [← terminalWeightAt_add, ← terminalWeightAt_mass]

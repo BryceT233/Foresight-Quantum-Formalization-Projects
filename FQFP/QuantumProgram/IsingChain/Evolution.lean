@@ -1,7 +1,16 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for the field and interaction layers of the open Ising chain.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/Register/TFIM.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
@@ -98,12 +107,6 @@ private theorem edge_rotation (j : Fin e) (c δ : ℝ) :
   rw [← ht, ← map_mul, ← map_mul, ← mul_assoc, smul_smul]
   exact h
 
-/-- Later instructions multiply on the left. -/
-theorem toOperator_append (xs ys : List (Gate e)) :
-    (program (xs ++ ys)).toOperator =
-      (program ys).toOperator * (program xs).toOperator := by
-  simp [program, UnitaryProgram.toOperator_sequence]
-
 private theorem amplitude_empty :
     (program ([] : List (Gate e))).toOperator = 1 := rfl
 
@@ -157,13 +160,6 @@ theorem toOperator_slice (h : Fin (e + 1) → ℝ) (J : Fin e → ℝ) (δ : ℝ
       exp (phase δ • interactionHamiltonian J) *
         exp (phase δ • fieldHamiltonian h) := by
   rw [slice, toOperator_append, toOperator_fieldGates, toOperator_interactionGates]
-
-/-- Interpreting a repeated instruction list raises its operator to the same power. -/
-theorem toOperator_replicate (k : ℕ) (gs : List (Gate e)) :
-    (program (List.replicate k gs).flatten).toOperator = (program gs).toOperator ^ k := by
-  induction k with
-  | zero => rfl
-  | succ k ih => rw [List.replicate_succ, List.flatten_cons, toOperator_append, ih, pow_succ]
 
 /-- Repeating the same instruction list realizes the corresponding operator power. -/
 theorem toOperator_circuit (h : Fin (e + 1) → ℝ) (J : Fin e → ℝ) (t : ℝ) (r : ℕ) :

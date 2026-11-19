@@ -102,9 +102,8 @@ theorem fiveStageStrangProduct_eq_half_mul_reverse (a b : A) (p t : ℝ) :
     fiveStageStrangHalfArguments, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
     mul_one, fiveStageStrangReverseHalfProduct, List.reverse_cons, List.reverse_nil,
     List.nil_append, List.cons_append]
-  all_goals
-    rw [show p / 2 * t = p * t / 2 by ring,
-      show (1 - 3 * p) / 2 * t = (1 - 3 * p) * t / 2 by ring]
+  rw [show p / 2 * t = p * t / 2 by ring,
+    show (1 - 3 * p) / 2 * t = (1 - 3 * p) * t / 2 by ring]
 
 end FQFP.BCH
 end

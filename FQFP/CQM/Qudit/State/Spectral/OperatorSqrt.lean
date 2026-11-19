@@ -65,7 +65,7 @@ lemma re_inner_apply_eq_norm_sqrt_sq (A : Operator H) (hA : A.IsPositive) (v : H
     (inner ℂ v (A v)).re = ‖A.sqrt v‖ ^ 2 := by
   calc
     _ = (inner ℂ v (A.sqrt.adjoint (A.sqrt v))).re := by
-      rw [adjoint_sqrt, ← Module.End.mul_apply, sqrt_mul_sqrt A hA]
+      rw [adjoint_sqrt, ← mul_apply_eq_comp A.sqrt A.sqrt v, sqrt_mul_sqrt A hA]
     _ = _ := by
       rw [LinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K]
       norm_cast
@@ -78,7 +78,7 @@ lemma apply_eq_zero_iff_re_inner_eq_zero (A : Operator H) (hA : A.IsPositive) (v
     simp [h]
   · intro h
     rw [A.re_inner_apply_eq_norm_sqrt_sq hA, sq_eq_zero_iff, norm_eq_zero] at h
-    rw [← A.sqrt_mul_sqrt hA, Module.End.mul_apply, h, map_zero]
+    rw [← A.sqrt_mul_sqrt hA, mul_apply_eq_comp, h, map_zero]
 
 /-- A positive operator whose square is `A` is the positive square root of `A`. -/
 lemma sqrt_unique {A B : Operator H} (hsq : B * B = A) (hB : B.IsPositive) :

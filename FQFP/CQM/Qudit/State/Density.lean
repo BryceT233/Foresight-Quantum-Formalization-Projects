@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg, Leonardo A. Lessa
+-/
+
+/-
+Physlib reference for density states, pure states, mixtures and expectations.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/States/Mixed/MState.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -84,7 +94,7 @@ lemma pure_apply (v : UnitState H) (x : H.state) :
 /-- A pure density operator is an idempotent operator. -/
 lemma pure_mul_self (v : UnitState H) : (pure v).op * (pure v).op = (pure v).op := by
   ext x
-  simp [Module.End.mul_apply]
+  simp
 
 /-- Pure density operators are invariant under global phase. -/
 @[simp]

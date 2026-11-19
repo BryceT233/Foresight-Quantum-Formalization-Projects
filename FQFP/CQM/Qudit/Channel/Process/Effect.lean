@@ -49,7 +49,7 @@ lemma le_one_iff_trace_mul_le {H : Qudit} {E : Operator H} (hE : E.IsPositive) :
     refine ⟨LinearMap.IsSymmetric.one.sub hE.isSymmetric, fun x => ?_⟩
     have hx := h (outer x x) (isPositive_outer x)
     rw [trace_mul_outer, trace_outer, ← hE.isSymmetric x x] at hx
-    simpa only [LinearMap.sub_apply, Module.End.one_apply, inner_sub_left, sub_nonneg] using hx
+    simpa only [LinearMap.sub_apply, one_apply_eq_self, inner_sub_left, sub_nonneg] using hx
 
 end Operator
 
@@ -214,7 +214,7 @@ lemma scalarValue_comp_effect {H : Qudit} (ρ : Density H)
   change ((CPQudit.effectOfPositive E hE).toSuperoperator
     (ρ.toCPState.toSuperoperator 1)).trace.re = _
   rw [toCPState_one, CPQudit.effectOfPositive_apply, Operator.trace_scalar]
-  simp only [Module.End.one_apply, LinearMap.smul_apply, smul_eq_mul, mul_one]
+  simp only [one_apply_eq_self, LinearMap.smul_apply, smul_eq_mul, mul_one]
   rfl
 
 end Density

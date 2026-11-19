@@ -1,11 +1,24 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for source derivations, soundness and selected measurement outcomes.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/Logic/Source/Rules.lean
+Qhl/Logic/Source/RulesSoundness.lean
+Qhl/Logic/Source/MeasurementSelected.lean
+Qhl/Logic/Source/ConvexDerived.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
 public import FQFP.QuantumProgram.Logic.Soundness
+public import FQFP.QuantumProgram.Logic.SourceConsequence
 public import FQFP.QuantumProgram.Logic.SourceConvex
 
 /-!
@@ -25,10 +38,6 @@ namespace QuantumProgram
 
 variable {Store Cell : Type*} {H : Qudit}
 
-/-- Source consequence compares effects on the precondition's classical support. -/
-def CQAssertion.Entails (A B : CQAssertion Store H) : Prop :=
-  ∀ σ, A.cls σ → B.cls σ ∧ A.op σ ≤ B.op σ
-
 private theorem mask_le_of {A B : Assertion Store H} {φ : Store → Prop}
     (h : ∀ σ, φ σ → A σ ≤ B σ) : A.mask φ ≤ B := by
   intro σ
@@ -38,16 +47,6 @@ private theorem mask_le_of {A B : Assertion Store H} {φ : Store → Prop}
   · change (A.mask φ σ : Operator H) ≤ _
     rw [A.mask_of_neg hc]
     exact (B σ).2.1
-
-/-- Source entailment implies pointwise order on the interpreted assertions. -/
-theorem CQAssertion.Entails.toAssn_le {A B : CQAssertion Store H} (h : A.Entails B) :
-    A.toAssn ≤ B.toAssn := by
-  apply mask_le_of
-  intro σ hσ
-  obtain ⟨hc, hq⟩ := h σ hσ
-  change A.op σ ≤ (B.effect.mask B.cls σ).val
-  rw [B.effect.mask_of_pos hc]
-  exact hq
 
 private theorem mask_and (A : Assertion Store H) (φ χ : Store → Prop) :
     (A.mask φ).mask χ = A.mask fun σ => φ σ ∧ χ σ := by
@@ -104,9 +103,19 @@ inductive SourceDerivTot : CQAssertion Store H → Command Store Cell H → CQAs
       (hd : ∀ σ, χ σ → ∀ i, (B i).defined σ) :
       (∀ i, SourceDerivTot ((A i).under φ) p ((B i).under χ)) →
       SourceDerivTot ((SourceEffect.convex w hw A).under φ) p ((SourceEffect.convex w hw B).under χ)
-  /-- Consequence retains the classical implication even when the source effect is zero. -/
-  | conseq {A A' B B' : CQAssertion Store H} {p : Command Store Cell H} :
-      A.Entails A' → SourceDerivTot A' p B' → B'.Entails B → SourceDerivTot A p B
+  /-- Strengthen and weaken using domain-aware source entailments before evaluation. -/
+  | sourceConseq {A A' B' B : SourceAssertion Store H} {p : Command Store Cell H} :
+      A.Entails A' → SourceDerivTot A'.toCQAssertion p B'.toCQAssertion → B'.Entails B →
+      SourceDerivTot A.toCQAssertion p B.toCQAssertion
+
+/-- Consequence specialized to everywhere-defined operands. -/
+theorem SourceDerivTot.conseq {A A' B B' : CQAssertion Store H} {p : Command Store Cell H}
+    (hA : A.Entails A') (h : SourceDerivTot A' p B') (hB : B'.Entails B) :
+    SourceDerivTot A p B := by
+  rw [← A.toCQAssertion_toSourceAssertion, ← B.toCQAssertion_toSourceAssertion]
+  apply SourceDerivTot.sourceConseq ((A.toSourceAssertion_entails_iff A').mpr hA) _
+    ((B'.toSourceAssertion_entails_iff B).mpr hB)
+  simpa only [CQAssertion.toCQAssertion_toSourceAssertion] using h
 
 /-- Interpret a source proof tree in the local total-correctness calculus. -/
 theorem SourceDerivTot.toDerivTot {P Q : CQAssertion Store H} {p : Command Store Cell H}
@@ -150,7 +159,7 @@ theorem SourceDerivTot.toDerivTot {P Q : CQAssertion Store H} {p : Command Store
   | convex2 φ χ A B w hw p hd _ ih =>
     rw [SourceEffect.convex_post_eq w hw B χ hd]
     exact .conseq (SourceEffect.convex_pre_le w hw A φ) (.convex w hw ih) le_rfl
-  | conseq h₁ _ h₂ ih => exact .conseq h₁.toAssn_le ih h₂.toAssn_le
+  | sourceConseq h₁ _ h₂ ih => exact DerivTot.sourceConseq h₁ ih h₂
 
 /-- Empty Convex2 gives the zero effect on both sides under arbitrary classical predicates. -/
 theorem SourceDerivTot.convex2Empty (φ χ : Store → Prop) (p : Command Store Cell H) :
@@ -230,9 +239,19 @@ inductive SourceDerivPar : CQAssertion Store H → Command Store Cell H → CQAs
       (hd : ∀ σ, χ σ → ∀ i, (B i).defined σ) :
       (∀ i, SourceDerivPar ((A i).under φ) p ((B i).under χ)) →
       SourceDerivPar ((SourceEffect.convex w hw A).under φ) p ((SourceEffect.convex w hw B).under χ)
-  /-- Consequence retains the classical implication even when the source effect is zero. -/
-  | conseq {A A' B B' : CQAssertion Store H} {p : Command Store Cell H} :
-      A.Entails A' → SourceDerivPar A' p B' → B'.Entails B → SourceDerivPar A p B
+  /-- Strengthen and weaken using domain-aware source entailments before evaluation. -/
+  | sourceConseq {A A' B' B : SourceAssertion Store H} {p : Command Store Cell H} :
+      A.Entails A' → SourceDerivPar A'.toCQAssertion p B'.toCQAssertion → B'.Entails B →
+      SourceDerivPar A.toCQAssertion p B.toCQAssertion
+
+/-- Consequence specialized to everywhere-defined operands. -/
+theorem SourceDerivPar.conseq {A A' B B' : CQAssertion Store H} {p : Command Store Cell H}
+    (hA : A.Entails A') (h : SourceDerivPar A' p B') (hB : B'.Entails B) :
+    SourceDerivPar A p B := by
+  rw [← A.toCQAssertion_toSourceAssertion, ← B.toCQAssertion_toSourceAssertion]
+  apply SourceDerivPar.sourceConseq ((A.toSourceAssertion_entails_iff A').mpr hA) _
+    ((B'.toSourceAssertion_entails_iff B).mpr hB)
+  simpa only [CQAssertion.toCQAssertion_toSourceAssertion] using h
 
 /-- Partial source proofs are sound for the masked assertions. The atomic rules have
 the same preconditions as their total counterparts. -/
@@ -258,7 +277,7 @@ theorem SourceDerivPar.sound {P Q : CQAssertion Store H} {p : Command Store Cell
     exact SourceEffect.validPar_convex1 φ χ A B w hw p hx ih
   | convex2 φ χ A B w hw p hd _ ih =>
     exact SourceEffect.validPar_convex2 φ χ A B w hw p hd ih
-  | conseq h₁ _ h₂ ih => exact validPar_conseq h₁.toAssn_le ih h₂.toAssn_le
+  | sourceConseq h₁ _ h₂ ih => exact validPar_sourceConseq h₁ ih h₂
 
 /-- Empty Convex2 gives the zero effect on both sides under arbitrary classical predicates. -/
 theorem SourceDerivPar.convex2Empty (φ χ : Store → Prop) (p : Command Store Cell H) :

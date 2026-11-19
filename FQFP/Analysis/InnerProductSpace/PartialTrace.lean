@@ -86,7 +86,7 @@ lemma inner_partialTraceRightWith {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι 𝕜 F) (A : Module.End 𝕜 (E ⊗[𝕜] F)) (x y : E) :
     ⟪x, partialTraceRightWith b A y⟫_𝕜 =
       ∑ i, ⟪x ⊗ₜ b i, A (y ⊗ₜ b i)⟫_𝕜 := by
-  simp [partialTraceRightWith, sum_apply, inner_sum, adjoint_inner_right]
+  simp [partialTraceRightWith, inner_sum, adjoint_inner_right]
 
 /-- Each coefficient is a trace on the discarded factor, hence does not depend on a basis. -/
 lemma inner_partialTraceRightWith_eq_trace {ι : Type*} [Fintype ι]
@@ -148,7 +148,7 @@ lemma trace_mul_partialTraceRight (A : Module.End 𝕜 (E ⊗[𝕜] F)) (B : Mod
   let c := stdOrthonormalBasis 𝕜 F
   rw [trace_eq_sum_inner _ b, trace_eq_sum_inner _ (b.tensorProduct c)]
   simp only [Fintype.sum_prod_type, OrthonormalBasis.tensorProduct_apply,
-    Module.End.mul_apply, ← adjoint_inner_left B,
+    mul_apply_eq_comp, ← adjoint_inner_left B,
     ← adjoint_inner_left (TensorProduct.map B (LinearMap.id : F →ₗ[𝕜] F)),
     TensorProduct.adjoint_map, adjoint_id,
     TensorProduct.map_tmul, id_apply]
@@ -206,7 +206,7 @@ lemma trace_mul_partialTraceLeft (A : Module.End 𝕜 (E ⊗[𝕜] F)) (B : Modu
   let c := stdOrthonormalBasis 𝕜 F
   rw [trace_eq_sum_inner _ c, trace_eq_sum_inner _ (b.tensorProduct c)]
   simp only [Fintype.sum_prod_type, OrthonormalBasis.tensorProduct_apply,
-    Module.End.mul_apply, ← adjoint_inner_left B,
+    mul_apply_eq_comp, ← adjoint_inner_left B,
     ← adjoint_inner_left (TensorProduct.map (LinearMap.id : E →ₗ[𝕜] E) B),
     TensorProduct.adjoint_map, adjoint_id, TensorProduct.map_tmul, id_apply,
     inner_partialTraceLeft b]

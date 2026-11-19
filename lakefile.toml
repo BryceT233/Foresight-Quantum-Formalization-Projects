@@ -25,5 +25,7 @@ name = "FQFP"
 name = "lint-style"
 srcDir = "scripts"
 supportInterpreter = true
+# Like Mathlib's lint-style executable, this runs meta linters at runtime.
+allowNonModules = true
 # Executables which import `Lake` must set `-lLake`.
 weakLinkArgs = ["-lLake"]

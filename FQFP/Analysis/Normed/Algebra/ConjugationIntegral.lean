@@ -86,7 +86,7 @@ theorem norm_expSMulConj_sub_linear_le (G L : A)
   have hr := norm_expSMulConj_sub_sum_le_of_le_one G L hG 2 (by norm_num) (x - c)
   simp only [sum_range_succ, sum_range_zero, zero_add, pow_zero, Nat.factorial_zero,
     Nat.cast_one, div_one, one_smul, pow_one, Nat.factorial_one,
-    ad_pow_succ, Module.End.one_apply, LieAlgebra.ad_apply] at hr
+    ad_pow_succ, one_apply_eq_self, LieAlgebra.ad_apply] at hr
   norm_num only [Nat.factorial, Nat.cast_ofNat] at hr
   rw [sq_abs] at hr
   have heq : expSMulConj G L x - expSMulConj G L c -

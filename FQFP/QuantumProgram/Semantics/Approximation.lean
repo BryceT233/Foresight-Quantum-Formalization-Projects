@@ -1,7 +1,17 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: Qedia contributors, Foresight Quantum
+-/
+
+/-
+Qhl source for finite-depth values and the criterion for partial correctness.
+qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
+Qhl/History/Approx.lean
+Qhl/Logic/Assertion.lean
+
+Copyright 2026 Qedia contributors.
+Modified by Foresight Quantum in 2026
 -/
 module
 
@@ -91,7 +101,7 @@ noncomputable def terminalMassUpTo (N : ℕ) : ℝ≥0∞ :=
 
 /-- The trace accumulated before a finite horizon fits within the input trace. -/
 theorem terminalMassUpTo_le_mass (N : ℕ) : c.terminalMassUpTo N ≤ c.state.mass :=
-  (ENNReal.sum_le_tsum _).trans c.terminatingMass_le
+  (sum_le_tsum _).trans c.terminatingMass_le
 
 /-- Finite-depth partial-correctness value, including all mass still unaccounted for. -/
 noncomputable def Val (N : ℕ) (A : Store → Operator H) : ℝ≥0∞ :=

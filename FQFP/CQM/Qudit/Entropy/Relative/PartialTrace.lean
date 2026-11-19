@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg
+-/
+
+/-
+Physlib reference for relative entropy under a partial trace.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/Entropy/DPI.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -34,7 +44,7 @@ variable {H K : Qudit}
 private lemma expectation_adjoint_mul (ρ : Density H) (X : Operator H) :
     ρ.expectation (X.adjoint * X) = ∑ i, ρ.eigenvalue i * ‖X (ρ.eigenbasis i)‖ ^ 2 := by
   rw [expectation, expectationComplex, Operator.trace, LinearMap.trace_eq_sum_inner _ ρ.eigenbasis]
-  simp only [Module.End.mul_apply, ρ.apply_eigenbasis, map_smul, inner_smul_right,
+  simp only [mul_apply_eq_comp, ρ.apply_eigenbasis, map_smul, inner_smul_right,
     LinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K, Complex.re_sum,
     RCLike.ofReal_eq_complex_ofReal, ← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.ofReal_re]
 
@@ -54,7 +64,7 @@ private lemma cost_eq_sum (ρ σ : Density H) (t : ℝ) (X : Operator H) :
   rw [cost, expectation_adjoint_mul, hσ]
   simp only [Finset.sum_add_distrib]
   congr 1
-  · simp only [entry, Module.End.one_apply, ← inner_sub_right, ← Finset.mul_sum,
+  · simp only [entry, one_apply_eq_self, ← inner_sub_right, ← Finset.mul_sum,
       σ.eigenbasis.sum_sq_norm_inner_right, LinearMap.sub_apply, mul_assoc]
   · rw [Finset.sum_comm]
     simp only [entry, ← LinearMap.adjoint_inner_left, ← Finset.mul_sum,
@@ -172,7 +182,7 @@ private lemma hasDerivAt_logPath (ρ σ : Density H) (h : ρ.AbsolutelyContinuou
 private lemma scaled_logSlope (ρ σ : Density H) {t : ℝ} (ht : t ∈ Set.Ioo 0 1) :
     t * (1 - t) ^ 2 * logSlope ρ σ t = t * (1 - t) - minimumCost ρ σ t := by
   have hmass : ∑ i, ∑ j, ρ.eigenvalue i * ‖entry ρ σ 1 i j‖ ^ 2 = 1 := by
-    simp only [entry, Module.End.one_apply, ← Finset.mul_sum, σ.eigenbasis.sum_sq_norm_inner_right,
+    simp only [entry, one_apply_eq_self, ← Finset.mul_sum, σ.eigenbasis.sum_sq_norm_inner_right,
       ρ.eigenbasis.norm_eq_one, one_pow, mul_one, ρ.sum_eigenvalue]
   conv_rhs =>
     lhs
@@ -196,7 +206,7 @@ private lemma scaled_logSlope (ρ σ : Density H) {t : ℝ} (ht : t ∈ Set.Ioo 
 
 private lemma logPath_one (ρ σ : Density H) : logPath ρ σ 1 = ρ.relativeEntropyReal σ := by
   simp only [logPath, sub_self, zero_mul, one_mul, zero_add, relativeEntropyReal_eq_sum,
-    entry, Module.End.one_apply, mul_right_comm]
+    entry, one_apply_eq_self, mul_right_comm]
 
 /-- Discarding the right factor decreases finite relative entropy, including for singular
 reference states. -/

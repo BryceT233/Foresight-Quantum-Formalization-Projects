@@ -71,7 +71,7 @@ lemma pure_sub_mul_self_mul_self (v w : UnitState H) :
   have h (v w : UnitState H) : (pure v).op * (pure w).op * (pure v).op =
       (‖inner ℂ v.val w.val‖ ^ 2 : ℂ) • (pure v).op := by
     ext x
-    simp only [Module.End.mul_apply, pure_apply, inner_smul_right, smul_smul,
+    simp only [mul_apply_eq_comp, pure_apply, inner_smul_right, smul_smul,
       LinearMap.smul_apply]
     congr 1
     rw [← inner_conj_symm w.val v.val]

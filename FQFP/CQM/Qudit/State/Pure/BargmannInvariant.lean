@@ -1,7 +1,17 @@
 /-
-Copyright (c) 2026 Anand Nambakam, Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Anand Nambakam. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Anand Nambakam, Foresight Quantum
+Authors: Anand Nambakam
+-/
+
+/-
+Physlib reference for the three-state Bargmann invariant and phase.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/States/Pure/BargmannInvariant.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Authors: Foresight Quantum
 -/
 module
 
@@ -38,7 +48,7 @@ def bargmannPhaseThree (u v w : UnitState H) : ℝ :=
 theorem bargmannInvariantThree_eq_trace (u v w : UnitState H) :
     bargmannInvariantThree u v w =
       ((Density.pure u).op * (Density.pure v).op * (Density.pure w).op).trace := by
-  rw [Density.op_pure w, Operator.trace_mul_outer, Module.End.mul_apply, Density.pure_apply,
+  rw [Density.op_pure w, Operator.trace_mul_outer, mul_apply_eq_comp, Density.pure_apply,
     Density.pure_apply, inner_smul_right, inner_smul_right]
   unfold bargmannInvariantThree
   ac_rfl

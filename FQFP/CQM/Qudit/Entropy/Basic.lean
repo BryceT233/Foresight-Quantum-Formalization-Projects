@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg
+-/
+
+/-
+Physlib reference for von Neumann entropy and its spectral formula.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/Entropy/VonNeumann.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -81,7 +91,7 @@ lemma vonNeumannEntropy_pure (ψ : UnitState H) : (pure ψ).vonNeumannEntropy = 
     (pure_mul_self ψ)
   change inner ℂ (ρ.eigenbasis i) ((ρ.op * ρ.op) (ρ.eigenbasis i)) =
     inner ℂ (ρ.eigenbasis i) (ρ.op (ρ.eigenbasis i)) at he
-  simp only [Module.End.mul_apply, apply_eigenbasis, map_smul, inner_smul_right,
+  simp only [mul_apply_eq_comp, apply_eigenbasis, map_smul, inner_smul_right,
     OrthonormalBasis.inner_eq_one, mul_one] at he
   have hr : ρ.eigenvalue i * ρ.eigenvalue i = ρ.eigenvalue i := by exact_mod_cast he
   have hz : ρ.eigenvalue i = 0 ∨ ρ.eigenvalue i = 1 := by

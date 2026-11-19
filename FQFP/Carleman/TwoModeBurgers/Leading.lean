@@ -97,7 +97,7 @@ private lemma lieDerivation_eq_pderiv (α γ β : ℝ) (p : MvPolynomial (Fin 2)
         vectorField α γ β 0 * pderiv 0 p +
           vectorField α γ β 1 * pderiv 1 p := by
       rw [mkDerivation_eq_sum_pderiv]
-      simp [Fin.sum_univ_two, Derivation.smul_apply, smul_eq_mul]
+      simp [Fin.sum_univ_two, smul_eq_mul]
     _ = _ := by
       simp only [vectorField, Matrix.cons_val_zero, Matrix.cons_val_one]
       ring

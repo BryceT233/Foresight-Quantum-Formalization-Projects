@@ -44,7 +44,7 @@ lemma ad_rat_pow_eq_adPow (a b : A) (n : ℕ) :
   induction n with
   | zero => rfl
   | succ n ih =>
-      rw [pow_succ', Module.End.mul_apply, LieAlgebra.ad_apply, ad_pow_succ, ih]
+      rw [pow_succ', mul_apply_eq_comp, LieAlgebra.ad_apply, ad_pow_succ, ih]
 
 omit [Algebra ℝ A] in
 /-- Reversed negative exponential lists are also left inverses. -/

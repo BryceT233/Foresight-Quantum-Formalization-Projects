@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg
+-/
+
+/-
+Physlib reference for relative entropy and its support condition.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/Entropy/Relative.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Foresight Quantum
 -/
 module
@@ -175,7 +185,7 @@ lemma relativeEntropyReal_eq_sum_of_eigenbasis {ι : Type*} [Fintype ι]
     ρ.relativeEntropyReal σ = ∑ i, p i * (Real.log (p i) - Real.log (q i)) := by
   rw [relativeEntropyReal, expectation, expectationComplex, Operator.trace,
     LinearMap.trace_eq_sum_inner _ b]
-  simp only [Module.End.mul_apply, hρ, map_smul, LinearMap.sub_apply,
+  simp only [mul_apply_eq_comp, hρ, map_smul, LinearMap.sub_apply,
     ρ.logOp_apply_of_eigenvector (hρ _), σ.logOp_apply_of_eigenvector (hσ _),
     inner_smul_right, inner_sub_right, OrthonormalBasis.inner_eq_one, mul_one,
     Complex.re_sum, ← Complex.ofReal_sub, ← Complex.ofReal_mul, Complex.ofReal_re]
@@ -188,7 +198,7 @@ lemma logOp_maximallyMixed (H : Qudit) (hn : Module.finrank ℂ H.state ≠ 0) :
   have h := (maximallyMixed H hn).logOp_apply_of_eigenvector (v := v)
     (a := (Module.finrank ℂ H.state : ℝ)⁻¹) (by simp [op_maximallyMixed])
   simpa only [Real.log_inv, Complex.ofReal_neg, LinearMap.smul_apply,
-    Module.End.one_apply] using h
+    one_apply_eq_self] using h
 
 /-- Relative entropy to the maximally mixed state measures the entropy deficit. -/
 lemma relativeEntropy_maximallyMixed (ρ : Density H) (hn : Module.finrank ℂ H.state ≠ 0) :

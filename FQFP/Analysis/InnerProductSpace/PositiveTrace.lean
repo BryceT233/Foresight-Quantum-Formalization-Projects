@@ -36,7 +36,7 @@ lemma IsPositive.trace_mul_nonneg {A B : E →ₗ[𝕜] E}
   rw [trace_eq_sum_inner _ (hB.isSymmetric.eigenvectorBasis rfl)]
   apply Finset.sum_nonneg
   intro i _
-  rw [Module.End.mul_apply, hB.isSymmetric.apply_eigenvectorBasis,
+  rw [mul_apply_eq_comp, hB.isSymmetric.apply_eigenvectorBasis,
     map_smul, inner_smul_right]
   exact mul_nonneg (RCLike.ofReal_nonneg.mpr (hB.nonneg_eigenvalues rfl i))
     (hA.inner_nonneg_right _)

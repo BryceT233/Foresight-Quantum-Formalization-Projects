@@ -113,7 +113,7 @@ lemma isPositive_outer (v : H.state) : (outer v v).IsPositive := by
 /-- Multiplying an outer product on the left applies the operator to its ket. -/
 lemma mul_outer (A : Operator H) (v w : H.state) : A * outer v w = outer (A v) w := by
   ext x
-  simp only [Module.End.mul_apply, outer_apply, map_smul]
+  simp only [mul_apply_eq_comp, outer_apply, map_smul]
 
 /-- The trace pairing against an outer product is a matrix coefficient. -/
 @[simp]

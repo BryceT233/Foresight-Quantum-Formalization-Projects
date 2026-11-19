@@ -69,7 +69,7 @@ lemma discard_eq_kraus {H : Qudit} {ι : Type*} [Fintype ι]
   intro A
   apply LinearMap.ext_ring
   rw [discard_apply, kraus_apply, LinearMap.sum_apply]
-  simp only [LinearMap.smul_apply, Module.End.one_apply, smul_eq_mul, mul_one,
+  simp only [LinearMap.smul_apply, one_apply_eq_self, smul_eq_mul, mul_one,
     LinearMap.comp_apply, bra, LinearMap.adjoint_innerₛₗ_apply,
     LinearMap.toSpanSingleton_apply, one_smul]
   exact LinearMap.trace_eq_sum_inner A b
@@ -181,7 +181,7 @@ lemma pure_comp_discard_iff {H K L : Qudit} (f : H ⟶ K) (g : H ⟶ L) :
     change Superoperator.discard K (Superoperator.conjugate f.hom A) (1 : ℂ) =
       Superoperator.discard L (Superoperator.conjugate g.hom A) (1 : ℂ) at e
     simp only [Superoperator.discard_conjugate_apply, LinearMap.smul_apply,
-      Module.End.one_apply, smul_eq_mul, mul_one] at e
+      one_apply_eq_self, smul_eq_mul, mul_one] at e
     exact e
   · intro h
     apply hom_ext

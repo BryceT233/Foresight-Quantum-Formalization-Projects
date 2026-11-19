@@ -72,7 +72,7 @@ def comap (M : POVM L ι) (V : K ⟶ L) [IsIsometry V] : POVM K ι where
   sum_op := by
     ext x
     have h := congrArg (fun A : Operator L => V.hom.adjoint (A (V.hom x))) M.sum_op
-    simpa only [LinearMap.sum_apply, LinearMap.comp_apply, map_sum, Module.End.one_apply,
+    simpa only [LinearMap.sum_apply, LinearMap.comp_apply, map_sum, one_apply_eq_self,
       hom_id, LinearMap.id_apply]
       using h.trans (hom_adjoint_apply_of_isIsometry V x)
 
@@ -115,7 +115,7 @@ lemma steeringMap_outer (ρ : Density (H ⊗ K)) (a : K.state) :
   change inner ℂ x (Operator.partialTraceRight
     (TensorProduct.map LinearMap.id (Operator.outer a a) * ρ.op) y) = _
   rw [Operator.inner_partialTraceRight b]
-  simp only [Module.End.mul_apply, LinearMap.comp_apply, LinearMap.adjoint_inner_right]
+  simp only [mul_apply_eq_comp, LinearMap.comp_apply, LinearMap.adjoint_inner_right]
   have he (z : K.state) :
       inner ℂ (x ⊗ₜ[ℂ] z)
         ((TensorProduct.map LinearMap.id (Operator.outer a a)) (ρ.op (y ⊗ₜ[ℂ] z))) =

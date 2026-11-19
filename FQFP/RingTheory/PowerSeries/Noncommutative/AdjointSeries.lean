@@ -57,7 +57,7 @@ theorem seriesLinearAction_adjointSeries_pow (W V : PowerSeries A) (j : ℕ) :
   | zero => simp
   | succ j ih =>
     rw [pow_succ', seriesLinearAction_mul, ih, seriesLinearAction_adjointSeries,
-      pow_succ', Module.End.mul_apply]
+      pow_succ', mul_apply_eq_comp]
 
 /-- Applying a scalar formal function of the positive graded adjoint. -/
 def adjointSeriesApply (c : PowerSeries ℚ) (W V : PowerSeries A) : PowerSeries A :=

@@ -1,6 +1,16 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2025 Alex Meiburg. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg, Rodolfo Soldati
+-/
+
+/-
+Physlib reference for Dirac notation.
+leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
+QuantumInfo/States/Pure/Braket.lean
+
+Modified by Foresight Quantum in 2026
+Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Authors: Bingyu Xia
 -/
 module
@@ -90,7 +100,7 @@ end Notation
 namespace Qudit
 
 /-- Finite-dimensional qudit state spaces are complete. -/
-instance (H : Qudit) : CompleteSpace H.state := FiniteDimensional.complete ℂ H.state
+instance (H : Qudit) : CompleteSpace H.state := FiniteDimensional.completeSpace ℂ H.state
 
 lemma of_state {H : Qudit} : of H.state = H := rfl
 
