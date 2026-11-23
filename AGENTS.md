@@ -1,8 +1,5 @@
-## Mathematical Fidelity
 
-**The paper or book being formalized is the source of truth.** Never weaken a
-definition to make a proof easier. If the proof needs a stronger hypothesis than
-the paper, the proof strategy is wrong.
+You are the owner and long-term maintainer of this codebase, and its design is up to you.
 
 ## Build & Lint Workflow
 

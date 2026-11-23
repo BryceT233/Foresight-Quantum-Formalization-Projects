@@ -56,6 +56,28 @@ class SnapshotComparisonTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "collision"):
             load_snapshot(path, {"modules": {"FQFP.Left": "FQFP.Right"}})
 
+    def test_declaration_move_requires_the_whole_name(self):
+        for name in ["Other.A.helper", "A.helper'", "A.helper.child"]:
+            with self.subTest(name=name):
+                path = self.write("records", [record(key=name, value=f"Lean.Expr.const `{name} []")])
+                original = load_snapshot(path, {})
+                migrated = load_snapshot(path, {"declarations": {"A.helper": "B.helper"}})
+                self.assertEqual(original, migrated)
+
+    def test_overlapping_moves_apply_once_to_keys_and_references(self):
+        migrations = {
+            "modules": {"A": "B", "A.Sub": "C", "C": "D"},
+            "declarations": {"__private.A.Sub.helper": "__private.C.special"},
+        }
+        for old, new in [("__private.A.Sub.helper", "__private.C.special"),
+                         ("__private.A.Sub.other", "__private.C.other"),
+                         ("__private.A.Subtree.helper", "__private.B.Subtree.helper")]:
+            with self.subTest(old=old):
+                before = self.write("before", [record(key=old, value=f"Lean.Expr.const `{old} []")])
+                after = self.write("after", [record(key=new, value=f"Lean.Expr.const `{new} []")])
+                self.assertEqual(load_snapshot(before, migrations)[new]["value"],
+                                 load_snapshot(after, {})[new]["value"])
+
     def test_priority_simp_type_body_and_missing_changes_fail(self):
         for field, value in [("instance_priority", 100), ("simp_forms", [True]*5),
                              ("type", "DifferentType"), ("value", "DifferentBody")]:

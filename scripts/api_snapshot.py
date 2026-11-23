@@ -38,25 +38,24 @@ def normalize_expression(text, parameters, remap):
 
 def load_snapshot(path, migrations):
     records = {}
-    module_map = migrations.get("modules", {})
     declaration_map = migrations.get("declarations", {})
+    module_map = migrations.get("modules", {})
+    private_prefixes = [
+        (f"__private.{old}.", f"__private.{module_map[old]}.")
+        for old in sorted(module_map, key=len, reverse=True)
+    ]
+
+    def remap(name):
+        if name in declaration_map:
+            return declaration_map[name]
+        if private_prefixes and name.startswith("__private."):
+            for old, new in private_prefixes:
+                if name.startswith(old):
+                    return new + name[len(old):]
+        return name
+
     for row in iter_records(path):
-        key = row["key"]
-        # Only module-qualified private identities are remapped. Public names stay stable.
-        replacements = {
-            "__private." + old + ".": "__private." + new + "."
-            for old, new in module_map.items()
-        }
-        replacements.update(declaration_map)
-
-        alternatives = [re.escape(old) + ("" if old.endswith(".") else r"(?![\w.])")
-                        for old in sorted(replacements, key=len, reverse=True)]
-        rename = re.compile("|".join(alternatives)) if alternatives else None
-
-        def remap(text):
-            return rename.sub(lambda m: replacements[m[0]], text) if rename else text
-
-        key = remap(key)
+        key = remap(row["key"])
         if key in records:
             raise ValueError(f"Identity collision after migration: {key}")
         parameters = {n: f"level_{i}" for i, n in enumerate(row["levels"])}

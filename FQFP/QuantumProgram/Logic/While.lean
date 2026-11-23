@@ -48,6 +48,23 @@ theorem next_whileDo_of_false {b : Store → Bool} (p : Command Store Cell H)
     (Configuration.mk (some (.whileDo b p)) s).next = [⟨none, s⟩] := by
   simp [Configuration.next, Command.step, hb]
 
+/-- With a false guard, the loop evaluates the post-observable in the current state. -/
+theorem Configuration.PostH_whileDo_of_false {b : Store → Bool} (p : Command Store Cell H)
+    {s : CQState Store H} (hb : b s.store = false) (A : Store → Operator H) :
+    (Configuration.mk (some (.whileDo b p)) s).PostH A =
+      ENNReal.ofReal (s.expectation (A s.store)) :=
+  PostH_of_step_terminal (next_whileDo_of_false p hb) A
+
+/-- With a true guard, each terminal occurrence of the body contributes the remaining loop's
+post-expectation. -/
+theorem Configuration.PostH_whileDo_of_true {b : Store → Bool} (p : Command Store Cell H)
+    {s : CQState Store H} (hb : b s.store = true) {A : Store → Operator H}
+    (hA : ∀ σ, (A σ).IsPositive) :
+    (Configuration.mk (some (.whileDo b p)) s).PostH A =
+      ∑' j, (Configuration.mk (some p) s).terminalWeightAt j
+        (fun t => (Configuration.mk (some (.whileDo b p)) t).PostH A) := by
+  rw [PostH_singleton (next_whileDo_of_true p hb), PostH_seqWith _ _ hA]
+
 /-- A loop preserves its invariant until the guard fails (QHL⁺ partial-correctness loop rule). -/
 theorem validPar_while {b : Store → Bool} {J : Assertion Store H} {p : Command Store Cell H}
     (h : validPar (J.mand b) p J) : validPar J (.whileDo b p) (J.mandNot b) := by
@@ -90,13 +107,9 @@ theorem validTot_while {b : Store → Bool} {J : Assertion Store H} {p : Command
   | _ n ih =>
     cases hb : b s.store with
     | false =>
-      have hf : (Configuration.mk (some (.whileDo b p)) s).frontier 1 = [⟨none, s⟩] := by
-        simpa [Configuration.frontier] using next_whileDo_of_false p hb
-      simpa only [J.mandNot_of_false hb] using
-        Configuration.ofReal_expectation_le_PostH_of_frontier hf (fun σ => J.mandNot b σ)
+      rw [Configuration.PostH_whileDo_of_false p hb, J.mandNot_of_false hb]
     | true =>
-      rw [Configuration.PostH_singleton (next_whileDo_of_true p hb),
-        Configuration.PostH_seqWith _ _ (J.mandNot b).isPositive]
+      rw [Configuration.PostH_whileDo_of_true p hb (J.mandNot b).isPositive]
       have prem := h n s
       rw [(J.mand b).mask_of_pos (φ := fun σ => t σ = n) hn, J.mand_of_true hb] at prem
       apply prem.trans

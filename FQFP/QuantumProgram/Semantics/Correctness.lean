@@ -16,9 +16,9 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Semantics.Denotation
+public import FQFP.CQM.Qudit.Channel.Process.Dual
 import FQFP.Analysis.InnerProductSpace.PositiveTrace
 import FQFP.CQM.Qudit.Channel.Choi
-import FQFP.CQM.Qudit.Channel.Process.Dual
 
 /-!
 # Post-expectations and semantic validity
@@ -65,6 +65,12 @@ theorem CQState.expectation_mono (s : CQState Store H) {A B : Operator H} (h : A
     s.expectation A ≤ s.expectation B := by
   simpa only [expectation, sub_mul, Operator.trace, map_sub, Complex.sub_re, sub_nonneg] using
     s.expectation_nonneg (LinearMap.le_def.mp h)
+
+/-- Pulling back the output effect gives its expectation in the evolved branch. -/
+theorem CQState.expectation_pullbackEffect {K : Qudit} (s : CQState Store H)
+    (Φ : QuantumChannel H K) (E : Set.Icc (0 : Operator K) 1) :
+    s.expectation (Φ.pullbackEffect E) = (s.map Φ).expectation E :=
+  congrArg Complex.re (Φ.toCPMap.trace_dual s.op E)
 
 /-- Evolving both a branch and its rank-one test by an isometry preserves the expectation. -/
 theorem CQState.expectation_outer_map {K : Qudit} (s : CQState Store H) (f : H ⟶ K)
@@ -149,14 +155,12 @@ theorem PostH_singleton {p : Command Store Cell H} {s : CQState Store H}
     {d : Configuration Store Cell H} (h : (Configuration.mk (some p) s).next = [d])
     (A : Store → Operator H) : (Configuration.mk (some p) s).PostH A = d.PostH A := by
   let c := Configuration.mk (some p) s
-  have h₁ : c.frontier 1 = [d] := by simpa [c, frontier] using h
   have hz : c.postAt 0 A = 0 := by simp [c, postAt_eq_sum_frontier, frontier]
   change (∑' n, ENNReal.ofReal (c.postAt n A)) = _
   rw [tsum_eq_zero_add' CompleteLattice.summable, hz, ENNReal.ofReal_zero, zero_add]
   apply tsum_congr
   intro n
-  rw [postAt_eq_sum_frontier, Nat.add_comm n 1, frontier_add_of_singleton h₁,
-    postAt_eq_sum_frontier]
+  simp only [postAt_eq_sum_frontier, frontier_succ, c, h, List.flatMap_singleton]
 
 /-- If all one-step successors are terminal, only depth one contributes to the post-expectation. -/
 theorem PostH_of_step_terminals {p : Command Store Cell H} {s : CQState Store H}
@@ -167,19 +171,23 @@ theorem PostH_of_step_terminals {p : Command Store Cell H} {s : CQState Store H}
   let c := Configuration.mk (some p) s
   have h₁ : c.frontier 1 = outputs.map (Configuration.mk none) := by
     simpa [c, frontier, next] using h
-  have h₂ (k : ℕ) : c.frontier (k + 2) = [] := by
-    induction k with
-    | zero =>
-      change (c.frontier 1).flatMap Configuration.next = []
-      simp [h₁, List.flatMap_map, next]
-    | succ k ih => exact congrArg (List.flatMap Configuration.next) ih
   change (∑' k, ENNReal.ofReal (c.postAt k A)) = _
   rw [tsum_eq_single 1]
   · simp [postAt_eq_sum_frontier, h₁, List.filter_map, List.map_map, Function.comp_def]
   · rintro (_ | _ | k) hk
     · simp [c, postAt_eq_sum_frontier, frontier]
     · exact (hk rfl).elim
-    · simp [postAt_eq_sum_frontier, h₂]
+    · have hempty : c.frontier (k + 2) = [] := by
+        rw [c.frontier_succ]
+        simp [c, next, h, List.flatMap_map, List.flatMap_eq_nil_iff, frontier_succ_terminal]
+      simp [postAt_eq_sum_frontier, hempty]
+
+/-- A command that terminates in one step with a single output evaluates the observable there. -/
+theorem PostH_of_step_terminal {p : Command Store Cell H} {s t : CQState Store H}
+    (h : p.step s = [⟨none, t⟩]) (A : Store → Operator H) :
+    (Configuration.mk (some p) s).PostH A = ENNReal.ofReal (t.expectation (A t.store)) := by
+  simpa only [List.map_singleton, List.sum_singleton] using
+    PostH_of_step_terminals (outputs := [t]) h A
 
 /-- A measurement evaluates its postcondition after writing each outcome to the classical store.
 The empty successor list of a blocked register contributes zero. -/

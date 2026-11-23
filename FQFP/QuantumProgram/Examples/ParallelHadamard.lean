@@ -76,10 +76,7 @@ theorem parallelHadamard_amplitude (n : ℕ) (bits : Fin (n + 1) → Fin 2) :
       ((hadamardPrefix n (n + 1) le_rfl).toOperator (productVector Qubit n fun _ => ZBasis 2 0)) =
       ((√2)⁻¹ : ℂ) ^ (n + 1) := by
   rw [parallelHadamard_apply_zero, inner_productVector]
-  have h (b : Fin 2) : inner ℂ (ZBasis 2 b) hadamardZero = ((√2)⁻¹ : ℂ) := by
-    rw [hadamardZero, hadamard_zero_apply, inner_smul_right, inner_add_right]
-    fin_cases b <;> simp
-  simp [h]
+  simp [inner_ZBasis_hadamardZero]
 
 /-- The register expression of the loop selects the site named by the classical counter. -/
 def hadamardBody (n : ℕ) : Command ℕ (Fin (n + 1)) (tensorPower Qubit n) :=

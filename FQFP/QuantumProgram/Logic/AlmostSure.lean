@@ -69,10 +69,8 @@ theorem validTot_while_of_contraction {b : Store → Bool} {p : Command Store Ce
     (Configuration.mk (some (.whileDo b p)) s).PostH (fun σ => J.mandNot b σ)
   have exitBound (s : CQState Store H) (hb : b s.store = false) :
       ENNReal.ofReal (s.expectation (J s.store)) ≤ exitWeight s := by
-    have hf : (Configuration.mk (some (.whileDo b p)) s).frontier 1 = [⟨none, s⟩] := by
-      simpa [Configuration.frontier] using next_whileDo_of_false p hb
-    simpa only [exitWeight, J.mandNot_of_false hb] using
-      Configuration.ofReal_expectation_le_PostH_of_frontier hf (fun σ => J.mandNot b σ)
+    simp only [exitWeight, Configuration.PostH_whileDo_of_false p hb, J.mandNot_of_false hb,
+      le_refl]
   have stage (n : ℕ) (s : CQState Store H) :
       ENNReal.ofReal (s.expectation (J s.store)) ≤ exitWeight s + (a : ℝ≥0∞) ^ n * retry s := by
     induction n generalizing s with
@@ -85,10 +83,8 @@ theorem validTot_while_of_contraction {b : Store → Bool} {p : Command Store Ce
       | false => exact (exitBound s hb).trans le_self_add
       | true =>
         let c := Configuration.mk (some p) s
-        have step : exitWeight s = ∑' j, c.terminalWeightAt j exitWeight := by
-          change (Configuration.mk (some (.whileDo b p)) s).PostH _ = _
-          rw [Configuration.PostH_singleton (next_whileDo_of_true p hb),
-            Configuration.PostH_seqWith _ _ (J.mandNot b).isPositive]
+        have step : exitWeight s = ∑' j, c.terminalWeightAt j exitWeight :=
+          Configuration.PostH_whileDo_of_true p hb (J.mandNot b).isPositive
         have body := hbody s
         rw [J.mand_of_true hb, Configuration.PostH_eq_tsum_terminalWeightAt _ J.isPositive] at body
         apply body.trans

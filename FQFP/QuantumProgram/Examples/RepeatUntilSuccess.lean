@@ -226,7 +226,7 @@ theorem reset_measure_effect (U : UnitaryProgram Memory) (f : Fin 2 → (Qubit �
         (∑ i, p i • Superoperator.conjugate (f i).hom.adjoint (E i)) := by
   apply Operator.ext_trace
   intro ρ
-  simp only [channelEffect, instrumentEffect, CPMap.trace_dual]
+  simp only [channelEffect, QuantumChannel.pullbackEffect, instrumentEffect, CPMap.trace_dual]
   change ((∑ i, (measurement.branchCPMap i).dual.toSuperoperator (E i)) *
     U.toChannel.toSuperoperator (reset.toSuperoperator ρ)).trace =
       LinearMap.trace ℂ Memory.state (TensorProduct.map LinearMap.id _ * ρ)

@@ -104,11 +104,30 @@ noncomputable def Configuration.frontier (c : Configuration Store Cell H) :
   | 0 => [c]
   | n + 1 => (c.frontier n).flatMap Configuration.next
 
+/-- Resume execution at each occurrence of an intermediate frontier, in branch order. -/
+theorem Configuration.frontier_add (c : Configuration Store Cell H) (m n : ℕ) :
+    c.frontier (m + n) = (c.frontier m).flatMap (·.frontier n) := by
+  induction n with
+  | zero => simp [frontier]
+  | succ n ih =>
+    rw [Nat.add_succ, frontier, ih, List.flatMap_assoc]
+    rfl
+
+/-- Partition the next depth by the first successor, retaining repeated occurrences. -/
+theorem Configuration.frontier_succ (c : Configuration Store Cell H) (n : ℕ) :
+    c.frontier (n + 1) = c.next.flatMap (·.frontier n) := by
+  rw [Nat.add_comm, c.frontier_add]
+  simp [frontier]
+
+/-- A terminated configuration has no occurrences at any positive depth. -/
+theorem Configuration.frontier_succ_terminal (s : CQState Store H) (n : ℕ) :
+    (Configuration.mk (Cell := Cell) none s).frontier (n + 1) = [] := by
+  rw [frontier_succ]
+  rfl
+
 /-- Execution can resume at the sole configuration of an intermediate frontier. -/
 theorem Configuration.frontier_add_of_singleton {c d : Configuration Store Cell H} {m : ℕ}
     (h : c.frontier m = [d]) (n : ℕ) : c.frontier (m + n) = d.frontier n := by
-  induction n with
-  | zero => exact h
-  | succ n ih => exact congrArg (List.flatMap Configuration.next) ih
+  simp [c.frontier_add m n, h]
 
 end QuantumProgram

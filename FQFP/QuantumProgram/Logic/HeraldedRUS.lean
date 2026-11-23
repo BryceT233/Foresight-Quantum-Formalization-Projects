@@ -163,12 +163,10 @@ theorem bodyPre_apply (A : Assertion Store Memory) (σ : Store) :
 /-- A full attempt preserves the identity effect because both channels and the
 measurement preserve total mass. -/
 theorem bodyPre_identity (σ : Store) : (bodyPre W Assertion.identity σ).val = 1 := by
-  have unital (f : QuantumChannel Memory Memory) : f.toCPMap.dual.toSuperoperator 1 = 1 :=
-    f.toCPMap.isTracePreserving_iff_dual_one.mp f.tracePreserving
   rw [bodyPre_apply]
   change reset.toCPMap.dual.toSuperoperator
     (W.toChannel.toCPMap.dual.toSuperoperator (∑ i, measurement.toPOVM.op i)) = 1
-  rw [measurement.toPOVM.sum_op, unital, unital]
+  rw [measurement.toPOVM.sum_op, W.toChannel.dual_one, reset.dual_one]
 
 /-- The success effect observes ancilla zero and the transformed data. -/
 def successEffect (ψ : UnitState Qubit) : Assertion Store Memory :=

@@ -96,13 +96,12 @@ theorem convex_post_eq (w : ι → ℝ≥0) (hw : ∑ i, w i ≤ 1) (B : ι → 
   · simp [CQAssertion.toAssn, CQAssertion.ofEffect, under, Assertion.mask,
       Assertion.convex, h]
 
-/-- Convex1 combines exclusive classical exits at the largest weight, on the common domain. -/
-theorem convex1_post_le [Nonempty ι] (w : ι → ℝ≥0) (hw : ∑ i, w i ≤ 1) (B : SourceEffect Store H)
+/-- Convex1 bounds exclusive classical exits by the supremum of their weights, zero for
+an empty family. -/
+theorem convex1_post_le (w : ι → ℝ≥0) (hw : ∑ i, w i ≤ 1) (B : SourceEffect Store H)
     (χ : ι → Store → Prop) (hx : ∀ σ i j, i ≠ j → χ i σ → ¬ χ j σ) :
     Assertion.convex w hw (fun i => (B.under (χ i)).toAssn) ≤
       ((B.scaled (maxWeight w) (maxWeight_le_one w hw)).under (fun σ => ∃ i, χ i σ)).toAssn := by
-  obtain ⟨k, _, hk⟩ := univ.exists_max_image w univ_nonempty
-  have hmax : maxWeight w = w k := le_antisymm (Finset.sup_le hk) (le_maxWeight w k)
   intro σ
   change (∑ i, ((w i : ℝ) : ℂ) • ((B.under (χ i)).toAssn σ).val) ≤ (_ : Operator H)
   by_cases hd : B.defined σ
@@ -112,9 +111,7 @@ theorem convex1_post_le [Nonempty ι] (w : ι → ℝ≥0) (hw : ∑ i, w i ≤ 
       · simp [CQAssertion.toAssn, CQAssertion.ofEffect, CQAssertion.effect, under, Assertion.mask,
           scaled, Assertion.convex, hd, hj, show ∃ i, χ i σ from ⟨j, hj⟩]
         simpa using smul_le_smul_of_nonneg_right
-          (Complex.real_le_real.mpr (show (w j : ℝ) ≤ maxWeight w by
-            rw [hmax]
-            exact hk j (mem_univ j)))
+          (Complex.real_le_real.mpr (show (w j : ℝ) ≤ maxWeight w from le_maxWeight w j))
           (B.effect σ).2.1
       · intro i _ hij
         simp [CQAssertion.toAssn, CQAssertion.ofEffect, under, Assertion.mask, hx σ j i hij.symm hj]
@@ -133,7 +130,7 @@ theorem convex_empty [IsEmpty ι] (w : ι → ℝ≥0) (hw : ∑ i, w i ≤ 1)
   · exact Assertion.convex_empty w hw _
 
 /-- Convex1 for total validity with mutually exclusive classical exits. -/
-theorem validTot_convex1 [Nonempty ι] (φ : Store → Prop) (χ : ι → Store → Prop)
+theorem validTot_convex1 (φ : Store → Prop) (χ : ι → Store → Prop)
     (A : ι → SourceEffect Store H) (B : SourceEffect Store H) (w : ι → ℝ≥0)
     (hw : ∑ i, w i ≤ 1) (p : Command Store Cell H) (hx : ∀ σ i j, i ≠ j → χ i σ → ¬ χ j σ)
     (h : ∀ i, validTot ((A i).under φ).toAssn p (B.under (χ i)).toAssn) :
@@ -150,7 +147,7 @@ theorem validTot_convex2 (φ χ : Store → Prop) (A B : ι → SourceEffect Sto
   exact validTot_conseq (convex_pre_le w hw A φ) (validTot_convex w hw h) le_rfl
 
 /-- Convex1 for partial validity with mutually exclusive classical exits. -/
-theorem validPar_convex1 [Nonempty ι] (φ : Store → Prop) (χ : ι → Store → Prop)
+theorem validPar_convex1 (φ : Store → Prop) (χ : ι → Store → Prop)
     (A : ι → SourceEffect Store H) (B : SourceEffect Store H) (w : ι → ℝ≥0)
     (hw : ∑ i, w i ≤ 1) (p : Command Store Cell H) (hx : ∀ σ i j, i ≠ j → χ i σ → ¬ χ j σ)
     (h : ∀ i, validPar ((A i).under φ).toAssn p (B.under (χ i)).toAssn) :

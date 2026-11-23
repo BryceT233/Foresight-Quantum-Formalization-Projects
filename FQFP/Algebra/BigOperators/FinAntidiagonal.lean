@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Data.Nat.Choose.Multinomial
 public import Mathlib.Basic.Real.Basic
+import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Algebra.BigOperators.NatAntidiagonal
 
 /-!
 # Finite antidiagonals and multinomial reindexing
@@ -244,51 +246,10 @@ to the sum over `{(m, i) | m < p, i ≤ m}` via `m = i + j`. -/
 lemma sum_range_add_antidiagonal {𝔸 : Type*} [AddCommMonoid 𝔸] (p : ℕ) (f : ℕ → ℕ → 𝔸) :
     (∑ j ∈ range p, ∑ i ∈ range (p - j), f i j) =
       ∑ m ∈ range p, ∑ i ∈ range (m + 1), f i (m - i) := by
-  rw [Finset.sum_sigma' (s := range p) (t := fun j => range (p - j)) (f := fun j i => f i j),
-    Finset.sum_sigma' (s := range p) (t := fun m => range (m + 1)) (f := fun m i => f i (m - i))]
-  refine Finset.sum_bij (fun x _ => ⟨x.2 + x.1, x.2⟩) ?_ ?_ ?_ ?_
-  · intro x hx
-    rw [mem_sigma] at hx
-    rcases hx with ⟨hx1, hx2⟩
-    rw [mem_range] at hx1 hx2
-    rw [mem_sigma]
-    constructor
-    · rw [mem_range]
-      exact (Nat.lt_sub_iff_add_lt).mp hx2
-    · rw [mem_range]
-      exact Nat.lt_succ_of_le (Nat.le_add_right x.2 x.1)
-  · intro a₁ _ a₂ _ h
-    rcases a₁ with ⟨j₁, i₁⟩
-    rcases a₂ with ⟨j₂, i₂⟩
-    have hi : i₁ = i₂ := congrArg Sigma.snd h
-    have hj : j₁ = j₂ := by
-      have hsum : i₁ + j₁ = i₂ + j₂ := congrArg Sigma.fst h
-      subst hi
-      exact Nat.add_left_cancel hsum
-    subst hj
-    subst hi
-    rfl
-  · intro b hb
-    rw [mem_sigma] at hb
-    rcases hb with ⟨hb1, hb2⟩
-    rw [mem_range] at hb1 hb2
-    refine ⟨⟨b.1 - b.2, b.2⟩, ?_, ?_⟩
-    · rw [mem_sigma]
-      constructor
-      · rw [mem_range]
-        exact lt_of_le_of_lt (Nat.sub_le b.1 b.2) hb1
-      · rw [mem_range]
-        have hle : b.2 ≤ b.1 := Nat.le_of_lt_succ hb2
-        have hsum : b.2 + (b.1 - b.2) = b.1 := by rw [add_comm, Nat.sub_add_cancel hle]
-        exact (Nat.lt_sub_iff_add_lt).mpr (by simpa [hsum] using hb1)
-    · rcases b with ⟨m, i⟩
-      have hle : i ≤ m := Nat.le_of_lt_succ hb2
-      congr
-      simpa [add_comm] using (Nat.sub_add_cancel hle)
-  · intro x _
-    congr
-    rw [Nat.add_comm]
-    exact (Nat.add_sub_cancel_right x.1 x.2).symm
+  rw [← sum_range_diag_flip p (fun j i => f i j)]
+  refine sum_congr rfl fun m _ => ?_
+  simpa only [Nat.sum_antidiagonal_eq_sum_range_succ_mk, Prod.swap_prod_mk, Nat.succ_eq_add_one]
+    using (Nat.sum_antidiagonal_swap (n := m) (f := fun q => f q.1 q.2))
 
 /-- Reindexing `j ↦ p - j - 1` over the antidiagonal fibers: the sum over `j < p` of the
 `Fin.snoc q (p - j)`-fiber equals the sum over `k < p` of the `Fin.snoc q (k + 1)`-fiber. -/

@@ -179,21 +179,15 @@ end Density
 theorem QuantumChannel.optimalTypeIIError_le_map (Φ : QuantumChannel H K) (ρ : Density H)
     (ε : unitInterval) (S : Set (Density H)) :
     ρ.optimalTypeIIError ε S ≤ (Φ.map ρ).optimalTypeIIError ε (Φ.map '' S) := by
-  let D := Φ.toCPMap.dual.toSuperoperator
-  have h1 : D 1 = 1 := Φ.toCPMap.isTracePreserving_iff_dual_one.mp Φ.tracePreserving
-  have he (τ : Density H) (A : Operator K) : τ.expectation (D A) = (Φ.map τ).expectation A :=
+  have he (τ : Density H) (A : Operator K) :
+      τ.expectation (Φ.toCPMap.dual.toSuperoperator A) = (Φ.map τ).expectation A :=
     congrArg Complex.re (Φ.toCPMap.trace_dual τ.op A)
   apply le_iInf
   rintro ⟨T, hT⟩
-  have hp (A : Operator K) (hA : 0 ≤ A) : 0 ≤ D A :=
-    LinearMap.nonneg_iff_isPositive.mpr (Φ.toCPMap.dual.completelyPositive.isPositive A
-      (LinearMap.nonneg_iff_isPositive.mp hA))
-  let U : Set.Icc (0 : Operator H) 1 := ⟨D T.val, hp _ T.2.1, by
-    simpa only [map_sub, h1, sub_nonneg] using hp (1 - T.val) (sub_nonneg.mpr T.2.2)⟩
-  apply (ρ.optimalTypeIIError_le ε S U (by
-    change ρ.expectation (1 - D T.val) ≤ ε
-    rwa [← h1, ← map_sub, he])).trans
+  apply (ρ.optimalTypeIIError_le ε S (Φ.pullbackEffect T) (by
+    change ρ.expectation (1 - Φ.toCPMap.dual.toSuperoperator T.val) ≤ ε
+    rwa [← Φ.dual_one, ← map_sub, he])).trans
   apply le_of_eq
-  simp only [worstCaseTypeIIError, iSup_image, U, he]
+  simp only [worstCaseTypeIIError, iSup_image, QuantumChannel.pullbackEffect, he]
 
 end Qudit

@@ -58,27 +58,9 @@ lemma lieDerivation_energy_totalDegree_le_two (α γ β : ℝ) :
 /-- After the first step, each energy iterate gains at most one degree. -/
 theorem lieIterate_energy_totalDegree_le (α γ β : ℝ) (n : ℕ) :
     (((mkDerivation ℝ (vectorField α γ β))^[n + 1]) (energy)).totalDegree ≤ n + 2 := by
-  induction n with
-  | zero => simpa only [Function.iterate_succ_apply', Function.iterate_zero,
-      id_eq, zero_add] using
-      lieDerivation_energy_totalDegree_le_two α γ β
-  | succ n ih =>
-    rw [Function.iterate_succ_apply']
-    have h := lieDerivation_totalDegree_le α γ β
-      (((mkDerivation ℝ (vectorField α γ β))^[n + 1]) (energy))
-    lia
-
-private lemma coefficient_zero_lieIterate_energy_high (α γ β : ℝ) (n k : ℕ) :
-    (((mkDerivation ℝ (vectorField α γ β))^[n + 1]) energy).coeff
-      (Finsupp.single 0 0 + Finsupp.single 1 (k + 3)) = 0 := by
-  induction n with
-  | zero =>
-    exact coefficient_eq_zero_of_totalDegree_lt _ _ _
-      (by have h := lieIterate_energy_totalDegree_le α γ β 0; lia)
-  | succ n ih =>
-    rw [Function.iterate_succ_apply', show k + 3 = (k + 2) + 1 by lia,
-      coefficient_zero_lieDerivation]
-    simp only [show (k + 2) + 1 = k + 3 by lia, ih, mul_zero]
+  rw [Function.iterate_succ_apply, Nat.add_comm n 2]
+  exact (lieIterate_totalDegree_le α γ β n _).trans
+    (Nat.add_le_add_right (lieDerivation_energy_totalDegree_le_two α γ β) n)
 
 private lemma coefficient_lieIterate_energy_base (α γ β : ℝ) :
     (((mkDerivation ℝ (vectorField α γ β))^[2]) energy).coeff
@@ -102,22 +84,16 @@ theorem coefficient_lieIterate_energy (α γ β : ℝ) (n : ℕ) :
     (((mkDerivation ℝ (vectorField α γ β))^[n + 2]) energy).coeff
       (Finsupp.single 0 2 + Finsupp.single 1 (n + 1)) =
       2 ^ (n + 1) * β ^ (n + 1) * (γ - α) := by
-  induction n with
-  | zero => simpa using coefficient_lieIterate_energy_base α γ β
-  | succ n ih =>
-    rw [show n + 1 + 2 = (n + 2) + 1 by lia, Function.iterate_succ_apply',
-      coefficient_two_lieDerivation]
-    have hdeg := lieIterate_energy_totalDegree_le α γ β (n + 1)
-    have hzero₁ : (((mkDerivation ℝ (vectorField α γ β))^[n + 2]) energy).coeff
-        (Finsupp.single 0 2 + Finsupp.single 1 (n + 1 + 1)) = 0 :=
-      coefficient_eq_zero_of_totalDegree_lt _ _ _ (by lia)
-    have hzero₂ : (((mkDerivation ℝ (vectorField α γ β))^[n + 2]) energy).coeff
-        (Finsupp.single 0 0 + Finsupp.single 1 (n + 1 + 2)) = 0 := by
-      simpa only [show n + 1 + 2 = n + 3 by lia] using
-        coefficient_zero_lieIterate_energy_high α γ β (n + 1) n
-    rw [hzero₁, hzero₂, ih]
-    simp only [pow_succ]
-    ring
+  calc
+    _ = (2 * β) ^ n * (((mkDerivation ℝ (vectorField α γ β))^[2]) energy).coeff
+          (Finsupp.single 0 2 + Finsupp.single 1 1) := by
+      rw [Function.iterate_succ_apply _ (n + 1), Function.iterate_succ_apply _ 1,
+        Function.iterate_one]
+      simpa only [Nat.add_comm 1 n] using coefficient_two_lieIterate_of_totalDegree_le
+        α γ β n 1 _ (lieDerivation_energy_totalDegree_le_two α γ β)
+    _ = _ := by
+      rw [coefficient_lieIterate_energy_base, mul_pow]
+      ring
 
 /-- Anisotropic damping gives every later energy iterate its maximal degree. -/
 theorem lieIterate_energy_totalDegree (α γ β : ℝ) (hβ : β ≠ 0)
@@ -128,10 +104,7 @@ theorem lieIterate_energy_totalDegree (α γ β : ℝ) (hβ : β ≠ 0)
     rw [coefficient_lieIterate_energy]
     exact mul_ne_zero (mul_ne_zero (pow_ne_zero _ (by norm_num))
       (pow_ne_zero _ hβ)) (sub_ne_zero.mpr (Ne.symm hαγ))
-  have hlow := le_totalDegree (mem_support_iff.mpr hcoeff)
-  have hlow' : 2 + (n + 1) ≤
-      (((mkDerivation ℝ (vectorField α γ β))^[n + 2]) energy).totalDegree := by
-    simpa [Finsupp.sum_fintype, Fin.sum_univ_two] using hlow
+  have hlow := add_le_totalDegree_of_coeff_ne_zero hcoeff
   have hhigh := lieIterate_energy_totalDegree_le α γ β (n + 1)
   lia
 
@@ -141,12 +114,10 @@ theorem no_finite_polynomial_closure_energy (α γ β : ℝ) (hβ : β ≠ 0)
     ¬ ∃ V : Submodule ℝ (MvPolynomial (Fin 2) ℝ),
       FiniteDimensional ℝ V ∧ energy ∈ V ∧
         ∀ p ∈ V, (mkDerivation ℝ (vectorField α γ β)) p ∈ V := by
-  rintro ⟨V, hfin, henergy, hV⟩
-  have : FiniteDimensional ℝ V := hfin
-  obtain ⟨N, hN⟩ := finiteDimensional_totalDegree_bounded V
-  have hmem := lieIterate_mem_invariant α γ β V hV henergy (N + 2)
-  have hdegree := hN _ hmem
-  rw [lieIterate_energy_totalDegree α γ β hβ hαγ] at hdegree
+  apply no_finite_polynomial_closure_of_unbounded_totalDegree
+  intro N
+  refine ⟨N + 2, ?_⟩
+  rw [lieIterate_energy_totalDegree α γ β hβ hαγ]
   lia
 
 /-- Under nonzero coupling, energy has a finite polynomial closure exactly at equal damping. -/

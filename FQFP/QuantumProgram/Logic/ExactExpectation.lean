@@ -79,7 +79,7 @@ theorem Assertion.channelPre_compl (A : Assertion Store H) (f : Store → Quantu
   funext σ
   apply Subtype.ext
   change (f σ).toCPMap.dual.toSuperoperator (1 - (A σ : Operator H)) = 1 - _
-  rw [map_sub, (f σ).toCPMap.isTracePreserving_iff_dual_one.mp (f σ).tracePreserving]
+  rw [map_sub, (f σ).dual_one]
   rfl
 
 end QuantumProgram

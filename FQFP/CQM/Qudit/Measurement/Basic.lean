@@ -289,6 +289,12 @@ theorem hadamard_zero_apply :
 /-- The state obtained by applying Hadamard to the computational `|0⟩`. -/
 def hadamardZero : Qubit.state := Qubit.H.asHom.hom (ZBasis 2 0)
 
+/-- Both computational-basis amplitudes of the Hadamard state are `1 / √2`. -/
+theorem inner_ZBasis_hadamardZero (i : Fin 2) :
+    inner ℂ (ZBasis 2 i) hadamardZero = ((√2)⁻¹ : ℂ) := by
+  rw [hadamardZero, hadamard_zero_apply, inner_smul_right, inner_add_right]
+  fin_cases i <;> simp
+
 /-- Hadamard produces a unit state, hence the abstract Born rule applies. -/
 theorem hadamard_zero_unit : ‖hadamardZero‖ = 1 := by
   simp [hadamardZero, (ZBasis 2).orthonormal.norm_eq_one]
@@ -302,9 +308,8 @@ theorem hadamard_zero_probability_sum :
 theorem hadamard_zero_probability (i : Fin 2) :
     scalarRingEquiv (probability (ketArrow hadamardZero) (braArrow (ZBasis 2 i))) =
       (1 / 2 : ℂ) := by
-  rw [scalarRingEquiv_probability_ketArrow_braArrow, hadamardZero,
-    hadamard_zero_apply]
-  fin_cases i <;> simp [inner_smul_right, inner_add_right, ← Complex.ofReal_pow]
+  rw [scalarRingEquiv_probability_ketArrow_braArrow, inner_ZBasis_hadamardZero]
+  simp [← Complex.ofReal_pow]
 
 end
 

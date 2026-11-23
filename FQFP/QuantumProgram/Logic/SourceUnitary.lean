@@ -68,7 +68,6 @@ theorem unitary_identity (φ : Store → Prop) (hr : ∀ σ, φ σ → Function.
   apply unitary_of_le r U (fun _ h => h) hr
   intro σ h
   simp only [Assertion.unitaryPre, dite_eq_left (hr σ h)]
-  let Φ := (U σ (hr σ h)).toChannel
-  exact (Φ.toCPMap.isTracePreserving_iff_dual_one.mp Φ.tracePreserving).ge
+  exact (U σ (hr σ h)).toChannel.dual_one.ge
 
 end QuantumProgram.SourceDerivTot

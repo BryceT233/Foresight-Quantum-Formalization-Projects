@@ -62,8 +62,8 @@ theorem postH_of_zero_budget (W : UnitaryProgram Memory) (cap : ℕ → ℕ) (s 
     (d := ⟨some (.counted counter (bound cap) (attempt W)), { s with store := arm s.store }⟩) rfl A
   have h₂ := Configuration.PostH_singleton (p := .counted counter (bound cap) (attempt W))
     (s := { s with store := arm s.store }) (d := ⟨some loop, t⟩) rfl A
-  rw [h₁, h₂, Configuration.PostH_of_step_terminals (outputs := [t]) (by
-    simp [loop, Command.step, b, t, arm, counter, bound, h])]
+  have hb : b t.store = false := by simp [b, t, arm, counter, bound, h]
+  rw [h₁, h₂, Configuration.PostH_whileDo_of_false body hb]
   simp [t, counter, arm, CQState.expectation]
 
 /-- The terminal probability of a classical success is zero on every input operator. -/

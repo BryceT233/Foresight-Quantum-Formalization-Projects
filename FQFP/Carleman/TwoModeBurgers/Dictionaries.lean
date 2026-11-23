@@ -33,12 +33,11 @@ private lemma index_decompose (d : Fin 2 →₀ ℕ) :
 private lemma monomial_decompose (d : Fin 2 →₀ ℕ) :
     (monomial d (1 : ℝ) : MvPolynomial (Fin 2) ℝ) =
       X 0 ^ (d 0) * X 1 ^ (d 1) := by
-  conv_lhs => rw [index_decompose d]
-  simp only [X_pow_eq_monomial, monomial_mul_monomial, mul_one]
+  rw [pow_mul_pow_eq_monomial, ← index_decompose d]
 
-private lemma index_degree (d : Fin 2 →₀ ℕ) : d.degree = d 0 + d 1 := by
-  rw [Finsupp.degree_eq_sum]
-  simp only [Fin.sum_univ_two]
+/-- The total degree of a two-mode monomial is the sum of its two exponents. -/
+lemma index_degree (d : Fin 2 →₀ ℕ) : d.degree = d 0 + d 1 := by
+  rw [Finsupp.degree_eq_sum, Fin.sum_univ_two]
 
 private lemma pair_degree (i j : ℕ) :
     (Finsupp.single (0 : Fin 2) i + Finsupp.single 1 j).degree = i + j := by
@@ -55,20 +54,11 @@ private lemma pair_eq_pair_iff (i j k l : ℕ) :
   · rintro ⟨rfl, rfl⟩
     rfl
 
-private lemma pow_mul_pow_eq_monomial (i j : ℕ) :
-    (X 0 : MvPolynomial (Fin 2) ℝ) ^ i * X 1 ^ j =
-      monomial (Finsupp.single 0 i + Finsupp.single 1 j) 1 := by
-  simp only [X_pow_eq_monomial, monomial_mul_monomial, mul_one]
-
 private lemma pow_mul_pow_mem_supported (S : Set (Fin 2 →₀ ℕ))
     (i j : ℕ) (h : Finsupp.single 0 i + Finsupp.single 1 j ∈ S) :
     (X 0 : MvPolynomial (Fin 2) ℝ) ^ i * X 1 ^ j ∈
       AddMonoidAlgebra.supported ℝ ℝ S := by
-  have hmon : (X 0 : MvPolynomial (Fin 2) ℝ) ^ i * X 1 ^ j =
-      monomial (Finsupp.single 0 i + Finsupp.single 1 j) 1 := by
-    simp only [X_pow_eq_monomial, monomial_mul_monomial, mul_one]
-  rw [hmon]
-  rw [AddMonoidAlgebra.supported_eq_span_single]
+  rw [pow_mul_pow_eq_monomial, AddMonoidAlgebra.supported_eq_span_single]
   apply Submodule.subset_span
   exact ⟨_, h, rfl⟩
 
@@ -96,12 +86,7 @@ private lemma truncTotal_pow_mul_pow (N i j : ℕ) :
     truncTotal (Fin 2) ℝ (N + 1)
         ((X 0 : MvPolynomial (Fin 2) ℝ) ^ i * X 1 ^ j) =
       if i + j ≤ N then X 0 ^ i * X 1 ^ j else 0 := by
-  have h : (X 0 : MvPolynomial (Fin 2) ℝ) ^ i * X 1 ^ j =
-      monomial (Finsupp.single 0 i + Finsupp.single 1 j) 1 := by
-    simp only [X_pow_eq_monomial, monomial_mul_monomial, mul_one]
-  rw [h, truncTotal_monomial]
-  simp only [map_add, Finsupp.degree_single]
-  simp only [Nat.lt_add_one_iff]
+  simp only [pow_mul_pow_eq_monomial, truncTotal_monomial, pair_degree, Nat.lt_add_one_iff]
 
 private lemma truncTotal_C_mul (N : ℕ) (c : ℝ)
     (p : MvPolynomial (Fin 2) ℝ) :
@@ -127,93 +112,35 @@ theorem truncatedLie_pow_mul_pow (α γ β : ℝ) (N i j : ℕ) :
     truncTotal_pow_mul_pow]
   simp only [add_assoc]
 
+private lemma coeff_truncatedLie_pow_mul_pow (α γ β : ℝ) (N i j k l : ℕ)
+    (hdegree : k + l ≤ N) :
+    (truncatedLie α γ β N ((X 0 : MvPolynomial (Fin 2) ℝ) ^ i * X 1 ^ j)).coeff
+      (Finsupp.single 0 k + Finsupp.single 1 l) =
+        (if i = k ∧ j = l then -(α * i + γ * j) else 0) +
+        (if i = k ∧ j + 1 = l then β * i else 0) -
+        (if i + 2 = k ∧ j - 1 = l then β * j else 0) := by
+  rw [truncatedLie, LinearMap.comp_apply, coeff_truncTotal, pair_degree,
+    ite_eq_left (Nat.lt_succ_of_le hdegree), Derivation.coeFn_coe, lieDerivation_pow_mul_pow]
+  simp only [mul_assoc, pow_mul_pow_eq_monomial,
+    AddMonoidAlgebra.coeff_sub, Finsupp.sub_apply, AddMonoidAlgebra.coeff_add, Finsupp.add_apply,
+    neg_mul, AddMonoidAlgebra.coeff_neg, Finsupp.coe_neg, Pi.neg_apply, coeff_C_mul,
+    coeff_monomial, pair_eq_pair_iff, mul_ite, mul_one, mul_zero, neg_ite, neg_zero]
+
 private lemma truncatedLie_rise_coefficient (α γ β : ℝ) (N i j : ℕ)
     (hdegree : i + j + 1 ≤ N) :
     (truncatedLie α γ β N
       ((X 0 : MvPolynomial (Fin 2) ℝ) ^ i * X 1 ^ j)).coeff
         (Finsupp.single 0 i + Finsupp.single 1 (j + 1)) = β * (i : ℝ) := by
-  rw [truncatedLie_pow_mul_pow]
-  rw [pow_mul_pow_eq_monomial i j,
-    pow_mul_pow_eq_monomial i (j + 1),
-    pow_mul_pow_eq_monomial (i + 2) (j - 1)]
-  have hbase : i + j ≤ N := by lia
-  rw [ite_eq_left hbase, ite_eq_left hdegree]
-  have hneq : (Finsupp.single (0 : Fin 2) i + Finsupp.single 1 j) ≠
-      (Finsupp.single 0 i + Finsupp.single 1 (j + 1)) := by
-    intro h
-    have hj := ((pair_eq_pair_iff i j i (j + 1)).mp h).2
-    lia
-  have hzero :
-      (C (α * (i : ℝ) + γ * (j : ℝ)) *
-        monomial (Finsupp.single 0 i + Finsupp.single 1 j) 1 :
-          MvPolynomial (Fin 2) ℝ).coeff
-            (Finsupp.single 0 i + Finsupp.single 1 (j + 1)) = 0 := by
-    rw [coeff_C_mul, coeff_monomial, ite_eq_right hneq]
-    simp
-  have hfirst :
-      (-C (α * (i : ℝ) + γ * (j : ℝ)) *
-        monomial (Finsupp.single 0 i + Finsupp.single 1 j) 1 :
-          MvPolynomial (Fin 2) ℝ).coeff
-            (Finsupp.single 0 i + Finsupp.single 1 (j + 1)) = 0 := by
-    rw [neg_mul, AddMonoidAlgebra.coeff_neg, Finsupp.coe_neg,
-      Pi.neg_apply, hzero]
-    simp
-  have hsecond :
-      (C (β * (i : ℝ)) *
-        monomial (Finsupp.single 0 i + Finsupp.single 1 (j + 1)) 1 :
-          MvPolynomial (Fin 2) ℝ).coeff
-            (Finsupp.single 0 i + Finsupp.single 1 (j + 1)) = β * (i : ℝ) := by
-    rw [coeff_C_mul, coeff_monomial]
-    simp
-  have hnelast : (Finsupp.single (0 : Fin 2) (i + 2) +
-      Finsupp.single 1 (j - 1)) ≠
-        (Finsupp.single 0 i + Finsupp.single 1 (j + 1)) := by
-    intro h
-    have hi := ((pair_eq_pair_iff (i + 2) (j - 1) i (j + 1)).mp h).1
-    lia
-  have hlast :
-      (C (β * (j : ℝ)) *
-        (if i + 2 + (j - 1) ≤ N then
-          monomial (Finsupp.single 0 (i + 2) + Finsupp.single 1 (j - 1)) 1
-        else 0) : MvPolynomial (Fin 2) ℝ).coeff
-          (Finsupp.single 0 i + Finsupp.single 1 (j + 1)) = 0 := by
-    split_ifs
-    · rw [coeff_C_mul, coeff_monomial, ite_eq_right hnelast]
-      simp
-    · simp
-  simp only [AddMonoidAlgebra.coeff_add, AddMonoidAlgebra.coeff_sub,
-    Finsupp.add_apply, Finsupp.sub_apply]
-  rw [hfirst, hsecond, hlast]
-  ring
+  rw [coeff_truncatedLie_pow_mul_pow α γ β N i j i (j + 1) (by lia)]
+  simp
 
 private lemma truncatedLie_shift_coefficient (α γ β : ℝ) (N i j : ℕ)
-    (hj : 0 < j) (hdegree : i + 2 + (j - 1) ≤ N) :
+    (hdegree : i + 2 + (j - 1) ≤ N) :
     (truncatedLie α γ β N
       ((X 0 : MvPolynomial (Fin 2) ℝ) ^ i * X 1 ^ j)).coeff
         (Finsupp.single 0 (i + 2) + Finsupp.single 1 (j - 1)) =
       -(β * (j : ℝ)) := by
-  rw [truncatedLie_pow_mul_pow]
-  rw [pow_mul_pow_eq_monomial i j,
-    pow_mul_pow_eq_monomial i (j + 1),
-    pow_mul_pow_eq_monomial (i + 2) (j - 1)]
-  have hbase : i + j ≤ N := by lia
-  have hrise : i + j + 1 ≤ N := by lia
-  rw [ite_eq_left hbase, ite_eq_left hrise, ite_eq_left hdegree]
-  have hnebase : (Finsupp.single (0 : Fin 2) i + Finsupp.single 1 j) ≠
-      (Finsupp.single 0 (i + 2) + Finsupp.single 1 (j - 1)) := by
-    intro h
-    have hi := ((pair_eq_pair_iff i j (i + 2) (j - 1)).mp h).1
-    lia
-  have hnerise : (Finsupp.single (0 : Fin 2) i + Finsupp.single 1 (j + 1)) ≠
-      (Finsupp.single 0 (i + 2) + Finsupp.single 1 (j - 1)) := by
-    intro h
-    have hi := ((pair_eq_pair_iff i (j + 1) (i + 2) (j - 1)).mp h).1
-    lia
-  simp only [AddMonoidAlgebra.coeff_add, AddMonoidAlgebra.coeff_sub,
-    Finsupp.add_apply, Finsupp.sub_apply, neg_mul,
-    AddMonoidAlgebra.coeff_neg, Finsupp.coe_neg, Pi.neg_apply,
-    coeff_C_mul, coeff_monomial]
-  rw [ite_eq_right hnebase, ite_eq_right hnerise]
+  rw [coeff_truncatedLie_pow_mul_pow α γ β N i j (i + 2) (j - 1) hdegree]
   simp
 
 /-- A monomial support closed under the two retained nonlinear transitions is
@@ -343,15 +270,15 @@ private theorem evenDictionary_invariant (α γ β : ℝ) (N k : ℕ) :
 theorem secondDictionary_invariant (α γ β : ℝ) (N : ℕ) :
     ∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ (secondDictionary N),
       truncatedLie α γ β N p ∈
-        AddMonoidAlgebra.supported ℝ ℝ (secondDictionary N) := by
-  exact evenDictionary_invariant α γ β N 1
+        AddMonoidAlgebra.supported ℝ ℝ (secondDictionary N) :=
+  evenDictionary_invariant α γ β N 1
 
 /-- The energy dictionary is invariant under truncation. -/
 theorem energyDictionary_invariant (α γ β : ℝ) (N : ℕ) :
     ∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ (energyDictionary N),
       truncatedLie α γ β N p ∈
-        AddMonoidAlgebra.supported ℝ ℝ (energyDictionary N) := by
-  exact evenDictionary_invariant α γ β N 2
+        AddMonoidAlgebra.supported ℝ ℝ (energyDictionary N) :=
+  evenDictionary_invariant α γ β N 2
 
 /-- The odd-exponent dictionary contains the first coordinate. -/
 theorem first_mem_firstDictionary (N : ℕ) (hN : 1 ≤ N) :
@@ -434,7 +361,7 @@ theorem dictionary_contains_shift (α γ β : ℝ) (hβ : β ≠ 0) (N : ℕ)
     Finsupp.single 0 (i + 2) + Finsupp.single 1 (j - 1) ∈ S := by
   apply index_mem_of_supported
     (hInv _ (pow_mul_pow_mem_supported S i j hsource))
-  rw [truncatedLie_shift_coefficient α γ β N i j hj hdegree]
+  rw [truncatedLie_shift_coefficient α γ β N i j hdegree]
   exact neg_ne_zero.mpr (mul_ne_zero hβ (by exact_mod_cast (Nat.ne_of_gt hj)))
 
 private lemma dictionary_contains_b_powers (α γ β : ℝ) (hβ : β ≠ 0)

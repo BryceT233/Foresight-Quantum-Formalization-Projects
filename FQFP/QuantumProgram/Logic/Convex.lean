@@ -72,9 +72,8 @@ theorem CQState.ofReal_expectation_convex (s : CQState Store H) (w : ι → ℝ�
 /-- Finite sums commute with the sum over terminal occurrences at an exact depth. -/
 theorem Configuration.terminalWeightAt_sum (c : Configuration Store Cell H) (n : ℕ)
     (f : ι → CQState Store H → ℝ≥0∞) :
-    c.terminalWeightAt n (fun s => ∑ i, f i s) = ∑ i, c.terminalWeightAt n (f i) := by
-  simp only [terminalWeightAt, ← List.ofFn_getElem_eq_map, List.sum_ofFn]
-  exact Finset.sum_comm
+    c.terminalWeightAt n (fun s => ∑ i, f i s) = ∑ i, c.terminalWeightAt n (f i) :=
+  c.terminalWeightAt_finsetSum n univ f
 
 /-- Terminal history expectations distribute over finite subprobability combinations. -/
 theorem Configuration.PostH_convex (c : Configuration Store Cell H) (w : ι → ℝ≥0)

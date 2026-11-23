@@ -68,11 +68,8 @@ private theorem hadamard_plus : UnitState.map Qubit.H.asHom plusBit = zeroBit :=
 theorem uniformState_amplitude {n : ℕ} (x : Fin n → Fin 2) :
     inner ℂ (registerBasis (ZBasis 2) n x) (uniformState n).val = ((Real.sqrt 2 : ℂ)⁻¹) ^ n := by
   rw [uniformState, product, inner_registerBasis_productState]
-  have h (b : Fin 2) : inner ℂ (ZBasis 2 b) (plusBit).val = ((Real.sqrt 2 : ℂ)⁻¹) := by
-    change inner ℂ (ZBasis 2 b) hadamardZero = _
-    rw [hadamardZero, hadamard_zero_apply, inner_smul_right, inner_add_right]
-    fin_cases b <;> simp
-  simp only [h, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  change (∏ i, inner ℂ (ZBasis 2 (x i)) hadamardZero) = _
+  simp [inner_ZBasis_hadamardZero]
 
 /-- The normalized DFT matrix is symmetric in the input and output words. -/
 theorem qftMatrix_transpose (n : ℕ) : (qftMatrix n).transpose = qftMatrix n := by

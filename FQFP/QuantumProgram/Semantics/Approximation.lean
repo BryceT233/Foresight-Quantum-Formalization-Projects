@@ -8,6 +8,7 @@ Authors: Qedia contributors
 Qhl source for finite-depth values and the criterion for partial correctness.
 qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
 Qhl/History/Approx.lean
+Qhl/History/SeqDecomp.lean
 Qhl/Logic/Assertion.lean
 
 Copyright 2026 Qedia contributors.
@@ -16,6 +17,7 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Semantics.Correctness
+import FQFP.Algebra.BigOperators.Group.List.Fin
 
 /-!
 # Finite-depth values for partial correctness
@@ -42,6 +44,16 @@ variable (c : Configuration Store Cell H)
 noncomputable def terminalWeightAt (n : ℕ) (w : CQState Store H → ℝ≥0∞) : ℝ≥0∞ :=
   (((c.frontier n).filter (·.control.isNone)).map (fun d => w d.state)).sum
 
+/-- Exact-depth terminal weights after one step sum over all one-step successors. -/
+theorem terminalWeightAt_succ (n : ℕ) (w : CQState Store H → ℝ≥0∞) :
+    c.terminalWeightAt (n + 1) w = (c.next.map (·.terminalWeightAt n w)).sum := by
+  unfold terminalWeightAt
+  rw [frontier_succ]
+  induction c.next with
+  | nil => simp
+  | cons d l ih => simp only [List.flatMap_cons, List.filter_append, List.map_append,
+      List.sum_append, List.map_cons, List.sum_cons, ih]
+
 /-- Pointwise bounds on branch weights pass to the terminal frontier. -/
 theorem terminalWeightAt_mono (n : ℕ) {f g : CQState Store H → ℝ≥0∞} (h : ∀ s, f s ≤ g s) :
     c.terminalWeightAt n f ≤ c.terminalWeightAt n g :=
@@ -52,10 +64,22 @@ theorem terminalWeightAt_add (n : ℕ) (f g : CQState Store H → ℝ≥0∞) :
     c.terminalWeightAt n (fun s => f s + g s) = c.terminalWeightAt n f + c.terminalWeightAt n g :=
   List.sum_map_add
 
+/-- Sum a finite family of weights before or after summing over terminal occurrences. -/
+theorem terminalWeightAt_finsetSum {ι : Type*} (n : ℕ) (u : Finset ι)
+    (f : ι → CQState Store H → ℝ≥0∞) :
+    c.terminalWeightAt n (fun s => ∑ i ∈ u, f i s) = ∑ i ∈ u, c.terminalWeightAt n (f i) :=
+  TrotterError.List.sum_map_sum _ u (fun d i => f i (Configuration.state d))
+
+/-- Nonnegative series commute with the finite sum over terminal occurrences at any depth. -/
+theorem terminalWeightAt_tsum {ι : Type*} (n : ℕ) (f : ι → CQState Store H → ℝ≥0∞) :
+    c.terminalWeightAt n (fun s => ∑' i, f i s) = ∑' i, c.terminalWeightAt n (f i) := by
+  simp only [terminalWeightAt, ← List.ofFn_getElem_eq_map, List.sum_ofFn]
+  exact (Summable.tsum_finsetSum fun _ _ => CompleteLattice.summable).symm
+
 /-- A constant factor can be pulled out of the sum over a terminal frontier. -/
 theorem terminalWeightAt_const_mul (n : ℕ) (a : ℝ≥0∞) (w : CQState Store H → ℝ≥0∞) :
-    c.terminalWeightAt n (fun s => a * w s) = a * c.terminalWeightAt n w := by
-  simp only [terminalWeightAt, ← List.ofFn_getElem_eq_map, List.sum_ofFn, Finset.mul_sum]
+    c.terminalWeightAt n (fun s => a * w s) = a * c.terminalWeightAt n w :=
+  List.sum_map_mul_left _ (w ∘ Configuration.state) a
 
 /-- Using the trace as the branch weight recovers the exact-depth terminating mass. -/
 theorem terminalWeightAt_mass (n : ℕ) :
@@ -124,30 +148,20 @@ theorem Val_succ_singleton {c d : Configuration Store Cell H} (hnext : c.next = 
     obtain ⟨_ | p, s⟩ := c
     · simp [next] at hnext
     · rfl
-  have hfront : c.frontier 1 = [d] := by simpa [frontier] using hnext
   have shift (w : CQState Store H → ℝ≥0∞) :
       ∑ i ∈ Finset.range (N + 1), c.terminalWeightAt i w =
         ∑ i ∈ Finset.range N, d.terminalWeightAt i w := by
-    have hs (i : ℕ) : c.terminalWeightAt (i + 1) w = d.terminalWeightAt i w := by
-      rw [terminalWeightAt, Nat.add_comm i 1, frontier_add_of_singleton hfront]
-      rfl
-    simp only [Finset.sum_range_succ', hs]
-    simp [terminalWeightAt, frontier, hrun]
+    have hz : c.terminalWeightAt 0 w = 0 := by simp [terminalWeightAt, frontier, hrun]
+    simp [Finset.sum_range_succ', c.terminalWeightAt_succ, hnext, hz]
   simp only [Val, postUpTo, terminalMassUpTo, postAtE, ← terminalWeightAt_mass, shift, hm]
 
 /-- A positive horizon sees the whole post-weight of an already terminated configuration. -/
 theorem Val_succ_terminal (s : CQState Store H) (N : ℕ) (A : Store → Operator H) :
     (Configuration.mk (Cell := Cell) none s).Val (N + 1) A =
       ENNReal.ofReal (s.expectation (A s.store)) := by
-  let c := Configuration.mk (Cell := Cell) none s
-  have hf (n : ℕ) : c.frontier (n + 1) = [] := by
-    induction n with
-    | zero => simp [c, frontier, next]
-    | succ n ih => exact congrArg (List.flatMap Configuration.next) ih
-  change c.Val (N + 1) A = _
   simp only [Val, postUpTo, terminalMassUpTo, Finset.sum_range_succ', postAtE,
-    terminalWeightAt, terminalMassAt, hf]
-  simp [frontier, c]
+    terminalWeightAt, terminalMassAt, frontier_succ_terminal]
+  simp [frontier]
 
 /-- Extending the horizon decreases the upper bound for observables bounded by one. -/
 theorem antitone_Val {A : Store → Operator H} (hA : ∀ σ, A σ ≤ 1) :

@@ -49,6 +49,16 @@ structure CPMap (H K : Qudit) where
   /-- Positivity after every finite-dimensional amplification. -/
   completelyPositive : toSuperoperator.IsCompletelyPositive
 
+/-- A completely positive map sends nonnegative operators to nonnegative operators. -/
+lemma CPMap.map_nonneg {H K : Qudit} (F : CPMap H K) {A : Operator H} (hA : 0 ≤ A) :
+    0 ≤ F.toSuperoperator A :=
+  LinearMap.nonneg_iff_isPositive.mpr
+    (F.completelyPositive.isPositive A (LinearMap.nonneg_iff_isPositive.mp hA))
+
+/-- A completely positive map is monotone in the Löwner order. -/
+lemma CPMap.monotone {H K : Qudit} (F : CPMap H K) : Monotone F.toSuperoperator :=
+  (monotone_iff_map_nonneg F.toSuperoperator).mpr fun _ => F.map_nonneg
+
 /-- Forget trace preservation while retaining the underlying CP process. -/
 def QuantumChannel.toCPMap {H K : Qudit} (f : QuantumChannel H K) : CPMap H K :=
   ⟨f.toSuperoperator, f.completelyPositive⟩

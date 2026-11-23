@@ -127,6 +127,17 @@ lemma isTracePreserving_iff_dual_one (f : CPMap H K) :
 
 end CPMap
 
+/-- The Heisenberg dual of a quantum channel preserves the identity operator. -/
+lemma QuantumChannel.dual_one {H K : Qudit} (Φ : QuantumChannel H K) :
+    Φ.toCPMap.dual.toSuperoperator 1 = 1 :=
+  Φ.toCPMap.isTracePreserving_iff_dual_one.mp Φ.tracePreserving
+
+/-- Pull a bounded effect on the output system back to the input system. -/
+def QuantumChannel.pullbackEffect {H K : Qudit} (Φ : QuantumChannel H K)
+    (E : Set.Icc (0 : Operator K) 1) : Set.Icc (0 : Operator H) 1 :=
+  ⟨Φ.toCPMap.dual.toSuperoperator E, Φ.toCPMap.dual.map_nonneg E.2.1,
+    (Φ.toCPMap.dual.monotone E.2.2).trans_eq Φ.dual_one⟩
+
 namespace CPQudit
 
 instance : DaggerCategory CPQudit where

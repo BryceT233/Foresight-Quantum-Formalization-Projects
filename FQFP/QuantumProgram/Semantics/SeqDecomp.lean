@@ -15,6 +15,8 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Semantics.Approximation
+import FQFP.Algebra.BigOperators.Group.List.Fin
+import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
 # Terminal histories of a sequential composition
@@ -32,47 +34,7 @@ namespace QuantumProgram.Configuration
 
 variable {Store Cell : Type*} {H : Qudit}
 
-private theorem sum_map_sum {α ι M : Type*} [AddCommMonoid M] (l : List α) (u : Finset ι)
-    (f : ι → α → M) :
-    (l.map fun a => ∑ i ∈ u, f i a).sum = ∑ i ∈ u, (l.map (f i)).sum := by
-  induction l with
-  | nil => simp
-  | cons a l ih => simp only [List.map_cons, List.sum_cons, ih, Finset.sum_add_distrib]
-
-private theorem sum_triangle {M : Type*} [AddCommMonoid M] (f : ℕ → ℕ → M) (n : ℕ) :
-    ∑ d ∈ Finset.range n, ∑ j ∈ Finset.range (d + 1), f j (d - j) =
-      ∑ j ∈ Finset.range n, ∑ i ∈ Finset.range (n - j), f j i := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have split (j) (hj : j ∈ Finset.range n) :
-        ∑ i ∈ Finset.range (n + 1 - j), f j i = (∑ i ∈ Finset.range (n - j), f j i) +
-          f j (n - j) := by
-      rw [Finset.mem_range] at hj
-      rw [show n + 1 - j = (n - j) + 1 by lia, Finset.sum_range_succ]
-    rw [Finset.sum_range_succ, ih,
-      Finset.sum_range_succ (f := fun j => ∑ i ∈ Finset.range (n + 1 - j), f j i),
-      Finset.sum_congr rfl split, Finset.sum_add_distrib, show n + 1 - n = 1 by lia,
-      Finset.sum_range_one, Finset.sum_range_succ (f := fun j => f j (n - j)),
-      Nat.sub_self, add_assoc]
-
 variable (c : Configuration Store Cell H) (q : Command Store Cell H)
-
-/-- Partition the next depth by the first successor, retaining repeated occurrences. -/
-theorem frontier_succ (n : ℕ) : c.frontier (n + 1) = c.next.flatMap (·.frontier n) := by
-  induction n with
-  | zero => simp [frontier]
-  | succ n ih => rw [frontier, ih, List.flatMap_assoc]; rfl
-
-/-- Exact-depth terminal weights after one step sum over all one-step successors. -/
-theorem terminalWeightAt_succ (n : ℕ) (w : CQState Store H → ℝ≥0∞) :
-    c.terminalWeightAt (n + 1) w = (c.next.map (·.terminalWeightAt n w)).sum := by
-  unfold terminalWeightAt
-  rw [frontier_succ]
-  induction c.next with
-  | nil => simp
-  | cons d l ih => simp only [List.flatMap_cons, List.filter_append, List.map_append,
-      List.sum_append, List.map_cons, List.sum_cons, ih]
 
 /-- A running command's post-expectation is the sum over its one-step successors. -/
 theorem PostH_eq_sum_next {p : Command Store Cell H} (s : CQState Store H)
@@ -111,7 +73,8 @@ theorem terminalWeightAt_seqWith (n : ℕ) (w : CQState Store H → ℝ≥0∞) 
       have hz (v : CQState Store H → ℝ≥0∞) : c.terminalWeightAt 0 v = 0 := by
         simp [terminalWeightAt, frontier, c]
       rw [hz, add_zero]
-      simp only [Function.comp_def, ih, sum_map_sum, Nat.succ_sub_succ, terminalWeightAt_succ]
+      simp only [Function.comp_def, ih, TrotterError.List.sum_map_sum, Nat.succ_sub_succ,
+        terminalWeightAt_succ]
       rfl
 
 /-- Post-expectation at an exact depth, disintegrated over the first command's exits. -/
@@ -130,10 +93,9 @@ private theorem sum_terminalWeightAt_seqWith (n : ℕ) (w : CQState Store H → 
     ∑ d ∈ Finset.range n, (c.seqWith q).terminalWeightAt d w =
       ∑ j ∈ Finset.range n, c.terminalWeightAt j (fun t =>
         ∑ i ∈ Finset.range (n - j), (Configuration.mk (some q) t).terminalWeightAt i w) := by
-  simp only [terminalWeightAt_seqWith]
-  rw [sum_triangle (fun j i => c.terminalWeightAt j
-    (fun t => (Configuration.mk (some q) t).terminalWeightAt i w))]
-  simp only [terminalWeightAt, sum_map_sum]
+  simp only [terminalWeightAt_seqWith, c.terminalWeightAt_finsetSum]
+  exact Finset.sum_range_diag_flip n (fun j i =>
+    c.terminalWeightAt j (fun t => (Configuration.mk (some q) t).terminalWeightAt i w))
 
 /-- Post-expectation before the horizon, with the remaining depth passed to the continuation. -/
 theorem postUpTo_seqWith (n : ℕ) (A : Store → Operator H) :
@@ -191,13 +153,9 @@ private theorem tsum_terminalWeightAt_seqWith (w : CQState Store H → ℝ≥0�
     ∑' d, (c.seqWith q).terminalWeightAt d w =
       ∑' j, c.terminalWeightAt j (fun t =>
         ∑' i, (Configuration.mk (some q) t).terminalWeightAt i w) := by
-  simp only [terminalWeightAt_seqWith]
-  rw [tsum_triangle (fun j i => c.terminalWeightAt j
-    (fun t => (Configuration.mk (some q) t).terminalWeightAt i w))]
-  apply tsum_congr
-  intro j
-  simp only [terminalWeightAt, ← List.ofFn_getElem_eq_map, List.sum_ofFn]
-  exact Summable.tsum_finsetSum fun _ _ => CompleteLattice.summable
+  simp only [terminalWeightAt_seqWith, c.terminalWeightAt_tsum]
+  exact tsum_triangle (fun j i =>
+    c.terminalWeightAt j (fun t => (Configuration.mk (some q) t).terminalWeightAt i w))
 
 /-- Over all depths, each first-phase exit contributes the continuation's post-expectation. -/
 theorem PostH_seqWith {A : Store → Operator H} (hA : ∀ σ, (A σ).IsPositive) :
