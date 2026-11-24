@@ -103,7 +103,7 @@ lemma norm_additiveKernel_le_of_rem_bound
 kernel is bounded by `2 Υ (Σ_γ α_comm) |τ|^p / p!`. -/
 theorem norm_additiveKernel_le_of_skewAdjoint
     [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
-    [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
+    [StarRing 𝔸] [CStarRing 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
     (h_skew : ∀ γ, star (H γ) = -(H γ)) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H)
     (hΥ : 0 < Υ) (τ : ℝ) :
     ‖additiveKernel P H τ‖ ≤
@@ -508,7 +508,7 @@ theorem trotter_error_comm_scaling
 bound, valid for all `t ≥ 0`. -/
 theorem trotter_error_bound_comm_scaling_of_skewAdjoint
     [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
-    [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
+    [StarRing 𝔸] [CStarRing 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
     (h_skew : ∀ γ, star (H γ) = -(H γ)) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H)
     (hΥ : 0 < Υ) :
     ∀ t : ℝ, 0 ≤ t →
@@ -557,7 +557,7 @@ theorem trotter_error_bound_comm_scaling_of_skewAdjoint
 /-- `thm:trotter_error_comm_scaling` (anti-Hermitian): the commuting-scaling bound as `t → ∞`. -/
 theorem trotter_error_comm_scaling_of_skewAdjoint
     [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
-    [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
+    [StarRing 𝔸] [CStarRing 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
     (h_skew : ∀ γ, star (H γ) = -(H γ)) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H)
     (hΥ : 0 < Υ) :
     (fun t : ℝ ↦ ‖P.eval H t - exp (t • ∑ γ : Fin Γ, H γ)‖) =O[Filter.atTop]
@@ -738,7 +738,7 @@ lemma norm_multiplicativeError_eq_norm_sub_of_skewAdjoint
 error pointwise commuting-scaling bound, valid for all `t ≥ 0` (no exponential prefactor). -/
 theorem multiplicative_error_bound_comm_scaling_of_skewAdjoint
     [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
-    [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
+    [StarRing 𝔸] [CStarRing 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
     (h_skew : ∀ γ, star (H γ) = -(H γ)) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H)
     (hΥ : 0 < Υ) :
     ∀ t : ℝ, 0 ≤ t →
@@ -752,7 +752,7 @@ theorem multiplicative_error_bound_comm_scaling_of_skewAdjoint
 multiplicative-error commuting-scaling bound as `t → ∞`. -/
 theorem multiplicative_error_comm_scaling_of_skewAdjoint
     [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
-    [StarRing 𝔸] [CStarRing 𝔸] [Nontrivial 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
+    [StarRing 𝔸] [CStarRing 𝔸] [StarModule ℝ 𝔸] (H : Fin Γ → 𝔸)
     (h_skew : ∀ γ, star (H γ) = -(H γ)) (p : ℕ) (hp : 1 ≤ p) (h_order : P.IsOrderOf p H)
     (hΥ : 0 < Υ) :
     (fun t : ℝ ↦ ‖multiplicativeError P H t‖) =O[Filter.atTop]

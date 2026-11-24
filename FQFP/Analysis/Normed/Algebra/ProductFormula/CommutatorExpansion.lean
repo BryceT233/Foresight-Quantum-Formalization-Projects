@@ -17,6 +17,7 @@ norms. For skew-adjoint generators, the conjugating exponentials are unitary.
 ## Main results
 
 * `TrotterError.norm_commutatorRemainder_le` bounds the remainder for general generators.
+* `TrotterError.norm_commutatorRemainder_le_of_le_one` gives the bound for contractive exponentials.
 * `TrotterError.norm_commutatorRemainder_le_of_skewAdjoint` gives the skew-adjoint estimate.
 -/
 
@@ -179,36 +180,15 @@ lemma prod_exp_mul_drop_reverse_telescope {s : ℕ} {𝔸 : Type*} [NormedRing �
     (List.ofFn (fun k : Fin s => exp (τ • A k))).prod *
       (((List.ofFn (fun k : Fin s => exp (-τ • A k))).drop ((j : ℕ) + 1)).reverse).prod
       = ((List.ofFn (fun k : Fin s => exp (τ • A k))).take ((j : ℕ) + 1)).prod := by
-  have hsplit : (List.ofFn (fun k : Fin s => exp (τ • A k))).prod =
-      ((List.ofFn (fun k : Fin s => exp (τ • A k))).take ((j : ℕ) + 1)).prod *
-        ((List.ofFn (fun k : Fin s => exp (τ • A k))).drop ((j : ℕ) + 1)).prod := by
-    simpa only [List.prod_append] using
-      (congrArg List.prod (List.take_append_drop ((j : ℕ) + 1)
-        (List.ofFn (fun k : Fin s => exp (τ • A k))))).symm
-  have hcancel : ((List.ofFn (fun k : Fin s => exp (τ • A k))).drop ((j : ℕ) + 1)).prod *
-      (((List.ofFn (fun k : Fin s => exp (-τ • A k))).drop ((j : ℕ) + 1)).reverse).prod = 1 := by
-    have hmapL : ((List.ofFn (fun k : Fin s => exp (τ • A k))).drop ((j : ℕ) + 1)) =
-        (((List.ofFn A).drop ((j : ℕ) + 1)).map (fun x : 𝔸 => exp (τ • x))) := by
-      rw [List.ofFn_comp' A (fun x => exp (τ • x)), ← List.map_drop]
-    have hmapR : (((List.ofFn (fun k : Fin s => exp (-τ • A k))).drop ((j : ℕ) + 1)).reverse) =
-        ((((List.ofFn A).drop ((j : ℕ) + 1)).map (fun x : 𝔸 => exp (-τ • x))).reverse) := by
-      rw [List.ofFn_comp' A (fun x => exp (-τ • x)), ← List.map_drop]
-    rw [hmapL, hmapR]
-    simpa [List.map_reverse] using prod_mul_rev_eq_one_of_mul_eq_one
-      (l := (List.ofFn A).drop ((j : ℕ) + 1))
-      (f := fun x : 𝔸 => exp (τ • x))
-      (g := fun x : 𝔸 => exp (-τ • x))
-      (hfg := fun x => by simpa [neg_smul] using exp_mul_neg_self (τ • x))
-  calc
-    (List.ofFn (fun k : Fin s => exp (τ • A k))).prod *
-      (((List.ofFn (fun k : Fin s => exp (-τ • A k))).drop ((j : ℕ) + 1)).reverse).prod
-        = ((List.ofFn (fun k : Fin s => exp (τ • A k))).take ((j : ℕ) + 1)).prod *
-            ((List.ofFn (fun k : Fin s => exp (τ • A k))).drop ((j : ℕ) + 1)).prod *
-            (((List.ofFn (fun k : Fin s => exp (-τ • A k))).drop ((j : ℕ) + 1)).reverse).prod := by
-              rw [hsplit]
-    _ = ((List.ofFn (fun k : Fin s => exp (τ • A k))).take ((j : ℕ) + 1)).prod * 1 := by
-              rw [mul_assoc, hcancel]
-    _ = ((List.ofFn (fun k : Fin s => exp (τ • A k))).take ((j : ℕ) + 1)).prod := by rw [mul_one]
+  let l := List.ofFn (fun k : Fin s => exp (τ • A k))
+  have hsplit := congrArg List.prod (List.take_append_drop ((j : ℕ) + 1) l)
+  rw [List.prod_append] at hsplit
+  rw [← hsplit, mul_assoc]
+  have hcancel := prod_mul_rev_eq_one_of_mul_eq_one ((List.ofFn A).drop ((j : ℕ) + 1))
+    (fun x ↦ exp (τ • x)) (fun x ↦ exp (-τ • x))
+    (fun x ↦ by simpa only [neg_smul] using exp_mul_neg_self (τ • x))
+  simpa only [l, List.map_reverse, List.map_drop, List.map_ofFn, Function.comp_def, mul_one] using
+    congrArg (fun x ↦ (l.take ((j : ℕ) + 1)).prod * x) hcancel
 
 /-- The product of the norms of exponentials `∏ᵢ ‖exp (tᵢ • Aᵢ)‖` is bounded by
 `exp (Σᵢ |tᵢ| · ‖Aᵢ‖)`. -/
@@ -217,22 +197,16 @@ lemma norm_prod_exp_smul_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 
     (A : ι → 𝔸) (t : ι → ℝ) :
     (l.map (fun i => ‖exp (t i • A i)‖)).prod ≤
       Real.exp ((l.map (fun i => |t i| * ‖A i‖)).sum) := by
-  calc
-    (l.map (fun i => ‖exp (t i • A i)‖)).prod
-        ≤ (l.map (fun i => Real.exp (|t i| * ‖A i‖))).prod := by
-            have hle : ∀ i ∈ l, ‖exp (t i • A i)‖ ≤ Real.exp (|t i| * ‖A i‖) := by
-              intro i _
-              simpa [norm_smul] using FQFP.norm_exp_le (t i • A i)
-            have hnonneg : ∀ i ∈ l, 0 ≤ ‖exp (t i • A i)‖ := by
-              intro i _
-              exact norm_nonneg (exp (t i • A i))
-            exact List.prod_map_le_prod_map₀
-              (f := fun i => ‖exp (t i • A i)‖)
-              (g := fun i => Real.exp (|t i| * ‖A i‖))
-              (s := l) hnonneg hle
-    _ = Real.exp ((l.map (fun i => |t i| * ‖A i‖)).sum) := by
-            rw [Real.exp_list_sum, List.map_map]
-            rfl
+  rw [Real.exp_list_sum, List.map_map]
+  refine List.prod_map_le_prod_map₀ _ _ (fun i _ ↦ norm_nonneg _) ?_
+  intro i _
+  simpa only [Function.comp_apply, norm_smul, Real.norm_eq_abs] using FQFP.norm_exp_le (t i • A i)
+
+private lemma norm_list_prod_exp_smul_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
+    [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸] {ι : Type*} (l : List ι) (A : ι → 𝔸) (t : ι → ℝ) :
+    ‖(l.map (fun i ↦ exp (t i • A i))).prod‖ ≤ Real.exp ((l.map (fun i ↦ |t i| * ‖A i‖)).sum) := by
+  refine (List.norm_prod_le _).trans ?_
+  simpa only [List.map_map, Function.comp_def] using norm_prod_exp_smul_le l A t
 
 /-- The norm of the product of `exp (τ • A i)` over a sublist `l` of `Fin s` is bounded by
 `exp (|τ| * (l.map ‖A ·‖).sum)`. -/
@@ -240,14 +214,7 @@ lemma norm_prod_exp_smul_list_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra
     [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸] {s : ℕ} (A : Fin s → 𝔸) (l : List (Fin s)) (τ : ℝ) :
     ‖(l.map (fun i => exp (τ • A i))).prod‖ ≤
       Real.exp (|τ| * (l.map (fun i => ‖A i‖)).sum) := by
-  have h := norm_prod_exp_smul_le (l := l) (A := A) (t := fun _ : Fin s => τ)
-  calc
-    ‖(l.map (fun i => exp (τ • A i))).prod‖
-        ≤ (l.map (fun i => ‖exp (τ • A i)‖)).prod := by
-            simpa [List.map_map, Function.comp_def] using
-              List.norm_prod_le (l.map (fun i => exp (τ • A i)))
-    _ ≤ Real.exp ((l.map (fun i => |τ| * ‖A i‖)).sum) := h
-    _ = Real.exp (|τ| * (l.map (fun i => ‖A i‖)).sum) := by rw [List.sum_map_mul_left]
+  simpa only [List.sum_map_mul_left] using norm_list_prod_exp_smul_le l A (fun _ ↦ τ)
 
 /-- The norm of the outer (left) exponential product of a remainder summand is bounded by
 `exp (Σ_{i ≥ k} |τ| · ‖A i‖)`, expressed as a `List` sum over the dropped suffix. -/
@@ -255,25 +222,8 @@ lemma norm_ofFn_drop_reverse_prod_exp_le {𝔸 : Type*} [NormedRing 𝔸] [Norme
     [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸] (A : Fin s → 𝔸) (k : ℕ) (τ : ℝ) :
     ‖((List.ofFn (fun i : Fin s => exp (τ • A i))).drop k).reverse.prod‖ ≤
       Real.exp (((List.ofFn (fun i : Fin s => |τ| * ‖A i‖)).drop k).sum) := by
-  have h := norm_prod_exp_smul_le (l := (List.ofFn (fun i : Fin s => i)).drop k)
-    (A := A) (t := fun _ : Fin s => τ)
-  have hmap : ((List.ofFn (fun i : Fin s => i)).drop k).map (fun i => ‖exp (τ • A i)‖) =
-      (List.ofFn (fun i : Fin s => ‖exp (τ • A i)‖)).drop k := by
-    rw [List.map_drop, ← List.ofFn_comp']
-  have hmap' : ((List.ofFn (fun i : Fin s => i)).drop k).map (fun i => |τ| * ‖A i‖) =
-      (List.ofFn (fun i : Fin s => |τ| * ‖A i‖)).drop k := by
-    rw [List.map_drop, ← List.ofFn_comp']
-  rw [hmap, hmap'] at h
-  calc
-    ‖((List.ofFn (fun i : Fin s => exp (τ • A i))).drop k).reverse.prod‖
-        ≤ (((List.ofFn (fun i : Fin s => exp (τ • A i))).drop k).reverse.map
-            (fun x : 𝔸 => ‖x‖)).prod := List.norm_prod_le _
-    _ = (((List.ofFn (fun i : Fin s => exp (τ • A i))).drop k).map
-            (fun x : 𝔸 => ‖x‖)).prod := by
-            rw [List.map_reverse, List.prod_reverse]
-    _ = ((List.ofFn (fun i : Fin s => ‖exp (τ • A i)‖)).drop k).prod := by
-            rw [List.map_drop, ← List.ofFn_comp']
-    _ ≤ Real.exp (((List.ofFn (fun i : Fin s => |τ| * ‖A i‖)).drop k).sum) := h
+  simpa only [List.map_reverse, List.sum_reverse, List.map_drop, List.map_ofFn, Function.comp_def]
+    using norm_list_prod_exp_smul_le ((List.ofFn fun i : Fin s ↦ i).drop k).reverse A (fun _ ↦ τ)
 
 /-- The norms of the strictly-smaller layers, `A j`, and the strictly-larger layers partition the
 total norm sum: `(take j).sum + ‖A j‖ + (drop (j+1)).sum = Σ_i ‖A i‖`. -/
@@ -388,11 +338,7 @@ lemma coeff_eq_multinomial_div_factorial {j p : ℕ} (q : Fin (j + 1) → ℕ) (
         (Nat.factorial p : ℝ) := by
   have hfac : (q (Fin.last j) : ℝ) * (Nat.factorial (q (Fin.last j) - 1) : ℝ) =
       (Nat.factorial (q (Fin.last j)) : ℝ) := by
-    rw [← Nat.cast_mul]
-    congr 1
-    have h := Nat.factorial_succ (q (Fin.last j) - 1)
-    rw [Nat.sub_add_cancel hlast] at h
-    exact h.symm
+    exact_mod_cast Nat.mul_factorial_pred (by lia : q (Fin.last j) ≠ 0)
   have hden : (q (Fin.last j) : ℝ) * (Nat.factorial (q (Fin.last j) - 1) : ℝ) *
         (∏ i : Fin j, (Nat.factorial (q i.castSucc) : ℝ)) =
       ∏ i : Fin (j + 1), (Nat.factorial (q i) : ℝ) := by
@@ -408,6 +354,16 @@ lemma coeff_eq_multinomial_div_factorial {j p : ℕ} (q : Fin (j + 1) → ℕ) (
     prod_ne_zero_iff.mpr (fun i _ => by positivity)
   field_simp [hfac_p, hprod]
   rw [← hms]; ring
+
+private lemma remainderTerm_coeff_eq_multinomial {j p : ℕ} {q : Fin (j + 1) → ℕ} (t : ℝ)
+    (hq : q ∈ finAntidiagonal (j + 1) p) (hlast : q (Fin.last j) ≠ 0) :
+    |t| ^ (q (Fin.last j) + ∑ i : Fin j, q i.castSucc) /
+        ((q (Fin.last j) : ℝ) * ((Nat.factorial (q (Fin.last j) - 1) : ℝ) *
+          ∏ i : Fin j, (Nat.factorial (q i.castSucc) : ℝ))) =
+      (Nat.multinomial univ q : ℝ) * |t| ^ p / (Nat.factorial p : ℝ) := by
+  have hsum := mem_finAntidiagonal.mp hq
+  rw [add_comm (q (Fin.last j)), ← Fin.sum_univ_castSucc, hsum, ← mul_assoc]
+  exact coeff_eq_multinomial_div_factorial q t hsum (by lia)
 
 /-- The telescoped remainder summand (with left context `L`): the norm of
 `L · (∏_k e^{τA_k}) · commutatorRemainderTerm A B (-τ) j q` telescopes to a single exponential
@@ -430,15 +386,11 @@ lemma norm_mul_commutatorRemainderTerm_le {s : ℕ} {𝔸 : Type*} [NormedRing �
   let N : List ℝ := List.ofFn (fun k : Fin s => ‖A k‖)
   let m : ℕ := q (Fin.last j)
   let r : ℕ := ∑ i : Fin j, q i.castSucc
-  have hsum : (∑ i : Fin (j + 1), q i) = p := mem_finAntidiagonal.mp hq
   have hlast' : 1 ≤ q (Fin.last j) := Nat.succ_le_of_lt (Nat.pos_of_ne_zero hlast)
   have hD : 0 < D := by positivity
   have hcont : Continuous (fun u : ℝ => (((-τ - u) ^ (m - 1) *
       (-τ) ^ r / D) : ℝ) • expSMulConj (A j) X u) := by
     fun_prop
-  have hqsum : q (Fin.last j) + (∑ i : Fin j, q i.castSucc) = p := by
-    rw [add_comm]
-    exact (Fin.sum_univ_castSucc (f := q)).symm.trans hsum
   have h_unfold : commutatorRemainderTerm A B (-τ) j q =
       ((En.drop ((j : ℕ) + 1)).reverse.prod *
         (∫ u in 0..(-τ), (((-τ - u) ^ (m - 1) * (-τ) ^ r /
@@ -543,14 +495,10 @@ lemma norm_mul_commutatorRemainderTerm_le {s : ℕ} {𝔸 : Type*} [NormedRing �
     _ = ‖X‖ * (|τ| ^ (q (Fin.last j) + (∑ i : Fin j, q i.castSucc)) / ((q (Fin.last j) : ℝ) * D)) *
             Real.exp (|τ| * (C + (N.take (j : ℕ)).sum + ‖A j‖ + (N.drop ((j : ℕ) + 1)).sum)) := by
             rw [hcomb]
-    _ = ‖X‖ * (|τ| ^ p / ((q (Fin.last j) : ℝ) * D)) *
-            Real.exp (|τ| * (C + ∑ k : Fin s, ‖A k‖)) := by
-            rw [hqsum, hexp_arg]
     _ = ‖X‖ * ((Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ) * |τ| ^ p /
             (Nat.factorial p : ℝ)) *
             Real.exp (|τ| * (C + ∑ k : Fin s, ‖A k‖)) := by
-            dsimp [D]
-            rw [← mul_assoc, coeff_eq_multinomial_div_factorial q τ hsum hlast']
+            rw [remainderTerm_coeff_eq_multinomial τ hq hlast, hexp_arg]
     _ = ‖adSequence (A ∘ Fin.castLE (Nat.succ_le_of_lt j.2)) q B‖ *
             (Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ) * |τ| ^ p /
               (Nat.factorial p : ℝ) * Real.exp (|τ| * (C + ∑ k : Fin s, ‖A k‖)) := by
@@ -567,48 +515,18 @@ lemma exp_bound_combine {s} {𝔸 : Type*} [NormedRing 𝔸] (A : Fin s → 𝔸
       |τ| * ((List.ofFn (fun i : Fin s => ‖A i‖)).drop (j + 1)).sum := by
     rw [List.ofFn_comp' (f := fun i : Fin s => ‖A i‖) (g := fun x : ℝ => |τ| * x),
       ← List.map_drop, List.sum_map_mul_left, List.map_id']
+  rw [← Real.exp_add, ← Real.exp_add, Real.exp_le_exp, hS]
   calc
-    Real.exp (((List.ofFn (fun i : Fin s => |τ| * ‖A i‖)).drop (j + 1)).sum) *
-        Real.exp (2 * |τ| * ‖A j‖) *
-          Real.exp (((List.ofFn (fun i : Fin s => |τ| * ‖A i‖)).drop (j + 1)).sum)
-        = Real.exp (2 * (((List.ofFn (fun i : Fin s => |τ| * ‖A i‖)).drop (j + 1)).sum +
-              |τ| * ‖A j‖)) := by
-              rw [← Real.exp_add, ← Real.exp_add]
-              congr 1; ring
-    _ ≤ Real.exp (2 * |τ| * ∑ i : Fin s, ‖A i‖) := by
-              apply Real.exp_le_exp.mpr
-              rw [hS]
-              have hle : ‖A j‖ + ((List.ofFn (fun i : Fin s => ‖A i‖)).drop (j + 1)).sum ≤
-                  ∑ i : Fin s, ‖A i‖ := norm_point_add_drop_sum_le A j
-              have h1 : 2 * (|τ| * ((List.ofFn (fun i : Fin s => ‖A i‖)).drop (j + 1)).sum +
-                    |τ| * ‖A j‖) = 2 * |τ| * (‖A j‖ +
-                      ((List.ofFn (fun i : Fin s => ‖A i‖)).drop (j + 1)).sum) := by ring
-              rw [h1]
-              simpa [mul_assoc] using (mul_le_mul_of_nonneg_left
-                (mul_le_mul_of_nonneg_left hle (abs_nonneg τ)) (by norm_num : 0 ≤ (2 : ℝ)))
+    _ = (2 * |τ|) * (‖A j‖ + ((List.ofFn (fun i : Fin s => ‖A i‖)).drop (j + 1)).sum) := by ring
+    _ ≤ _ := mul_le_mul_of_nonneg_left (norm_point_add_drop_sum_le A j) (by positivity)
 
 /-- The norm of the outer (right) exponential product is bounded by the same suffix exponential. -/
 lemma norm_ofFn_drop_prod_exp_le {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
     [NormedAlgebra ℝ 𝔸] [NormOneClass 𝔸] (A : Fin s → 𝔸) (k : ℕ) (τ : ℝ) :
     ‖((List.ofFn (fun i : Fin s => exp (-τ • A i))).drop k).prod‖ ≤
       Real.exp (((List.ofFn (fun i : Fin s => |τ| * ‖A i‖)).drop k).sum) := by
-  have h := norm_prod_exp_smul_le (l := (List.ofFn (fun i : Fin s => i)).drop k)
-    (A := A) (t := fun _ : Fin s => -τ)
-  have hmap : ((List.ofFn (fun i : Fin s => i)).drop k).map (fun i => ‖exp (-τ • A i)‖) =
-      (List.ofFn (fun i : Fin s => ‖exp (-τ • A i)‖)).drop k := by
-    rw [List.map_drop, ← List.ofFn_comp']
-  have hmap' : ((List.ofFn (fun i : Fin s => i)).drop k).map (fun i => |-τ| * ‖A i‖) =
-      (List.ofFn (fun i : Fin s => |τ| * ‖A i‖)).drop k := by
-    rw [List.map_drop, ← List.ofFn_comp']
-    simp [abs_neg]
-  rw [hmap, hmap'] at h
-  calc
-    ‖((List.ofFn (fun i : Fin s => exp (-τ • A i))).drop k).prod‖
-        ≤ (((List.ofFn (fun i : Fin s => exp (-τ • A i))).drop k).map
-            (fun x : 𝔸 => ‖x‖)).prod := List.norm_prod_le _
-    _ = ((List.ofFn (fun i : Fin s => ‖exp (-τ • A i)‖)).drop k).prod := by
-            rw [List.map_drop, ← List.ofFn_comp']
-    _ ≤ Real.exp (((List.ofFn (fun i : Fin s => |τ| * ‖A i‖)).drop k).sum) := h
+  simpa only [List.map_drop, List.map_ofFn, Function.comp_def, abs_neg] using
+    norm_list_prod_exp_smul_le ((List.ofFn fun i : Fin s ↦ i).drop k) A (fun _ ↦ -τ)
 
 /-- The norm bound of a single remainder summand. -/
 lemma norm_commutatorRemainderTerm_le {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
@@ -622,7 +540,6 @@ lemma norm_commutatorRemainderTerm_le {s} {𝔸 : Type*} [NormedRing 𝔸] [Norm
   let X : 𝔸 := adSequence (A ∘ Fin.castLE (Nat.succ_le_of_lt j.2)) q B
   let D : ℝ := (Nat.factorial (q (Fin.last j) - 1) : ℝ) *
     ∏ i : Fin j, (Nat.factorial (q i.castSucc) : ℝ)
-  have hsum : (∑ i : Fin (j + 1), q i) = p := mem_finAntidiagonal.mp hq
   have hD : 0 < D := by positivity
   have houterL : ‖((List.ofFn (fun i : Fin s => exp (τ • A i))).drop (j + 1)).reverse.prod‖ ≤
       Real.exp (((List.ofFn (fun i : Fin s => |τ| * ‖A i‖)).drop (j + 1)).sum) :=
@@ -636,17 +553,6 @@ lemma norm_commutatorRemainderTerm_le {s} {𝔸 : Type*} [NormedRing 𝔸] [Norm
         Real.exp (2 * |τ| * ‖A j‖) := by
         simpa [D] using norm_conj_smul_integral_le (A j) X (q (Fin.last j))
           (∑ i : Fin j, q i.castSucc) D (by lia) hD τ
-  have hcoeff : |τ| ^ (q (Fin.last j) + (∑ i : Fin j, q i.castSucc)) / ((q (Fin.last j) : ℝ) * D) =
-      (Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ) * |τ| ^ p /
-        (Nat.factorial p : ℝ) := by
-    have hqsum : q (Fin.last j) + (∑ i : Fin j, q i.castSucc) = p := by
-      calc
-        q (Fin.last j) + (∑ i : Fin j, q i.castSucc)
-            = (∑ i : Fin j, q i.castSucc) + q (Fin.last j) := by rw [add_comm]
-        _ = ∑ i : Fin (j + 1), q i := (Fin.sum_univ_castSucc (f := q)).symm
-        _ = p := hsum
-    rw [hqsum, ← mul_assoc]
-    exact coeff_eq_multinomial_div_factorial q τ hsum (by lia)
   calc
     ‖commutatorRemainderTerm A B τ j q‖
         ≤ ‖((List.ofFn (fun i : Fin s => exp (τ • A i))).drop (j + 1)).reverse.prod‖ *
@@ -667,7 +573,8 @@ lemma norm_commutatorRemainderTerm_le {s} {𝔸 : Type*} [NormedRing 𝔸] [Norm
             Real.exp (((List.ofFn (fun i : Fin s => |τ| * ‖A i‖)).drop (j + 1)).sum)) := by ring
     _ ≤ ‖X‖ * ((Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ) * |τ| ^ p /
           (Nat.factorial p : ℝ)) * Real.exp (2 * |τ| * ∑ i : Fin s, ‖A i‖) := by
-              rw [hcoeff]; gcongr
+              rw [remainderTerm_coeff_eq_multinomial τ hq hlast]
+              gcongr
               exact exp_bound_combine A j τ
     _ = ‖adSequence (A ∘ Fin.castLE (Nat.succ_le_of_lt j.2)) q B‖ *
           (Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ) * |τ| ^ p /
@@ -688,40 +595,18 @@ lemma norm_mul_commutatorRemainder_le_of_term_bound {s} {𝔸 : Type*} [NormedRi
             (Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ) * |τ| ^ p /
               (Nat.factorial p : ℝ) * F) :
     ‖M * commutatorRemainder A B p τ‖ ≤ αCommConj A B p * |τ| ^ p / (Nat.factorial p : ℝ) * F := by
-  rw [commutatorRemainder]
-  simp_rw [Finset.mul_sum]
-  have h1 : ‖∑ j : Fin s, ∑ q ∈ (finAntidiagonal (j + 1) p).filter
-      (fun q => q (Fin.last j) ≠ 0), M * commutatorRemainderTerm A B τ j q‖ ≤
-      ∑ j : Fin s, ∑ q ∈ (finAntidiagonal (j + 1) p).filter
-      (fun q => q (Fin.last j) ≠ 0), ‖M * commutatorRemainderTerm A B τ j q‖ := by
-    apply norm_sum_le_of_le
-    intros; exact norm_sum_le ..
-  have h2 : ∑ j : Fin s, ∑ q ∈ (finAntidiagonal (j + 1) p).filter
-      (fun q => q (Fin.last j) ≠ 0), ‖M * commutatorRemainderTerm A B τ j q‖ ≤
-      ∑ j : Fin s, ∑ q ∈ (finAntidiagonal (j + 1) p).filter
-      (fun q => q (Fin.last j) ≠ 0),
-        ‖adSequence (A ∘ Fin.castLE (Nat.succ_le_of_lt j.2)) q B‖ *
-          (Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ) * |τ| ^ p /
-            (Nat.factorial p : ℝ) * F :=
-    sum_le_sum (fun j _ => sum_le_sum (fun q hq => hterm j q hq))
-  have h3 : ∑ j : Fin s, ∑ q ∈ (finAntidiagonal (j + 1) p).filter
-      (fun q => q (Fin.last j) ≠ 0),
-        ‖adSequence (A ∘ Fin.castLE (Nat.succ_le_of_lt j.2)) q B‖ *
-          (Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ) * |τ| ^ p /
-            (Nat.factorial p : ℝ) * F ≤
-      αCommConj A B p * |τ| ^ p / (Nat.factorial p : ℝ) * F := by
-    have hlayer : layerSum A B p ≤ αCommConj A B p := layerSum_le_αCommConj A B p
-    have hnonneg : 0 ≤ |τ| ^ p / (Nat.factorial p : ℝ) * F := by positivity
-    have hmain : (∑ j : Fin s, ∑ q ∈ (finAntidiagonal (j + 1) p).filter
-        (fun q => q (Fin.last j) ≠ 0),
-          (‖adSequence (A ∘ Fin.castLE (Nat.succ_le_of_lt j.2)) q B‖ *
-            (Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ)) *
-            (|τ| ^ p / (Nat.factorial p : ℝ) * F)) ≤
-        αCommConj A B p * (|τ| ^ p / (Nat.factorial p : ℝ) * F) := by
-      simp_rw [← sum_mul]
-      exact mul_le_mul_of_nonneg_right (by simpa [layerSum, mul_comm] using hlayer) hnonneg
-    simpa [div_eq_mul_inv, mul_assoc] using hmain
-  exact h1.trans (h2.trans h3)
+  let c := |τ| ^ p / (Nat.factorial p : ℝ) * F
+  calc
+    _ ≤ layerSum A B p * c := by
+      simp only [commutatorRemainder, layerSum, Finset.mul_sum, Finset.sum_mul]
+      apply norm_sum_le_of_le
+      intro j _
+      apply norm_sum_le_of_le
+      intro q hq
+      simpa only [c, div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm] using hterm j q hq
+    _ ≤ αCommConj A B p * c :=
+      mul_le_mul_of_nonneg_right (layerSum_le_αCommConj A B p) (by positivity)
+    _ = _ := by simp only [c, div_eq_mul_inv, mul_assoc]
 
 /-- The spectral-norm bound of the commutator remainder (theory.tex:238-241, general operators). -/
 theorem norm_commutatorRemainder_le {s} {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
@@ -734,6 +619,66 @@ theorem norm_commutatorRemainder_le {s} {𝔸 : Type*} [NormedRing 𝔸] [Normed
       simpa only [one_mul] using
         norm_commutatorRemainderTerm_le A B p τ j q (mem_filter.mp hq).1 (mem_filter.mp hq).2)
 
+section
+
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+
+/-- A finite conjugation remainder term has its exact multinomial weight when
+all the exponential factors are contractions in both time directions. -/
+theorem norm_commutatorRemainderTerm_le_of_le_one {s : ℕ}
+    (A : Fin s → 𝔸) (B : 𝔸) (p : ℕ) (t : ℝ)
+    (hA : ∀ i (u : ℝ), ‖exp (u • A i)‖ ≤ 1) (j : Fin s) (q : Fin (j + 1) → ℕ)
+    (hq : q ∈ finAntidiagonal (j + 1) p) (hlast : q (Fin.last j) ≠ 0) :
+    ‖commutatorRemainderTerm A B t j q‖ ≤
+      ‖adSequence (A ∘ Fin.castLE (Nat.succ_le_of_lt j.2)) q B‖ *
+        (Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ) * |t| ^ p /
+          (Nat.factorial p : ℝ) := by
+  let X := adSequence (A ∘ Fin.castLE (Nat.succ_le_of_lt j.2)) q B
+  let D : ℝ := (Nat.factorial (q (Fin.last j) - 1) : ℝ) *
+    ∏ i : Fin j, (Nat.factorial (q i.castSucc) : ℝ)
+  have hlast_le : 1 ≤ q (Fin.last j) := Nat.succ_le_iff.mpr (Nat.pos_of_ne_zero hlast)
+  have hD : 0 < D := by positivity
+  have hint : ‖∫ u in 0..t, (((t - u) ^ (q (Fin.last j) - 1) *
+        t ^ (∑ i : Fin j, q i.castSucc) / D) : ℝ) • expSMulConj (A j) X u‖ ≤
+      ‖X‖ * |t| ^ (q (Fin.last j) + (∑ i : Fin j, q i.castSucc)) /
+        ((q (Fin.last j) : ℝ) * D) := by
+    apply norm_conj_smul_integral_le_of_norm_conj_le (A j) X (q (Fin.last j))
+      (∑ i : Fin j, q i.castSucc) D hlast_le hD t ‖X‖ (norm_nonneg X)
+    intro u _
+    exact (norm_expSMulConj_eq_of_le_one (A j) X (hA j) u).le
+  have hnorm : ‖commutatorRemainderTerm A B t j q‖ =
+      ‖∫ u in 0..t, (((t - u) ^ (q (Fin.last j) - 1) *
+        t ^ (∑ i : Fin j, q i.castSucc) / D) : ℝ) • expSMulConj (A j) X u‖ := by
+    unfold commutatorRemainderTerm
+    simpa only [List.map_drop, List.map_ofFn, Function.comp_def, X, D] using
+      norm_list_exp_conj_eq_of_le_one A hA
+        ((List.ofFn (fun i : Fin s ↦ i)).drop (j + 1)) _ t
+  rw [hnorm]
+  calc
+    _ ≤ ‖X‖ * |t| ^ (q (Fin.last j) + (∑ i : Fin j, q i.castSucc)) /
+        ((q (Fin.last j) : ℝ) * D) := hint
+    _ = ‖X‖ * (|t| ^ (q (Fin.last j) + (∑ i : Fin j, q i.castSucc)) /
+        ((q (Fin.last j) : ℝ) * D)) := by ring
+    _ = _ := by
+      rw [remainderTerm_coeff_eq_multinomial t hq hlast]
+      dsimp only [X]
+      ring
+
+/-- **Finite conjugation remainder bound.** The full multinomial commutator
+constant is retained, with no exponential growth factor or step restriction. -/
+theorem norm_commutatorRemainder_le_of_le_one {s : ℕ} (A : Fin s → 𝔸)
+    (B : 𝔸) (p : ℕ) (t : ℝ) (hA : ∀ i (u : ℝ), ‖exp (u • A i)‖ ≤ 1) :
+    ‖commutatorRemainder A B p t‖ ≤ αCommConj A B p * |t| ^ p /
+      (Nat.factorial p : ℝ) := by
+  simpa only [one_mul, mul_one] using
+    norm_mul_commutatorRemainder_le_of_term_bound (1 : 𝔸) A B p t 1 (by norm_num)
+      (fun j q hq ↦ by
+        simpa only [one_mul, mul_one] using
+          norm_commutatorRemainderTerm_le_of_le_one A B p t hA j q
+            (mem_filter.mp hq).1 (mem_filter.mp hq).2)
+
+end
+
 /-- The product of the norms of skew-exponentials `exp (τ • A i)` is at most `1`. -/
 lemma norm_ofFn_drop_prod_le_one_of_skewAdjoint {s} {𝔸 : Type*} [NormedRing 𝔸]
     [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
@@ -741,31 +686,8 @@ lemma norm_ofFn_drop_prod_le_one_of_skewAdjoint {s} {𝔸 : Type*} [NormedRing �
     [StarModule ℝ 𝔸] (A : Fin s → 𝔸) (hskew : ∀ i, star (A i) = -A i)
     (k : ℕ) (τ : ℝ) :
     (((List.ofFn (fun i : Fin s => exp (τ • A i))).drop k).map (fun x : 𝔸 => ‖x‖)).prod ≤ 1 := by
-  have hle : ∀ i ∈ (List.ofFn (fun i : Fin s => i)).drop k, ‖exp (τ • A i)‖ ≤ 1 := by
-    intro i _
-    exact (norm_exp_smul_of_skewAdjoint (hskew i) τ).le
-  have hnonneg : ∀ i ∈ (List.ofFn (fun i : Fin s => i)).drop k, 0 ≤ ‖exp (τ • A i)‖ := by
-    intro i _
-    exact norm_nonneg (exp (τ • A i))
-  have h := List.prod_map_le_prod_map₀
-    (f := fun i : Fin s => ‖exp (τ • A i)‖)
-    (g := fun _ : Fin s => (1 : ℝ))
-    (s := (List.ofFn (fun i : Fin s => i)).drop k) hnonneg hle
-  calc
-    (((List.ofFn (fun i : Fin s => exp (τ • A i))).drop k).map (fun x : 𝔸 => ‖x‖)).prod
-        = (((List.ofFn (fun i : Fin s => i)).drop k).map
-            (fun i : Fin s => ‖exp (τ • A i)‖)).prod := by
-              rw [List.map_drop, List.map_ofFn, List.map_drop, List.map_ofFn]
-              rfl
-    _ ≤ (((List.ofFn (fun i : Fin s => i)).drop k).map (fun _ : Fin s => (1 : ℝ))).prod := h
-    _ = 1 := by
-      rw [List.map_drop, List.map_ofFn]
-      apply List.prod_eq_one
-      intro x hx
-      have hx' : x ∈ List.ofFn (fun _ : Fin s => (1 : ℝ)) :=
-        (List.drop_sublist k (List.ofFn (fun _ : Fin s => (1 : ℝ)))).subset hx
-      rcases (List.mem_ofFn' (fun _ : Fin s => (1 : ℝ)) x).mp hx' with ⟨i, hi⟩
-      rw [← hi]
+  rw [List.map_drop, List.map_ofFn]
+  simp [Function.comp_def, norm_exp_smul_of_skewAdjoint, hskew, List.ofFn_const]
 
 /-- The norm of the integral in one skew-adjoint remainder summand is bounded by
 `‖X‖ · |τ|^(q+m) / (q · D)` (no exponential factor). -/
@@ -782,80 +704,25 @@ lemma norm_conj_smul_integral_le_of_skew {𝔸 : Type*} [NormedRing 𝔸]
 
 /-- The norm bound of a single remainder summand in the skew-adjoint case. -/
 lemma norm_commutatorRemainderTerm_le_of_skewAdjoint {s} {𝔸 : Type*} [NormedRing 𝔸]
-    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
-    [Nontrivial 𝔸] [StarModule ℝ 𝔸] (A : Fin s → 𝔸) (B : 𝔸) (p : ℕ)
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
+    [StarModule ℝ 𝔸] (A : Fin s → 𝔸) (B : 𝔸) (p : ℕ)
     (τ : ℝ) (hskew : ∀ i, star (A i) = -A i) (j : Fin s) (q : Fin (j + 1) → ℕ)
     (hq : q ∈ finAntidiagonal (j + 1) p) (hlast : q (Fin.last j) ≠ 0) :
     ‖commutatorRemainderTerm A B τ j q‖ ≤
       ‖adSequence (A ∘ Fin.castLE (Nat.succ_le_of_lt j.2)) q B‖ *
         (Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ) * |τ| ^ p /
-          (Nat.factorial p : ℝ) := by
-  let X : 𝔸 := adSequence (A ∘ Fin.castLE (Nat.succ_le_of_lt j.2)) q B
-  let D : ℝ := (Nat.factorial (q (Fin.last j) - 1) : ℝ) *
-    ∏ i : Fin j, (Nat.factorial (q i.castSucc) : ℝ)
-  have hsum : (∑ i : Fin (j + 1), q i) = p := mem_finAntidiagonal.mp hq
-  have hlast_le : 1 ≤ q (Fin.last j) := Nat.succ_le_iff.mpr (Nat.pos_of_ne_zero hlast)
-  have hD : 0 < D := by positivity
-  have houterL :
-      ‖((List.ofFn (fun i : Fin s => exp (τ • A i))).drop (j + 1)).reverse.prod‖ ≤ 1 := by
-    calc
-      ‖((List.ofFn (fun i : Fin s => exp (τ • A i))).drop (j + 1)).reverse.prod‖
-          ≤ (((List.ofFn (fun i : Fin s => exp (τ • A i))).drop (j + 1)).reverse.map
-              (fun x : 𝔸 => ‖x‖)).prod := List.norm_prod_le _
-      _ = (((List.ofFn (fun i : Fin s => exp (τ • A i))).drop (j + 1)).map
-              (fun x : 𝔸 => ‖x‖)).prod := by rw [List.map_reverse, List.prod_reverse]
-      _ ≤ 1 := norm_ofFn_drop_prod_le_one_of_skewAdjoint A hskew (j + 1) τ
-  have houterR : ‖((List.ofFn (fun i : Fin s => exp (-τ • A i))).drop (j + 1)).prod‖ ≤ 1 := by
-    calc
-      ‖((List.ofFn (fun i : Fin s => exp (-τ • A i))).drop (j + 1)).prod‖
-          ≤ (((List.ofFn (fun i : Fin s => exp (-τ • A i))).drop (j + 1)).map
-              (fun x : 𝔸 => ‖x‖)).prod := List.norm_prod_le _
-      _ ≤ 1 := by simpa using norm_ofFn_drop_prod_le_one_of_skewAdjoint A hskew (j + 1) (-τ)
-  have hint : ‖∫ u in 0..τ, (((τ - u) ^ (q (Fin.last j) - 1) * τ ^ (∑ i : Fin j, q i.castSucc) /
-        D) : ℝ) • (expSMulConj (A j) X u)‖ ≤
-      ‖X‖ * |τ| ^ (q (Fin.last j) + (∑ i : Fin j, q i.castSucc)) / ((q (Fin.last j) : ℝ) * D) := by
-        simpa [D] using norm_conj_smul_integral_le_of_skew (A j) X (hskew j) (q (Fin.last j))
-          (∑ i : Fin j, q i.castSucc) D hlast_le hD τ
-  have hcoeff : |τ| ^ (q (Fin.last j) + (∑ i : Fin j, q i.castSucc)) / ((q (Fin.last j) : ℝ) * D) =
-      (Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ) * |τ| ^ p /
-        (Nat.factorial p : ℝ) := by
-    have hqsum : q (Fin.last j) + (∑ i : Fin j, q i.castSucc) = p := by
-      calc
-        q (Fin.last j) + (∑ i : Fin j, q i.castSucc)
-            = (∑ i : Fin j, q i.castSucc) + q (Fin.last j) := by rw [add_comm]
-        _ = ∑ i : Fin (j + 1), q i := (Fin.sum_univ_castSucc (f := q)).symm
-        _ = p := hsum
-    rw [hqsum, ← mul_assoc]
-    exact coeff_eq_multinomial_div_factorial q τ hsum hlast_le
-  calc
-    ‖commutatorRemainderTerm A B τ j q‖
-        ≤ ‖((List.ofFn (fun i : Fin s => exp (τ • A i))).drop (j + 1)).reverse.prod‖ *
-            ‖∫ u in 0..τ, (((τ - u) ^ (q (Fin.last j) - 1) * τ ^ (∑ i : Fin j, q i.castSucc) /
-                D) : ℝ) • (expSMulConj (A j) X u)‖ *
-            ‖((List.ofFn (fun i : Fin s => exp (-τ • A i))).drop (j + 1)).prod‖ := by
-              unfold commutatorRemainderTerm
-              exact (norm_mul_le _ _).trans
-                (mul_le_mul_of_nonneg_right (norm_mul_le _ _) (norm_nonneg _))
-    _ ≤ 1 * (‖X‖ * |τ| ^ (q (Fin.last j) + (∑ i : Fin j, q i.castSucc)) /
-          ((q (Fin.last j) : ℝ) * D)) * 1 := by gcongr
-    _ = ‖X‖ * (|τ| ^ (q (Fin.last j) + (∑ i : Fin j, q i.castSucc)) /
-        ((q (Fin.last j) : ℝ) * D)) := by ring
-    _ = ‖adSequence (A ∘ Fin.castLE (Nat.succ_le_of_lt j.2)) q B‖ *
-          (Nat.multinomial (univ : Finset (Fin (j + 1))) q : ℝ) * |τ| ^ p /
-            (Nat.factorial p : ℝ) := by rw [hcoeff]; dsimp [X]; ring
+          (Nat.factorial p : ℝ) :=
+  norm_commutatorRemainderTerm_le_of_le_one A B p τ
+    (fun i ↦ norm_exp_smul_le_one_of_skewAdjoint (hskew i)) j q hq hlast
 
 /-- The spectral-norm bound of the commutator remainder for anti-Hermitian operators
 (theory.tex:242-244). -/
 theorem norm_commutatorRemainder_le_of_skewAdjoint {s} {𝔸 : Type*} [NormedRing 𝔸]
-    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
-    [Nontrivial 𝔸] [StarModule ℝ 𝔸] (A : Fin s → 𝔸) (B : 𝔸) (p : ℕ) (τ : ℝ)
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] [StarRing 𝔸] [CStarRing 𝔸]
+    [StarModule ℝ 𝔸] (A : Fin s → 𝔸) (B : 𝔸) (p : ℕ) (τ : ℝ)
     (hskew : ∀ i, star (A i) = -A i) :
-    ‖commutatorRemainder A B p τ‖ ≤ αCommConj A B p * |τ| ^ p / (Nat.factorial p : ℝ) := by
-  simpa only [one_mul, mul_one] using
-    (norm_mul_commutatorRemainder_le_of_term_bound (1 : 𝔸) A B p τ 1 (by norm_num)
-    (fun j q hq => by
-      simpa only [one_mul, mul_one] using
-        norm_commutatorRemainderTerm_le_of_skewAdjoint A B p τ hskew j q
-        (mem_filter.mp hq).1 (mem_filter.mp hq).2))
+    ‖commutatorRemainder A B p τ‖ ≤ αCommConj A B p * |τ| ^ p / (Nat.factorial p : ℝ) :=
+  norm_commutatorRemainder_le_of_le_one A B p τ
+    (fun i ↦ norm_exp_smul_le_one_of_skewAdjoint (hskew i))
 
 end TrotterError

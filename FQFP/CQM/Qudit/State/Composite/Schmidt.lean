@@ -40,7 +40,7 @@ proof adapts the characteristic-polynomial argument in physlib's
 
 @[expose] public section
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory MonoidalCategory DaggerCategory
 open scoped TensorProduct
 
 namespace Qudit.UnitState
@@ -180,6 +180,24 @@ lemma schmidt_decomposition (ψ : UnitState (H ⊗ K)) :
   · have hz : (Density.pure ψ).partialTraceRight.eigenvalue i = 0 :=
       le_antisymm (le_of_not_gt hi) ((Density.pure ψ).partialTraceRight.eigenvalue_nonneg i)
     rw [ψ.contractLeft_eigenbasis_eq_zero i hz, TensorProduct.tmul_zero]
+
+/-- Local isometries mapping corresponding Schmidt vectors to each other carry the source
+state to the target state when the corresponding coefficients agree. -/
+lemma eq_map_of_schmidt {H' K' : Qudit} (ψ : UnitState (H ⊗ K)) (φ : UnitState (H' ⊗ K'))
+    (f : H ⟶ H') (g : K ⟶ K') [IsIsometry f] [IsIsometry g] (e : ψ.SchmidtIndex ≃ φ.SchmidtIndex)
+    (hc : ∀ i, φ.schmidtCoefficient (e i) = ψ.schmidtCoefficient i)
+    (hl : ∀ i, f (ψ.schmidtLeft i) = φ.schmidtLeft (e i))
+    (hr : ∀ i, g (ψ.schmidtRight i) = φ.schmidtRight (e i)) :
+    φ = ψ.map (f ⊗ₘ g) := by
+  apply Subtype.ext
+  change φ.val = (f ⊗ₘ g).hom ψ.val
+  rw [ψ.schmidt_decomposition, map_sum, φ.schmidt_decomposition,
+    ← e.sum_comp (fun i => (φ.schmidtCoefficient i : ℂ) • (φ.schmidtLeft i ⊗ₜ[ℂ] φ.schmidtRight i))]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [map_smul, hc]
+  change _ = (ψ.schmidtCoefficient i : ℂ) • (f (ψ.schmidtLeft i) ⊗ₜ[ℂ] g (ψ.schmidtRight i))
+  rw [hl, hr]
 
 /-- The squared Schmidt coefficients form a probability distribution. -/
 lemma sum_sq_schmidtCoefficient (ψ : UnitState (H ⊗ K)) :

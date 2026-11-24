@@ -8,6 +8,7 @@ Authors: Qedia contributors
 Qhl source for soundness of the two derivation systems.
 qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
 Qhl/Logic/Soundness.lean
+Qhl/Logic/Source/RulesSoundness.lean (soundness of Kraus accumulation)
 
 Copyright 2026 Qedia contributors.
 Modified by Foresight Quantum in 2026
@@ -111,6 +112,7 @@ theorem DerivTot.sound {A B : Assertion Store H} {p : Command Store Cell H} (h :
   | whileLoop t _ ih => exact validTot_while t ih
   | whileLoopSource t hbound _ _ ihInv ihRank => exact validTot_while_source t hbound ihInv ihRank
   | convex w hw _ ih => exact validTot_convex w hw ih
+  | kraus K hK hp _ ih => exact validTot_kraus K hK hp ih
   | conseq hA _ hB ih => exact validTot_conseq hA ih hB
 
 /-- A total-correctness derivation of the masked assertions proves the total history judgement. -/

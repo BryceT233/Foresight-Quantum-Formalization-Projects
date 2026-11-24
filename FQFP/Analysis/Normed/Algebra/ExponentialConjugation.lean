@@ -30,6 +30,7 @@ expansion and norm bounds of the single conjugation `exp (τ • A) * X * exp (-
 * `expSMulConj_taylor`: the single-layer Taylor expansion with integral remainder.
 * `isometry_expSMulConj_of_le_one`: conjugation preserves distances under two-sided
   exponential contraction bounds.
+* `norm_list_exp_conj_eq_of_le_one`: an ordered list of such conjugations preserves the norm.
 * `norm_expSMulConj_le`, `norm_expSMulConj_remainder_le`: norm bounds for the conjugation
   and its remainder (theory.tex:151-155).
 * `norm_expSMulConj_eq_of_skewAdjoint`: the conjugation preserves the norm when the
@@ -326,6 +327,25 @@ theorem norm_expSMulConj_eq_of_le_one {𝔸 : Type*} [NormedRing 𝔸]
     ‖expSMulConj A X t‖ = ‖X‖ := by
   rw [expSMulConj, norm_mul_exp_smul_eq_of_le_one A _ hA (-t),
     norm_exp_smul_mul_eq_of_le_one A X hA t]
+
+/-- A finite ordered composition of conjugations preserves the norm under
+two-sided exponential contraction bounds, including for the empty list. -/
+theorem norm_list_exp_conj_eq_of_le_one {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] {ι : Type*} (A : ι → 𝔸)
+    (hA : ∀ i (t : ℝ), ‖exp (t • A i)‖ ≤ 1) (l : List ι) (B : 𝔸) (t : ℝ) :
+    ‖(l.map (fun i ↦ exp (t • A i))).reverse.prod * B *
+      (l.map (fun i ↦ exp ((-t) • A i))).prod‖ = ‖B‖ := by
+  induction l generalizing B with
+  | nil => simp
+  | cons i l ih =>
+      simp only [List.map_cons, List.reverse_cons, List.prod_append,
+        List.prod_cons, List.prod_nil, mul_one]
+      rw [show (l.map (fun i ↦ exp (t • A i))).reverse.prod * exp (t • A i) * B *
+          (exp ((-t) • A i) * (l.map (fun i ↦ exp ((-t) • A i))).prod) =
+        (l.map (fun i ↦ exp (t • A i))).reverse.prod * expSMulConj (A i) B t *
+          (l.map (fun i ↦ exp ((-t) • A i))).prod by
+            simp only [expSMulConj, mul_assoc]]
+      rw [ih, norm_expSMulConj_eq_of_le_one (A i) B (hA i) t]
 
 /-- At fixed time, conjugation preserves distances if the exponential is contractive
 for all real times. -/

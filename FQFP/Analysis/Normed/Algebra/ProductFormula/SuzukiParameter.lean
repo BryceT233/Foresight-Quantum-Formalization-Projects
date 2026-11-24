@@ -78,25 +78,6 @@ theorem isSuzukiCubic_iff_eq_suzukiP (p : ℝ) : IsSuzukiCubic p ↔ p = suzukiP
   · rintro rfl
     exact isSuzukiCubic_suzukiP
 
-/-- The source rational enclosure of the canonical real Suzuki parameter. -/
-theorem suzukiP_mem_rational_interval :
-    41449 / 100000 < suzukiP ∧ suzukiP < 41450 / 100000 := by
-  have hd : 0 < 4 - (4 : ℝ) ^ ((1 : ℝ) / 3) := by
-    linarith only [cube_root_four_lt_two]
-  have hlo : (4 : ℝ) - 100000 / 41449 < (4 : ℝ) ^ ((1 : ℝ) / 3) := by
-    apply (Odd.pow_lt_pow (by decide : Odd 3)).mp
-    rw [cube_root_four_cubed]
-    norm_num
-  have hhi : (4 : ℝ) ^ ((1 : ℝ) / 3) < 4 - 100000 / 41450 := by
-    apply (Odd.pow_lt_pow (by decide : Odd 3)).mp
-    rw [cube_root_four_cubed]
-    norm_num
-  constructor
-  · rw [suzukiP, lt_div_iff₀ hd]
-    linarith only [hlo]
-  · rw [suzukiP, div_lt_iff₀ hd]
-    linarith only [hhi]
-
 /-- The cubic relation in monic form over the rationals. -/
 theorem suzukiP_cubic_relation :
     60 * suzukiP ^ 3 - 48 * suzukiP ^ 2 + 12 * suzukiP - 1 = 0 := by
@@ -125,5 +106,11 @@ theorem suzukiP_mem_tight_rational_interval :
     linarith only [hlo]
   · rw [suzukiP, div_lt_iff₀ hd]
     linarith only [hhi]
+
+/-- The source rational enclosure of the canonical real Suzuki parameter. -/
+theorem suzukiP_mem_rational_interval :
+    41449 / 100000 < suzukiP ∧ suzukiP < 41450 / 100000 := by
+  obtain ⟨hlo, hhi⟩ := suzukiP_mem_tight_rational_interval
+  exact ⟨lt_trans (by norm_num) hlo, lt_trans hhi (by norm_num)⟩
 
 end FQFP.BCH

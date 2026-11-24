@@ -8,6 +8,7 @@ Authors: Qedia contributors
 Qhl source for the partial and total derivation systems.
 qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
 Qhl/Logic/Rules.lean
+Qhl/Logic/Source/Rules.lean (evaluated Kraus accumulation for total derivations)
 
 Copyright 2026 Qedia contributors.
 Modified by Foresight Quantum in 2026
@@ -15,7 +16,7 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Logic.PrimitiveRules
-public import FQFP.QuantumProgram.Logic.Convex
+public import FQFP.QuantumProgram.Logic.Kraus
 
 /-!
 # QHL⁺ derivations of partial and total correctness
@@ -105,6 +106,11 @@ inductive DerivTot : Assertion Store H → Command Store Cell H → Assertion St
   | convex {ι : Type} [Fintype ι] (w : ι → ℝ≥0) (hw : ∑ i, w i ≤ 1)
       {A B : ι → Assertion Store H} {p : Command Store Cell H} :
       (∀ i, DerivTot (A i) p (B i)) → DerivTot (Assertion.convex w hw A) p (Assertion.convex w hw B)
+  /-- Pull the branches of a framed subnormalized Kraus family through a total derivation. -/
+  | kraus {ι : Type} [Fintype ι] (K : Store → ι → Operator H)
+      (hK : ∀ σ, ∑ i, (K σ i).adjoint ∘ₗ K σ i ≤ 1) {p : Command Store Cell H}
+      (hp : ∀ i, p.KrausFrame (fun σ => K σ i)) {A B : ι → Assertion Store H} :
+      (∀ i, DerivTot (A i) p (B i)) → DerivTot (Assertion.kraus K hK A) p (Assertion.kraus K hK B)
   /-- Strengthen the precondition and weaken the postcondition in pointwise effect order. -/
   | conseq {A A' B' B : Assertion Store H} {p : Command Store Cell H} :
       A ≤ A' → DerivTot A' p B' → B' ≤ B → DerivTot A p B

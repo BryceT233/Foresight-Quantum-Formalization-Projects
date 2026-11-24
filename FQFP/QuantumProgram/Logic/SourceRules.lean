@@ -5,7 +5,7 @@ Authors: Qedia contributors
 -/
 
 /-
-Qhl source for source derivations, soundness and selected measurement outcomes.
+Qhl source for source derivations, soundness, measurement and Kraus accumulation.
 qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
 Qhl/Logic/Source/Rules.lean
 Qhl/Logic/Source/RulesSoundness.lean
@@ -20,13 +20,14 @@ module
 public import FQFP.QuantumProgram.Logic.Soundness
 public import FQFP.QuantumProgram.Logic.SourceConsequence
 public import FQFP.QuantumProgram.Logic.SourceConvex
+public import FQFP.QuantumProgram.Logic.SourceKraus
 
 /-!
 # Source correctness rules on evaluated operands
 
-Classical support is explicit in a `CQAssertion`. The fragment used by bounded RUS
-has total effect families and injective quantum registers. Selected measurement follows
-from the all-outcome rule and the rule moving a quantum mask into classical support.
+Classical support is explicit in a `CQAssertion`. Selected measurement follows from the
+all-outcome rule and the rule moving a quantum mask into classical support. Kraus accumulation
+combines branch derivations while retaining the domain of every operand.
 -/
 
 @[expose] public section
@@ -53,9 +54,27 @@ private theorem mask_and (A : Assertion Store H) (φ χ : Store → Prop) :
   funext σ
   by_cases hp : φ σ <;> by_cases hq : χ σ <;> simp [Assertion.mask, hp, hq]
 
+/-- Restrict the classical support to a branch of a conditional, retaining its quantum effect. -/
+def CQAssertion.onBranch (A : CQAssertion Store H) (b : Store → Bool) (v : Bool) :
+    CQAssertion Store H := { A with cls := fun σ => A.cls σ ∧ b σ = v }
+
+private theorem guard_onBranch (A : CQAssertion Store H) (b : Store → Bool) :
+    Assertion.guard b (A.onBranch b true).toAssn (A.onBranch b false).toAssn = A.toAssn := by
+  have h (v : Bool) : (A.onBranch b v).toAssn = A.toAssn.mask (fun σ => b σ = v) :=
+    (mask_and A.effect A.cls _).symm
+  rw [h, h]
+  funext σ
+  cases hb : b σ <;> simp [Assertion.guard, hb, Assertion.mask]
+
 /-- Source proof trees for assignments, evaluated quantum operations, sequencing and
 integer-ranked loops. Every register in this fragment is defined on the classical support. -/
 inductive SourceDerivTot : CQAssertion Store H → Command Store Cell H → CQAssertion Store H → Prop
+  /-- Skipping preserves the entire source assertion. -/
+  | skip (A : CQAssertion Store H) : SourceDerivTot A .skip A
+  /-- Each branch may assume its guard value. -/
+  | cond {A B : CQAssertion Store H} {p q : Command Store Cell H} (b : Store → Bool) :
+      SourceDerivTot (A.onBranch b true) p B → SourceDerivTot (A.onBranch b false) q B →
+      SourceDerivTot A (.ite b p q) B
   /-- Substitute into both the classical predicate and the quantum effect. -/
   | assign (f : Store → Store) (A : Assertion Store H) (φ : Store → Prop) :
       SourceDerivTot (.ofEffect (A ∘ f) (φ ∘ f)) (.assign f) (.ofEffect A φ)
@@ -103,6 +122,25 @@ inductive SourceDerivTot : CQAssertion Store H → Command Store Cell H → CQAs
       (hd : ∀ σ, χ σ → ∀ i, (B i).defined σ) :
       (∀ i, SourceDerivTot ((A i).under φ) p ((B i).under χ)) →
       SourceDerivTot ((SourceEffect.convex w hw A).under φ) p ((SourceEffect.convex w hw B).under χ)
+  /-- Accumulate a complete framed Kraus family under a common classical postcondition. -/
+  | accum2 {ι : Type} [Fintype ι] (φ ψ : Store → Prop) (A B : ι → SourceEffect Store H)
+      (K : Store → ι → Operator H) (hK : ∀ σ, ∑ i, (K σ i).adjoint ∘ₗ K σ i = 1)
+      (p : Command Store Cell H) (hp : ∀ i, p.KrausFrame (fun σ => K σ i))
+      (hd : ∀ σ, ψ σ → ∀ i, (B i).defined σ) :
+      (∀ i, SourceDerivTot ((A i).under φ) p ((B i).under ψ)) →
+      SourceDerivTot ((SourceEffect.kraus K (fun σ => (hK σ).le) A).under φ) p
+        ((SourceEffect.kraus K (fun σ => (hK σ).le) B).under ψ)
+  /-- Merge exclusive exits when a single contraction dominates each conjugated input state. -/
+  | accum1 {ι : Type} [Fintype ι] (φ : Store → Prop) (ψ : ι → Store → Prop)
+      (A : ι → SourceEffect Store H) (B : SourceEffect Store H) (K : Store → ι → Operator H)
+      (hK : ∀ σ, ∑ i, (K σ i).adjoint ∘ₗ K σ i = 1) (J : Store → Operator H)
+      (hJ : ∀ σ, (J σ).adjoint ∘ₗ J σ ≤ 1) (p : Command Store Cell H)
+      (hp : ∀ i, p.KrausFrame (fun σ => K σ i)) (hx : ∀ σ i j, i ≠ j → ψ i σ → ¬ ψ j σ)
+      (hd : ∀ σ i (ρ : Operator H), ρ.IsPositive →
+        Superoperator.conjugate (K σ i) ρ ≤ Superoperator.conjugate (J σ) ρ) :
+      (∀ i, SourceDerivTot ((A i).under φ) p (B.under (ψ i))) →
+      SourceDerivTot ((SourceEffect.kraus K (fun σ => (hK σ).le) A).under φ) p
+        ((SourceEffect.krausOne J hJ B).under fun σ => ∃ i, ψ i σ)
   /-- Strengthen and weaken using domain-aware source entailments before evaluation. -/
   | sourceConseq {A A' B' B : SourceAssertion Store H} {p : Command Store Cell H} :
       A.Entails A' → SourceDerivTot A'.toCQAssertion p B'.toCQAssertion → B'.Entails B →
@@ -121,6 +159,8 @@ theorem SourceDerivTot.conseq {A A' B B' : CQAssertion Store H} {p : Command Sto
 theorem SourceDerivTot.toDerivTot {P Q : CQAssertion Store H} {p : Command Store Cell H}
     (h : SourceDerivTot P p Q) : DerivTot P.toAssn p Q.toAssn := by
   induction h with
+  | skip A => exact .skip A.toAssn
+  | cond b _ _ ih₁ ih₀ => simpa only [guard_onBranch] using DerivTot.cond (b := b) ih₁ ih₀
   | assign f A φ =>
     exact .assign f (A.mask φ)
   | channel f A φ =>
@@ -159,6 +199,12 @@ theorem SourceDerivTot.toDerivTot {P Q : CQAssertion Store H} {p : Command Store
   | convex2 φ χ A B w hw p hd _ ih =>
     rw [SourceEffect.convex_post_eq w hw B χ hd]
     exact .conseq (SourceEffect.convex_pre_le w hw A φ) (.convex w hw ih) le_rfl
+  | accum2 φ ψ A B K hK p hp hd _ ih =>
+    rw [SourceEffect.kraus_post_eq K _ B ψ (fun σ h i j => iff_of_true (hd σ h i) (hd σ h j))]
+    exact .conseq (SourceEffect.kraus_pre_le K _ A φ) (.kraus K _ hp ih) le_rfl
+  | accum1 φ ψ A B K hK J hJ p hp hx hd _ ih =>
+    exact .conseq (SourceEffect.kraus_pre_le K _ A φ) (.kraus K _ hp ih)
+      (SourceEffect.krausOne_post_le K _ B ψ J hJ hx hd)
   | sourceConseq h₁ _ h₂ ih => exact DerivTot.sourceConseq h₁ ih h₂
 
 /-- Empty Convex2 gives the zero effect on both sides under arbitrary classical predicates. -/
@@ -194,6 +240,12 @@ theorem SourceDerivTot.measureSelected {k m : ℕ} (r : Store → Fin k → Cell
 
 /-- Partial source proofs on evaluated operands, with an unranked loop and finite convex rules. -/
 inductive SourceDerivPar : CQAssertion Store H → Command Store Cell H → CQAssertion Store H → Prop
+  /-- Skipping preserves the entire source assertion. -/
+  | skip (A : CQAssertion Store H) : SourceDerivPar A .skip A
+  /-- Each branch may assume its guard value. -/
+  | cond {A B : CQAssertion Store H} {p q : Command Store Cell H} (b : Store → Bool) :
+      SourceDerivPar (A.onBranch b true) p B → SourceDerivPar (A.onBranch b false) q B →
+      SourceDerivPar A (.ite b p q) B
   /-- Substitute into both the classical predicate and the quantum effect. -/
   | assign (f : Store → Store) (A : Assertion Store H) (φ : Store → Prop) :
       SourceDerivPar (.ofEffect (A ∘ f) (φ ∘ f)) (.assign f) (.ofEffect A φ)
@@ -239,6 +291,25 @@ inductive SourceDerivPar : CQAssertion Store H → Command Store Cell H → CQAs
       (hd : ∀ σ, χ σ → ∀ i, (B i).defined σ) :
       (∀ i, SourceDerivPar ((A i).under φ) p ((B i).under χ)) →
       SourceDerivPar ((SourceEffect.convex w hw A).under φ) p ((SourceEffect.convex w hw B).under χ)
+  /-- Accumulate a complete framed Kraus family under a common classical postcondition. -/
+  | accum2 {ι : Type} [Fintype ι] (φ ψ : Store → Prop) (A B : ι → SourceEffect Store H)
+      (K : Store → ι → Operator H) (hK : ∀ σ, ∑ i, (K σ i).adjoint ∘ₗ K σ i = 1)
+      (p : Command Store Cell H) (hp : ∀ i, p.KrausFrame (fun σ => K σ i))
+      (hd : ∀ σ, ψ σ → ∀ i, (B i).defined σ) :
+      (∀ i, SourceDerivPar ((A i).under φ) p ((B i).under ψ)) →
+      SourceDerivPar ((SourceEffect.kraus K (fun σ => (hK σ).le) A).under φ) p
+        ((SourceEffect.kraus K (fun σ => (hK σ).le) B).under ψ)
+  /-- Merge exclusive exits when a single contraction dominates each conjugated input state. -/
+  | accum1 {ι : Type} [Fintype ι] (φ : Store → Prop) (ψ : ι → Store → Prop)
+      (A : ι → SourceEffect Store H) (B : SourceEffect Store H) (K : Store → ι → Operator H)
+      (hK : ∀ σ, ∑ i, (K σ i).adjoint ∘ₗ K σ i = 1) (J : Store → Operator H)
+      (hJ : ∀ σ, (J σ).adjoint ∘ₗ J σ ≤ 1) (p : Command Store Cell H)
+      (hp : ∀ i, p.KrausFrame (fun σ => K σ i)) (hx : ∀ σ i j, i ≠ j → ψ i σ → ¬ ψ j σ)
+      (hd : ∀ σ i (ρ : Operator H), ρ.IsPositive →
+        Superoperator.conjugate (K σ i) ρ ≤ Superoperator.conjugate (J σ) ρ) :
+      (∀ i, SourceDerivPar ((A i).under φ) p (B.under (ψ i))) →
+      SourceDerivPar ((SourceEffect.kraus K (fun σ => (hK σ).le) A).under φ) p
+        ((SourceEffect.krausOne J hJ B).under fun σ => ∃ i, ψ i σ)
   /-- Strengthen and weaken using domain-aware source entailments before evaluation. -/
   | sourceConseq {A A' B' B : SourceAssertion Store H} {p : Command Store Cell H} :
       A.Entails A' → SourceDerivPar A'.toCQAssertion p B'.toCQAssertion → B'.Entails B →
@@ -258,6 +329,8 @@ the same preconditions as their total counterparts. -/
 theorem SourceDerivPar.sound {P Q : CQAssertion Store H} {p : Command Store Cell H}
     (h : SourceDerivPar P p Q) : validPar P.toAssn p Q.toAssn := by
   induction h with
+  | skip A => exact (validTot_skip A.toAssn).validPar
+  | cond b _ _ ih₁ ih₀ => simpa only [guard_onBranch] using validPar_cond (b := b) ih₁ ih₀
   | assign f A φ => exact (SourceDerivTot.assign f A φ).sound.validPar
   | channel f A φ => exact (SourceDerivTot.channel f A φ).sound.validPar
   | unitary r U A φ hr => exact (SourceDerivTot.unitary r U A φ hr).sound.validPar
@@ -277,6 +350,11 @@ theorem SourceDerivPar.sound {P Q : CQAssertion Store H} {p : Command Store Cell
     exact SourceEffect.validPar_convex1 φ χ A B w hw p hx ih
   | convex2 φ χ A B w hw p hd _ ih =>
     exact SourceEffect.validPar_convex2 φ χ A B w hw p hd ih
+  | accum2 φ ψ A B K hK p hp hd _ ih =>
+    exact SourceEffect.validPar_accum2 K A φ hK B ψ hp
+      (fun σ h i j => iff_of_true (hd σ h i) (hd σ h j)) ih
+  | accum1 φ ψ A B K hK J hJ p hp hx hd _ ih =>
+    exact SourceEffect.validPar_accum1 K A φ hK B ψ hp J hJ hx hd ih
   | sourceConseq h₁ _ h₂ ih => exact validPar_sourceConseq h₁ ih h₂
 
 /-- Empty Convex2 gives the zero effect on both sides under arbitrary classical predicates. -/

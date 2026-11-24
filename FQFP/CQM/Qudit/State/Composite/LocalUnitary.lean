@@ -152,19 +152,7 @@ lemma locallyUnitaryEquivalent_of_schmidtCoefficients_eq
   let g : K ⟶ K := (isoMk V.toLinearEquiv).hom
   let : IsUnitary f := isUnitary_isoMk_coe_LIEquiv U
   let : IsUnitary g := isUnitary_isoMk_coe_LIEquiv V
-  refine ⟨f, g, inferInstance, inferInstance, Subtype.ext ?_⟩
-  change φ.val = (f ⊗ₘ g).hom ψ.val
-  rw [ψ.schmidt_decomposition, map_sum, φ.schmidt_decomposition]
-  rw [← e.sum_comp (fun i => (φ.schmidtCoefficient i : ℂ) •
-    (φ.schmidtLeft i ⊗ₜ[ℂ] φ.schmidtRight i))]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [map_smul, hom_tensorHom, TensorProduct.map_tmul]
-  change (φ.schmidtCoefficient (e i) : ℂ) •
-    (φ.schmidtLeft (e i) ⊗ₜ[ℂ] φ.schmidtRight (e i)) =
-    (ψ.schmidtCoefficient i : ℂ) • (U (ψ.schmidtLeft i) ⊗ₜ[ℂ] V (ψ.schmidtRight i))
-  rw [hU, hV, he]
-  rfl
+  exact ⟨f, g, inferInstance, inferInstance, ψ.eq_map_of_schmidt φ f g e he hU hV⟩
 
 /-- Two pure vectors on the same bipartite system are locally unitarily equivalent exactly
 when their positive Schmidt coefficients agree, with multiplicity. -/

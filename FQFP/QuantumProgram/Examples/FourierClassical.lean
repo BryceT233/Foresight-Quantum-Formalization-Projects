@@ -5,9 +5,10 @@ Authors: Qedia contributors
 -/
 
 /-
-Qhl source for inverse Fourier decoding with a read-only classical input.
+Qhl sources for Fourier circuits with a read-only classical input.
 qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
-Qhl/Examples/InverseQFTClassicalTriple.lean
+Qhl/Examples/InverseQFTClassicalTriple.lean (inverse decoding and its source derivation)
+Qhl/Examples/QFTClassicalTriple.lean (forward correctness for a stored word and arbitrary input)
 
 Copyright 2026 Qedia contributors.
 Modified by Foresight Quantum in 2026
@@ -15,10 +16,10 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Examples.InverseFourierCorrectness
-public import FQFP.QuantumProgram.StoreLens
+public import FQFP.QuantumProgram.Semantics.GhostStore
 
 /-!
-# Inverse Fourier transform with a read-only classical word
+# Fourier transforms with a read-only classical word
 
 The counters occupy the first component of the store. The reversal and inverse stages
 track product states determined by the word in the second component throughout execution.
@@ -67,6 +68,24 @@ theorem fourierAssertion_expectation (σ : Store n) :
     Density.pure_mul_self, Density.trace_one, Complex.one_re]
 
 variable [NeZero n]
+
+/-- Run the forward counted Fourier circuit on the two writable counters. -/
+def forwardCircuit (n : ℕ) [NeZero n] : Command (Store n) (Fin n) (Memory n) :=
+  (FourierIteration.circuit n).mapStore StoreLens.fst
+
+/-- Every classical write of the forward circuit preserves the input word. -/
+theorem forwardCircuit_preserves_word : (forwardCircuit n).PreservesParameters Prod.snd :=
+  Command.preservesParameters_mapStore _ _ _ fun _ _ => rfl
+
+/-- The forward circuit applies the DFT to a normalized input selected by the stored word. -/
+theorem validTot_forwardCircuit (v : (Fin n → Fin 2) → UnitState (Memory n)) :
+    validTot (fun σ : Store n => Assertion.pure (v σ.2) σ) (forwardCircuit n)
+      (fun σ => Assertion.pure (UnitState.map (qftGate n) (v σ.2)) σ) :=
+  (validTot_mapStore_fst_iff _ _ _).mpr fun x => validTot_circuit_qftOp (v x)
+
+/-- Encode the stored big-endian word as its normalized Fourier state. -/
+theorem validTot_encode : validTot (basisAssertion n) (forwardCircuit n) (fourierAssertion n) :=
+  validTot_forwardCircuit fun x => product fun i => UnitState.ofBasis (ZBasis 2) (x i)
 
 /-- At each store the Fourier assertion is the projector onto its suffix-phase product. -/
 theorem fourierAssertion_apply (σ : Store n) :

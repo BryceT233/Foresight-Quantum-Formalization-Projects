@@ -188,19 +188,7 @@ theorem exists_unitary_of_partialTraceRight_eq (ψ : UnitState (H ⊗ K))
     (φ.orthonormal_schmidtRight.comp e e.injective) hdim
   let U : K ⟶ L := (isoMk V.toLinearEquiv).hom
   let : IsUnitary U := isUnitary_isoMk_coe_LIEquiv V
-  refine ⟨U, inferInstance, Subtype.ext ?_⟩
-  change φ.val = (𝟙 H ⊗ₘ U).hom ψ.val
-  rw [ψ.schmidt_decomposition, map_sum, φ.schmidt_decomposition]
-  rw [← e.sum_comp (fun i => (φ.schmidtCoefficient i : ℂ) •
-    (φ.schmidtLeft i ⊗ₜ[ℂ] φ.schmidtRight i))]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [map_smul, hom_tensorHom, TensorProduct.map_tmul]
-  change (φ.schmidtCoefficient (e i) : ℂ) •
-    (φ.schmidtLeft (e i) ⊗ₜ[ℂ] φ.schmidtRight (e i)) =
-    (ψ.schmidtCoefficient i : ℂ) • (ψ.schmidtLeft i ⊗ₜ[ℂ] V (ψ.schmidtRight i))
-  rw [hc, hl, hV]
-  rfl
+  exact ⟨U, inferInstance, ψ.eq_map_of_schmidt φ (𝟙 H) U e hc (fun i => (hl i).symm) hV⟩
 
 /-- Equal retained marginals characterize auxiliary-only unitary equivalence when the
 auxiliary dimensions agree. -/
