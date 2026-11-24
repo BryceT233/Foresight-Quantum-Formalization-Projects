@@ -16,16 +16,14 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.Channel.Degradation.BroadcastExtension
-public import FQFP.CQM.Qudit.Channel.ChoiState
-public import FQFP.CQM.Qudit.Channel.EntanglementBreaking.Basic
+public import FQFP.CQM.Qudit.Channel.EntanglementBreaking.ChoiDecomposition
 
 /-!
 # Entanglement-breaking channels are antidegradable
 
 Applying an entanglement-breaking channel to the maximally entangled input gives a separable
-Choi state. Each product term admits a joint extension with two copies of its output density.
-The extended positive Choi operator defines a joint channel with both marginals equal to the
-original channel. A partial trace of the joint Stinespring environment recovers the output.
+Choi state. Its measure-and-prepare decomposition provides a joint channel by preparing
+two output states for each measurement outcome. Self-compatibility then gives antidegradability.
 -/
 
 @[expose] public section
@@ -65,39 +63,8 @@ theorem exists_joint_channel_of_isSeparable_choiState (b : OrthonormalBasis ι �
     (hH : 0 < Module.finrank ℂ H.state) (hsep : (Φ.choiState b hH).IsSeparable) :
     ∃ Ψ : QuantumChannel H (K ⊗ K),
       (partialTraceRight K K).comp Ψ = Φ ∧ (partialTraceLeft K K).comp Ψ = Φ := by
-  obtain ⟨j, _, w, hw, hs, s, r, he⟩ := (Density.isSeparable_iff_exists_mixture _).mp hsep
-  let τ := Density.mixture w hw hs (fun i => ((s i).tensor (s i)).tensor (r i))
-  let n : ℂ := Module.finrank ℂ H.state
-  have hn : n ≠ 0 := by
-    dsimp [n]
-    exact_mod_cast hH.ne'
-  obtain ⟨S, hcp, hS⟩ := Superoperator.exists_of_choi_positive b (n • τ.op)
-    (τ.positive.smul_of_nonneg (by dsimp [n]; positivity))
-  have hm (Γ : QuantumChannel (K ⊗ K) K)
-      (hΓ : ∀ i, Γ.map ((s i).tensor (s i)) = s i) :
-      Γ.toSuperoperator ∘ₗ S = Φ.toSuperoperator := by
-    apply Superoperator.choi_injective b
-    rw [Superoperator.choi_comp, hS, map_smul]
-    have hτ : Superoperator.tensor Γ.toSuperoperator (LinearMap.id : Superoperator H H) τ.op =
-        (Φ.choiState b hH).op := by
-      rw [← he]
-      simp only [τ, Density.op_mixture, Density.op_tensor, map_sum, map_smul,
-        Superoperator.tensor_apply, LinearMap.id_apply]
-      exact Finset.sum_congr rfl fun i _ =>
-        congrArg (fun A => (w i : ℂ) • Operator.tensor A (r i).op) (congrArg Density.op (hΓ i))
-    rw [hτ]
-    change n • (n⁻¹ • _) = _
-    rw [smul_smul, mul_inv_cancel₀ hn, one_smul]
-  have hr := hm (partialTraceRight K K) (fun i => (map_partialTraceRight _).trans
-    (Density.partialTraceRight_tensor _ _))
-  have hl := hm (partialTraceLeft K K) (fun i => (map_partialTraceLeft _).trans
-    (Density.partialTraceLeft_tensor _ _))
-  have htp : S.IsTracePreserving := by
-    intro A
-    calc
-      _ = (Operator.partialTraceRight (S A)).trace := (LinearMap.trace_partialTraceRight _).symm
-      _ = _ := (congrArg Operator.trace (LinearMap.congr_fun hr A)).trans (Φ.tracePreserving A)
-  exact ⟨⟨S, hcp, htp⟩, QuantumChannel.ext hr, QuantumChannel.ext hl⟩
+  obtain ⟨α, _, M, σ, rfl⟩ := exists_measurePrepare_of_isSeparable_choiState b hH hsep
+  exact (compatible_iff_exists_joint_channel _ _).mp (compatible_measurePrepare M σ σ)
 
 /-- Every entanglement-breaking channel is antidegradable for its chosen standard complement,
 including a channel with zero-dimensional input or output. -/

@@ -93,6 +93,28 @@ lemma mul_spectralProjection (σ : Density H) (a : ℝ) :
     simp [σ.spectralProjection_apply_of_eigenvector _ (σ.apply_eigenbasis i),
       σ.apply_eigenbasis, hi]
 
+/-- The projective measurement with one outcome per distinct eigenvalue, including
+the zero eigenvalue when the reference has a kernel. -/
+def spectralResolution (σ : Density H) :
+    CategoryTheory.OrthogonalResolution H σ.spectralValues where
+  proj a := ofHom (σ.spectralProjection a)
+  isProj a := by
+    constructor
+    · apply hom_ext
+      change σ.spectralProjection a * σ.spectralProjection a = _
+      rw [spectralProjection_mul, ite_eq_left rfl]
+      rfl
+    · exact hom_ext (σ.adjoint_spectralProjection a)
+  orthogonal := by
+    intro a b hab
+    apply hom_ext
+    change σ.spectralProjection b * σ.spectralProjection a = 0
+    rw [spectralProjection_mul, ite_eq_right (fun h ↦ hab (Subtype.ext h.symm))]
+  sum_proj := by
+    apply hom_ext
+    rw [hom_sum]
+    exact (σ.spectralValues.sum_coe_sort σ.spectralProjection).trans σ.sum_spectralProjection
+
 /-- The CPTP channel obtained by measuring the spectral blocks and forgetting the outcome. -/
 def pinching (σ : Density H) : QuantumChannel H H :=
   QuantumChannel.ofKraus (fun a : σ.spectralValues => σ.spectralProjection a) (by
@@ -108,6 +130,17 @@ lemma pinching_apply (σ : Density H) (A : Operator H) :
   rw [Superoperator.kraus_apply]
   simp only [adjoint_spectralProjection]
   exact σ.spectralValues.sum_coe_sort fun a => σ.spectralProjection a * A * σ.spectralProjection a
+
+/-- The spectral pinching channel is the unread Lüders measurement of the eigenspaces. -/
+theorem pinching_eq_luders_toChannel (σ : Density H) :
+    σ.pinching = (POVM.ofOrthogonalResolution σ.spectralResolution).luders.toChannel := by
+  apply QuantumChannel.ext
+  apply LinearMap.ext
+  intro A
+  rw [POVM.luders_toChannel_ofOrthogonalResolution, pinching_apply,
+    CategoryTheory.OrthogonalResolution.diagonalPart, hom_sum]
+  exact (σ.spectralValues.sum_coe_sort
+    fun a ↦ σ.spectralProjection a * A * σ.spectralProjection a).symm
 
 /-- **Pinching inequality**. A positive operator is dominated in Löwner order by its
 pinching times the number of distinct eigenvalues, including zero when present. -/
@@ -169,9 +202,8 @@ lemma pinching_map_self (σ : Density H) : σ.pinching.map σ = σ :=
 
 /-- Applying the pinching channel twice equals applying it once. -/
 lemma pinching_idempotent (σ : Density H) : σ.pinching.comp σ.pinching = σ.pinching := by
-  apply QuantumChannel.ext
-  exact LinearMap.ext fun A =>
-    (σ.pinching_apply_eq_self_iff _).mpr (σ.commute_pinching A).symm
+  rw [pinching_eq_luders_toChannel]
+  exact POVM.luders_toChannel_idempotent σ.spectralResolution
 
 /-- The coherence between two eigenvectors survives exactly within a common spectral block.
 The eigenvectors can be chosen freely within either eigenspace. -/

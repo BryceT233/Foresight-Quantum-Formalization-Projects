@@ -16,6 +16,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.CQM.Category.Postprocessing
 public import FQFP.CQM.Qudit.Channel.Dilation.Complementary
 public import FQFP.CQM.Qudit.Channel.Composite
 public import FQFP.CQM.Qudit.Channel.MeasurePrepare
@@ -50,6 +51,10 @@ variable {H K L M N P : Qudit}
 def IsDegradableTo (Φ : QuantumChannel H K) (Ψ : QuantumChannel H L) : Prop :=
   ∃ D : QuantumChannel K L, D.comp Φ = Ψ
 
+/-- Channel degradation is postprocessing in the category of causal processes. -/
+lemma isDegradableTo_iff (Φ : QuantumChannel H K) (Ψ : QuantumChannel H L) :
+    Φ.IsDegradableTo Ψ ↔ CQM.IsDegradableTo Φ.asHom Ψ.asHom := Iff.rfl
+
 /-- The reverse of channel degradation. -/
 abbrev IsAntidegradableTo (Φ : QuantumChannel H K) (Ψ : QuantumChannel H L) : Prop :=
   Ψ.IsDegradableTo Φ
@@ -62,48 +67,42 @@ def IsAntidegradable (Φ : QuantumChannel H K) : Prop := Φ.complementary.IsDegr
 
 /-- Every channel degrades to itself by identity postprocessing. -/
 lemma IsDegradableTo.refl (Φ : QuantumChannel H K) : Φ.IsDegradableTo Φ :=
-  ⟨id K, id_comp Φ⟩
+  CQM.IsDegradableTo.refl Φ.asHom
 
 /-- Postprocessings compose, even when all three output dimensions differ. -/
 lemma IsDegradableTo.trans {Φ : QuantumChannel H K} {Ψ : QuantumChannel H L}
     {Χ : QuantumChannel H M} (h : Φ.IsDegradableTo Ψ) (h' : Ψ.IsDegradableTo Χ) :
-    Φ.IsDegradableTo Χ := by
-  obtain ⟨D, rfl⟩ := h
-  obtain ⟨D', rfl⟩ := h'
-  exact ⟨D'.comp D, comp_assoc _ _ _⟩
+    Φ.IsDegradableTo Χ :=
+  ((isDegradableTo_iff _ _).mp h).trans ((isDegradableTo_iff _ _).mp h')
 
 /-- Preprocessing both channels preserves their degradation relation. -/
 lemma IsDegradableTo.comp {Φ : QuantumChannel H K} {Ψ : QuantumChannel H L}
     (h : Φ.IsDegradableTo Ψ) (Γ : QuantumChannel M H) :
-    (Φ.comp Γ).IsDegradableTo (Ψ.comp Γ) := by
-  obtain ⟨D, rfl⟩ := h
-  exact ⟨D, (comp_assoc _ _ _).symm⟩
+    (Φ.comp Γ).IsDegradableTo (Ψ.comp Γ) :=
+  ((isDegradableTo_iff _ _).mp h).precomp Γ.asHom
 
 /-- Independent degradations give a degradation of product channels. -/
 lemma IsDegradableTo.tensor {Φ : QuantumChannel H K} {Ψ : QuantumChannel H L}
     {Φ' : QuantumChannel M N} {Ψ' : QuantumChannel M P}
     (h : Φ.IsDegradableTo Ψ) (h' : Φ'.IsDegradableTo Ψ') :
-    (Φ.tensor Φ').IsDegradableTo (Ψ.tensor Ψ') := by
-  obtain ⟨D, rfl⟩ := h
-  obtain ⟨D', rfl⟩ := h'
-  exact ⟨D.tensor D', (tensor_comp _ _ _ _).symm⟩
+    (Φ.tensor Φ').IsDegradableTo (Ψ.tensor Ψ') :=
+  ((isDegradableTo_iff _ _).mp h).tensor ((isDegradableTo_iff _ _).mp h')
 
 /-- The identity channel can simulate every channel with its input. -/
 lemma isDegradableTo_of_id (Φ : QuantumChannel H K) : (id H).IsDegradableTo Φ :=
-  ⟨Φ, comp_id Φ⟩
+  CQM.isDegradableTo_of_id Φ.asHom
 
 /-- A replacement channel after any channel is the same replacement channel. -/
 lemma replacement_comp (Φ : QuantumChannel H K) (σ : Density L) :
     (replacement K σ).comp Φ = replacement H σ := by
-  apply QuantumChannel.ext
-  apply LinearMap.ext
-  intro A
-  change (replacement K σ).toSuperoperator (Φ.toSuperoperator A) = _
-  rw [replacement_apply, Φ.tracePreserving, replacement_apply]
+  change Φ.asHom ≫ SemiCartesianMonoidalCategory.toUnit _ ≫ σ.toState = _
+  rw [SemiCartesianMonoidalCategory.comp_toUnit_assoc]
+  rfl
 
 /-- Every channel can be degraded to any fixed-state replacement channel. -/
 lemma isDegradableTo_replacement (Φ : QuantumChannel H K) (σ : Density L) :
-    Φ.IsDegradableTo (replacement H σ) := ⟨replacement K σ, replacement_comp Φ σ⟩
+    Φ.IsDegradableTo (replacement H σ) :=
+  CQM.isDegradableTo_toUnit_comp Φ.asHom σ.toState
 
 /-- The identity channel is degradable. -/
 lemma isDegradable_id (H : Qudit) : (id H).IsDegradable :=

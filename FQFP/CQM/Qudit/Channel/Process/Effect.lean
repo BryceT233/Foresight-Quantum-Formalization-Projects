@@ -108,6 +108,12 @@ def effectEquiv (H : Qudit) :
     change ((stateEquiv H) ((stateEquiv H).symm f†))† = f
     rw [Equiv.apply_symm_apply, involutive_dagger]
 
+/-- Equal CP effects have equal representing positive operators. -/
+lemma eq_of_effectOfPositive_eq {A B : Operator H} {hA : A.IsPositive} {hB : B.IsPositive}
+    (h : effectOfPositive A hA = effectOfPositive B hB) : A = B := by
+  change effectEquiv H ⟨A, hA⟩ = effectEquiv H ⟨B, hB⟩ at h
+  exact congrArg Subtype.val ((effectEquiv H).injective h)
+
 /-- Discarding is the effect of the identity operator. -/
 lemma effectOfPositive_one (H : Qudit) :
     effectOfPositive (1 : Operator H) LinearMap.isPositive_one = discard ⟨H⟩ := by

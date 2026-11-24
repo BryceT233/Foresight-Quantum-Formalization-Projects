@@ -1,27 +1,27 @@
 # Foresight Quantum Formalization Projects (FQFP)
 
-This repository collects results formalized in Lean 4 by a research group at
-**Foresight Quantum**. The library builds on Mathlib and loosely follows its
-directory structure, grouping results under `FQFP/` by mathematical subject.
+FQFP is a Lean 4 library developed by a research group at Foresight Quantum.
+It builds on Mathlib. The modules under `FQFP/` are organized by mathematical
+subject, following roughly the same layout as Mathlib.
 
 ## Project history
 
 Bingyu Xia started this repository to formalize the opening chapters of
 Chris Heunen and Jamie Vicary’s [*Categorical Quantum Mechanics: An Introduction*][cqm].
 
-The group later used DeepSeek V4 Pro through the DeepSeek harness to formalize
+We later used DeepSeek V4 Pro through the DeepSeek harness to formalize
 the product-formula error bounds in [*A Theory of Trotter Error*][childs] by
 Andrew M. Childs, Yuan Su, Minh C. Tran, Nathan Wiebe, and Shuchen Zhu.
-Along the way, the group incorporated selected results from two of Jue Xu’s
-Lean 4 repositories. [Lean-BCH][bch] formalizes the Baker–Campbell–Hausdorff
-formula in complete normed algebras and gives explicit bounds on its remainder.
+During that work, we incorporated selected results from two of Jue Xu’s Lean 4
+repositories. [Lean-BCH][bch] formalizes the Baker-Campbell-Hausdorff formula
+in complete normed algebras and gives explicit bounds on the remainder.
 [Lean-Trotter][trotter] proves convergence rates and error bounds for the
-Lie–Trotter product formula, Strang splitting, and the fourth-order Suzuki formula.
+Lie-Trotter product formula, Strang splitting, and the fourth-order Suzuki formula.
 
-The group then took on the formalization of the main results in *Trotter Error
+We then began formalizing the main results of *Trotter Error
 Bounds in Lean 4 with a Cancellation-Aware Analysis of the Fourth-Order Suzuki
-Formula*. With help from GPT-Astra, the group is now incorporating results from
-[Physlib’s `QuantumInfo` directory][quantuminfo].
+Formula*. We are now incorporating results from
+[Physlib’s `QuantumInfo` directory][quantuminfo] with help from GPT-Astra.
 
 [cqm]: https://www.cs.ox.ac.uk/files/7051/notes.pdf
 [childs]: https://arxiv.org/abs/1912.08854
@@ -31,38 +31,47 @@ Formula*. With help from GPT-Astra, the group is now incorporating results from
 
 ## Library structure
 
-- [CategoryTheory](FQFP/CategoryTheory) develops the categorical foundations of
-  quantum mechanics, including dagger categories, monoidal structure, states,
-  and measurements. The category of relations provides a concrete model.
+- [CategoryTheory](FQFP/CategoryTheory) covers dagger categories, monoidal
+  structure, states, and measurements as foundations for categorical quantum
+  mechanics. The category of relations gives a concrete model.
 - [CQM](FQFP/CQM) formalizes quantum teleportation and finite-dimensional
-  quantum information. Its qudit modules cover states and measurements, quantum
-  channels and their dilations, and bounds involving fidelity, trace distance,
-  and entropy.
-- [Algebra](FQFP/Algebra) develops the Baker–Campbell–Hausdorff expansion and
-  uses identities between noncommutative words to verify commutator coefficients
-  for the fourth-order Suzuki formula.
-- [Analysis](FQFP/Analysis) proves BCH remainder bounds and Trotter–Suzuki
-  error bounds, including estimates that account for cancellation in the
-  fourth-order formula. See the [Trotter error formalization](https://brycet233.github.io/TrotterError/).
+  quantum information. The qudit modules cover states, measurements, and
+  quantum channels and their dilations. They also give bounds involving
+  fidelity, trace distance, and entropy.
+- [Algebra](FQFP/Algebra) develops the Baker-Campbell-Hausdorff (BCH)
+  expansion and uses identities between noncommutative words to verify the
+  commutator coefficients in the fourth-order Suzuki formula.
+- [Analysis](FQFP/Analysis) proves bounds on the BCH remainder and the error
+  in Trotter-Suzuki product formulas. These include estimates that account for
+  cancellation in the fourth-order formula. See the [Trotter error formalization](https://brycet233.github.io/TrotterError/).
 - [Carleman](FQFP/Carleman) studies finite truncations of the Carleman
-  linearization of polynomial ODEs, with conditional error bounds, a scalar
-  quadratic example, and results on polynomial closure for a two-mode Burgers system.
+  linearization of polynomial ODEs. It gives conditional error bounds, works
+  through a scalar quadratic example, and studies polynomial closure for a
+  two-mode Burgers system.
 
-Import `FQFP` for the whole library, or import individual modules such as
-`FQFP.Algebra.Lie.BCH.Coefficients`,
+Import `FQFP` for the whole library. For fewer dependencies, import individual
+modules such as `FQFP.Algebra.Lie.BCH.Coefficients`,
 `FQFP.Analysis.Normed.Algebra.ProductFormula.ErrorBounds`, or
-`FQFP.CategoryTheory.Dagger.Basic` for a smaller dependency set.
-`FQFP.lean` is the only umbrella file; subject and compatibility umbrellas have
-been removed. Declaration names, including the `FQFP.BCH` and `TrotterError`
-namespaces, are unchanged. Paper provenance remains in module documentation.
+`FQFP.CategoryTheory.Dagger.Basic`.
 
-New shared results belong under the mathematical subject they extend. Algebraic
-foundations must not import this project's analysis or application modules.
+`FQFP.lean` is the only umbrella file. We removed the subject and compatibility
+umbrellas and kept the existing declaration names, including those in the
+`FQFP.BCH` and `TrotterError` namespaces. Module documentation identifies the
+source papers.
 
-Build the umbrella library with `lake build FQFP`.
+Place new shared results under the mathematical subject they extend. Keep the
+algebraic foundations independent of this project's analysis and application
+modules.
 
-Run `python scripts/check.py` for the unified build, declaration/style lint,
-tool tests and all `FQFPTest/` Lean regressions. CI runs the same command.
-The default style linter includes `FQFPTest/`. For before/after API verification,
-including module-qualified private identities and global registrations, see
-[API snapshot tools](scripts/API_SNAPSHOTS.md).
+## Build and checks
+
+Build the full library with `lake build FQFP`.
+
+To run the same checks as CI, use `python scripts/check.py`. It builds the
+library, runs the declaration and style linters, tests the tools, and runs all
+Lean regression tests in `FQFPTest/`. The style linter checks `FQFPTest/` by
+default.
+
+Use the [API snapshot tools](scripts/API_SNAPSHOTS.md) to compare the API
+before and after a change. The comparison covers module-qualified private
+identities and global registrations.

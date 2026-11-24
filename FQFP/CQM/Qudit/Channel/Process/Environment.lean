@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.CQM.Category.Discarding
 public import FQFP.CQM.Qudit.Channel.Process.Category
 public import FQFP.CQM.Qudit.Channel.Dilation.Basic
 
@@ -147,8 +148,14 @@ lemma tensor_discard (H K : CPQudit) :
     Superoperator.isTracePreserving_discard, Operator.partialTraceRight_tensor]
   rfl
 
+/-- The trace supplies monoidal discarding on CP processes. -/
+def discarding : CQM.Discarding CPQudit where
+  discard := discard
+  discard_unit := discard_unit
+  discard_tensor := discard_tensor
+
 /-- A process is causal when discarding its output equals discarding its input. -/
-def IsCausal {H K : CPQudit} (f : H ⟶ K) : Prop := f ≫ discard K = discard H
+abbrev IsCausal {H K : CPQudit} (f : H ⟶ K) : Prop := discarding.IsCausal f
 
 /-- Causality is precisely preservation of the trace on all operators. -/
 lemma isCausal_iff {H K : CPQudit} (f : H ⟶ K) :
@@ -191,6 +198,19 @@ lemma pure_comp_discard_iff {H K L : Qudit} (f : H ⟶ K) (g : H ⟶ L) :
       Superoperator.discard L (Superoperator.conjugate g.hom A)
     simp only [Superoperator.discard_conjugate_apply]
     rw [show f.hom.adjoint ∘ₗ f.hom = g.hom.adjoint ∘ₗ g.hom from congrArg Hom.hom h]
+
+/-- The pure-process functor satisfies the environment separation axiom (7.20). -/
+lemma separatesPure : discarding.SeparatesPure pure := fun _ _ _ f g => pure_comp_discard_iff f g
+
+/-- A causal process on the right factor can be dropped before taking the partial trace,
+even when the CP process on the left factor is unnormalized. -/
+lemma partialTraceRight_comp_tensor {H K L M : CPQudit} (f : H ⟶ K) {g : L ⟶ M}
+    (hg : IsCausal g) :
+    Operator.partialTraceRight ∘ₗ Superoperator.tensor f.toSuperoperator g.toSuperoperator =
+      f.toSuperoperator ∘ₗ (Operator.partialTraceRight :
+        Superoperator (H.toQudit ⊗ L.toQudit) H.toQudit) := by
+  rw [← tensor_discard K M, ← tensor_discard H L]
+  exact congrArg CPMap.toSuperoperator (discarding.tensor_comp_discardRight f hg)
 
 /-- Every CP process is a pure process followed by a finite environmental partial trace.
 No trace normalization or positive-dimension assumption is imposed. -/

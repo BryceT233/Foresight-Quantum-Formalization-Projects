@@ -17,6 +17,7 @@ These notions and product-state entanglement require only a monoidal category.
 ## Main definitions
 
 * `MonoidalCategory.State`, `MonoidalCategory.JointState`: states and joint states.
+* `MonoidalCategory.State.tensor`: the joint state prepared by two independent states.
 * `MonoidalCategory.JointState.Entangled`: a joint state that is not a product state.
 * `MonoidalCategory.Effect`: an arrow to the tensor unit.
 
@@ -44,17 +45,27 @@ abbrev State (c : C) : Type _ := 𝟙_ C ⟶ c
 into their tensor product `c₁ ⊗ c₂`. -/
 abbrev JointState (c₁ c₂ : C) : Type _ := 𝟙_ C ⟶ c₁ ⊗ c₂
 
+/-- The product state prepared by two independent states (§1.1.3). -/
+def State.tensor {X Y : C} (a : State X) (b : State Y) : JointState X Y :=
+  (λ_ (𝟙_ C)).inv ≫ (a ⊗ₘ b)
+
+/-- Applying a local process to each output of a product state. -/
+lemma State.tensor_comp {X Y X' Y' : C} (a : State X) (b : State Y)
+    (f : X ⟶ X') (g : Y ⟶ Y') :
+    a.tensor b ≫ (f ⊗ₘ g) = State.tensor (a ≫ f) (b ≫ g) := by
+  simp only [State.tensor, Category.assoc, tensorHom_comp_tensorHom]
+
 /-- A joint state `f : JointState c₁ c₂` is entangled if it is not a product state, i.e. if
 it cannot be written as `(λ_ (𝟙_ C)).inv ≫ (g ⊗ₘ h)` for states `g : State c₁` and
 `h : State c₂`. -/
 def JointState.Entangled {c₁ c₂ : C} (f : JointState c₁ c₂) : Prop :=
-  ∀ (g : State c₁) (h : State c₂), f ≠ (λ_ (𝟙_ C)).inv ≫ (g ⊗ₘ h)
+  ∀ (g : State c₁) (h : State c₂), f ≠ g.tensor h
 
 /-- A joint state is not entangled iff it is a product state, i.e. of the form
 `(λ_ (𝟙_ C)).inv ≫ (g ⊗ₘ h)` for states `g` and `h`. -/
 lemma JointState.not_entangled_iff {c₁ c₂ : C} (f : JointState c₁ c₂) :
     ¬ f.Entangled ↔ ∃ (g : State c₁) (h : State c₂), f = (λ_ (𝟙_ C)).inv ≫ (g ⊗ₘ h) := by
-  simp [JointState.Entangled]
+  simp [JointState.Entangled, State.tensor]
 
 end States
 

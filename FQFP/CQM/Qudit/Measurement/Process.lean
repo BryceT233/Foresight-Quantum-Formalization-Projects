@@ -5,7 +5,9 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.CQM.Category.Instrument
 public import FQFP.CQM.Qudit.Channel.Process.Effect
+public import FQFP.CQM.Qudit.Channel.Process.Semiadditive
 public import FQFP.CQM.Qudit.Measurement.Luders
 public import FQFP.CQM.Qudit.Measurement.ClassicalRegister
 
@@ -62,6 +64,20 @@ lemma sum_effect (M : POVM H ι) :
     ← Finset.sum_mul, M.sum_op, one_mul]
   rfl
 
+/-- POVM normalization as an equality of CP arrows. -/
+lemma sum_effect_eq_discard (M : POVM H ι) : ∑ i, M.effect i = CPQudit.discard ⟨H⟩ :=
+  CPQudit.hom_ext ((CPMap.toSuperoperator_sum _ _).trans M.sum_effect)
+
+/-- The effects of a POVM form an instrument with trivial output. -/
+lemma isInstrument_effect (M : POVM H ι) : CPQudit.discarding.IsInstrument M.effect :=
+  (CPQudit.discarding.isInstrument_effect_iff _).mpr M.sum_effect_eq_discard
+
+/-- A measurement is determined by its categorical outcome effects. -/
+lemma ext_effect {M N : POVM H ι} (h : ∀ i, M.effect i = N.effect i) : M = N := by
+  apply POVM.ext
+  funext i
+  exact CPQudit.eq_of_effectOfPositive_eq (h i)
+
 /-- Preparation followed by an outcome has exactly the existing Born probability. -/
 lemma scalarValue_toCPState_comp_effect (M : POVM H ι) (ρ : Density H) (i : ι) :
     CPQudit.scalarValue (ρ.toCPState ≫ M.effect i) = M.probability ρ i :=
@@ -96,6 +112,54 @@ lemma branchCPMap_isTraceNonincreasing (I : Instrument H K ι) (i : ι) :
 lemma sum_branchCPMap (I : Instrument H K ι) :
     ∑ i, (I.branchCPMap i).toSuperoperator = I.toChannel.toCPMap.toSuperoperator := rfl
 
+/-- Build an instrument from CP arrows satisfying categorical normalization. -/
+def ofCPMaps (f : ι → ((⟨H⟩ : CPQudit) ⟶ ⟨K⟩)) (hf : CPQudit.discarding.IsInstrument f) :
+    Instrument H K ι where
+  branch i := (f i).toSuperoperator
+  completelyPositive i := (f i).completelyPositive
+  tracePreserving := by
+    rw [← CPMap.toSuperoperator_sum]
+    exact (CPQudit.isCausal_iff _).mp hf
+
+/-- Forgetting outcomes takes the sum inside the CP process category. -/
+lemma sum_branchCPMap_eq (I : Instrument H K ι) : ∑ i, I.branchCPMap i = I.toChannel.toCPMap :=
+  CPQudit.hom_ext ((CPMap.toSuperoperator_sum _ _).trans I.sum_branchCPMap)
+
+/-- Concrete instruments are exactly finite CP families with causal total. -/
+def cpMapEquiv : Instrument H K ι ≃
+    {f : ι → ((⟨H⟩ : CPQudit) ⟶ ⟨K⟩) // CPQudit.discarding.IsInstrument f} where
+  toFun I := ⟨I.branchCPMap, by
+    rw [CQM.Discarding.IsInstrument, I.sum_branchCPMap_eq]
+    exact (CPQudit.isCausal_iff _).mpr I.tracePreserving⟩
+  invFun f := ofCPMaps f.1 f.2
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- Run a second instrument selected by the first outcome and retain both outcomes. -/
+def bind {κ : Type*} [Fintype κ] (I : Instrument H K ι) (J : ι → Instrument K L κ) :
+    Instrument H L (ι × κ) :=
+  ofCPMaps _ ((cpMapEquiv I).2.bind (g := fun i => (J i).branchCPMap)
+    (fun i => (cpMapEquiv (J i)).2))
+
+/-- The branch labeled by a pair is the sequential composite of the selected branches. -/
+lemma branchCPMap_bind {κ : Type*} [Fintype κ] (I : Instrument H K ι)
+    (J : ι → Instrument K L κ) (i : ι) (j : κ) :
+    (I.bind J).branchCPMap (i, j) = I.branchCPMap i ≫ (J i).branchCPMap j := rfl
+
+/-- Forgetting only the second outcome gives the first branch followed by its chosen channel. -/
+lemma sum_branchCPMap_bind {κ : Type*} [Fintype κ] (I : Instrument H K ι)
+    (J : ι → Instrument K L κ) (i : ι) :
+    ∑ j, (I.bind J).branchCPMap (i, j) = I.branchCPMap i ≫ (J i).toChannel.toCPMap := by
+  simp only [branchCPMap_bind, ← Semiadditive.comp_sum, sum_branchCPMap_eq]
+
+/-- For a fixed second instrument, forgetting both outcomes composes the two channels. -/
+lemma toChannel_bind_const {κ : Type*} [Fintype κ] (I : Instrument H K ι) (J : Instrument K L κ) :
+    (I.bind (fun _ => J)).toChannel = J.toChannel.comp I.toChannel := by
+  apply CausalQudit.inclusion.map_injective (X := ⟨H⟩) (Y := ⟨L⟩)
+  have h := Semiadditive.sum_comp_sum I.branchCPMap J.branchCPMap
+  rw [I.sum_branchCPMap_eq, J.sum_branchCPMap_eq] at h
+  exact (I.bind (fun _ => J)).sum_branchCPMap_eq.symm.trans h.symm
+
 /-- Discarding after each branch determines the instrument's operator POVM. -/
 def toPOVM (I : Instrument H K ι) : POVM H ι where
   op i := (I.branchCPMap i).dual.toSuperoperator 1
@@ -110,6 +174,14 @@ def toPOVM (I : Instrument H K ι) : POVM H ι where
 lemma effect_toPOVM (I : Instrument H K ι) (i : ι) :
     I.toPOVM.effect i = I.branchCPMap i ≫ CPQudit.discard ⟨K⟩ :=
   (CPQudit.comp_discard_eq_effect _).symm
+
+/-- An instrument with trivial quantum output already consists of its outcome effects. -/
+lemma effect_toPOVM_of_effects (e : ι → ((⟨H⟩ : CPQudit) ⟶ 𝟙_ CPQudit))
+    (he : CPQudit.discarding.IsInstrument e) (i : ι) :
+    (ofCPMaps e he).toPOVM.effect i = e i := by
+  rw [effect_toPOVM]
+  change e i ≫ CPQudit.discard (𝟙_ CPQudit) = e i
+  rw [CPQudit.discard_unit, Category.comp_id]
 
 /-- The induced POVM retains the instrument's outcome probabilities. -/
 lemma probability_toPOVM (I : Instrument H K ι) (ρ : Density H) (i : ι) :
@@ -134,6 +206,14 @@ lemma record_comp_read (I : Instrument H K ι) (b : OrthonormalBasis ι ℂ C.st
 /-- Outcome-dependent channel processing agrees with categorical branch composition. -/
 lemma branchCPMap_postprocess (I : Instrument H K ι) (Φ : ι → QuantumChannel K L) (i : ι) :
     (I.postprocess Φ).branchCPMap i = I.branchCPMap i ≫ (Φ i).toCPMap := rfl
+
+/-- Outcome-dependent deterministic processing preserves the induced measurement. -/
+lemma toPOVM_postprocess (I : Instrument H K ι) (Φ : ι → QuantumChannel K L) :
+    (I.postprocess Φ).toPOVM = I.toPOVM := by
+  apply POVM.ext_effect
+  intro i
+  rw [effect_toPOVM, effect_toPOVM, branchCPMap_postprocess]
+  exact ((CPQudit.isCausal_iff _).mpr (Φ i).tracePreserving).comp_discard_eq _
 
 /-- After a possible outcome, its unnormalized CP state is its probability times its density. -/
 lemma toCPState_comp_branch_conditional (I : Instrument H K ι) (ρ : Density H) (i : ι)
@@ -160,6 +240,38 @@ end Instrument
 namespace POVM
 
 variable {H : Qudit} {ι : Type*} [Fintype ι]
+
+/-- In the Schrödinger picture a POVM is equivalently a finite family of CP effects
+whose sum is discarding, including when the outcome type is empty. -/
+def effectFamilyEquiv : POVM H ι ≃
+    {e : ι → ((⟨H⟩ : CPQudit) ⟶ 𝟙_ CPQudit) // ∑ i, e i = CPQudit.discard ⟨H⟩} where
+  toFun M := ⟨M.effect, M.sum_effect_eq_discard⟩
+  invFun e := (Instrument.ofCPMaps e.1
+    ((CPQudit.discarding.isInstrument_effect_iff _).mpr e.2)).toPOVM
+  left_inv M := ext_effect (Instrument.effect_toPOVM_of_effects M.effect _)
+  right_inv e := Subtype.ext (funext (Instrument.effect_toPOVM_of_effects e.1 _))
+
+/-- Pull a whole measurement back along a quantum channel by composing its CP effects. -/
+def pullback {K : Qudit} (M : POVM K ι) (Φ : QuantumChannel H K) : POVM H ι :=
+  (Instrument.ofCPMaps (fun i => Φ.toCPMap ≫ M.effect i)
+    (M.isInstrument_effect.precomp ((CPQudit.isCausal_iff _).mpr Φ.tracePreserving))).toPOVM
+
+/-- Heisenberg transport of a POVM is precomposition of its outcome effects. -/
+lemma effect_pullback {K : Qudit} (M : POVM K ι) (Φ : QuantumChannel H K) (i : ι) :
+    (M.pullback Φ).effect i = Φ.toCPMap ≫ M.effect i :=
+  Instrument.effect_toPOVM_of_effects _ _ i
+
+/-- In operator coordinates the same pullback is the trace-pairing dual of the channel. -/
+lemma op_pullback {K : Qudit} (M : POVM K ι) (Φ : QuantumChannel H K) (i : ι) :
+    (M.pullback Φ).op i = Φ.toCPMap.dual.toSuperoperator (M.op i) :=
+  CPQudit.eq_of_effectOfPositive_eq ((M.effect_pullback Φ i).trans
+    (CPQudit.comp_effectOfPositive Φ.toCPMap (M.op i) (M.positive i)))
+
+/-- Pulling back the measurement gives the same Born probability as evolving the state. -/
+lemma probability_pullback {K : Qudit} (M : POVM K ι) (Φ : QuantumChannel H K)
+    (ρ : Density H) (i : ι) : (M.pullback Φ).probability ρ i = M.probability (Φ.map ρ) i := by
+  rw [← scalarValue_toCPState_comp_effect, effect_pullback, ← Category.assoc,
+    Density.toCPState_comp, scalarValue_toCPState_comp_effect]
 
 /-- The POVM induced by the Lüders instrument is the original POVM. -/
 @[simp]

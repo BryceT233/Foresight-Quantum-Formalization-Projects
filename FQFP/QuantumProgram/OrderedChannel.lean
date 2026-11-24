@@ -124,6 +124,26 @@ def orderedInstrument {ι : Type*} [Fintype ι]
     rw [← map_sum]
     exact (orderedChannel D r I.toChannel).tracePreserving
 
+/-- Each original outcome acts by the lift of its local branch superoperator. -/
+@[simp] theorem orderedInstrument_branch {ι : Type*} [Fintype ι]
+    (I : Instrument (tensorMemory (D ∘ r)) (tensorMemory (D ∘ r)) ι) (i : ι) :
+    (orderedInstrument D r I).branch i = orderedSuperoperator D r (I.branch i) := rfl
+
+/-- Forgetting the outcome commutes with lifting an instrument to the whole memory. -/
+@[simp] theorem orderedInstrument_toChannel {ι : Type*} [Fintype ι]
+    (I : Instrument (tensorMemory (D ∘ r)) (tensorMemory (D ∘ r)) ι) :
+    (orderedInstrument D r I).toChannel = orderedChannel D r I.toChannel := by
+  apply QuantumChannel.ext
+  exact (map_sum (orderedSuperoperator D r) I.branch Finset.univ).symm
+
+/-- Lifting a local gate induces the lifted local unitary channel. -/
+theorem toChannel_liftGate_orderedLift
+    (U : tensorMemory (D ∘ r) ⟶ tensorMemory (D ∘ r)) [DaggerCategory.IsUnitary U] :
+    (UnitaryProgram.liftGate (orderedLift D r) U).toChannel =
+      orderedChannel D r (QuantumChannel.ofIsometry U) := by
+  apply QuantumChannel.ext
+  exact (orderedSuperoperator_conjugate D r U.hom).symm
+
 /-- Initialize an ordered selection, possibly noncontiguous, to the given joint density. -/
 def orderedInitialize (τ : Density (tensorMemory (D ∘ r))) :
     QuantumChannel (tensorMemory D) (tensorMemory D) :=
@@ -269,6 +289,16 @@ def measureOn {m : ℕ} (I : ∀ σ, Function.Injective (cells σ) →
     Instrument (tensorMemory (D ∘ cells σ)) (tensorMemory (D ∘ cells σ)) (Fin m))
     (upd : Fin m → S → S) : Command S (Fin n) (tensorMemory D) :=
   measure cells (fun σ hi => orderedInstrument D ⟨cells σ, hi⟩ (I σ hi)) upd
+
+/-- Run a joint gate on a fixed ordered tuple of distinct sites. -/
+def unitaryOnRegister (U : tensorMemory (D ∘ r) ⟶ tensorMemory (D ∘ r))
+    [DaggerCategory.IsUnitary U] : Command S (Fin n) (tensorMemory D) :=
+  unitaryOn D (fun _ => r) (fun _ _ => U)
+
+/-- Run a local instrument on a fixed ordered tuple and write back its original outcome. -/
+def measureOnRegister {m : ℕ} (I : Instrument (tensorMemory (D ∘ r)) (tensorMemory (D ∘ r)) (Fin m))
+    (upd : Fin m → S → S) : Command S (Fin n) (tensorMemory D) :=
+  measureOn D (fun _ => r) (fun _ _ => I) upd
 
 /-- A whole-memory Kraus frame follows from commutation with the acted-on register algebra. -/
 theorem KrausFrame.measureOn {m : ℕ} (I : ∀ σ, Function.Injective (cells σ) →

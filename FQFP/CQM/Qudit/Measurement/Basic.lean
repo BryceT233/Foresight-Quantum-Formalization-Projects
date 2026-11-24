@@ -8,7 +8,7 @@ module
 public import FQFP.CQM.Qudit.Dagger
 public import FQFP.CQM.Qudit.Monoidal
 public import FQFP.CQM.Qudit.Biproducts
-public import FQFP.CategoryTheory.Monoidal.Measurement
+public import FQFP.CQM.Category.StateOverlap
 
 /-!
 # Measurement in finite-dimensional complex Hilbert spaces
@@ -47,6 +47,13 @@ def scalarRingEquiv : Scalar Qudit ≃+* ℂ where
   right_inv z := by change z • (1 : ℂ) = z; simp
   map_mul' _ _ := by simp
   map_add' _ _ := by simp
+
+/-- In the qudit model the categorical overlap of kets is the complex inner product. -/
+theorem scalarRingEquiv_overlap {H : Qudit} (v w : H.state) :
+    scalarRingEquiv (CQM.overlap (ketArrow v) (ketArrow w)) = inner ℂ v w := by
+  change (ketArrow w ≫ (ketArrow v)†).hom 1 = _
+  rw [ketArrow_dagger, hom_ketArrow_comp_braArrow_apply]
+  exact mul_one _
 
 /-- A ket is an isometry precisely when its vector has unit norm. -/
 theorem isIsometry_ketArrow_iff {H : Qudit} (v : H.state) :
@@ -139,13 +146,9 @@ theorem sum_probability_orthonormalBasis {H : Qudit} {ι : Type*} [Fintype ι]
 theorem scalarRingEquiv_probability_ketArrow_braArrow {H : Qudit} (v w : H.state) :
     scalarRingEquiv (probability (ketArrow v) (braArrow w)) =
       (‖inner ℂ w v‖ ^ 2 : ℂ) := by
-  change (ketArrow v ≫ braArrow w ≫ (braArrow w)† ≫ (ketArrow v)†).hom 1 = _
-  rw [braArrow_dagger, ketArrow_dagger]
-  simp only [ketArrow, ket, braArrow, bra, hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp,
-    coe_innerₛₗ_apply, Function.comp_apply, LinearMap.toSpanSingleton_apply, one_smul]
-  rw [inner_smul_right, ← inner_conj_symm w v, mul_comm, RCLike.mul_conj,
-    RCLike.norm_conj]
-  norm_cast
+  rw [← ketArrow_dagger w, CQM.probability_dagger, map_mul, scalarRingEquiv_overlap,
+    scalarRingEquiv_overlap, ← inner_conj_symm v w]
+  exact RCLike.conj_mul (inner ℂ w v)
 
 /-- Every probability in the qudit model is a nonnegative real scalar. -/
 theorem probability_re_nonneg {H : Qudit} (v w : H.state) :

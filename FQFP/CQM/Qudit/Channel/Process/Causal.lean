@@ -7,6 +7,7 @@ module
 
 public import FQFP.CQM.Qudit.Channel.Process.Environment
 public import Mathlib.CategoryTheory.Monoidal.Braided.Transport
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 
 /-!
 # The causal category of quantum channels
@@ -159,17 +160,22 @@ def discard (H : CausalQudit) : H ⟶ 𝟙_ CausalQudit :=
 
 /-- There is a unique deterministic effect: discarding. -/
 lemma eq_discard {H : CausalQudit} (f : H ⟶ 𝟙_ CausalQudit) : f = discard H := by
-  apply QuantumChannel.ext
-  apply LinearMap.ext
-  intro A
-  change f.toSuperoperator A = A.trace • 1
-  calc
-    f.toSuperoperator A = (f.toSuperoperator A).trace • 1 := by
-      rw [Operator.trace_scalar, ← Operator.scalar_eq]
-    _ = _ := by rw [f.tracePreserving]
+  apply inclusion.map_injective
+  exact (CPQudit.discarding.isCausal_effect_iff _).mp (isCausal_inclusion f)
+
+/-- The tensor unit is terminal among deterministic processes. Its projections discard
+the other subsystem. -/
+instance : SemiCartesianMonoidalCategory CausalQudit where
+  isTerminalTensorUnit := Limits.IsTerminal.ofUniqueHom discard fun _ f => eq_discard f
+  fst H K := H ◁ discard K ≫ (ρ_ H).hom
+  snd H K := discard H ▷ K ≫ (λ_ K).hom
 
 end
 
 end CausalQudit
+
+/-- Regard a bundled channel as a morphism with explicit objects in the causal category. -/
+abbrev QuantumChannel.asHom {H K : Qudit} (Φ : QuantumChannel H K) :
+    (⟨H⟩ : CausalQudit) ⟶ ⟨K⟩ := Φ
 
 end Qudit

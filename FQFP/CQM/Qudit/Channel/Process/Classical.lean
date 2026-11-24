@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.CQM.Category.Postprocessing
 public import FQFP.CQM.Qudit.Channel.Process.Causal
 public import FQFP.CQM.Qudit.Channel.Process.Dual
 public import FQFP.CQM.Qudit.Channel.MeasurePrepare
@@ -108,12 +109,8 @@ lemma dephase_outer (b : OrthonormalBasis ι ℂ H.state) (j : ι) :
 /-- Dephasing is idempotent on all operators, not only density states. -/
 lemma dephase_idempotent (b : OrthonormalBasis ι ℂ H.state) :
     (dephase b).comp (dephase b) = dephase b := by
-  apply QuantumChannel.ext
-  apply LinearMap.ext
-  intro A
-  change (dephase b).toSuperoperator ((dephase b).toSuperoperator A) = _
-  rw [dephase_apply b A, map_sum]
-  simp only [map_smul, dephase_outer]
+  rw [dephase_eq_luders, ← POVM.ofOrthogonalResolution_basisResolution]
+  exact POVM.luders_toChannel_idempotent (POVM.basisResolution b)
 
 end QuantumChannel
 
@@ -195,6 +192,31 @@ lemma outcomeChannel_comp_effect (M : POVM H ι) (b : OrthonormalBasis ι ℂ C.
     CPQudit.effectOfPositive (Operator.outer (b i) (b i)) (Operator.isPositive_outer (b i)) = _
   rw [CPQudit.comp_effectOfPositive]
   simp only [dual_outcomeChannel_projection, effect]
+
+/-- Reading the basis of the outcome register pulls back to the entire original measurement. -/
+lemma pullback_ofBasis_outcomeChannel (M : POVM H ι) (b : OrthonormalBasis ι ℂ C.state) :
+    (ofBasis b).pullback (M.outcomeChannel b) = M :=
+  ext_effect fun i => (effect_pullback ..).trans (M.outcomeChannel_comp_effect b i)
+
+/-- Reading the registered label and preparing its state realizes the measure-and-prepare map. -/
+lemma measurePrepare_comp_outcomeChannel {K : Qudit} (M : POVM H ι)
+    (b : OrthonormalBasis ι ℂ C.state) (σ : ι → Density K) :
+    ((ofBasis b).measurePrepare σ).comp (M.outcomeChannel b) = M.measurePrepare σ := by
+  rw [measurePrepare_comp, pullback_ofBasis_outcomeChannel]
+
+/-- The postprocessings of a fixed measurement register are exactly the channels that use
+that POVM and prepare an arbitrary density state for each outcome. -/
+theorem isDegradableTo_iff_exists_measurePrepare {K : Qudit} (M : POVM H ι)
+    (b : OrthonormalBasis ι ℂ C.state) (Φ : QuantumChannel H K) :
+    CQM.IsDegradableTo (M.outcomeChannel b).asHom Φ.asHom ↔
+      ∃ σ : ι → Density K, Φ = M.measurePrepare σ := by
+  constructor
+  · rintro ⟨D, hD⟩
+    change D.comp (M.outcomeChannel b) = Φ at hD
+    exact ⟨_, hD.symm.trans ((congrArg D.comp (M.measurePrepare_basis b).symm).trans
+      (M.comp_measurePrepare _ D))⟩
+  · rintro ⟨σ, rfl⟩
+    exact ⟨((ofBasis b).measurePrepare σ).asHom, M.measurePrepare_comp_outcomeChannel b σ⟩
 
 end POVM
 

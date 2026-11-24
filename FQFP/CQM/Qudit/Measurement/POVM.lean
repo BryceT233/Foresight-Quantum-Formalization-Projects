@@ -17,6 +17,7 @@ module
 
 public import FQFP.CQM.Qudit.State.Density
 public import FQFP.CQM.Qudit.Measurement.Basic
+public import FQFP.CQM.Category.ProjectiveMeasurement
 
 /-!
 # Finite positive operator-valued measurements
@@ -63,6 +64,31 @@ namespace POVM
 noncomputable section
 
 variable {H : Qudit} {ι : Type*} [Fintype ι]
+
+/-- Every projection-valued measure is a POVM with the same outcome operators (§0.3.4). -/
+def ofOrthogonalResolution (P : OrthogonalResolution H ι) : POVM H ι where
+  op i := (P.proj i).hom
+  positive i := hom_isPositive_of_isPositive _
+  sum_op := by
+    change ∑ i, (P.proj i).hom = LinearMap.id
+    rw [← hom_sum, P.sum_proj, hom_id]
+
+/-- The projection-valued measure associated to an orthonormal basis (Lemma 0.62). -/
+def basisResolution (b : OrthonormalBasis ι ℂ H.state) : OrthogonalResolution H ι :=
+  CQM.projectiveMeasurementOfEffects (fun i ↦ braArrow (b i))
+    (disjoint_braArrow_orthonormalBasis b) (by simpa using sum_braArrow_comp_ketArrow b)
+
+/-- Each basis projection is the outer square of its basis vector. -/
+lemma hom_basisResolution_proj (b : OrthonormalBasis ι ℂ H.state) (i : ι) :
+    ((basisResolution b).proj i).hom = Operator.outer (b i) (b i) := by
+  change (braArrow (b i) ≫ (braArrow (b i))†).hom = _
+  rw [braArrow_dagger]
+  rfl
+
+/-- A basis measurement is nondegenerate in the sense of Definition 0.61. -/
+theorem trace_basisResolution_proj (b : OrthonormalBasis ι ℂ H.state) (i : ι) :
+    Operator.trace ((basisResolution b).proj i).hom = 1 := by
+  rw [hom_basisResolution_proj, Operator.trace_outer, b.inner_eq_one]
 
 /-- Each outcome operator is nonnegative in the Loewner order. -/
 lemma op_nonneg (M : POVM H ι) (i : ι) : 0 ≤ M.op i :=
@@ -115,6 +141,18 @@ lemma probability_pure (M : POVM H ι) (v : UnitState H) (i : ι) :
     M.probability (Density.pure v) i = (inner ℂ (v : H.state) (M.op i v)).re :=
   Density.expectation_pure v (M.op i)
 
+/-- For a pure input the POVM probability is the categorical Born weight of the
+unnormalized projected state. This includes projections onto degenerate eigenspaces. -/
+theorem probability_ofOrthogonalResolution_pure (P : OrthogonalResolution H ι)
+    (v : UnitState H) (i : ι) :
+    (ofOrthogonalResolution P).probability (Density.pure v) i =
+      (scalarRingEquiv (CQM.overlap
+        (ketArrow v.val ≫ P.proj i) (ketArrow v.val ≫ P.proj i))).re := by
+  rw [probability_pure, CQM.overlap_comp_proj, ketArrow_dagger]
+  change _ = (inner ℂ v.val ((P.proj i) ((1 : ℂ) • v.val))).re
+  rw [one_smul]
+  rfl
+
 /-- The binary projective measurement testing membership in a subspace.
 The outcome `true` corresponds to the projection onto `S`. -/
 def ofSubmodule (S : Submodule ℂ H.state) : POVM H Bool where
@@ -133,9 +171,15 @@ def ofBasis (b : OrthonormalBasis ι ℂ H.state) : POVM H ι where
   op i := Operator.outer (b i) (b i)
   positive i := Operator.isPositive_outer (b i)
   sum_op := by
-    ext x
-    simpa only [LinearMap.sum_apply, Operator.outer_apply, one_apply_eq_self]
-      using b.sum_repr' x
+    simpa only [ofOrthogonalResolution, hom_basisResolution_proj] using
+      (ofOrthogonalResolution (basisResolution b)).sum_op
+
+/-- Interpreting the basis resolution recovers the existing basis POVM. -/
+lemma ofOrthogonalResolution_basisResolution (b : OrthonormalBasis ι ℂ H.state) :
+    ofOrthogonalResolution (basisResolution b) = ofBasis b := by
+  apply POVM.ext
+  funext i
+  exact hom_basisResolution_proj b i
 
 /-- The computational basis POVM, including the empty basis in dimension zero. -/
 def computational (n : ℕ) : POVM (std n) (Fin n) := ofBasis (ZBasis n)

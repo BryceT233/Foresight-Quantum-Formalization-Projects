@@ -78,15 +78,48 @@ lemma luders_branch_of_idempotent (M : POVM H ι) (i : ι)
     M.luders.branch i A = M.op i * A * M.op i := by
   rw [luders_branch_apply, Operator.sqrt_eq_self _ (M.positive i) hi]
 
+/-- The Lüders update of a projection-valued measure selects the corresponding block. -/
+lemma luders_branch_ofOrthogonalResolution (P : CategoryTheory.OrthogonalResolution H ι)
+    (i : ι) (A : Operator H) :
+    (ofOrthogonalResolution P).luders.branch i A = (P.proj i).hom * A * (P.proj i).hom :=
+  luders_branch_of_idempotent _ _ (hom_idem_of_isProj (P.proj i)) _
+
+/-- An immediate repetition of a projective measurement gives the same outcome.
+The unnormalized branch formula also covers impossible outcomes. -/
+theorem luders_branch_repeat [DecidableEq ι] (P : CategoryTheory.OrthogonalResolution H ι)
+    (i j : ι) (A : Operator H) :
+    (ofOrthogonalResolution P).luders.branch j ((ofOrthogonalResolution P).luders.branch i A) =
+      if i = j then (ofOrthogonalResolution P).luders.branch i A else 0 := by
+  simp only [luders_branch_ofOrthogonalResolution]
+  have h := congrArg Hom.hom (P.sandwich_sandwich i j (ofHom A))
+  split_ifs at h ⊢ <;> exact h
+
+/-- Forgetting the outcome of a projective measurement keeps the diagonal blocks. -/
+theorem luders_toChannel_ofOrthogonalResolution (P : CategoryTheory.OrthogonalResolution H ι)
+    (A : Operator H) : (ofOrthogonalResolution P).luders.toChannel.toSuperoperator A =
+      (P.diagonalPart (ofHom A)).hom := by
+  change (∑ i, (ofOrthogonalResolution P).luders.branch i) A = _
+  simp only [LinearMap.sum_apply, luders_branch_ofOrthogonalResolution,
+    CategoryTheory.OrthogonalResolution.diagonalPart, hom_sum]
+  rfl
+
+/-- Forgetting the outcome of a projective measurement defines an idempotent channel. -/
+theorem luders_toChannel_idempotent (P : CategoryTheory.OrthogonalResolution H ι) :
+    let Φ := (ofOrthogonalResolution P).luders.toChannel
+    Φ.comp Φ = Φ := by
+  apply QuantumChannel.ext
+  apply LinearMap.ext
+  intro A
+  simp only [QuantumChannel.comp, LinearMap.comp_apply, luders_toChannel_ofOrthogonalResolution]
+  exact congrArg Hom.hom (P.diagonalPart_idempotent (ofHom A))
+
 /-- Basis measurement produces an unnormalized multiple of the observed basis projection. -/
 lemma luders_ofBasis_branch (b : OrthonormalBasis ι ℂ H.state) (i : ι) (A : Operator H) :
     (ofBasis b).luders.branch i A = inner ℂ (b i) (A (b i)) • Operator.outer (b i) (b i) := by
-  have hs : (ofBasis b).op i * (ofBasis b).op i = (ofBasis b).op i := by
-    ext x
-    simp [ofBasis]
-  rw [luders_branch_of_idempotent _ _ hs]
+  rw [← ofOrthogonalResolution_basisResolution, luders_branch_ofOrthogonalResolution,
+    hom_basisResolution_proj]
   ext x
-  simp [ofBasis, smul_smul, mul_comm]
+  simp [smul_smul, mul_comm]
 
 /-- Conditioning a basis measurement gives the observed pure basis state. -/
 lemma conditional_luders_ofBasis (b : OrthonormalBasis ι ℂ H.state) (ρ : Density H)

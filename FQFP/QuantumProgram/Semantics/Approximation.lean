@@ -177,13 +177,16 @@ theorem antitone_Val {A : Store → Operator H} (hA : ∀ σ, A σ ≤ 1) :
   exact add_le_add le_rfl ((add_le_add (c.postAtE_le_terminalMassAt N hA) le_rfl).trans_eq
     (add_tsub_cancel_of_le hroom))
 
+/-- Terminal post-expectations accumulated before a finite horizon converge to the full sum. -/
+theorem tendsto_postUpTo {A : Store → Operator H} (hA : ∀ σ, (A σ).IsPositive) :
+    Tendsto (fun N => c.postUpTo N A) atTop (𝓝 (c.PostH A)) := by
+  simpa only [postUpTo, PostH, c.postAtE_eq_ofReal_postAt _ hA] using
+    ENNReal.tendsto_nat_tsum (fun n => c.postAtE n A)
+
 /-- The finite-depth values converge to the post-expectation plus residual trace. -/
 theorem tendsto_Val {A : Store → Operator H} (hA : ∀ σ, (A σ).IsPositive) :
-    Tendsto (fun N => c.Val N A) atTop (𝓝 (c.PostH A + c.nonterminatingMass)) := by
-  have hp : Tendsto (fun N => c.postUpTo N A) atTop (𝓝 (c.PostH A)) := by
-    simpa only [postUpTo, PostH, c.postAtE_eq_ofReal_postAt _ hA] using
-      ENNReal.tendsto_nat_tsum (fun n => c.postAtE n A)
-  exact hp.add (ENNReal.Tendsto.sub tendsto_const_nhds
+    Tendsto (fun N => c.Val N A) atTop (𝓝 (c.PostH A + c.nonterminatingMass)) :=
+  (c.tendsto_postUpTo hA).add (ENNReal.Tendsto.sub tendsto_const_nhds
     (ENNReal.tendsto_nat_tsum (fun n => (c.terminalMassAt n : ℝ≥0∞))) (Or.inl ENNReal.coe_ne_top))
 
 /-- Every finite horizon bounds the limiting yield for an assertion. -/

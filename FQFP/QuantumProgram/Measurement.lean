@@ -27,8 +27,9 @@ and quantum operator `Kᵢ ρ Kᵢ†` for each outcome `i`. The trace carries t
 weight. A repeated cell in the evaluated register blocks the instruction.
 
 `measurementSuccessors` returns the classical–quantum states of these terminal
-configurations in outcome order. Its instrument acts on the whole system. For a
-local measurement, the caller supplies the operators lifted from the evaluated register.
+configurations in outcome order. Its instrument acts on the whole system.
+`Command.measureOn` lifts a local instrument at a store-dependent address, and
+`Command.measureOnRegister` lifts it on a fixed ordered tuple of distinct sites.
 
 The source clause is `Qhl.stepProg_measure` in `Qhl/Program/Step.lean`,
 qedia/quantum-formal-verification, revision `3dfe80b893e2ab949a0428a2e18c06153b310bd0`.

@@ -7,6 +7,7 @@ module
 
 public import FQFP.CategoryTheory.Monoidal.Dagger.Basic
 public import Mathlib.CategoryTheory.Monoidal.Comon_
+public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 
 /-!
 # Frobenius and classical structures
@@ -57,10 +58,40 @@ def FrobeniusObj.cup {X : C} (A : FrobeniusObj X) : 𝟙_ C ⟶ X ⊗ X :=
 def FrobeniusObj.cap {X : C} (A : FrobeniusObj X) : X ⊗ X ⟶ 𝟙_ C :=
   A.mul ≫ A.counit
 
+/-- A Frobenius structure makes its object self-dual (Theorem 5.15).
+This pairing depends on the supplied structure. -/
+@[instance_reducible]
+def FrobeniusObj.exactPairing {X : C} (A : FrobeniusObj X) : ExactPairing X X where
+  coevaluation' := A.cup
+  evaluation' := A.cap
+  coevaluation_evaluation' := by
+    simp only [FrobeniusObj.cup, FrobeniusObj.cap, whiskerLeft_comp, comp_whiskerRight,
+      Category.assoc]
+    rw [← Category.assoc (α_ X X X).inv, ← Category.assoc (X ◁ A.comul),
+      A.frobenius_right, Category.assoc, A.counit_comul, ← Category.assoc, A.mul_one]
+  evaluation_coevaluation' := by
+    simp only [FrobeniusObj.cup, FrobeniusObj.cap, whiskerLeft_comp, comp_whiskerRight,
+      Category.assoc]
+    rw [← Category.assoc (α_ X X X).hom, ← Category.assoc (A.comul ▷ X),
+      A.frobenius_left, Category.assoc, A.comul_counit, ← Category.assoc, A.one_mul]
+
 end Monoidal
 
 variable [MonoidalDaggerCategory C]
 
+/-- For adjoint copying and merging, the two Frobenius equations are daggers of each other. -/
+lemma frobenius_right_of_dagger_left {X : C} (d : X ⟶ X ⊗ X)
+    (h : (d ▷ X) ≫ (α_ X X X).hom ≫ (X ◁ d†) = d† ≫ d) :
+    (X ◁ d) ≫ (α_ X X X).inv ≫ (d† ▷ X) = d† ≫ d := by
+  simpa only [dagger_comp, dagger_whiskerLeft, dagger_whiskerRight, involutive_dagger,
+    IsUnitary.dagger_hom_eq_inv, Category.assoc] using congrArg dagger h
+
+/-- With a unitary braiding, the dagger of cocommutative copying is commutative merging. -/
+lemma braiding_comp_dagger_of_cocomm [BraidedCategory C] {X : C} [IsUnitary (β_ X X).hom]
+    (d : X ⟶ X ⊗ X) (h : d ≫ (β_ X X).hom = d) : (β_ X X).hom ≫ d† = d† := by
+  have hd := congrArg dagger h
+  rw [dagger_comp, IsUnitary.dagger_hom_eq_inv] at hd
+  exact ((β_ X X).inv_comp_eq.mp hd).symm
 /-- Taking daggers turns a comonoid into a monoid. The choice remains explicit. -/
 @[instance_reducible]
 def ComonObj.dagger {X : C} (A : ComonObj X) : MonObj X where

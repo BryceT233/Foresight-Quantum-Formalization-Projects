@@ -71,15 +71,9 @@ namespace POVM
 variable {H K L : Qudit} {ι : Type*} [Fintype ι]
 
 /-- Measure a POVM and prepare the density state associated with the observed label. -/
-def measurePrepareInstrument (M : POVM H ι) (σ : ι → Density K) : Instrument H K ι where
-  branch i := (M.effect i ≫ (σ i).toCPState).toSuperoperator
-  completelyPositive i := (M.effect i ≫ (σ i).toCPState).completelyPositive
-  tracePreserving A := by
-    change ((∑ i, Superoperator.prepare (σ i).op ∘ₗ (M.effect i).toSuperoperator) A).trace = _
-    simp only [LinearMap.sum_apply, map_sum, LinearMap.comp_apply,
-      Superoperator.prepare_apply, map_smul, Density.trace_one, smul_eq_mul, mul_one]
-    rw [← map_sum, ← LinearMap.sum_apply, M.sum_effect]
-    exact Superoperator.isTracePreserving_discard H A
+def measurePrepareInstrument (M : POVM H ι) (σ : ι → Density K) : Instrument H K ι :=
+  Instrument.ofCPMaps (fun i => M.effect i ≫ (σ i).toCPState)
+    (M.isInstrument_effect.postprocess fun i => (σ i).isCausal_toCPState)
 
 /-- Each branch is exactly the Born weight times its prepared output, on all operators. -/
 lemma measurePrepareInstrument_branch (M : POVM H ι) (σ : ι → Density K)
@@ -96,6 +90,11 @@ lemma branchCPMap_measurePrepareInstrument (M : POVM H ι) (σ : ι → Density 
 /-- Forget the outcome of a measurement followed by outcome-dependent preparation. -/
 def measurePrepare (M : POVM H ι) (σ : ι → Density K) : QuantumChannel H K :=
   (M.measurePrepareInstrument σ).toChannel
+
+/-- Forgetting the outcome sums the composites of effects and preparations as CP arrows. -/
+lemma toCPMap_measurePrepare (M : POVM H ι) (σ : ι → Density K) :
+    (M.measurePrepare σ).toCPMap = ∑ i, M.effect i ≫ (σ i).toCPState :=
+  (M.measurePrepareInstrument σ).sum_branchCPMap_eq.symm
 
 /-- The measure-and-prepare formula holds on all operators, without positivity assumptions. -/
 lemma measurePrepare_apply (M : POVM H ι) (σ : ι → Density K) (A : Operator H) :
@@ -116,42 +115,45 @@ lemma map_measurePrepare (M : POVM H ι) (σ : ι → Density K) (ρ : Density H
   intro i _
   exact congrArg (· • (σ i).op) (M.probability_eq_trace ρ i).symm
 
+/-- The POVM induced by this instrument is the original measurement. -/
+lemma toPOVM_measurePrepareInstrument (M : POVM H ι) (σ : ι → Density K) :
+    (M.measurePrepareInstrument σ).toPOVM = M := by
+  apply ext_effect
+  intro i
+  rw [Instrument.effect_toPOVM, branchCPMap_measurePrepareInstrument, Category.assoc]
+  have hs : (σ i).toCPState ≫ CPQudit.discard ⟨K⟩ = 𝟙 _ :=
+    (CPQudit.discarding.isCausal_state_iff _).mp (σ i).isCausal_toCPState
+  rw [hs, Category.comp_id]
+
 /-- Preparing a new state does not change the probability of the preceding measurement. -/
 lemma probability_measurePrepareInstrument (M : POVM H ι) (σ : ι → Density K)
     (ρ : Density H) (i : ι) :
     (M.measurePrepareInstrument σ).probability ρ i = M.probability ρ i := by
-  simp only [Instrument.probability, measurePrepareInstrument_branch, map_smul,
-    Density.trace_one, smul_eq_mul, mul_one]
-  rfl
-
-/-- The POVM induced by this instrument is the original measurement. -/
-lemma toPOVM_measurePrepareInstrument (M : POVM H ι) (σ : ι → Density K) :
-    (M.measurePrepareInstrument σ).toPOVM = M := by
-  apply POVM.ext
-  funext i
-  apply Operator.ext_trace
-  intro A
-  rw [Instrument.toPOVM, CPMap.trace_dual, one_mul]
-  change ((M.measurePrepareInstrument σ).branch i A).trace = _
-  simp only [measurePrepareInstrument_branch, map_smul, Density.trace_one, smul_eq_mul, mul_one]
+  rw [← Instrument.probability_toPOVM, toPOVM_measurePrepareInstrument]
 
 /-- If every outcome prepares the same state, the channel is replacement. -/
 lemma measurePrepare_const (M : POVM H ι) (σ : Density K) :
     M.measurePrepare (fun _ => σ) = QuantumChannel.replacement H σ := by
-  apply QuantumChannel.ext
-  apply LinearMap.ext
-  intro A
-  rw [measurePrepare_apply, QuantumChannel.replacement_apply, ← Finset.sum_smul,
-    ← map_sum, ← Finset.sum_mul, M.sum_op, one_mul]
+  apply CausalQudit.inclusion.map_injective (X := ⟨H⟩) (Y := ⟨K⟩)
+  change (M.measurePrepare _).toCPMap = CPQudit.discard ⟨H⟩ ≫ σ.toCPState
+  rw [toCPMap_measurePrepare, ← Semiadditive.sum_comp, M.sum_effect_eq_discard]
 
 /-- Subsequent quantum processing acts only on the prepared states. -/
 lemma comp_measurePrepare (M : POVM H ι) (σ : ι → Density K) (Φ : QuantumChannel K L) :
     Φ.comp (M.measurePrepare σ) = M.measurePrepare (fun i => Φ.map (σ i)) := by
-  apply QuantumChannel.ext
-  apply LinearMap.ext
-  intro A
-  change Φ.toSuperoperator ((M.measurePrepare σ).toSuperoperator A) = _
-  simp only [measurePrepare_apply, map_sum, map_smul, QuantumChannel.op_map]
+  apply QuantumChannel.asCPHom_injective
+  rw [QuantumChannel.asCPHom_comp]
+  simp only [QuantumChannel.asCPHom, toCPMap_measurePrepare, Semiadditive.sum_comp,
+    Category.assoc, Density.toCPState_comp]
+
+/-- Prior quantum processing pulls back the measurement and leaves the preparation family fixed. -/
+lemma measurePrepare_comp {G : Qudit} (M : POVM H ι) (σ : ι → Density K)
+    (Φ : QuantumChannel G H) :
+    (M.measurePrepare σ).comp Φ = (M.pullback Φ).measurePrepare σ := by
+  apply QuantumChannel.asCPHom_injective
+  rw [QuantumChannel.asCPHom_comp]
+  simp only [QuantumChannel.asCPHom, toCPMap_measurePrepare, Semiadditive.comp_sum,
+    effect_pullback, Category.assoc]
 
 end POVM
 

@@ -26,6 +26,10 @@ The control and sequencing clauses follow `Qhl/Program/Step.lean`. Quantum instr
 receive their whole-memory actions after register evaluation. In particular a supplied
 initialization channel can run as a channel instruction. Registers are checked for repeated
 cells before applying a local unitary or enumerating measurement branches.
+
+For an ordered tensor register, `Command.unitaryOnRegister` and `Command.measureOnRegister`
+accept operations on its local memory. `Command.unitaryOn` and `Command.measureOn`
+evaluate the register addresses in the classical store.
 -/
 
 @[expose] public section
@@ -74,6 +78,11 @@ def Command.PreservesParameters {P : Type*} (p : Command Store Cell H) (read : S
   | .measure _ _ upd => ∀ i σ, read (upd i σ) = read σ
   | .seq p q | .ite _ p q => p.PreservesParameters read ∧ q.PreservesParameters read
   | .whileDo _ body => body.PreservesParameters read
+
+/-- Every command preserves a constant classical parameter. -/
+theorem Command.preservesParameters_const {P : Type*} (p : Command Store Cell H) (a : P) :
+    p.PreservesParameters (fun _ => a) := by
+  induction p <;> simp_all [PreservesParameters]
 
 /-- Attach a continuation to the result of a step of the first command. -/
 def Configuration.seqWith (c : Configuration Store Cell H) (q : Command Store Cell H) :

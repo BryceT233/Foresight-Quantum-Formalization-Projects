@@ -284,4 +284,21 @@ end
 
 end CPQudit
 
+namespace QuantumChannel
+
+variable {H K L : Qudit}
+
+/-- A channel viewed as a morphism of the completely positive process category. -/
+abbrev asCPHom (Φ : QuantumChannel H K) : (⟨H⟩ : CPQudit) ⟶ ⟨K⟩ := Φ.toCPMap
+
+/-- Forgetting trace preservation preserves sequential composition. -/
+lemma asCPHom_comp (Φ : QuantumChannel H K) (Ψ : QuantumChannel K L) :
+    (Ψ.comp Φ).asCPHom = Φ.asCPHom ≫ Ψ.asCPHom := rfl
+
+/-- Equality of the underlying CP arrows detects equality of channels. -/
+lemma asCPHom_injective : Function.Injective (asCPHom (H := H) (K := K)) :=
+  fun _ _ h => QuantumChannel.ext (congrArg CPMap.toSuperoperator h)
+
+end QuantumChannel
+
 end Qudit

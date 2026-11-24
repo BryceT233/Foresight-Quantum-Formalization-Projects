@@ -1,12 +1,12 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Bingyu Xia
+Authors: Bingyu Xia, Foresight Quantum
 -/
 module
 
 public import FQFP.CategoryTheory.Monoidal.Dagger.Rigid
-public import FQFP.CQM.Qudit.Monoidal
+public import FQFP.CQM.Qudit.Classical.Basis
 
 /-!
 # Self-duality of a finite-dimensional Hilbert space
@@ -15,7 +15,7 @@ A finite-dimensional complex Hilbert space is its own dual, but the identificati
 canonical: it is determined by the choice of an orthonormal basis, with coevaluation the
 maximally entangled state `∑ i, b i ⊗ b i` and evaluation the bilinear form that multiplies the
 two coordinates. This file constructs that pairing from an explicit basis
-(`exactPairingOfOrthonormalBasis`) and records its two snake equations, checked on pure tensors.
+(`exactPairingOfOrthonormalBasis`). Its snake equations follow from the basis Frobenius structure.
 The self-dual pairing of the standard space `ℂⁿ` is the special case of the computational basis,
 `RelCat`'s counterpart being `FQFP.CategoryTheory.Category.RelCat.Rigid`.
 
@@ -62,8 +62,8 @@ the one of the conjugate space `H ⊗ H ⟶ ℂ`, transported to `H ⊗ H` along
 isomorphism from `H` to its conjugate space. This is why the self-duality is a choice of basis,
 and why the transpose `rightAdjointMate` is the plain transpose rather than the dagger.
 
-The snakes are computed on pure tensors. The coordinate of a basis vector is evaluated with
-`Finset.sum_eq_single`, and the sums are collapsed with `OrthonormalBasis.sum_repr'`.
+The cup and cap coincide with the ones induced by basis copying and merging. The snake
+equations now follow from Frobenius self-duality (Theorem 5.15).
 -/
 
 @[expose] public section
@@ -173,59 +173,64 @@ lemma sum_tmul_bra (b : OrthonormalBasis ι ℂ H.state) (x : H.state) :
   simpa using
     (TensorProduct.smul_tmul (R := ℂ) (r := inner ℂ (b i) x) (m := b i) (n := (1 : ℂ))).symm
 
-/-- The first snake equation, evaluated on a pure tensor. -/
-lemma coevaluation_evaluation_apply (b : OrthonormalBasis ι ℂ H.state) (x : H.state) (c : ℂ) :
-    (basisEvaluation b ▷ H) ((α_ H H H).inv ((H ◁ basisCoevaluation b)
-      (x ⊗ₜ[ℂ] c))) = (1 : ℂ) ⊗ₜ[ℂ] (c • x) := by
-  have hterm : ∀ i : ι,
-      (basisEvaluation b ▷ H) ((α_ H H H).inv (x ⊗ₜ[ℂ] (b i ⊗ₜ[ℂ] b i)))
-        = bra (b i) x ⊗ₜ[ℂ] b i := by
-    intro i
-    rw [associator_inv_apply, whiskerRight_apply, basisEvaluation_apply]
-    exact congrArg (· ⊗ₜ[ℂ] b i) (basisForm_apply_basis b x i)
-  rw [whiskerLeft_apply, basisCoevaluation_apply,
-    tmul_smul_sum_tmul, map_smul, map_sum, map_smul, map_sum]
-  simp only [hterm]
-  rw [sum_bra_tmul, TensorProduct.smul_tmul', TensorProduct.smul_tmul]
-
-/-- The second snake equation, evaluated on a pure tensor. -/
-lemma evaluation_coevaluation_apply (b : OrthonormalBasis ι ℂ H.state) (x : H.state) (c : ℂ) :
-    (H ◁ basisEvaluation b) ((α_ H H H).hom ((basisCoevaluation b ▷ H)
-      (c ⊗ₜ[ℂ] x))) = (c • x) ⊗ₜ[ℂ] (1 : ℂ) := by
-  have hterm : ∀ i : ι,
-      (H ◁ basisEvaluation b) ((α_ H H H).hom ((b i ⊗ₜ[ℂ] b i) ⊗ₜ[ℂ] x))
-        = b i ⊗ₜ[ℂ] bra (b i) x := by
-    intro i
-    rw [associator_hom_apply, whiskerLeft_apply, basisEvaluation_apply, basisForm_comm]
-    exact congrArg (b i ⊗ₜ[ℂ] ·) (basisForm_apply_basis b x i)
-  rw [whiskerRight_apply, basisCoevaluation_apply, smul_sum_tmul,
-    map_smul, map_sum, map_smul, map_sum]
-  simp only [hterm]
-  rw [sum_tmul_bra, TensorProduct.smul_tmul']
-
 set_option backward.isDefEq.respectTransparency.types false in
+/-- The evaluation is the dagger of the coevaluation: adjunction of the maximally entangled
+state is the coordinate-multiplication form. Unlike the self-duality itself, this statement does
+not depend on the choice of basis. -/
+lemma dagger_basisCoevaluation (b : OrthonormalBasis ι ℂ H.state) :
+    (basisCoevaluation b)† = basisEvaluation b := by
+  apply hom_ext
+  apply TensorProduct.ext'
+  intro x y
+  rw [hom_dagger, hom_basisCoevaluation,
+    LinearMap.adjoint_toSpanSingleton (𝕜 := ℂ) (E := H.state ⊗[ℂ] H.state)
+      (x := ∑ i, b i ⊗ₜ[ℂ] b i),
+    basisEvaluation_apply, basisForm_apply]
+  simp only [coe_innerₛₗ_apply, sum_inner, TensorProduct.inner_tmul, bra_apply]
+
+/-- The induced cup is exactly the existing basis-dependent self-dual cup. -/
+lemma classicalStructure_cup (b : OrthonormalBasis ι ℂ H.state) :
+    (classicalStructureOfOrthonormalBasis b).cup = basisCoevaluation b := by
+  apply hom_ext
+  apply LinearMap.ext
+  intro c
+  change basisCopy b ((basisDelete b)† c) = _
+  rw [dagger_basisDelete_apply, map_smul, map_sum]
+  simp [basisCopy_basis]
+
+/-- The induced cap is exactly the existing basis evaluation. -/
+lemma classicalStructure_cap (b : OrthonormalBasis ι ℂ H.state) :
+    (classicalStructureOfOrthonormalBasis b).cap = basisEvaluation b := by
+  rw [← (classicalStructureOfOrthonormalBasis b).toDaggerFrobeniusObj.dagger_cup,
+    classicalStructure_cup, dagger_basisCoevaluation]
+
 /-- The first snake equation for the basis pairing. -/
 lemma coevaluation_evaluation (b : OrthonormalBasis ι ℂ H.state) :
     (H ◁ basisCoevaluation b) ≫ (α_ H H H).inv ≫ (basisEvaluation b ▷ H)
       = (ρ_ H).hom ≫ (λ_ H).inv := by
-  apply hom_ext
-  apply TensorProduct.ext'
-  intro x c
-  change (basisEvaluation b ▷ H) ((α_ H H H).inv ((H ◁ basisCoevaluation b) (x ⊗ₜ[ℂ] c)))
-    = (λ_ H).inv ((ρ_ H).hom (x ⊗ₜ[ℂ] c))
-  rw [coevaluation_evaluation_apply b x c, rightUnitor_hom_apply, leftUnitor_inv_apply]
+  rw [← classicalStructure_cup, ← classicalStructure_cap]
+  let A := (classicalStructureOfOrthonormalBasis b).toFrobeniusObj
+  exact A.exactPairing.coevaluation_evaluation'
 
-set_option backward.isDefEq.respectTransparency.types false in
 /-- The second snake equation for the basis pairing. -/
 lemma evaluation_coevaluation (b : OrthonormalBasis ι ℂ H.state) :
     (basisCoevaluation b ▷ H) ≫ (α_ H H H).hom ≫ (H ◁ basisEvaluation b)
       = (λ_ H).hom ≫ (ρ_ H).inv := by
-  apply hom_ext
-  apply TensorProduct.ext'
-  intro c x
-  change (H ◁ basisEvaluation b) ((α_ H H H).hom ((basisCoevaluation b ▷ H) (c ⊗ₜ[ℂ] x)))
-    = (ρ_ H).inv ((λ_ H).hom (c ⊗ₜ[ℂ] x))
-  rw [evaluation_coevaluation_apply b x c, leftUnitor_hom_apply, rightUnitor_inv_apply]
+  rw [← classicalStructure_cup, ← classicalStructure_cap]
+  let A := (classicalStructureOfOrthonormalBasis b).toFrobeniusObj
+  exact A.exactPairing.evaluation_coevaluation'
+
+/-- The first snake equation, evaluated on a pure tensor. -/
+lemma coevaluation_evaluation_apply (b : OrthonormalBasis ι ℂ H.state) (x : H.state) (c : ℂ) :
+    (basisEvaluation b ▷ H) ((α_ H H H).inv ((H ◁ basisCoevaluation b)
+      (x ⊗ₜ[ℂ] c))) = (1 : ℂ) ⊗ₜ[ℂ] (c • x) :=
+  congrArg (fun f : H ⊗ 𝟙_ Qudit ⟶ 𝟙_ Qudit ⊗ H => f (x ⊗ₜ[ℂ] c)) (coevaluation_evaluation b)
+
+/-- The second snake equation, evaluated on a pure tensor. -/
+lemma evaluation_coevaluation_apply (b : OrthonormalBasis ι ℂ H.state) (x : H.state) (c : ℂ) :
+    (H ◁ basisEvaluation b) ((α_ H H H).hom ((basisCoevaluation b ▷ H)
+      (c ⊗ₜ[ℂ] x))) = (c • x) ⊗ₜ[ℂ] (1 : ℂ) :=
+  congrArg (fun f : 𝟙_ Qudit ⊗ H ⟶ H ⊗ 𝟙_ Qudit => f (c ⊗ₜ[ℂ] x)) (evaluation_coevaluation b)
 
 /-- A finite-dimensional Hilbert space is its own dual, given an orthonormal basis: the
 coevaluation is the maximally entangled state of that basis and the evaluation multiplies its
@@ -243,21 +248,6 @@ instance instExactPairingStd (n : ℕ) : ExactPairing (std n) (std n) :=
   exactPairingOfOrthonormalBasis (ZBasis n)
 
 /-! ### Compatibility with the dagger -/
-
-set_option backward.isDefEq.respectTransparency.types false in
-/-- The evaluation is the dagger of the coevaluation: adjunction of the maximally entangled
-state is the coordinate-multiplication form. Unlike the self-duality itself, this statement does
-not depend on the choice of basis. -/
-lemma dagger_basisCoevaluation (b : OrthonormalBasis ι ℂ H.state) :
-    (basisCoevaluation b)† = basisEvaluation b := by
-  apply hom_ext
-  apply TensorProduct.ext'
-  intro x y
-  rw [hom_dagger, hom_basisCoevaluation,
-    LinearMap.adjoint_toSpanSingleton (𝕜 := ℂ) (E := H.state ⊗[ℂ] H.state)
-      (x := ∑ i, b i ⊗ₜ[ℂ] b i),
-    basisEvaluation_apply, basisForm_apply]
-  simp only [coe_innerₛₗ_apply, sum_inner, TensorProduct.inner_tmul, bra_apply]
 
 /-- The self-dual pairing of an orthonormal basis is invariant under the dagger: reversing it as
 in Lemma 3.45 returns the same coevaluation and evaluation. -/

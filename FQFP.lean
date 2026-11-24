@@ -198,7 +198,13 @@ public import FQFP.Analysis.SpecialFunctions.RelativeEntropy
 public import FQFP.Analysis.SpecialFunctions.Integrals.IteratedBounds
 public import FQFP.Analysis.SpecialFunctions.Integrals.Monomial
 public import FQFP.Basic.Rel
+public import FQFP.CQM.Category.DataProcessing
+public import FQFP.CQM.Category.Discarding
+public import FQFP.CQM.Category.Instrument
 public import FQFP.CQM.Category.Operator
+public import FQFP.CQM.Category.Postprocessing
+public import FQFP.CQM.Category.ProjectiveMeasurement
+public import FQFP.CQM.Category.StateOverlap
 public import FQFP.CQM.Category.Teleportation
 public import FQFP.CQM.HilbCat
 public import FQFP.CQM.Qudit.Basic
@@ -208,9 +214,11 @@ public import FQFP.CQM.Qudit.Channel.Choi
 public import FQFP.CQM.Qudit.Channel.ChoiState
 public import FQFP.CQM.Qudit.Channel.CompletelyPositive
 public import FQFP.CQM.Qudit.Channel.Composite
+public import FQFP.CQM.Qudit.Channel.DataProcessing
 public import FQFP.CQM.Qudit.Channel.Degradation.Basic
 public import FQFP.CQM.Qudit.Channel.Degradation.BroadcastExtension
 public import FQFP.CQM.Qudit.Channel.Degradation.DilationIndependence
+public import FQFP.CQM.Qudit.Channel.Degradation.Distinguishability
 public import FQFP.CQM.Qudit.Channel.Degradation.IsometryRecovery
 public import FQFP.CQM.Qudit.Channel.Dilation.Basic
 public import FQFP.CQM.Qudit.Channel.Dilation.Complementary
@@ -219,6 +227,7 @@ public import FQFP.CQM.Qudit.Channel.Dilation.StinespringUniqueness
 public import FQFP.CQM.Qudit.Channel.Ensemble
 public import FQFP.CQM.Qudit.Channel.EntanglementBreaking.Antidegradable
 public import FQFP.CQM.Qudit.Channel.EntanglementBreaking.Basic
+public import FQFP.CQM.Qudit.Channel.EntanglementBreaking.ChoiDecomposition
 public import FQFP.CQM.Qudit.Channel.EntanglementBreaking.MeasurePrepare
 public import FQFP.CQM.Qudit.Channel.EntanglementBreaking.RankOneKraus
 public import FQFP.CQM.Qudit.Channel.MeasurePrepare
@@ -231,11 +240,14 @@ public import FQFP.CQM.Qudit.Channel.Process.Compact
 public import FQFP.CQM.Qudit.Channel.Process.Dual
 public import FQFP.CQM.Qudit.Channel.Process.Effect
 public import FQFP.CQM.Qudit.Channel.Process.Environment
+public import FQFP.CQM.Qudit.Channel.Process.Semiadditive
 public import FQFP.CQM.Qudit.Channel.Process.State
 public import FQFP.CQM.Qudit.Channel.Superoperator
 public import FQFP.CQM.Qudit.Classical
+public import FQFP.CQM.Qudit.Classical.Basis
 public import FQFP.CQM.Qudit.Classical.Channel
 public import FQFP.CQM.Qudit.Classical.Code
+public import FQFP.CQM.Qudit.Classical.CopyableState
 public import FQFP.CQM.Qudit.Classical.QuantumChannel
 public import FQFP.CQM.Qudit.Dagger
 public import FQFP.CQM.Qudit.Entropy.Basic
@@ -344,7 +356,9 @@ public import FQFP.CategoryTheory.Dagger.Basic
 public import FQFP.CategoryTheory.Dagger.Biproducts
 public import FQFP.CategoryTheory.Dagger.Endomorphism
 public import FQFP.CategoryTheory.Dagger.Kernels
+public import FQFP.CategoryTheory.Dagger.OrthogonalResolution
 public import FQFP.CategoryTheory.Limits.Shapes.Biproducts
+public import FQFP.CategoryTheory.Monoidal.Copying
 public import FQFP.CategoryTheory.Monoidal.Dagger.Basic
 public import FQFP.CategoryTheory.Monoidal.Dagger.Braided
 public import FQFP.CategoryTheory.Monoidal.Dagger.Rigid
@@ -352,6 +366,7 @@ public import FQFP.CategoryTheory.Monoidal.Frobenius
 public import FQFP.CategoryTheory.Monoidal.Measurement
 public import FQFP.CategoryTheory.Monoidal.Rigid.Basic
 public import FQFP.CategoryTheory.Monoidal.Scalar
+public import FQFP.CategoryTheory.Monoidal.SemiCartesian
 public import FQFP.CategoryTheory.Monoidal.State
 public import FQFP.CategoryTheory.Semiadditive.Basic
 public import FQFP.CategoryTheory.Semiadditive.Biproducts
@@ -409,6 +424,7 @@ public import FQFP.QuantumProgram.Logic.Kraus
 public import FQFP.QuantumProgram.Logic.LoopGhost
 public import FQFP.QuantumProgram.Logic.PrimitiveRules
 public import FQFP.QuantumProgram.Logic.RegisterKraus
+public import FQFP.QuantumProgram.Logic.RegisterWP
 public import FQFP.QuantumProgram.Logic.Rules
 public import FQFP.QuantumProgram.Logic.Soundness
 public import FQFP.QuantumProgram.Logic.SourceAssertion
@@ -434,6 +450,7 @@ public import FQFP.QuantumProgram.Semantics.History
 public import FQFP.QuantumProgram.Semantics.KrausFrame
 public import FQFP.QuantumProgram.Semantics.RegisterFrame
 public import FQFP.QuantumProgram.Semantics.SeqDecomp
+public import FQFP.QuantumProgram.Semantics.WeakestPrecondition
 public import FQFP.QuantumProgram.RegisterPermutation
 public import FQFP.QuantumProgram.TensorRegister
 public import FQFP.QuantumProgram.Trotter

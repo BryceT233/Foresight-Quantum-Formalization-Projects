@@ -17,7 +17,7 @@ module
 
 public import FQFP.CQM.Qudit.Entropy.Relative.PartialTrace
 public import FQFP.CQM.Qudit.Entropy.SandwichedRenyi.PartialTrace
-public import FQFP.CQM.Qudit.Channel.Dilation.Basic
+public import FQFP.CQM.Qudit.Channel.DataProcessing
 public import FQFP.CQM.Qudit.Channel.MeasurePrepare
 
 /-!
@@ -34,16 +34,18 @@ namespace Qudit.QuantumChannel
 
 variable {H K : Qudit}
 
+/-- Umegaki relative entropy is a distinguishability measure on causal processes. -/
+theorem satisfiesDataProcessing_relativeEntropy :
+    CQM.SatisfiesDataProcessing CausalQudit.densityFunctor (fun _ ρ σ => ρ.relativeEntropy σ) :=
+  CausalQudit.satisfiesDataProcessing_of_dilation Density.relativeEntropy
+    (fun V _ ρ σ => (ρ.relativeEntropy_map_isometry σ V).le)
+    Density.relativeEntropy_partialTraceRight_le
+
 /-- **Data processing inequality** for Umegaki relative entropy under any quantum channel,
 including inputs with infinite relative entropy. -/
 theorem relativeEntropy_map_le (Φ : QuantumChannel H K) (ρ σ : Density H) :
-    (Φ.map ρ).relativeEntropy (Φ.map σ) ≤ ρ.relativeEntropy σ := by
-  obtain ⟨n, V, hV, hΦ⟩ := Φ.exists_dilation_map
-  rw [hΦ ρ, hΦ σ]
-  calc
-    _ ≤ (ρ.map V).relativeEntropy (σ.map V) :=
-      (ρ.map V).relativeEntropy_partialTraceRight_le (σ.map V)
-    _ = ρ.relativeEntropy σ := ρ.relativeEntropy_map_isometry σ V
+    (Φ.map ρ).relativeEntropy (Φ.map σ) ≤ ρ.relativeEntropy σ :=
+  satisfiesDataProcessing_relativeEntropy Φ.asHom ρ σ
 
 /-- A channel preserves inclusion of the source support in the reference support. -/
 lemma absolutelyContinuous_map (Φ : QuantumChannel H K) {ρ σ : Density H}
@@ -68,15 +70,21 @@ theorem sandwichedTraceFunctional_map_le (Φ : QuantumChannel H K) (ρ σ : Dens
   exact (ρ.map V).sandwichedTraceFunctional_partialTraceRight_le (σ.map V) hα
     ((ρ.absolutelyContinuous_map_iff σ V).mpr h)
 
+/-- Sandwiched Rényi relative entropy satisfies categorical data processing above order one. -/
+theorem satisfiesDataProcessing_sandwichedRenyiRelativeEntropy (α : Set.Ioi (1 : ℝ)) :
+    CQM.SatisfiesDataProcessing CausalQudit.densityFunctor
+      (fun _ ρ σ => ρ.sandwichedRenyiRelativeEntropy σ α) :=
+  CausalQudit.satisfiesDataProcessing_of_dilation (fun ρ σ => ρ.sandwichedRenyiRelativeEntropy σ α)
+    (fun V _ ρ σ => (ρ.sandwichedRenyiRelativeEntropy_map_isometry σ α V).le)
+    (fun ρ σ => ρ.sandwichedRenyiRelativeEntropy_partialTraceRight_le σ α)
+
 /-- **Data processing for sandwiched Rényi relative entropy** of every real order above one.
 The Stinespring environment is discarded on the right. -/
 theorem sandwichedRenyiRelativeEntropy_map_le (Φ : QuantumChannel H K) (ρ σ : Density H)
     (α : Set.Ioi (1 : ℝ)) :
     (Φ.map ρ).sandwichedRenyiRelativeEntropy (Φ.map σ) α ≤
-      ρ.sandwichedRenyiRelativeEntropy σ α := by
-  obtain ⟨n, V, hV, hΦ⟩ := Φ.exists_dilation_map
-  rw [hΦ ρ, hΦ σ, ← ρ.sandwichedRenyiRelativeEntropy_map_isometry σ α V]
-  exact (ρ.map V).sandwichedRenyiRelativeEntropy_partialTraceRight_le (σ.map V) α
+      ρ.sandwichedRenyiRelativeEntropy σ α :=
+  satisfiesDataProcessing_sandwichedRenyiRelativeEntropy α Φ.asHom ρ σ
 
 end Qudit.QuantumChannel
 

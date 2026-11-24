@@ -217,14 +217,8 @@ instance : SymmetricMonoidalDaggerCategory CPQudit where
   isUnitary_braiding H K := isUnitary_pure (β_ H.toQudit K.toQudit).hom
 /-- A pure process preserves the trace exactly when it is an isometry. -/
 lemma isCausal_pure_iff {H K : Qudit} (f : H ⟶ K) :
-    IsCausal (pure.map f) ↔ IsIsometry f := by
-  change pure.map f ≫ discard ⟨K⟩ = discard ⟨H⟩ ↔ IsIsometry f
-  have h := pure_comp_discard_iff f (𝟙 H)
-  simp only [pure.map_id, Category.id_comp, dagger_id] at h
-  dsimp only [pure] at h ⊢
-  rw [Category.id_comp] at h
-  rw [h]
-  exact ⟨fun h => ⟨by simpa using h⟩, fun h => by simp⟩
+    IsCausal (pure.map f) ↔ IsIsometry f :=
+  separatesPure.isCausal_map_iff f
 
 end CPQudit
 

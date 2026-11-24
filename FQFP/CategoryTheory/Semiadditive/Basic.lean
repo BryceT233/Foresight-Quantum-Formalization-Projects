@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Preadditive.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Data.Fintype.BigOperators
 
 /-!
 # Semiadditive categories
@@ -119,6 +120,19 @@ lemma comp_sum {X Y Z : C} {ι : Type*} (s : Finset ι) (f : X ⟶ Y) (g : ι �
 lemma sum_comp {X Y Z : C} {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y)) (g : Y ⟶ Z) :
     (∑ i ∈ s, f i) ≫ g = ∑ i ∈ s, f i ≫ g :=
   map_sum (rightComp X g) f s
+
+/-- Sum over pairs of outcomes by first summing the continuations of each branch. -/
+lemma sum_prod_comp {X Y Z : C} {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (f : ι → (X ⟶ Y)) (g : ι → κ → (Y ⟶ Z)) :
+    ∑ p : ι × κ, f p.1 ≫ g p.1 p.2 = ∑ i, f i ≫ ∑ j, g i j := by
+  rw [Fintype.sum_prod_type]
+  simp_rw [comp_sum]
+
+/-- Composing two finite sums gives the sum over all pairs of choices. -/
+lemma sum_comp_sum {X Y Z : C} {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (f : ι → (X ⟶ Y)) (g : κ → (Y ⟶ Z)) :
+    (∑ i, f i) ≫ (∑ j, g j) = ∑ p : ι × κ, f p.1 ≫ g p.2 := by
+  rw [sum_prod_comp f (fun _ => g), sum_comp]
 
 end Semiadditive
 

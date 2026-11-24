@@ -57,6 +57,20 @@ noncomputable def instrumentEffect {m : ℕ} (I : Instrument H H (Fin m))
     (Finset.sum_le_sum fun i _ => (I.branchCPMap i).dual.monotone (E i).2.2).trans_eq
       I.toPOVM.sum_op⟩
 
+/-- An outcome-independent postcondition pulls back through the nonselective channel. -/
+@[simp] theorem instrumentEffect_const {m : ℕ} (I : Instrument H H (Fin m))
+    (E : Set.Icc (0 : Operator H) 1) :
+    instrumentEffect I (fun _ => E) = I.toChannel.pullbackEffect E := by
+  apply Subtype.ext
+  apply Operator.ext_trace
+  intro X
+  change ((∑ i, (I.branchCPMap i).dual.toSuperoperator E) * X).trace =
+    (I.toChannel.toCPMap.dual.toSuperoperator E * X).trace
+  simp only [Finset.sum_mul, Operator.trace, map_sum, CPMap.trace_dual]
+  change _ = (E.val * (∑ i, I.branch i) X).trace
+  simp only [LinearMap.sum_apply, Finset.mul_sum, Operator.trace, map_sum]
+  rfl
+
 /-- Born-sum precondition with the postcondition evaluated after classical write-back. -/
 noncomputable def Assertion.measurePre (A : Assertion Store H) {k m : ℕ}
     (r : Store → Fin k → Cell) (I : ∀ σ, Function.Injective (r σ) → Instrument H H (Fin m))
@@ -96,20 +110,24 @@ theorem validTot_unitary {k : ℕ} (r : Store → Fin k → Cell)
     exact ENNReal.ofReal_le_ofReal (s.expectation_pullbackEffect (U s.store h).toChannel _).le
   · simp [Assertion.unitaryPre, h, CQState.expectation_zero]
 
+/-- The measurement precondition sums expectations at the updated branch stores. -/
+theorem CQState.expectation_measurePre (s : CQState Store H) {k m : ℕ} (r : Store → Fin k → Cell)
+    (I : ∀ σ, Function.Injective (r σ) → Instrument H H (Fin m)) (upd : Fin m → Store → Store)
+    (A : Assertion Store H) : s.expectation (A.measurePre r I upd s.store) =
+      ((measurementSuccessors r I upd s).map fun t => t.expectation (A t.store)).sum := by
+  by_cases h : Function.Injective (r s.store)
+  · simp only [Assertion.measurePre, dite_eq_left h, instrumentEffect, CQState.expectation,
+      measurementSuccessors, List.map_ofFn, List.sum_ofFn, Finset.sum_mul, Operator.trace, map_sum,
+      Complex.re_sum]
+    exact Finset.sum_congr rfl fun i _ => congrArg Complex.re
+      (((I s.store h).branchCPMap i).trace_dual s.op (A (upd i s.store)))
+  · simp [Assertion.measurePre, measurementSuccessors, h, CQState.expectation_zero]
+
 /-- Each instrument branch pairs with the effect at that branch's updated store. -/
 theorem validTot_measure {k m : ℕ} (r : Store → Fin k → Cell)
     (I : ∀ σ, Function.Injective (r σ) → Instrument H H (Fin m)) (upd : Fin m → Store → Store)
     (A : Assertion Store H) : validTot (A.measurePre r I upd) (.measure r I upd) A := by
   intro s
-  by_cases h : Function.Injective (r s.store)
-  · rw [Configuration.PostH_measure]
-    apply ENNReal.ofReal_le_ofReal
-    apply le_of_eq
-    simp only [Assertion.measurePre, dite_eq_left h, instrumentEffect, CQState.expectation,
-      measurementSuccessors, List.map_ofFn, List.sum_ofFn, Finset.sum_mul, Operator.trace, map_sum,
-      Complex.re_sum]
-    exact Finset.sum_congr rfl fun i _ => congrArg Complex.re
-      (((I s.store h).branchCPMap i).trace_dual s.op (A (upd i s.store)))
-  · simp [Assertion.measurePre, h, CQState.expectation_zero]
+  rw [Configuration.PostH_measure, s.expectation_measurePre]
 
 end QuantumProgram
