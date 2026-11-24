@@ -68,6 +68,12 @@ lemma eval_append (scale : ℚ) (letters : α → 𝔸) (s t : Table α) :
   simpa only [eval_eq_coeffWordTable] using
     CoeffWordTable.eval_append (Int.castRingHom ℚ) (fun k ↦ scale⁻¹ • letters k) s t
 
+/-- Prepending a letter to every word contributes one inversely scaled factor on the left. -/
+lemma eval_map_cons (scale : ℚ) (letters : α → 𝔸) (a : α) (t : Table α) :
+    eval scale letters (t.map fun p ↦ (a :: p.1, p.2)) =
+      (scale⁻¹ • letters a) * eval scale letters t := by
+  simp only [eval_eq_coeffWordTable, CoeffWordTable.eval_map_cons]
+
 /-- Evaluate a finite family of words of one length and one coefficient. -/
 lemma eval_ofFn (scale : ℚ) (letters : α → 𝔸) {m n : ℕ}
     (words : Fin m → Fin n → α) (c : ℤ) :

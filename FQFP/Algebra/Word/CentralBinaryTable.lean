@@ -103,24 +103,13 @@ theorem eval_collectTree (f : R →+* K) (letters : Option (Fin 2) → A)
   | nil => rfl
   | cons p t ih => rw [collectTree, eval_insert, CoeffWordTable.eval_cons, ih]
 
-private lemma eval_map_cons (f : R →+* K) (letters : Option (Fin 2) → A)
-    (a : Option (Fin 2)) (t : CoeffWordTable.Table R (Option (Fin 2))) :
-    CoeffWordTable.eval f letters (t.map fun p ↦ (a :: p.1, p.2)) =
-      letters a * CoeffWordTable.eval f letters t := by
-  induction t with
-  | nil => simp [CoeffWordTable.eval_nil]
-  | cons p t ih =>
-      rw [List.map_cons, CoeffWordTable.eval_cons, CoeffWordTable.eval_cons, ih, mul_add]
-      simp only [List.map_cons, List.prod_cons, mul_smul_comm]
-
 /-- Converting a tree to its nonzero rows preserves evaluation. -/
 theorem eval_toTable [DecidableEq R] (f : R →+* K) (letters : Option (Fin 2) → A)
     (t : Tree R) : CoeffWordTable.eval f letters (toTable t) = eval f letters t := by
   induction t with
   | zero => rfl
   | node c m l r hm hl hr =>
-      rw [toTable, CoeffWordTable.eval_append, CoeffWordTable.eval_append,
-        CoeffWordTable.eval_append, eval_map_cons, eval_map_cons, eval_map_cons,
+      simp only [toTable, CoeffWordTable.eval_append, CoeffWordTable.eval_map_cons,
         hm, hl, hr, eval]
       by_cases hc : c = 0 <;>
         simp [hc, CoeffWordTable.eval_nil, CoeffWordTable.eval_singleton]

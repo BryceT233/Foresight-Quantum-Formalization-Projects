@@ -109,6 +109,24 @@ lemma partialTraceLeft_map_tensor (Φ : QuantumChannel H K) (Ψ : QuantumChannel
   have h := congrArg (fun Γ => Γ.map ρ) (partialTraceLeft_comp_tensor Φ Ψ)
   simpa only [map_comp, map_partialTraceLeft] using h
 
+/-- Discarding the last two outputs after reassociation equals discarding them successively. -/
+lemma partialTraceRight_comp_associator (H K L : Qudit) :
+    (partialTraceRight H (K ⊗ L)).comp (ofIsometry (α_ H K L).hom) =
+      (partialTraceRight H K).comp (partialTraceRight (H ⊗ K) L) := by
+  apply QuantumChannel.ext
+  simpa only [comp, partialTraceRight, ofIsometry, hom_hom_associator,
+    Superoperator.relabel_eq_conjugate, TensorProduct.toLinearEquiv_assocIsometry] using
+    Superoperator.partialTraceRight_relabel_assoc H K L
+
+/-- Discarding the first output after reassociation leaves the last output untouched. -/
+lemma partialTraceLeft_comp_associator (H K L : Qudit) :
+    (partialTraceLeft H (K ⊗ L)).comp (ofIsometry (α_ H K L).hom) =
+      (partialTraceLeft H K).tensor (id L) := by
+  apply QuantumChannel.ext
+  simpa only [comp, tensor, partialTraceLeft, id, ofIsometry, hom_hom_associator,
+    Superoperator.relabel_eq_conjugate, TensorProduct.toLinearEquiv_assocIsometry] using
+    Superoperator.partialTraceLeft_relabel_assoc H K L
+
 /-- Reassociate `H ⊗ (K ⊗ L)` and discard `L`, equivalently discard it inside `K ⊗ L`. -/
 lemma partialTraceRight_map_associator_inv (ρ : Density (H ⊗ (K ⊗ L))) :
     (ρ.map (α_ H K L).inv).partialTraceRight =

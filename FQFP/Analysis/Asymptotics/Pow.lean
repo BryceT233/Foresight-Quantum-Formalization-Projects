@@ -9,9 +9,9 @@ public import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 public import Mathlib.Analysis.Normed.Ring.Basic
 
 /-!
-# Power-order asymptotics near zero
+# Power-order asymptotics
 
-Power comparison and addition, multiplication and boundedness rules.
+Power comparison, arithmetic and boundedness near zero, and inverse-power decay of sequences.
 
 ## Main results
 
@@ -23,6 +23,7 @@ Power comparison and addition, multiplication and boundedness rules.
 * `TrotterError.orderCond_mul_left`.
 * `TrotterError.neg_pow_isBigO`.
 * `TrotterError.tendsto_neg_nhds_zero`.
+* `FQFP.isBigO_inv_nat_pow_of_remainder_le`.
 -/
 
 @[expose] public section
@@ -100,3 +101,20 @@ lemma tendsto_neg_nhds_zero : Filter.Tendsto (fun a : ℝ => -a) (𝓝 (0 : ℝ)
   simpa using continuous_neg.tendsto (0 : ℝ)
 
 end TrotterError
+
+namespace FQFP
+
+open Asymptotics Filter
+
+/-- An eventual norm bound by a constant times `(t / n) ^ p` gives inverse-power decay
+of order `p` along natural indices. -/
+theorem isBigO_inv_nat_pow_of_remainder_le {E : Type*} [Norm E]
+    {F : ℕ → E} {t B : ℝ} {p : ℕ}
+    (hF : ∀ᶠ n : ℕ in atTop, ‖F n‖ ≤ (t / n) ^ p * B) :
+    F =O[atTop] (fun n : ℕ ↦ ((n : ℝ)⁻¹) ^ p) := by
+  apply IsBigO.of_bound (t ^ p * B)
+  filter_upwards [hF] with n hn
+  simpa only [norm_pow, norm_inv, Real.norm_natCast, div_eq_mul_inv, mul_pow,
+    mul_right_comm] using hn
+
+end FQFP

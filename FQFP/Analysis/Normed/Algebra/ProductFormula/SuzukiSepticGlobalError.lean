@@ -98,8 +98,7 @@ theorem abs_norm_fiveStageStrangProduct_pow_error_sub_septic_midpoint_le (a b : 
     |‖fiveStageStrangProduct a b p (t / r) ^ r - exp (t • (a + b))‖ -
       ‖suzukiSepticMidpointTerm a b p r (t / r)‖| ≤
         suzukiSepticGlobalRemainder a b p (t / r) r := by
-  rw [norm_pow_sub_exp_eq_interaction (a + b) _ hG]
-  exact (abs_norm_sub_norm_le _ _).trans
+  exact (abs_norm_pow_sub_exp_sub_norm_le (a + b) _ _ hG t r).trans
     (norm_fiveStageStrangProduct_pow_sub_septic_midpoint_le_div a b p hp ha hb hG t ht r hr)
 
 /-- The actual refined Suzuki operator remainder is `O(r⁻⁸)` with fixed inputs and time. -/
@@ -125,14 +124,10 @@ theorem isBigO_norm_fiveStageStrangProduct_pow_error_sub_septic_midpoint (a b : 
     (fun r : ℕ ↦ ‖fiveStageStrangProduct a b p (t / r) ^ r - exp (t • (a + b))‖ -
       ‖suzukiSepticMidpointTerm a b p r (t / r)‖)
       =O[atTop] (fun r : ℕ ↦ ((r : ℝ)⁻¹) ^ 8) := by
-  apply isBigO_inv_nat_pow_eight_of_septicGlobalRemainder
-    (ℓ := ‖suzukiQuinticTerm a b p‖) (μ := ‖suzukiDefectSepticTerm a b p‖)
-    (C := suzukiNonicConstant a b p) (t := t) _
-    (suzukiCenteredNonicConstant a b p) (norm_nonneg _) (norm_nonneg _)
-    (suzukiNonicConstant_nonneg a b p) ht
-  intro r hr
-  simpa only [Real.norm_eq_abs, suzukiSepticGlobalRemainder] using
-    abs_norm_fiveStageStrangProduct_pow_error_sub_septic_midpoint_le a b p hp ha hb hG t ht r hr
+  refine (isBigO_of_le atTop ?_).trans
+    (isBigO_fiveStageStrangProduct_pow_sub_septic_midpoint a b p hp ha hb hG t ht)
+  intro r
+  exact abs_norm_pow_sub_exp_sub_norm_le (a + b) _ _ hG t r
 
 /-- **Canonical C*-algebra refined global bound.** Skew-adjoint inputs supply
 the exponentials' norm bounds, and the canonical parameter supplies the order condition. -/

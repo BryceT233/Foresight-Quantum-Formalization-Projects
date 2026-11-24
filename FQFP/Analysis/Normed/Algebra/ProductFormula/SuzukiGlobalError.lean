@@ -165,20 +165,11 @@ theorem isBigO_fiveStageStrangProduct_pow_sub_exp_of_integral_eq_zero (a b : A) 
     (hK : conjugationIntegral (a + b) (suzukiQuinticTerm a b p) t = 0) :
     (fun r : ℕ ↦ fiveStageStrangProduct a b p (t / r) ^ r - exp (t • (a + b)))
       =O[atTop] (fun r : ℕ ↦ ((r : ℝ)⁻¹) ^ 6) := by
-  let ℓ := ‖suzukiQuinticTerm a b p‖
-  let C := suzukiSepticConstant a b p
-  let alpha := suzukiCenteredConjugationConstant a b p
-  let J := ‖⁅a + b, ⁅a + b, suzukiQuinticTerm a b p⁆⁆‖
-  apply isBigO_inv_nat_pow_six_of_remainder_le _ t
-    (t * (C + 5 / 14 * alpha + J / 24) + t / 2 * ℓ ^ 2 +
-      5 * t / 12 * ℓ * C + t ^ 2 / 2 * (ℓ + C) ^ 2)
-  filter_upwards [eventually_quinticGlobalRemainder_le_pow_six alpha J
-    (norm_nonneg (suzukiQuinticTerm a b p))
-    (suzukiSepticConstant_nonneg a b p) ht, eventually_ge_atTop 1] with r hsmall hr
-  have hbnd := norm_fiveStageStrangProduct_pow_sub_integral_le_div a b p hp ha hb hG t ht r hr
-  rw [hK, smul_zero, sub_zero,
-    ← norm_pow_sub_exp_eq_interaction (a + b) _ hG t r] at hbnd
-  exact hbnd.trans hsmall
+  obtain ⟨B, hB⟩ := exists_eventually_le_pow_six_of_le_quinticGlobalRemainder
+    (norm_nonneg _) (suzukiSepticConstant_nonneg a b p) ht
+    (norm_fiveStageStrangProduct_pow_sub_integral_le_div a b p hp ha hb hG t ht)
+  apply isBigO_inv_nat_pow_six_of_remainder_le _ t B
+  simpa only [hK, smul_zero, sub_zero, ← norm_pow_sub_exp_eq_interaction _ _ hG] using hB
 
 /-- The global distance between the splitting power and the exact evolution
 is at most two, under the same exponential norm hypotheses. -/

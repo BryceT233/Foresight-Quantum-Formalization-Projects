@@ -54,23 +54,21 @@ lemma hasSum_expMulMulTerm (a b c : A) :
 lemma norm_exp_mul_exp_mul_exp_sub_sum_le (a b c : A) (n : ℕ) :
     ‖exp a * exp b * exp c - ∑ i ∈ range n, expMulMulTerm a b c i‖ ≤
       Real.exp (‖a‖ + ‖b‖ + ‖c‖) -
-        ∑ i ∈ range n, (‖a‖ + ‖b‖ + ‖c‖) ^ i / Nat.factorial i :=
-  norm_sub_sum_le_real_exp_tail _ _ _ (hasSum_expMulMulTerm a b c)
-    (norm_expMulMulTerm_le a b c) n
+        ∑ i ∈ range n, (‖a‖ + ‖b‖ + ‖c‖) ^ i / Nat.factorial i := by
+  simpa [expListTerm_triple, mul_assoc, add_assoc] using norm_prod_exp_sub_sum_le [a, b, c] n
 
 /-- The distance of the three-factor product from one is controlled by the scalar exponential. -/
 lemma norm_exp_mul_exp_mul_exp_sub_one_le (a b c : A) :
     ‖exp a * exp b * exp c - 1‖ ≤ Real.exp (‖a‖ + ‖b‖ + ‖c‖) - 1 := by
-  simpa only [sum_range_one, expMulMulTerm_zero, pow_zero, Nat.factorial_zero,
-    Nat.cast_one, div_one] using norm_exp_mul_exp_mul_exp_sub_sum_le a b c 1
+  simpa [mul_assoc, add_assoc] using norm_prod_exp_sub_one_le [a, b, c]
 
 /-- On the quarter-radius ball, every product tail of degree at least two is bounded by a power. -/
 lemma norm_exp_mul_exp_mul_exp_sub_sum_le_pow (a b c : A) (n : ℕ) (hn : 2 ≤ n)
     (habc : ‖a‖ + ‖b‖ + ‖c‖ < 1 / 4) :
     ‖exp a * exp b * exp c - ∑ i ∈ range n, expMulMulTerm a b c i‖ ≤
       (‖a‖ + ‖b‖ + ‖c‖) ^ n := by
-  exact (norm_exp_mul_exp_mul_exp_sub_sum_le a b c n).trans
-    (real_exp_sub_sum_le_pow (by positivity) (by linarith only [habc]) n hn)
+  simpa [expListTerm_triple, mul_assoc, add_assoc] using
+    norm_prod_exp_sub_sum_le_pow [a, b, c] n hn (by simpa [add_assoc] using habc)
 
 /-- The positive part of a small exponential product has norm at most twice the input scale. -/
 lemma norm_exp_mul_exp_mul_exp_sub_one_le_two_mul (a b c : A)
@@ -94,12 +92,8 @@ lemma norm_logPartialSum_exp_mul_exp_mul_exp_sub_sum_le (a b c : A)
     ‖logPartialSum A n (exp a * exp b * exp c - 1) -
       ∑ k ∈ range n, logCoeff k • positivePowerTrunc (expMulMulTerm a b c) k n‖ ≤
       (n : ℝ) * 2 ^ (n - 1) * (‖a‖ + ‖b‖ + ‖c‖) ^ n := by
-  have h := norm_logPartialSum_sub_sum_positivePowerTrunc_le_of_pow
-    (exp a * exp b * exp c - 1) (expMulMulTerm a b c) n
-    (fun k hk ↦ norm_exp_mul_exp_mul_exp_sub_one_pow_sub_positivePowerTrunc_le a b c habc k n hk)
-  apply h.trans
-  exact le_trans (mul_le_mul_of_nonneg_right (sum_norm_logCoeff_le n) (by positivity))
-    (by rw [mul_assoc])
+  simpa [funext (expListTerm_triple a b c), mul_assoc, add_assoc] using
+    norm_logPartialSum_prod_exp_sub_sum_le [a, b, c] (by simpa [add_assoc] using habc) n
 
 /-- The logarithm of a small three-factor product has a uniform finite homogeneous approximation. -/
 theorem norm_log_exp_mul_exp_mul_exp_sub_sum_le (a b c : A)

@@ -110,30 +110,21 @@ lemma partialTraceRight_lift (d : Φ.Dilation E) (R : Qudit) :
     (Operator.partialTraceRight : Superoperator (K ⊗ (E ⊗ R)) K) ∘ₗ
         Superoperator.conjugate (d.lift R).hom =
       Φ.toSuperoperator ∘ₗ (Operator.partialTraceRight : Superoperator (H ⊗ R) H) := by
+  change ((partialTraceRight K (E ⊗ R)).comp (ofIsometry (d.lift R))).toSuperoperator =
+    (Φ.comp (partialTraceRight H R)).toSuperoperator
   dsimp only [lift]
-  rw [hom_comp, Superoperator.conjugate_comp, hom_hom_associator,
-    ← TensorProduct.toLinearEquiv_assocIsometry,
-    ← Superoperator.relabel_eq_conjugate (H := (K ⊗ E) ⊗ R) (K := K ⊗ (E ⊗ R))
-      (TensorProduct.assocIsometry ℂ K.state E.state R.state),
-    ← LinearMap.comp_assoc, Superoperator.partialTraceRight_relabel_assoc,
-    LinearMap.comp_assoc, hom_tensorHom, hom_id, Superoperator.conjugate_tensor,
-    Superoperator.conjugate_id, Superoperator.partialTraceRight_tensor_id,
-    ← LinearMap.comp_assoc, ← d.channel_eq]
+  rw [ofIsometry_comp, ← comp_assoc, partialTraceRight_comp_associator,
+    comp_assoc, ofIsometry_tensor, partialTraceRight_comp_tensor, ← comp_assoc, ← d.channel_eq_comp]
 
 /-- The other marginal is the complementary channel with the reference left untouched. -/
 lemma partialTraceLeft_lift (d : Φ.Dilation E) (R : Qudit) :
     (Operator.partialTraceLeft : Superoperator (K ⊗ (E ⊗ R)) (E ⊗ R)) ∘ₗ
         Superoperator.conjugate (d.lift R).hom =
       (d.complementary.tensor (id R)).toSuperoperator := by
+  change ((partialTraceLeft K (E ⊗ R)).comp (ofIsometry (d.lift R))).toSuperoperator = _
   dsimp only [lift]
-  rw [hom_comp, Superoperator.conjugate_comp, hom_hom_associator,
-    ← TensorProduct.toLinearEquiv_assocIsometry,
-    ← Superoperator.relabel_eq_conjugate (H := (K ⊗ E) ⊗ R) (K := K ⊗ (E ⊗ R))
-      (TensorProduct.assocIsometry ℂ K.state E.state R.state),
-    ← LinearMap.comp_assoc, Superoperator.partialTraceLeft_relabel_assoc,
-    hom_tensorHom, hom_id, Superoperator.conjugate_tensor, Superoperator.conjugate_id,
-    ← Superoperator.tensor_comp, LinearMap.id_comp]
-  rfl
+  rw [ofIsometry_comp, ← comp_assoc, partialTraceLeft_comp_associator,
+    ofIsometry_tensor, ofIsometry_id, ← tensor_comp, id_comp, complementary]
 
 /-- A lifted pure state purifies the channel output on its input marginal. -/
 lemma partialTraceRight_pure_lift (d : Φ.Dilation E) {R : Qudit}

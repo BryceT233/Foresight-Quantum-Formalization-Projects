@@ -278,6 +278,11 @@ lemma real_exp_sub_one_pow_le_of_le {s t : ℝ} (hs : 0 ≤ s) (hst : s ≤ t)
       (pow_le_pow_left₀ (by positivity) (add_le_add (le_refl (1 : ℝ)) hst) n)
       (pow_nonneg hs n)
 
+/-- On the unit interval the exponential increment is at most twice the input. -/
+lemma real_exp_sub_one_le_two_mul {s : ℝ} (hs : 0 ≤ s) (hs1 : s ≤ 1) :
+    Real.exp s - 1 ≤ 2 * s := by
+  simpa only [pow_one, one_add_one_eq_two] using real_exp_sub_one_pow_le_of_le hs hs1 le_rfl 1
+
 /-! ### Taylor remainders in a normed algebra
 
 The low-order cases of `norm_exp_sub_sum_le` written in the form every caller uses: the remainder

@@ -70,7 +70,19 @@ lemma tensor_induction_on {H K : Qudit} (A : Operator (H ⊗ K))
   obtain ⟨x, rfl⟩ := (tensorEquiv H K).surjective A
   induction x using TensorProduct.inductionOn with
   | tmul B C => exact htensor B C
-  | add x y hx hy => rw [map_add]; exact hadd _ _ hx hy
+  | add x y hx hy => simpa only [map_add] using hadd _ _ hx hy
+
+/-- Linear maps on a left-associated triple are determined on triple product operators. -/
+lemma tensor_ext_threefold {H K L : Qudit} {V : Type*} [AddCommGroup V] [Module ℂ V]
+    {f g : Operator ((H ⊗ K) ⊗ L) →ₗ[ℂ] V}
+    (h : ∀ A B C, f (tensor (tensor A B) C) = g (tensor (tensor A B) C)) : f = g := by
+  apply tensor_ext
+  intro AB C
+  induction AB using tensor_induction_on with
+  | htensor A B => exact h A B C
+  | hadd A B hA hB =>
+    simpa only [tensor, ← TensorProduct.mapBilinear_apply, map_add, LinearMap.add_apply] using
+      congrArg₂ (· + ·) hA hB
 
 end Operator
 
@@ -226,17 +238,23 @@ lemma relabel_assoc_tensor (A : Operator H) (B : Operator K) (C : Operator L) :
     relabel (TensorProduct.assocIsometry ℂ H.state K.state L.state)
       (Operator.tensor (Operator.tensor A B) C) =
       Operator.tensor A (Operator.tensor B C) := by
-  apply TensorProduct.ext'
-  intro x yz
-  induction yz using TensorProduct.inductionOn with
-  | tmul y z =>
-    change (TensorProduct.assoc ℂ H.state K.state L.state)
-      (TensorProduct.map (TensorProduct.map A B) C
-        ((TensorProduct.assoc ℂ H.state K.state L.state).symm (x ⊗ₜ (y ⊗ₜ z)))) = _
-    rw [TensorProduct.assoc_symm_tmul, TensorProduct.map_tmul,
-      TensorProduct.map_tmul, TensorProduct.assoc_tmul]
-    rfl
-  | add u v hu hv => simp_all [TensorProduct.tmul_add]
+  apply LinearMap.ext
+  intro x
+  change (TensorProduct.assoc ℂ H.state K.state L.state)
+    (TensorProduct.map (TensorProduct.map A B) C
+      ((TensorProduct.assoc ℂ H.state K.state L.state).symm x)) = _
+  rw [← TensorProduct.map_map_assoc, LinearEquiv.apply_symm_apply]
+  rfl
+
+/-- Reassociation commutes with the tensor product of three superoperators. -/
+lemma relabel_assoc_comp_tensor (Φ : Superoperator H K) (Ψ : Superoperator L M)
+    (Γ : Superoperator N P) :
+    relabel (TensorProduct.assocIsometry ℂ K.state M.state P.state) ∘ₗ tensor (tensor Φ Ψ) Γ =
+      tensor Φ (tensor Ψ Γ) ∘ₗ
+        relabel (TensorProduct.assocIsometry ℂ H.state L.state N.state) := by
+  apply Operator.tensor_ext_threefold
+  intro A B C
+  simp only [LinearMap.comp_apply, tensor_apply, relabel_assoc_tensor]
 
 /-- Discarding a composite right factor agrees with two successive partial traces. -/
 lemma partialTraceRight_relabel_assoc (H K L : Qudit) :
@@ -244,16 +262,10 @@ lemma partialTraceRight_relabel_assoc (H K L : Qudit) :
         relabel (TensorProduct.assocIsometry ℂ H.state K.state L.state) =
       (Operator.partialTraceRight : Superoperator (H ⊗ K) H) ∘ₗ
         (Operator.partialTraceRight : Superoperator ((H ⊗ K) ⊗ L) (H ⊗ K)) := by
-  apply Operator.tensor_ext
-  intro A C
-  induction A using Operator.tensor_induction_on with
-  | htensor A B =>
-    simp only [LinearMap.comp_apply, relabel_assoc_tensor,
-      Operator.partialTraceRight_tensor, Operator.trace_tensor, map_smul,
-      smul_smul, mul_comm]
-  | hadd A B hA hB =>
-    simpa only [Operator.tensor, ← TensorProduct.mapBilinear_apply, map_add,
-      LinearMap.add_apply] using congrArg₂ (· + ·) hA hB
+  apply Operator.tensor_ext_threefold
+  intro A B C
+  simp only [LinearMap.comp_apply, relabel_assoc_tensor, Operator.partialTraceRight_tensor,
+    Operator.trace_tensor, map_smul, smul_smul, mul_comm]
 
 /-- Discarding the first factor after reassociation retains the other two factors. -/
 lemma partialTraceLeft_relabel_assoc (H K L : Qudit) :
@@ -261,33 +273,24 @@ lemma partialTraceLeft_relabel_assoc (H K L : Qudit) :
         relabel (TensorProduct.assocIsometry ℂ H.state K.state L.state) =
       tensor (Operator.partialTraceLeft : Superoperator (H ⊗ K) K)
         (LinearMap.id : Superoperator L L) := by
-  apply Operator.tensor_ext
-  intro A C
-  induction A using Operator.tensor_induction_on with
-  | htensor A B =>
-    simp only [LinearMap.comp_apply, relabel_assoc_tensor, tensor_apply,
-      Operator.partialTraceLeft_tensor, LinearMap.id_apply]
-    exact (TensorProduct.map_smul_left _ _ _).symm
-  | hadd A B hA hB =>
-    simpa only [Operator.tensor, ← TensorProduct.mapBilinear_apply, map_add,
-      LinearMap.add_apply] using congrArg₂ (· + ·) hA hB
+  apply Operator.tensor_ext_threefold
+  intro A B C
+  simp only [LinearMap.comp_apply, relabel_assoc_tensor, tensor_apply,
+    Operator.partialTraceLeft_tensor, LinearMap.id_apply]
+  exact (TensorProduct.map_smul_left _ _ _).symm
 
 /-- Inverse reassociation of operator products. -/
 lemma relabel_assoc_symm_tensor (A : Operator H) (B : Operator K) (C : Operator L) :
     relabel (TensorProduct.assocIsometry ℂ H.state K.state L.state).symm
       (Operator.tensor A (Operator.tensor B C)) =
       Operator.tensor (Operator.tensor A B) C := by
-  apply TensorProduct.ext'
-  intro xy z
-  induction xy using TensorProduct.inductionOn with
-  | tmul x y =>
-    change (TensorProduct.assoc ℂ H.state K.state L.state).symm
-      (TensorProduct.map A (TensorProduct.map B C)
-        ((TensorProduct.assoc ℂ H.state K.state L.state) ((x ⊗ₜ y) ⊗ₜ z))) = _
-    rw [TensorProduct.assoc_tmul, TensorProduct.map_tmul,
-      TensorProduct.map_tmul, TensorProduct.assoc_symm_tmul]
-    rfl
-  | add u v hu hv => simp_all [TensorProduct.add_tmul]
+  apply LinearMap.ext
+  intro x
+  change (TensorProduct.assoc ℂ H.state K.state L.state).symm
+    (TensorProduct.map A (TensorProduct.map B C)
+      ((TensorProduct.assoc ℂ H.state K.state L.state) x)) = _
+  rw [← TensorProduct.map_map_assoc_symm, LinearEquiv.symm_apply_apply]
+  rfl
 
 /-- Tensoring identities on two ancillary factors agrees with reassociation. -/
 lemma tensor_id_assoc (Φ : Superoperator H K) (L M : Qudit) :
@@ -296,15 +299,10 @@ lemma tensor_id_assoc (Φ : Superoperator H K) (L M : Qudit) :
       relabel (TensorProduct.assocIsometry ℂ K.state L.state M.state).symm ∘ₗ
         tensor Φ (LinearMap.id : Superoperator (L ⊗ M) (L ⊗ M)) ∘ₗ
         relabel (TensorProduct.assocIsometry ℂ H.state L.state M.state) := by
-  apply Operator.tensor_ext
-  intro A C
-  induction A using Operator.tensor_induction_on with
-  | htensor A B =>
-    simp only [tensor_apply, LinearMap.id_apply, LinearMap.comp_apply,
-      relabel_assoc_tensor, relabel_assoc_symm_tensor]
-  | hadd A B hA hB =>
-    simpa only [Operator.tensor, ← TensorProduct.mapBilinear_apply, map_add,
-      LinearMap.add_apply] using congrArg₂ (· + ·) hA hB
+  apply Operator.tensor_ext_threefold
+  intro A B C
+  simp only [tensor_apply, LinearMap.id_apply, LinearMap.comp_apply,
+    relabel_assoc_tensor, relabel_assoc_symm_tensor]
 
 /-- Tensoring on the left is tensoring on the right conjugated by swaps. -/
 lemma id_tensor_eq_comm (Φ : Superoperator H K) (L : Qudit) :

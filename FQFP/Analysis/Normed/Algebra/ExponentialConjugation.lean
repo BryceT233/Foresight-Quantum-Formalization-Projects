@@ -28,6 +28,8 @@ expansion and norm bounds of the single conjugation `exp (τ • A) * X * exp (-
   `expSMulConj A X τ - X = ∫₀^τ expSMulConj A ⁅A, X⁆ s ds`.
 * `iteratedDeriv_expSMulConj_zero`: `iteratedDeriv j (expSMulConj A X) 0 = adPow A j X`.
 * `expSMulConj_taylor`: the single-layer Taylor expansion with integral remainder.
+* `isometry_expSMulConj_of_le_one`: conjugation preserves distances under two-sided
+  exponential contraction bounds.
 * `norm_expSMulConj_le`, `norm_expSMulConj_remainder_le`: norm bounds for the conjugation
   and its remainder (theory.tex:151-155).
 * `norm_expSMulConj_eq_of_skewAdjoint`: the conjugation preserves the norm when the
@@ -300,40 +302,22 @@ theorem norm_exp_smul_mul_eq_of_le_one {𝔸 : Type*} [NormedRing 𝔸]
     [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸)
     (hA : ∀ t : ℝ, ‖exp (t • A)‖ ≤ 1) (t : ℝ) :
     ‖exp (t • A) * X‖ = ‖X‖ := by
-  have hinv : exp ((-t) • A) * exp (t • A) = 1 := by
-    simpa only [neg_smul] using exp_neg_mul_self (t • A)
-  apply le_antisymm
-  · calc
-      ‖exp (t • A) * X‖ ≤ ‖exp (t • A)‖ * ‖X‖ := norm_mul_le _ _
-      _ ≤ 1 * ‖X‖ := mul_le_mul_of_nonneg_right (hA t) (norm_nonneg X)
-      _ = ‖X‖ := one_mul _
-  · calc
-      ‖X‖ = ‖exp ((-t) • A) * (exp (t • A) * X)‖ := by
-        rw [← mul_assoc, hinv, one_mul]
-      _ ≤ ‖exp ((-t) • A)‖ * ‖exp (t • A) * X‖ := norm_mul_le _ _
-      _ ≤ 1 * ‖exp (t • A) * X‖ :=
-        mul_le_mul_of_nonneg_right (hA (-t)) (norm_nonneg _)
-      _ = ‖exp (t • A) * X‖ := one_mul _
+  have bound (s : ℝ) (Y : 𝔸) : ‖exp (s • A) * Y‖ ≤ ‖Y‖ := by
+    simpa only [one_mul] using norm_mul_le_of_le (hA s) (le_refl ‖Y‖)
+  refine le_antisymm (bound t X) ?_
+  simpa only [← mul_assoc, neg_smul, exp_neg_mul_self, one_mul] using
+    bound (-t) (exp (t • A) * X)
 
 /-- A two-sided contraction bound for the exponential makes right multiplication isometric. -/
 theorem norm_mul_exp_smul_eq_of_le_one {𝔸 : Type*} [NormedRing 𝔸]
     [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸)
     (hA : ∀ t : ℝ, ‖exp (t • A)‖ ≤ 1) (t : ℝ) :
     ‖X * exp (t • A)‖ = ‖X‖ := by
-  have hinv : exp (t • A) * exp ((-t) • A) = 1 := by
-    simpa only [neg_smul] using exp_mul_neg_self (t • A)
-  apply le_antisymm
-  · calc
-      ‖X * exp (t • A)‖ ≤ ‖X‖ * ‖exp (t • A)‖ := norm_mul_le _ _
-      _ ≤ ‖X‖ * 1 := mul_le_mul_of_nonneg_left (hA t) (norm_nonneg X)
-      _ = ‖X‖ := mul_one _
-  · calc
-      ‖X‖ = ‖(X * exp (t • A)) * exp ((-t) • A)‖ := by
-        rw [mul_assoc, hinv, mul_one]
-      _ ≤ ‖X * exp (t • A)‖ * ‖exp ((-t) • A)‖ := norm_mul_le _ _
-      _ ≤ ‖X * exp (t • A)‖ * 1 :=
-        mul_le_mul_of_nonneg_left (hA (-t)) (norm_nonneg _)
-      _ = ‖X * exp (t • A)‖ := mul_one _
+  have bound (s : ℝ) (Y : 𝔸) : ‖Y * exp (s • A)‖ ≤ ‖Y‖ := by
+    simpa only [mul_one] using norm_mul_le_of_le (le_refl ‖Y‖) (hA s)
+  refine le_antisymm (bound t X) ?_
+  simpa only [mul_assoc, neg_smul, exp_mul_neg_self, mul_one] using
+    bound (-t) (X * exp (t • A))
 
 /-- Two-sided exponential bounds give an isometric conjugation in a normed algebra. -/
 theorem norm_expSMulConj_eq_of_le_one {𝔸 : Type*} [NormedRing 𝔸]
@@ -342,5 +326,14 @@ theorem norm_expSMulConj_eq_of_le_one {𝔸 : Type*} [NormedRing 𝔸]
     ‖expSMulConj A X t‖ = ‖X‖ := by
   rw [expSMulConj, norm_mul_exp_smul_eq_of_le_one A _ hA (-t),
     norm_exp_smul_mul_eq_of_le_one A X hA t]
+
+/-- At fixed time, conjugation preserves distances if the exponential is contractive
+for all real times. -/
+theorem isometry_expSMulConj_of_le_one {𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A : 𝔸)
+    (hA : ∀ t : ℝ, ‖exp (t • A)‖ ≤ 1) (t : ℝ) :
+    Isometry (fun X ↦ expSMulConj A X t) :=
+  AddMonoidHomClass.isometry_of_norm (expSMulConjLin A t) fun X ↦
+    norm_expSMulConj_eq_of_le_one A X hA t
 
 end TrotterError

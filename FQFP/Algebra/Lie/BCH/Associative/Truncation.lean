@@ -140,20 +140,50 @@ theorem bch_quintic_truncation_eq (a b : A) :
     ← mul_assoc]
   module
 
+/-- The BCH truncation through degree five as a weighted sum of homogeneous powers. -/
+theorem bch_quintic_truncation_eq_sum_positivePowerTrunc (a b : A) :
+    (a + b) + (2 : ℚ)⁻¹ • (a * b - b * a) + bchCubicTerm a b +
+      bchQuarticTerm a b + bchQuinticTerm a b =
+      ∑ k ∈ range 6, logCoeff k • positivePowerTrunc (expMulTerm a b) k 6 := by
+  rw [bch_quintic_truncation_eq]
+  have h₁ : expMulTerm a b 1 = bchZ a b := expMulTerm_one a b
+  norm_num [positivePowerTrunc, sum_range_succ, logCoeff, h₁, expMulTerm_two,
+    expMulTerm_three, expMulTerm_four, expMulTerm_five]
+  simp only [bchY35, bchY45, pow_succ, pow_zero, one_mul, mul_add, smul_add, ← mul_assoc]
+  module
+
+/-- The degree-six logarithm component is the sextic BCH polynomial. -/
+lemma bchSexticTerm_eq_sum_positivePowerCoeff (a b : A) :
+    bchSexticTerm a b = ∑ k ∈ range 7, logCoeff k • positivePowerCoeff (expMulTerm a b) k 6 := by
+  rw [← sub_eq_zero.mp (septic_pure_identity a b)]
+  have h₁ : expMulTerm a b 1 = bchZ a b := expMulTerm_one a b
+  norm_num only [sum_range_succ, sum_range_zero, logCoeff, zero_smul, one_smul, add_zero, zero_add,
+    positivePowerCoeff_self, positivePowerCoeff_one, positivePowerCoeff_add_two, Nat.reduceAdd,
+    Nat.reduceSub, h₁, expMulTerm_two, expMulTerm_three, expMulTerm_four, expMulTerm_five,
+    expMulTerm_six]
+  simp only [bchW6, bchY36, bchY46, bchY56, pow_succ, pow_zero, one_mul, mul_add,
+    smul_add, smul_sub, two_smul, ← mul_assoc]
+  module
+
 /-- The BCH truncation through degree six is the finite logarithm of homogeneous powers. -/
 theorem bch_sextic_truncation_eq (a b : A) :
     (a + b) + (2 : ℚ)⁻¹ • (a * b - b * a) + bchCubicTerm a b +
       bchQuarticTerm a b + bchQuinticTerm a b + bchSexticTerm a b =
       ∑ k ∈ range 7, logCoeff k • positivePowerTrunc (expMulTerm a b) k 7 := by
-  rw [← sub_eq_zero.mp (septic_pure_identity a b), bch_quintic_truncation_eq]
+  rw [sum_smul_positivePowerTrunc_succ logCoeff (expMulTerm a b) 6,
+    ← bch_quintic_truncation_eq_sum_positivePowerTrunc, ← bchSexticTerm_eq_sum_positivePowerCoeff]
+
+/-- The degree-seven logarithm component is the septic BCH polynomial. -/
+lemma bchSepticTerm_eq_sum_positivePowerCoeff (a b : A) :
+    bchSepticTerm a b = ∑ k ∈ range 8, logCoeff k • positivePowerCoeff (expMulTerm a b) k 7 := by
+  rw [← sub_eq_zero.mp (octic_pure_identity a b)]
   have h₁ : expMulTerm a b 1 = bchZ a b := expMulTerm_one a b
-  simp only [sum_range_succ, sum_range_zero, zero_add]
-  norm_num only [positivePowerTrunc, sum_range_succ, sum_range_zero, add_zero, zero_add,
-    ite_true, ite_false, Nat.reduceSub, Nat.reduceAdd, logCoeff, h₁,
-    expMulTerm_two, expMulTerm_three, expMulTerm_four, expMulTerm_five, expMulTerm_six]
-  unfold bchW6 bchY36 bchY46 bchY56 bchY35 bchY45
-  simp only [pow_succ, pow_zero, one_mul, mul_one, mul_add, smul_add, smul_sub,
-    two_smul, ← mul_assoc]
+  norm_num only [sum_range_succ, sum_range_zero, logCoeff, zero_smul, one_smul, add_zero, zero_add,
+    positivePowerCoeff_self, positivePowerCoeff_one, positivePowerCoeff_add_two, Nat.reduceAdd,
+    Nat.reduceSub, h₁, expMulTerm_two, expMulTerm_three, expMulTerm_four, expMulTerm_five,
+    expMulTerm_six, expMulTerm_seven]
+  simp only [bchW7, bchY37, bchY47, bchY57, bchY67, pow_succ, pow_zero, one_mul, mul_add,
+    smul_add, smul_sub, two_smul, ← mul_assoc]
   module
 
 /-- The BCH truncation through degree seven is the finite logarithm of homogeneous powers. -/
@@ -161,17 +191,8 @@ theorem bch_septic_truncation_eq (a b : A) :
     (a + b) + (2 : ℚ)⁻¹ • (a * b - b * a) + bchCubicTerm a b + bchQuarticTerm a b +
       bchQuinticTerm a b + bchSexticTerm a b + bchSepticTerm a b =
       ∑ k ∈ range 8, logCoeff k • positivePowerTrunc (expMulTerm a b) k 8 := by
-  rw [← sub_eq_zero.mp (octic_pure_identity a b), bch_sextic_truncation_eq]
-  have h₁ : expMulTerm a b 1 = bchZ a b := expMulTerm_one a b
-  simp only [sum_range_succ, sum_range_zero, zero_add]
-  norm_num only [positivePowerTrunc, sum_range_succ, sum_range_zero, add_zero, zero_add,
-    ite_true, ite_false, Nat.reduceSub, Nat.reduceAdd, logCoeff, h₁,
-    expMulTerm_two, expMulTerm_three, expMulTerm_four, expMulTerm_five, expMulTerm_six,
-    expMulTerm_seven]
-  unfold bchW7 bchY37 bchY47 bchY57 bchY67
-  simp only [pow_succ, pow_zero, one_mul, mul_one, mul_add, smul_add, smul_sub,
-    two_smul, ← mul_assoc]
-  module
+  rw [sum_smul_positivePowerTrunc_succ logCoeff (expMulTerm a b) 7,
+    ← bch_sextic_truncation_eq, ← bchSepticTerm_eq_sum_positivePowerCoeff]
 
 /-! ### The degree-eight logarithm increment -/
 

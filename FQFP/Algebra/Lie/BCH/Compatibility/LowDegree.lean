@@ -47,6 +47,22 @@ theorem bchLieCoeff_four_eq_bchQuarticTerm (a b : A) :
   simp only [bchQuarticTerm, Ring.lie_def, mul_sub, sub_mul, ← mul_assoc]
   module
 
+/-- The logarithm truncated through degree three is the cubic BCH polynomial. -/
+theorem bch_cubic_truncation_eq_sum_positivePowerTrunc (a b : A) :
+    (a + b) + (2 : ℚ)⁻¹ • (a * b - b * a) + bchCubicTerm a b =
+      ∑ k ∈ Finset.range 4, logCoeff k • positivePowerTrunc (expMulTerm a b) k 4 := by
+  rw [sum_logCoeff_positivePowerTrunc_eq_sum_bchLieCoeff]
+  simp [Finset.sum_range_succ, bchLieCoeff_two, bchLieCoeff_three_eq_bchCubicTerm, Ring.lie_def]
+
+/-- The logarithm truncated through degree four adds the quartic BCH coefficient. -/
+theorem bch_quartic_truncation_eq_sum_positivePowerTrunc (a b : A) :
+    (a + b) + (2 : ℚ)⁻¹ • (a * b - b * a) + bchCubicTerm a b + bchQuarticTerm a b =
+      ∑ k ∈ Finset.range 5, logCoeff k • positivePowerTrunc (expMulTerm a b) k 5 := by
+  rw [bch_cubic_truncation_eq_sum_positivePowerTrunc,
+    sum_logCoeff_positivePowerTrunc_eq_sum_bchLieCoeff a b 4,
+    sum_logCoeff_positivePowerTrunc_eq_sum_bchLieCoeff a b 5,
+    Finset.sum_range_succ (n := 4), bchLieCoeff_four_eq_bchQuarticTerm]
+
 /-- The sixth logarithm coefficient is the fixed conjugation expression in Lie brackets. -/
 theorem expListLogCoeff_pair_six_eq_lieTerm (a b : A) :
     expListLogCoeff [a, b] 6 = bchSexticLieTerm a b := by

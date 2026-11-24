@@ -186,23 +186,11 @@ theorem norm_groupedConj_sub_sum_le {𝔸 : Type*} [NormedRing 𝔸]
       change ‖(expSMulConj (A (Fin.last s)) (groupedConj A' K' B x) x + _) -
         (Q + _)‖ ≤ |x| ^ p * (groupedConjBound A' K' B p + _)
       rw [add_sub_add_right_eq_sub]
-      calc
-        _ ≤ ‖expSMulConj (A (Fin.last s)) (groupedConj A' K' B x) x -
-              expSMulConj (A (Fin.last s)) P x‖ +
-            ‖expSMulConj (A (Fin.last s)) P x - Q‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-        _ ≤ |x| ^ p * groupedConjBound A' K' B p +
-            |x| ^ p * ∑ k ∈ range p,
-              ‖adPow (A (Fin.last s)) (p - k) (groupedConjCoeff A' K' B k)‖ /
-                (Nat.factorial (p - k) : ℝ) := by
-          apply add_le_add
-          · change ‖expSMulConjLin (A (Fin.last s)) x (groupedConj A' K' B x) -
-              expSMulConjLin (A (Fin.last s)) x P‖ ≤ _
-            rw [← (expSMulConjLin (A (Fin.last s)) x).map_sub]
-            change ‖expSMulConj (A (Fin.last s)) (groupedConj A' K' B x - P) x‖ ≤ _
-            rw [norm_expSMulConj_eq_of_le_one _ _ (hA (Fin.last s))]
-            exact ih A' K' (fun i ↦ hA i.castSucc)
-          · exact norm_expSMulConj_sum_sub_sum_le _ _ (hA (Fin.last s)) p x
-        _ = _ := (mul_add ..).symm
+      refine (norm_sub_le_norm_sub_add_norm_sub _ (expSMulConj (A (Fin.last s)) P x) Q).trans ?_
+      rw [← dist_eq_norm, (isometry_expSMulConj_of_le_one _ (hA (Fin.last s)) x).dist_eq,
+        dist_eq_norm, mul_add]
+      exact add_le_add (ih A' K' (fun i ↦ hA i.castSucc))
+        (norm_expSMulConj_sum_sub_sum_le _ _ (hA (Fin.last s)) p x)
 
 /-- The remainder bound for skew-adjoint generators in any complete real C*-algebra. -/
 theorem norm_groupedConj_sub_sum_le_of_skewAdjoint {𝔸 : Type*} [NormedRing 𝔸]

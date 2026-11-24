@@ -99,6 +99,7 @@ public import FQFP.Analysis.Normed.Algebra.BCH.SymmetricLieBounds
 public import FQFP.Analysis.Normed.Algebra.BCH.SymmetricQuintic
 public import FQFP.Analysis.Normed.Algebra.BCH.SymmetricSeptic
 public import FQFP.Analysis.Normed.Algebra.BCH.TermBounds
+public import FQFP.Analysis.Normed.Algebra.BCH.Truncation
 public import FQFP.Analysis.Normed.Algebra.BinaryWord
 public import FQFP.Analysis.Normed.Algebra.Commutator
 public import FQFP.Analysis.Normed.Algebra.ConjugationIntegral
@@ -106,6 +107,7 @@ public import FQFP.Analysis.Normed.Algebra.Exponential
 public import FQFP.Analysis.Normed.Algebra.ExponentialCalculus
 public import FQFP.Analysis.Normed.Algebra.ExponentialConjugation
 public import FQFP.Analysis.Normed.Algebra.ExponentialList
+public import FQFP.Analysis.Normed.Algebra.ExponentialListBounds
 public import FQFP.Analysis.Normed.Algebra.ExponentialListSeries
 public import FQFP.Analysis.Normed.Algebra.ExponentialProduct
 public import FQFP.Analysis.Normed.Algebra.ExponentialProductTriple

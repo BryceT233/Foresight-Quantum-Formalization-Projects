@@ -105,6 +105,11 @@ private lemma eval_mul_row (f : R →+* K) (letters : κ → A) (p : List κ × 
       simp only [List.map_cons, eval_cons, ih, mul_add, map_mul,
         List.map_append, List.prod_append, smul_mul_smul_comm]
 
+/-- Prepending a letter to every word multiplies the evaluation on the left. -/
+lemma eval_map_cons (f : R →+* K) (letters : κ → A) (a : κ) (t : Table R κ) :
+    eval f letters (t.map fun p ↦ (a :: p.1, p.2)) = letters a * eval f letters t := by
+  simpa using eval_mul_row f letters ([a], 1) t
+
 /-- Evaluation preserves table multiplication without commuting the letters. -/
 lemma eval_mul (f : R →+* K) (letters : κ → A) (s t : Table R κ) :
     eval f letters (mul s t) = eval f letters s * eval f letters t := by

@@ -75,9 +75,10 @@ theorem quinticGlobalRemainder_le_pow_six {ℓ C alpha J t h : ℝ} {r : ℕ}
     calc
       _ ≤ h ^ 5 * ℓ + h ^ 7 * C := min_le_right _ _
       _ ≤ h ^ 5 * ℓ + h ^ 5 * C := by
-        exact add_le_add le_rfl (mul_le_mul_of_nonneg_right
-          (pow_le_pow_of_le_one hh hh1 (by decide : 5 ≤ 7)) hC)
+        gcongr h ^ 5 * ℓ + ?_ * C
+        exact pow_le_pow_of_le_one hh hh1 (by decide : 5 ≤ 7)
       _ = _ := by ring
+  have hpow {k : ℕ} (hk : 6 ≤ k) : h ^ k ≤ h ^ 6 := pow_le_pow_of_le_one hh hh1 hk
   have hquad : (r : ℝ) * ((r : ℝ) - 1) / 2 * quinticStepBound ℓ C h ^ 2 ≤
       t ^ 2 / 2 * h ^ 6 * (ℓ + C) ^ 2 := by
     calc
@@ -88,22 +89,15 @@ theorem quinticGlobalRemainder_le_pow_six {ℓ C alpha J t h : ℝ} {r : ℕ}
         rw [← ht]
         ring
       _ ≤ t ^ 2 / 2 * h ^ 6 * (ℓ + C) ^ 2 := by
-        exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
-          (pow_le_pow_of_le_one hh hh1 (by decide : 6 ≤ 8)) (by positivity))
-          (sq_nonneg _)
+        gcongr t ^ 2 / 2 * ?_ * (ℓ + C) ^ 2
+        exact hpow (by decide)
   unfold quinticGlobalRemainder
   calc
     _ ≤ t * h ^ 6 * (C + 5 / 14 * alpha + J / 24) + t / 2 * h ^ 6 * ℓ ^ 2 +
         5 * t / 12 * h ^ 6 * ℓ * C + t ^ 2 / 2 * h ^ 6 * (ℓ + C) ^ 2 := by
       apply add_le_add _ hquad
-      apply add_le_add
-      · apply add_le_add le_rfl
-        exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
-          (pow_le_pow_of_le_one hh hh1 (by decide : 6 ≤ 9)) (by positivity))
-          (sq_nonneg _)
-      · exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
-          (mul_le_mul_of_nonneg_left
-            (pow_le_pow_of_le_one hh hh1 (by decide : 6 ≤ 11)) (by positivity)) hℓ) hC
+      gcongr t * h ^ 6 * _ + t / 2 * ?_ * ℓ ^ 2 + 5 * t / 12 * ?_ * ℓ * C <;>
+        exact hpow (by decide)
     _ = _ := by ring
 
 /-- At fixed nonnegative time, the sixth-power remainder bound holds
@@ -121,5 +115,15 @@ theorem eventually_quinticGlobalRemainder_le_pow_six {ℓ C t : ℝ} (alpha J : 
     (div_nonneg ht (Nat.cast_nonneg r)) hsmall.le hr
   have hr0 : (r : ℝ) ≠ 0 := by exact_mod_cast (show r ≠ 0 by lia)
   exact mul_div_cancel₀ t hr0
+
+/-- A sequence bounded by the quintic global remainder at positive step counts
+is eventually bounded by a constant times the sixth power of the step size. -/
+lemma exists_eventually_le_pow_six_of_le_quinticGlobalRemainder
+    {f : ℕ → ℝ} {ℓ C alpha J t : ℝ} (hℓ : 0 ≤ ℓ) (hC : 0 ≤ C) (ht : 0 ≤ t)
+    (hf : ∀ n : ℕ, 1 ≤ n → f n ≤ quinticGlobalRemainder ℓ C alpha J t (t / n) n) :
+    ∃ B : ℝ, ∀ᶠ n : ℕ in Filter.atTop, f n ≤ (t / n) ^ 6 * B := by
+  have hbound := eventually_quinticGlobalRemainder_le_pow_six alpha J hℓ hC ht
+  exact ⟨_, ((Filter.eventually_ge_atTop 1).and hbound).mono fun n ⟨hn, hrem⟩ ↦
+    (hf n hn).trans hrem⟩
 
 end FQFP

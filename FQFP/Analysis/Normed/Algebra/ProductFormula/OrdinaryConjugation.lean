@@ -50,6 +50,13 @@ theorem norm_list_exp_conj_eq_of_le_one {ι : Type*} (A : ι → 𝔸)
             simp only [expSMulConj, mul_assoc]]
       rw [ih, norm_expSMulConj_eq_of_le_one (A i) B (hA i) t]
 
+/-- An ordered conjugation by a finite family of contractive exponential groups
+preserves the norm. -/
+theorem norm_multiConj_eq_of_le_one {s : ℕ} (A : Fin s → 𝔸) (B : 𝔸)
+    (hA : ∀ i (t : ℝ), ‖exp (t • A i)‖ ≤ 1) (t : ℝ) : ‖multiConj A B t‖ = ‖B‖ := by
+  simpa only [multiConj, List.map_ofFn, Function.comp_def] using
+    norm_list_exp_conj_eq_of_le_one A hA (List.ofFn fun i ↦ i) B t
+
 /-- A finite conjugation remainder term has its exact multinomial weight when
 all the exponential factors are contractions in both time directions. -/
 theorem norm_commutatorRemainderTerm_le_of_le_one {s : ℕ}

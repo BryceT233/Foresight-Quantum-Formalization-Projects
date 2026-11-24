@@ -153,26 +153,9 @@ lemma assoc_natural {H K L H' K' L' : CPQudit}
     ((f ⊗ₘ g) ⊗ₘ h) ≫ (α_ H' K' L').hom =
       (α_ H K L).hom ≫ (f ⊗ₘ (g ⊗ₘ h)) := by
   apply hom_ext
-  obtain ⟨n, a, ha⟩ := f.completelyPositive.exists_kraus
-  obtain ⟨m, b, hb⟩ := g.completelyPositive.exists_kraus
-  obtain ⟨k, c, hc⟩ := h.completelyPositive.exists_kraus
-  apply LinearMap.ext
-  intro A
-  simp only [hom_comp, hom_tensor, ha, hb, hc, Superoperator.kraus,
-    Superoperator.tensor_sum_left, Superoperator.tensor_sum_right,
-    LinearMap.comp_apply, LinearMap.sum_apply, map_sum]
-  apply Finset.sum_congr rfl
-  intro i _
-  apply Finset.sum_congr rfl
-  intro j _
-  apply Finset.sum_congr rfl
-  intro l _
-  have e := congrArg (fun f => (pure.map f).toSuperoperator A)
-    (associator_naturality (ofHom (a l) : H.toQudit ⟶ H'.toQudit)
-      (ofHom (b j) : K.toQudit ⟶ K'.toQudit) (ofHom (c i) : L.toQudit ⟶ L'.toQudit))
-  simp only [pure.map_comp, pure_tensor] at e
-  dsimp only [pure, tensor] at e
-  convert e using 1 <;> rfl
+  simpa only [hom_comp, hom_tensor, hom_associator, Qudit.hom_hom_associator,
+    Superoperator.relabel_eq_conjugate, TensorProduct.toLinearEquiv_assocIsometry] using
+    Superoperator.relabel_assoc_comp_tensor f.toSuperoperator g.toSuperoperator h.toSuperoperator
 
 /-- Naturality of the left unit for arbitrary CP processes. -/
 lemma left_natural {H K : CPQudit} (f : H ⟶ K) :

@@ -93,11 +93,7 @@ theorem eval_eq_zero (f : Fin 2 → A) (t : Tree) (h : isZero t = true) : eval f
 /-- Absorb a table's scale into its letter assignment. This includes zero scale. -/
 theorem eval_scale (s : ℚ) (f : Fin 2 → A) (t : WordTable.Table (Fin 2)) :
     WordTable.eval s f t = WordTable.eval 1 (fun a => s⁻¹ • f a) t := by
-  induction t with
-  | nil => rfl
-  | cons p t ih =>
-    rw [WordTable.eval_cons, WordTable.eval_cons, ih, FQFP.prod_map_smul]
-    simp [smul_smul, div_eq_mul_inv, inv_pow]
+  rw [WordTable.eval_eq_coeffWordTable, WordTable.eval_one_eq_coeffWordTable]
 
 /-- A checked prefix tree certifies the original scaled word table. -/
 theorem eval_table_eq_zero (s : ℚ) (f : Fin 2 → A) (t : WordTable.Table (Fin 2))
@@ -105,22 +101,14 @@ theorem eval_table_eq_zero (s : ℚ) (f : Fin 2 → A) (t : WordTable.Table (Fin
   rw [eval_scale, ← eval_collect]
   exact eval_eq_zero _ _ h
 
-private theorem eval_map_cons (f : Fin 2 → A) (a : Fin 2) (t : WordTable.Table (Fin 2)) :
-    WordTable.eval 1 f (t.map fun p ↦ (a :: p.1, p.2)) = f a * WordTable.eval 1 f t := by
-  induction t with
-  | nil => simp [WordTable.eval_nil]
-  | cons p t ih =>
-    rw [List.map_cons, WordTable.eval_cons, WordTable.eval_cons, ih, mul_add]
-    simp [List.map_cons, List.prod_cons]
-
 /-- Converting a coefficient tree to rows preserves its ordered polynomial. -/
 theorem eval_toTable (f : Fin 2 → A) (t : Tree) :
     WordTable.eval 1 f (toTable t) = eval f t := by
   induction t with
   | zero => rfl
   | node c l r hl hr =>
-    rw [toTable, WordTable.eval_append, WordTable.eval_append,
-      eval_map_cons, eval_map_cons, hl, hr, eval]
+    simp only [toTable, WordTable.eval_append, WordTable.eval_map_cons, inv_one, one_smul,
+      hl, hr, eval]
     by_cases hc : c = 0 <;> simp [hc, WordTable.eval_nil, WordTable.eval_singleton]
 
 /-- Collect a binary table by its word prefixes, discarding zero rows. -/

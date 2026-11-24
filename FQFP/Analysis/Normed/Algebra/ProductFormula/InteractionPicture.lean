@@ -21,8 +21,11 @@ operator sum as the leading term.
 
 ## Main results
 
+* `TrotterError.interactionIncrement_eq_mul_sub_mul`: the single-step error at the cell endpoints.
 * `TrotterError.interactionProduct_eq_contractionProduct`: the exact finite product.
 * `TrotterError.norm_interactionProduct_sub_midpoint_le`: the discrete operator bound.
+* `FQFP.norm_pow_sub_exp_eq_interaction`: equality of the physical and interaction error norms.
+* `FQFP.abs_norm_pow_sub_exp_sub_norm_le`: the operator remainder controls the norm error.
 -/
 
 @[expose] public noncomputable section
@@ -42,12 +45,19 @@ def interactionIncrement (G S : A) (h : ℝ) (k : ℕ) : A :=
 lemma one_add_interactionIncrement (G S : A) (h : ℝ) (k : ℕ) :
     1 + interactionIncrement G S h k =
       exp (-(((k : ℝ) + 1) * h) • G) * S * exp (((k : ℝ) * h) • G) := by
-  have hi : exp (-((k : ℝ) * h) • G) * exp (((k : ℝ) * h) • G) = 1 := by
-    rw [exp_smul_mul_exp_smul]
-    simp
   unfold interactionIncrement
-  rw [mul_sub, sub_mul, mul_one, hi, add_sub_cancel, ← mul_assoc,
+  rw [mul_sub, sub_mul, mul_one, exp_smul_mul_exp_smul, neg_add_cancel, zero_smul, exp_zero,
+    add_sub_cancel, ← mul_assoc,
     exp_smul_mul_exp_smul, show -((k : ℝ) * h) + -h = -(((k : ℝ) + 1) * h) by ring]
+
+/-- The increment is the single-step error multiplied by the inverse evolution at the
+right endpoint and the forward evolution at the left endpoint. -/
+lemma interactionIncrement_eq_mul_sub_mul (G S : A) (h : ℝ) (k : ℕ) :
+    interactionIncrement G S h k =
+      exp (-(((k : ℝ) + 1) * h) • G) * (S - exp (h • G)) * exp (((k : ℝ) * h) • G) := by
+  rw [mul_sub, sub_mul, ← one_add_interactionIncrement, exp_smul_mul_exp_smul,
+    exp_smul_mul_exp_smul, show -(((k : ℝ) + 1) * h) + h + (k : ℝ) * h = 0 by ring]
+  simp
 
 /-- The interaction-picture splitting power is precisely the ordered finite product. -/
 theorem interactionProduct_eq_contractionProduct (G S : A) (h : ℝ) (r : ℕ) :
@@ -58,24 +68,15 @@ theorem interactionProduct_eq_contractionProduct (G S : A) (h : ℝ) (r : ℕ) :
   · intro k
     rw [one_add_interactionIncrement]
     simp only [Nat.cast_add, Nat.cast_one]
-    have hi : exp (((k : ℝ) * h) • G) * exp (-((k : ℝ) * h) • G) = 1 := by
-      rw [exp_smul_mul_exp_smul]
-      simp
-    rw [mul_assoc, mul_assoc, ← mul_assoc (exp (((k : ℝ) * h) • G)), hi, one_mul,
-      ← mul_assoc, pow_succ', mul_assoc]
+    rw [mul_assoc, mul_assoc, ← mul_assoc (exp (((k : ℝ) * h) • G)),
+      neg_smul ((k : ℝ) * h), exp_mul_neg_self, one_mul, ← mul_assoc, pow_succ', mul_assoc]
 
 /-- Exponential norm bounds transfer the single-step norm to every transported increment. -/
 lemma norm_interactionIncrement_eq (G S : A) (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1)
     (h : ℝ) (k : ℕ) :
     ‖interactionIncrement G S h k‖ = ‖S - exp (h • G)‖ := by
-  unfold interactionIncrement
-  rw [norm_mul_exp_smul_eq_of_le_one G _ hG, norm_exp_smul_mul_eq_of_le_one G _ hG]
-  have hi : exp ((-h) • G) * exp (h • G) = 1 := by
-    rw [exp_smul_mul_exp_smul]
-    simp
-  rw [show exp ((-h) • G) * S - 1 = exp ((-h) • G) * (S - exp (h • G)) by
-    rw [mul_sub, hi]]
-  exact norm_exp_smul_mul_eq_of_le_one G _ hG _
+  rw [interactionIncrement_eq_mul_sub_mul, norm_mul_exp_smul_eq_of_le_one G _ hG,
+    norm_exp_smul_mul_eq_of_le_one G _ hG]
 
 /-- A contraction splitting and two-sided exponential controls make every factor contractive. -/
 lemma norm_one_add_interactionIncrement_le_one (G S : A)
@@ -91,23 +92,12 @@ lemma interactionIncrement_eq_midpoint_conj (G S : A) (h : ℝ) (k : ℕ) :
       expSMulConj (-G)
         (exp ((-h / 2) • G) * (S - exp (h • G)) * exp ((-h / 2) • G))
         (((k : ℝ) + 1 / 2) * h) := by
-  have hleft : -(((k : ℝ) + 1 / 2) * h) + -h / 2 = -(((k : ℝ) + 1) * h) := by ring
-  have hright : -h / 2 + ((k : ℝ) + 1 / 2) * h = (k : ℝ) * h := by ring
-  have hcenter : exp ((-h / 2) • G) * exp (h • G) * exp ((-h / 2) • G) = 1 := by
-    rw [exp_smul_mul_exp_smul, exp_smul_mul_exp_smul,
-      show -h / 2 + h + -h / 2 = 0 by ring]
-    simp
-  apply add_left_cancel (a := (1 : A))
-  rw [one_add_interactionIncrement]
+  rw [interactionIncrement_eq_mul_sub_mul]
   simp only [expSMulConj, smul_neg, ← neg_smul, neg_neg]
-  rw [mul_sub, sub_mul, hcenter, mul_sub, sub_mul, mul_one,
-    show exp (-(((k : ℝ) + 1 / 2) * h) • G) *
-      exp ((((k : ℝ) + 1 / 2) * h) • G) = 1 by
-      rw [exp_smul_mul_exp_smul]
-      simp, add_sub_cancel]
-  simp only [← mul_assoc]
-  rw [exp_smul_mul_exp_smul, hleft, mul_assoc _ S, mul_assoc _ (exp ((-h / 2) • G)),
-    exp_smul_mul_exp_smul, hright, mul_assoc]
+  rw [show -(((k : ℝ) + 1) * h) = -(((k : ℝ) + 1 / 2) * h) + -h / 2 by ring,
+    show (k : ℝ) * h = -h / 2 + ((k : ℝ) + 1 / 2) * h by ring,
+    ← exp_smul_mul_exp_smul, ← exp_smul_mul_exp_smul]
+  simp only [mul_assoc]
 
 /-- A centered local estimate transports unchanged to each interaction increment. -/
 theorem norm_interactionIncrement_sub_conj_le (G S B : A)
@@ -116,11 +106,9 @@ theorem norm_interactionIncrement_sub_conj_le (G S B : A)
       B‖ ≤ η) (k : ℕ) :
     ‖interactionIncrement G S h k -
       expSMulConj (-G) B (((k : ℝ) + 1 / 2) * h)‖ ≤ η := by
-  rw [interactionIncrement_eq_midpoint_conj]
-  change ‖expSMulConjLin (-G) _ _ - expSMulConjLin (-G) _ B‖ ≤ η
-  rw [← map_sub]
-  exact (norm_expSMulConj_eq_of_le_one (-G) _ (fun t ↦ by
-    simpa only [smul_neg, ← neg_smul] using hG (-t)) _).le.trans hlocal
+  have hneg (t : ℝ) : ‖exp (t • (-G))‖ ≤ 1 := by simpa only [smul_neg, neg_smul] using hG (-t)
+  rwa [interactionIncrement_eq_midpoint_conj, ← dist_eq_norm,
+    (isometry_expSMulConj_of_le_one (-G) hneg _).dist_eq, dist_eq_norm]
 
 /-- A homogeneous quintic centered estimate transports to a midpoint conjugation. -/
 theorem norm_interactionIncrement_sub_midpoint_le (G S L : A)
@@ -148,25 +136,15 @@ theorem norm_interactionProduct_sub_sum_conj_le (G S B : A)
     (norm_one_add_interactionIncrement_le_one G S hG hS h)
     (fun k ↦ (norm_interactionIncrement_eq G S hG h k).le.trans hδ) r
   rw [← interactionProduct_eq_contractionProduct G S h r] at hrem
+  rw [add_comm ((r : ℝ) * η)]
+  refine (norm_sub_le_norm_sub_add_norm_sub _ (∑ k ∈ range r, interactionIncrement G S h k) _).trans
+    (add_le_add hrem ?_)
+  rw [← sum_sub_distrib]
   calc
-    _ = ‖(exp (-((r : ℝ) * h) • G) * S ^ r - 1 -
-          ∑ k ∈ range r, interactionIncrement G S h k) +
-        ∑ k ∈ range r, (interactionIncrement G S h k -
-          expSMulConj (-G) B (((k : ℝ) + 1 / 2) * h))‖ := by
-      rw [sum_sub_distrib]
-      congr 1
-      abel
-    _ ≤ ‖exp (-((r : ℝ) * h) • G) * S ^ r - 1 -
-          ∑ k ∈ range r, interactionIncrement G S h k‖ +
-        ‖∑ k ∈ range r, (interactionIncrement G S h k -
-          expSMulConj (-G) B (((k : ℝ) + 1 / 2) * h))‖ := norm_add_le _ _
-    _ ≤ (r : ℝ) * ((r : ℝ) - 1) / 2 * δ ^ 2 + ∑ _k ∈ range r, η := by
-      apply add_le_add hrem
-      exact (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦
+    _ ≤ ∑ _k ∈ range r, η :=
+      (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦
         norm_interactionIncrement_sub_conj_le G S B hG h hlocal k)
-    _ = _ := by
-      simp
-      ring
+    _ = _ := by simp
 
 /-- A quintic centered main term gives the original discrete midpoint bound. -/
 theorem norm_interactionProduct_sub_midpoint_le (G S L : A)
@@ -183,3 +161,27 @@ theorem norm_interactionProduct_sub_midpoint_le (G S L : A)
     norm_interactionProduct_sub_sum_conj_le G S (h ^ 5 • L) hG hS h hlocal hδ r
 
 end TrotterError
+
+namespace FQFP
+
+open TrotterError
+
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A]
+
+/-- Multiplication by the inverse exact evolution identifies the physical
+global error norm with the interaction-picture error norm. -/
+theorem norm_pow_sub_exp_eq_interaction (G S : A)
+    (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1) (t : ℝ) (r : ℕ) :
+    ‖S ^ r - exp (t • G)‖ = ‖exp ((-t) • G) * S ^ r - 1‖ := by
+  rw [← norm_exp_smul_mul_eq_of_le_one G (S ^ r - exp (t • G)) hG (-t), mul_sub,
+    TrotterError.exp_smul_mul_exp_smul]
+  simp
+
+/-- The interaction-picture operator remainder bounds the error in the predicted norm. -/
+theorem abs_norm_pow_sub_exp_sub_norm_le (G S M : A)
+    (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1) (t : ℝ) (r : ℕ) :
+    |‖S ^ r - exp (t • G)‖ - ‖M‖| ≤ ‖exp ((-t) • G) * S ^ r - 1 - M‖ := by
+  rw [norm_pow_sub_exp_eq_interaction G S hG]
+  exact abs_norm_sub_norm_le _ _
+
+end FQFP

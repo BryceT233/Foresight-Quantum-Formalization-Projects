@@ -44,31 +44,20 @@ def marginal (d : Ψ.Dilation E) :
   toHom := d.toHom ≫ (α_ K L E).hom
   isIsometry := inferInstance
   channel_eq := by
-    change Operator.partialTraceRight ∘ₗ Ψ.toSuperoperator = _
-    rw [hom_comp, Superoperator.conjugate_comp, hom_hom_associator,
-      ← TensorProduct.toLinearEquiv_assocIsometry,
-      ← Superoperator.relabel_eq_conjugate (H := (K ⊗ L) ⊗ E) (K := K ⊗ (L ⊗ E))
-        (TensorProduct.assocIsometry ℂ K.state L.state E.state),
-      ← LinearMap.comp_assoc, Superoperator.partialTraceRight_relabel_assoc,
-      LinearMap.comp_assoc, ← d.channel_eq]
+    change _ = ((partialTraceRight K (L ⊗ E)).comp
+      (ofIsometry (d.toHom ≫ (α_ K L E).hom))).toSuperoperator
+    rw [ofIsometry_comp, ← comp_assoc, partialTraceRight_comp_associator, comp_assoc,
+      ← d.channel_eq_comp]
 
 /-- Tracing out the original environment from the marginal dilation's complement gives the
 second marginal channel, on all input operators. -/
 lemma partialTraceRight_comp_complementary_marginal (d : Ψ.Dilation E) :
     (partialTraceRight L E).comp d.marginal.complementary = (partialTraceLeft K L).comp Ψ := by
-  apply QuantumChannel.ext
-  change Operator.partialTraceRight ∘ₗ Operator.partialTraceLeft ∘ₗ
-    Superoperator.conjugate (d.toHom ≫ (α_ K L E).hom).hom =
-      Operator.partialTraceLeft ∘ₗ Ψ.toSuperoperator
-  rw [hom_comp, Superoperator.conjugate_comp, hom_hom_associator,
-    ← TensorProduct.toLinearEquiv_assocIsometry,
-    ← Superoperator.relabel_eq_conjugate (H := (K ⊗ L) ⊗ E) (K := K ⊗ (L ⊗ E))
-      (TensorProduct.assocIsometry ℂ K.state L.state E.state)]
-  conv_lhs =>
-    arg 2
-    rw [← LinearMap.comp_assoc, Superoperator.partialTraceLeft_relabel_assoc]
-  rw [← LinearMap.comp_assoc, Superoperator.partialTraceRight_tensor_id,
-    LinearMap.comp_assoc, ← d.channel_eq]
+  change (partialTraceRight L E).comp ((partialTraceLeft K (L ⊗ E)).comp
+    (ofIsometry (d.toHom ≫ (α_ K L E).hom))) = _
+  rw [ofIsometry_comp, ← comp_assoc (partialTraceLeft K (L ⊗ E)),
+    partialTraceLeft_comp_associator, ← comp_assoc, partialTraceRight_comp_tensor,
+    comp_assoc, ← d.channel_eq_comp]
 
 end Dilation
 

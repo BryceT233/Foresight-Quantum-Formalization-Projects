@@ -26,6 +26,7 @@ A second-order conjugation remainder controls its change of frame.
 * `conjCoeff_zero`: the constant coefficient is the transported element.
 * `conjCoeff_one`: the linear coefficient is the bracket with the generator sum.
 * `centeredConjugationConstant_eq_sum`: the original diagonal and mixed bracket formula.
+* `norm_centered_half_transport_sub_conjugation_le`: the local error bounds the transport error.
 * `norm_centered_symmetricExpProduct_sub_quintic_le`: the centered local error bound.
 -/
 
@@ -177,6 +178,32 @@ lemma norm_centered_symmetricExpProduct_sub_one (l : List A) (G : A)
   rw [← exp_neg_half_mul_exp_mul_exp_neg_half G x, ← sub_mul, ← mul_sub,
     norm_mul_exp_smul_eq_of_le_one G _ hG, norm_exp_smul_mul_eq_of_le_one G _ hG]
 
+/-- The centered half-transport differs from its conjugation by at most the
+local distance times the norm of its input. -/
+theorem norm_centered_half_transport_sub_conjugation_le (l : List A) (G B : A)
+    (hZ : ∀ Z ∈ l, ∀ t : ℝ, ‖exp (t • Z)‖ ≤ 1)
+    (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1) (x : ℝ) :
+    ‖exp ((-x / 2) • G) * expListProduct l x * B *
+        expListProduct l.reverse x * exp ((-x / 2) • G) -
+      multiConj (centeredConjugationList l G).get B x‖ ≤
+        ‖B‖ * ‖symmetricExpProduct l x - exp (x • G)‖ := by
+  let R := multiConj (centeredConjugationList l G).get B x
+  let J := exp ((-x / 2) • G) * symmetricExpProduct l x * exp ((-x / 2) • G)
+  have heq : exp ((-x / 2) • G) * expListProduct l x * B *
+      expListProduct l.reverse x * exp ((-x / 2) • G) = R * J := by
+    dsimp [R, J]
+    rw [multiConj_centeredConjugationList]
+    dsimp only [symmetricExpProduct]
+    simp only [mul_assoc]
+    rw [← mul_assoc (exp ((x / 2) • G)), exp_smul_mul_exp_smul,
+      show x / 2 + -x / 2 = 0 by ring, zero_smul, exp_zero, one_mul]
+    rw [← mul_assoc (expListProduct l.reverse (-x)), expListProduct_reverse_neg_mul, one_mul]
+  have hn : ‖R‖ = ‖B‖ := norm_multiConj_eq_of_le_one _ B
+    (norm_exp_smul_centeredConjugationList_le_one l G hZ hG) x
+  rw [heq, show R * J - R = R * (J - 1) by rw [mul_sub, mul_one]]
+  exact (norm_mul_le _ _).trans_eq (by rw [hn,
+    norm_centered_symmetricExpProduct_sub_one l G hG x])
+
 /-- Transporting the leading defect differs from the untransported element by a
 quadratic commutator term and the original local error, with no product of remainders. -/
 theorem norm_centered_half_transport_sub_le (l : List A) (G L : A)
@@ -187,32 +214,11 @@ theorem norm_centered_half_transport_sub_le (l : List A) (G L : A)
       expListProduct l.reverse x * exp ((-x / 2) • G) - L‖ ≤
       x ^ 2 / 2 * centeredConjugationConstant l G L +
         ‖L‖ * ‖symmetricExpProduct l x - exp (x • G)‖ := by
-  let R := exp ((-x / 2) • G) * expListProduct l x * L *
-    expListProduct l.reverse (-x) * exp ((x / 2) • G)
-  let B := exp ((-x / 2) • G) * symmetricExpProduct l x * exp ((-x / 2) • G)
-  have hRB : R * B = exp ((-x / 2) • G) * expListProduct l x * L *
-      expListProduct l.reverse x * exp ((-x / 2) • G) := by
-    dsimp [R, B, symmetricExpProduct]
-    simp only [mul_assoc]
-    rw [← mul_assoc (exp ((x / 2) • G)), exp_smul_mul_exp_smul,
-      show x / 2 + -x / 2 = 0 by ring, zero_smul, exp_zero, one_mul]
-    rw [← mul_assoc (expListProduct l.reverse (-x)), expListProduct_reverse_neg_mul, one_mul]
-  rw [← hRB, show R * B - L = (R - L) * B + L * (B - 1) by noncomm_ring]
-  calc
-    _ ≤ ‖(R - L) * B‖ + ‖L * (B - 1)‖ := norm_add_le _ _
-    _ ≤ ‖R - L‖ + ‖L‖ * ‖B - 1‖ := by
-      apply add_le_add _ (norm_mul_le _ _)
-      dsimp [B, symmetricExpProduct]
-      simp only [← mul_assoc]
-      rw [norm_mul_exp_smul_eq_of_le_one G _ hG,
-        norm_mul_expListProduct_eq_of_le_one l.reverse _
-          (fun Z hmem ↦ hZ Z (by simpa using hmem)),
-        norm_mul_expListProduct_eq_of_le_one l _ hZ,
-        norm_mul_exp_smul_eq_of_le_one G _ hG]
-    _ ≤ _ := by
-      rw [show ‖B - 1‖ = ‖symmetricExpProduct l x - exp (x • G)‖ from
-        norm_centered_symmetricExpProduct_sub_one l G hG x]
-      exact add_le_add (norm_centeredConjugation_sub_le l G L hZ hG hsum x) le_rfl
+  have htransport := norm_centered_half_transport_sub_conjugation_le l G L hZ hG x
+  have hconj := norm_centeredConjugation_sub_le l G L hZ hG hsum x
+  rw [← multiConj_centeredConjugationList] at hconj
+  exact (norm_sub_le_norm_sub_add_norm_sub _ _ _).trans
+    ((add_le_add htransport hconj).trans_eq (add_comm _ _))
 
 end FQFP
 

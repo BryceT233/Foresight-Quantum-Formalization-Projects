@@ -70,37 +70,6 @@ theorem norm_centeredConjugation_sub_le_grouped (l : List A) (G M : A)
   simpa only [sum_range_succ, sum_range_zero, zero_add, pow_zero, one_smul,
     conjCoeff_zero, h1, smul_zero, add_zero] using hb
 
-/-- The centered half-transport differs from its conjugation by at most the
-local distance times the norm of its input. -/
-theorem norm_centered_half_transport_sub_conjugation_le (l : List A) (G B : A)
-    (hZ : ∀ Z ∈ l, ∀ t : ℝ, ‖exp (t • Z)‖ ≤ 1)
-    (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1) (x : ℝ) :
-    ‖exp ((-x / 2) • G) * expListProduct l x * B *
-        expListProduct l.reverse x * exp ((-x / 2) • G) -
-      multiConj (centeredConjugationList l G).get B x‖ ≤
-        ‖B‖ * ‖symmetricExpProduct l x - exp (x • G)‖ := by
-  let R := multiConj (centeredConjugationList l G).get B x
-  let J := exp ((-x / 2) • G) * symmetricExpProduct l x * exp ((-x / 2) • G)
-  have heq : exp ((-x / 2) • G) * expListProduct l x * B *
-      expListProduct l.reverse x * exp ((-x / 2) • G) = R * J := by
-    dsimp [R, J]
-    rw [multiConj_centeredConjugationList]
-    dsimp only [symmetricExpProduct]
-    simp only [mul_assoc]
-    rw [← mul_assoc (exp ((x / 2) • G)), exp_smul_mul_exp_smul,
-      show x / 2 + -x / 2 = 0 by ring, zero_smul, exp_zero, one_mul]
-    rw [← mul_assoc (expListProduct l.reverse (-x)), expListProduct_reverse_neg_mul, one_mul]
-  have hn : ‖R‖ = ‖B‖ := by
-    dsimp [R]
-    rw [multiConj_centeredConjugationList, norm_mul_exp_smul_eq_of_le_one G _ hG,
-      norm_mul_expListProduct_eq_of_le_one l.reverse _
-        (fun Z hz ↦ hZ Z (by simpa using hz)), mul_assoc,
-      norm_exp_smul_mul_eq_of_le_one G _ hG,
-      norm_expListProduct_mul_eq_of_le_one l _ hZ]
-  rw [heq, show R * J - R = R * (J - 1) by noncomm_ring]
-  exact (norm_mul_le _ _).trans_eq (by rw [hn,
-    norm_centered_symmetricExpProduct_sub_one l G hG x])
-
 /-- The two centered exterior half-products preserve every input norm. -/
 lemma norm_centered_half_transport_eq (l : List A) (G B : A)
     (hZ : ∀ Z ∈ l, ∀ t : ℝ, ‖exp (t • Z)‖ ≤ 1)

@@ -5,9 +5,9 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Asymptotics.Pow
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.SepticRemainder
 public import Mathlib.Analysis.SpecificLimits.Basic
-public import Mathlib.Analysis.Asymptotics.Defs
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -118,14 +118,9 @@ theorem isBigO_inv_nat_pow_eight_of_septicGlobalRemainder
     (hℓ : 0 ≤ ℓ) (hμ : 0 ≤ μ) (hC : 0 ≤ C) (ht : 0 ≤ t)
     (hF : ∀ r : ℕ, 1 ≤ r → ‖F r‖ ≤ septicGlobalRemainder ℓ μ C D (t / r) r) :
     F =O[atTop] (fun r : ℕ ↦ ((r : ℝ)⁻¹) ^ 8) := by
-  apply IsBigO.of_bound (t ^ 8 *
-    (t * (D + ℓ ^ 2 / 2 + ℓ * μ + (5 * ℓ * C + 7 * μ ^ 2) / 14 +
-      7 * μ * C / 16) + t ^ 2 / 2 * (ℓ + μ + C) ^ 2))
-  filter_upwards [eventually_septicGlobalRemainder_le_pow_eight D hℓ hμ hC ht,
-    eventually_ge_atTop 1] with r hr hr1
-  simpa only [div_eq_mul_inv, mul_pow, Real.norm_eq_abs,
-    abs_of_nonneg (pow_nonneg (inv_nonneg.mpr (Nat.cast_nonneg r : (0 : ℝ) ≤ r)) 8),
-    mul_assoc, mul_comm, mul_left_comm] using (hF r hr1).trans hr
+  have hbound := eventually_septicGlobalRemainder_le_pow_eight D hℓ hμ hC ht
+  exact isBigO_inv_nat_pow_of_remainder_le <|
+    ((eventually_ge_atTop 1).and hbound).mono fun r ⟨hr, hrem⟩ ↦ (hF r hr).trans hrem
 
 /-- The explicit refined remainder itself is eighth order at fixed time. -/
 theorem isBigO_septicGlobalRemainder {ℓ μ C t : ℝ} (D : ℝ)

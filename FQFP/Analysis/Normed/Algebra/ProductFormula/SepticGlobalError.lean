@@ -86,8 +86,7 @@ theorem abs_norm_pow_sub_exp_sub_septic_midpoint_le (G S L N : A) (ℓ μ C D : 
     (hstep : ‖S - exp (h • G)‖ ≤ septicStepBound ℓ μ C h) (r : ℕ) :
     |‖S ^ r - exp (((r : ℝ) * h) • G)‖ - ‖septicMidpointTerm G L N r h‖| ≤
       septicGlobalRemainder ℓ μ C D h r := by
-  rw [norm_pow_sub_exp_eq_interaction G S hG]
-  exact (abs_norm_sub_norm_le _ _).trans
+  exact (abs_norm_pow_sub_exp_sub_norm_le G S _ hG _ r).trans
     (norm_interactionProduct_sub_septic_midpoint_le G S L N ℓ μ C D hG hS h hlocal hstep r)
 
 end FQFP

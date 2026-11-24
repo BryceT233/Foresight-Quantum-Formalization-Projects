@@ -5,6 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.Analysis.Asymptotics.Pow
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.QuinticGlobalRemainder
 public import FQFP.Analysis.Calculus.TaylorAsymptotics
 
@@ -61,12 +62,8 @@ omit [NormedSpace ℝ E] in
 `O(r⁻⁶)` along positive integer step counts. -/
 theorem isBigO_inv_nat_pow_six_of_remainder_le (F : ℕ → E) (t B : ℝ)
     (hF : ∀ᶠ n in atTop, ‖F n‖ ≤ (t / n) ^ 6 * B) :
-    F =O[atTop] (fun n : ℕ ↦ ((n : ℝ)⁻¹) ^ 6) := by
-  apply IsBigO.of_bound (t ^ 6 * B)
-  filter_upwards [hF] with n hn
-  simpa [div_eq_mul_inv, mul_pow, Real.norm_eq_abs,
-    abs_of_nonneg (pow_nonneg (inv_nonneg.mpr (Nat.cast_nonneg n : (0 : ℝ) ≤ n)) 6),
-    mul_assoc, mul_comm, mul_left_comm] using hn
+    F =O[atTop] (fun n : ℕ ↦ ((n : ℝ)⁻¹) ^ 6) :=
+  isBigO_inv_nat_pow_of_remainder_le hF
 
 /-- The explicit quintic global remainder yields its sharp norm limit along
 positive integer step counts. -/
@@ -76,11 +73,7 @@ theorem tendsto_nat_pow_four_mul_norm_of_quinticGlobalRemainder (F : ℕ → E) 
       quinticGlobalRemainder ℓ C alpha J t (t / n) n) :
     Tendsto (fun n : ℕ ↦ (n : ℝ) ^ 4 * ‖F n‖) Filter.atTop
       (𝓝 (t ^ 4 * ‖K‖)) := by
-  apply tendsto_nat_pow_four_mul_norm_of_remainder_le F K t
-    (t * (C + 5 / 14 * alpha + J / 24) + t / 2 * ℓ ^ 2 +
-      5 * t / 12 * ℓ * C + t ^ 2 / 2 * (ℓ + C) ^ 2) ht
-  filter_upwards [eventually_quinticGlobalRemainder_le_pow_six alpha J hℓ hC ht,
-    eventually_ge_atTop 1] with n hn hn1
-  exact (hF n hn1).trans hn
+  obtain ⟨B, hB⟩ := exists_eventually_le_pow_six_of_le_quinticGlobalRemainder hℓ hC ht hF
+  exact tendsto_nat_pow_four_mul_norm_of_remainder_le F K t B ht hB
 
 end FQFP

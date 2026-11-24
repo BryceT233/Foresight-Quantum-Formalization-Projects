@@ -17,7 +17,6 @@ continuous operator remainder, retaining the complete integral as its main term.
 ## Main results
 
 * `norm_interactionProduct_sub_integral_le`: the global operator bound.
-* `norm_pow_sub_exp_eq_interaction`: equality of the two error norms.
 * `two_sided_norm_of_norm_sub_le`: the corresponding scalar enclosure.
 -/
 
@@ -47,34 +46,10 @@ theorem norm_interactionProduct_sub_integral_le (G S L : A) (C alpha : ℝ)
   have hd := norm_interactionProduct_sub_midpoint_le G S L hG hS h hlocal hcap r
   have hq := norm_midpointConjugationIntegral_sub_conjugationIntegral_le G L hG r h hh
   rw [quinticGlobalRemainder_eq _ _ _ _ _ _ _ rfl]
-  calc
-    _ = ‖(exp (-((r : ℝ) * h) • G) * S ^ r - 1 -
-          h ^ 4 • midpointConjugationIntegral G L r h) +
-        h ^ 4 • (midpointConjugationIntegral G L r h -
-          conjugationIntegral G L ((r : ℝ) * h))‖ := by
-      congr 1
-      module
-    _ ≤ ‖exp (-((r : ℝ) * h) • G) * S ^ r - 1 -
-          h ^ 4 • midpointConjugationIntegral G L r h‖ +
-        ‖h ^ 4 • (midpointConjugationIntegral G L r h -
-          conjugationIntegral G L ((r : ℝ) * h))‖ := norm_add_le _ _
-    _ ≤ _ := by
-      apply add_le_add hd
-      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (pow_nonneg hh 4)]
-      exact mul_le_mul_of_nonneg_left hq (pow_nonneg hh 4)
-
-/-- Multiplication by the inverse exact evolution identifies the physical
-global error norm with the interaction-picture error norm. -/
-theorem norm_pow_sub_exp_eq_interaction (G S : A)
-    (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1) (t : ℝ) (r : ℕ) :
-    ‖S ^ r - exp (t • G)‖ = ‖exp ((-t) • G) * S ^ r - 1‖ := by
-  rw [← norm_exp_smul_mul_eq_of_le_one G (S ^ r - exp (t • G)) hG (-t), mul_sub,
-    TrotterError.exp_smul_mul_exp_smul]
-  simp
-
-end FQFP
-
-namespace FQFP
+  refine (norm_sub_le_norm_sub_add_norm_sub _ (h ^ 4 • midpointConjugationIntegral G L r h) _).trans
+    (add_le_add hd ?_)
+  rw [← smul_sub, norm_smul, Real.norm_of_nonneg (pow_nonneg hh 4)]
+  exact mul_le_mul_of_nonneg_left hq (pow_nonneg hh 4)
 
 variable {E : Type*} [NormedAddCommGroup E]
 
