@@ -6,13 +6,14 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Category.Postprocessing
-public import FQFP.CQM.Qudit.Channel.Process.Causal
+public import FQFP.CQM.Qudit.Channel.Composite
 public import FQFP.CQM.Qudit.Channel.Process.Dual
 public import FQFP.CQM.Qudit.Channel.MeasurePrepare
 public import FQFP.CQM.Qudit.Classical
 public import FQFP.CQM.Qudit.Measurement.Luders
 public import FQFP.CQM.Qudit.Measurement.Process
 public import FQFP.CQM.Qudit.Teleportation.Instrument
+public import Mathlib.LinearAlgebra.Matrix.IsDiag
 
 /-!
 # Classical structures inside the quantum process category
@@ -27,6 +28,8 @@ with maps of classical algebras, or construct the general `CP[C]` category.
 
 * `Qudit.QuantumChannel.dephase`: dephasing in a chosen orthonormal basis.
 * `Qudit.QuantumChannel.dephase_idempotent`: dephasing twice is dephasing once.
+* `Qudit.QuantumChannel.broadcasts_basisCopy_iff_isDiag`: basis copying broadcasts exactly
+  the density matrices diagonal in that basis (§§7.3.2 and 7.5).
 * `Qudit.POVM.outcomeChannel`: the classical register of measurement outcomes.
 * `Qudit.teleportation_causal_composite`: corrected teleportation in causal CP semantics.
 -/
@@ -63,9 +66,34 @@ lemma basisCopy_eq_krausDilation (b : OrthonormalBasis ι ℂ H.state) :
 
 namespace QuantumChannel
 
+open SemiCartesianMonoidalCategory
+
+/-- Coherent basis copying remains coassociative as a deterministic channel. -/
+lemma ofIsometry_basisCopy_coassoc (b : OrthonormalBasis ι ℂ H.state) :
+    let d := (ofIsometry (basisCopy b)).asHom
+    d ≫ ((⟨H⟩ : CausalQudit) ◁ d) = d ≫ (d ▷ (⟨H⟩ : CausalQudit)) ≫ (α_ _ _ _).hom := by
+  apply CausalQudit.inclusion.map_injective
+  have h := congrArg CPQudit.pure.map (basisComonObj b).comul_assoc
+  simp only [← id_tensorHom, ← tensorHom_id, CPQudit.pure.map_comp, CPQudit.pure_tensor,
+    CPQudit.pure.map_id] at h
+  exact h
+
+/-- Exchanging the two output registers preserves coherent basis copying. -/
+lemma ofIsometry_basisCopy_swap (b : OrthonormalBasis ι ℂ H.state) :
+    (ofIsometry (basisCopy b)).asHom ≫ (β_ (⟨H⟩ : CausalQudit) ⟨H⟩).hom =
+      (ofIsometry (basisCopy b)).asHom := by
+  apply CausalQudit.inclusion.map_injective
+  exact (CPQudit.pure.map_comp ..).symm.trans (congrArg CPQudit.pure.map (basisCopy_comm b))
+
 /-- Dephasing in a chosen classical structure: copy and discard the second output. -/
 def dephase (b : OrthonormalBasis ι ℂ H.state) : QuantumChannel H H :=
   (partialTraceRight H H).comp (ofIsometry (basisCopy b))
+
+/-- The first marginal of coherent copying is the unread basis measurement. -/
+lemma ofIsometry_basisCopy_comp_fst (b : OrthonormalBasis ι ℂ H.state) :
+    (ofIsometry (basisCopy b)).asHom ≫ fst _ _ = (dephase b).asHom := by
+  rw [CausalQudit.fst_eq_partialTraceRight]
+  rfl
 
 /-- The copy-and-discard process is the sum of basis projection conjugations. -/
 lemma dephase_eq_kraus (b : OrthonormalBasis ι ℂ H.state) :
@@ -88,8 +116,7 @@ lemma dephase_eq_luders (b : OrthonormalBasis ι ℂ H.state) :
   apply Finset.sum_congr rfl
   intro i _
   rw [POVM.luders_ofBasis_branch]
-  ext x
-  simp [smul_smul, mul_comm]
+  exact Superoperator.conjugate_ket_comp_bra_apply (b i) (b i) A
 
 /-- Dephasing retains diagonal coefficients and erases off-diagonal coherence. -/
 lemma dephase_apply (b : OrthonormalBasis ι ℂ H.state) (A : Operator H) :
@@ -99,18 +126,50 @@ lemma dephase_apply (b : OrthonormalBasis ι ℂ H.state) (A : Operator H) :
   change (∑ i, (POVM.ofBasis b).luders.branch i) A = _
   simp only [LinearMap.sum_apply, POVM.luders_ofBasis_branch]
 
+/-- Dephasing keeps the diagonal matrix units of its basis and kills the others. -/
+lemma dephase_basis_outer [DecidableEq ι] (b : OrthonormalBasis ι ℂ H.state) (i j : ι) :
+    (dephase b).toSuperoperator (Operator.outer (b i) (b j)) =
+      if i = j then Operator.outer (b i) (b j) else 0 := by
+  rw [dephase_eq_luders, ← POVM.ofOrthogonalResolution_basisResolution]
+  apply POVM.luders_toChannel_outer <;> simp [POVM.hom_basisResolution_proj]
+
 /-- A classical basis projection is fixed by dephasing. -/
 lemma dephase_outer (b : OrthonormalBasis ι ℂ H.state) (j : ι) :
     (dephase b).toSuperoperator (Operator.outer (b j) (b j)) = Operator.outer (b j) (b j) := by
   classical
-  rw [dephase_apply]
-  simp [b.inner_eq_ite, apply_ite]
+  exact (dephase_basis_outer b j j).trans (ite_eq_left rfl)
 
 /-- Dephasing is idempotent on all operators, not only density states. -/
 lemma dephase_idempotent (b : OrthonormalBasis ι ℂ H.state) :
     (dephase b).comp (dephase b) = dephase b := by
-  rw [dephase_eq_luders, ← POVM.ofOrthogonalResolution_basisResolution]
-  exact POVM.luders_toChannel_idempotent (POVM.basisResolution b)
+  simpa only [ofIsometry_basisCopy_comp_fst] using!
+    comp_fst_idempotent_of_coassoc _ (ofIsometry_basisCopy_coassoc b)
+
+/-- Basis copying broadcasts a channel's outputs exactly when dephasing fixes them. -/
+lemma broadcasts_basisCopy_iff {K : Qudit} (b : OrthonormalBasis ι ℂ H.state)
+    (Φ : QuantumChannel K H) :
+    CQM.Broadcasts (ofIsometry (basisCopy b)).asHom Φ.asHom ↔ (dephase b).comp Φ = Φ := by
+  rw [CQM.broadcasts_iff_of_swap _ (ofIsometry_basisCopy_swap b), ofIsometry_basisCopy_comp_fst]
+  rfl
+
+/-- In the chosen coordinates, dephasing keeps exactly the diagonal of the input matrix. -/
+lemma toMatrix_map_dephase [DecidableEq ι] (b : OrthonormalBasis ι ℂ H.state) (ρ : Density H) :
+    ((dephase b).map ρ).toMatrix b = Matrix.diagonal (ρ.toMatrix b).diag := by
+  ext i j
+  simp only [Matrix.diagonal_apply, Matrix.diag_apply, Density.toMatrix,
+    LinearMap.toMatrixOrthonormal_apply_apply, op_map, dephase_apply, LinearMap.sum_apply,
+    LinearMap.smul_apply, Operator.outer_apply]
+  by_cases h : i = j <;> simp [h, b.inner_eq_ite, inner_smul_right]
+
+/-- A density preparation is broadcast by this copier exactly when its matrix is diagonal. -/
+theorem broadcasts_basisCopy_iff_isDiag [DecidableEq ι] (b : OrthonormalBasis ι ℂ H.state)
+    (ρ : Density H) :
+    CQM.Broadcasts (ofIsometry (basisCopy b)).asHom ρ.toState ↔ (ρ.toMatrix b).IsDiag := by
+  rw [CQM.broadcasts_iff_of_swap _ (ofIsometry_basisCopy_swap b), ofIsometry_basisCopy_comp_fst,
+    Density.toState_comp, Density.toState_injective.eq_iff, Matrix.isDiag_iff_diagonal_diag,
+    ← toMatrix_map_dephase]
+  exact ⟨fun h => congrArg (Density.toMatrix · b) h,
+    fun h => Density.ext ((LinearMap.toMatrixOrthonormal b).injective h)⟩
 
 end QuantumChannel
 
@@ -160,6 +219,16 @@ lemma outcomeChannel_apply (M : POVM H ι) (b : OrthonormalBasis ι ℂ C.state)
   rw [Instrument.record_apply, map_sum]
   simp only [Operator.partialTraceLeft_tensor, trace_luders_branch]
 
+/-- Coherent copying in the register basis broadcasts the outcome of any POVM. -/
+lemma broadcasts_outcomeChannel (M : POVM H ι) (b : OrthonormalBasis ι ℂ C.state) :
+    CQM.Broadcasts (QuantumChannel.ofIsometry (basisCopy b)).asHom (M.outcomeChannel b).asHom := by
+  apply (QuantumChannel.broadcasts_basisCopy_iff b _).mpr
+  apply QuantumChannel.ext
+  apply LinearMap.ext
+  intro A
+  change (QuantumChannel.dephase b).toSuperoperator ((M.outcomeChannel b).toSuperoperator A) = _
+  simp only [outcomeChannel_apply, map_sum, map_smul, QuantumChannel.dephase_outer]
+
 /-- Encoding a POVM outcome in a basis is measurement followed by pure-state preparation. -/
 lemma measurePrepare_basis (M : POVM H ι) (b : OrthonormalBasis ι ℂ C.state) :
     M.measurePrepare (fun i => Density.pure (UnitState.ofBasis b i)) = M.outcomeChannel b := by
@@ -168,30 +237,24 @@ lemma measurePrepare_basis (M : POVM H ι) (b : OrthonormalBasis ι ℂ C.state)
   intro A
   simp only [measurePrepare_apply, outcomeChannel_apply, Density.op_pure, UnitState.ofBasis]
 
+/-- Reading a classical outcome after the measurement channel recovers the original effect. -/
+lemma outcomeChannel_comp_effect (M : POVM H ι) (b : OrthonormalBasis ι ℂ C.state) (i : ι) :
+    (M.outcomeChannel b).toCPMap ≫ (ofBasis b).effect i = M.effect i := by
+  classical
+  rw [← measurePrepare_basis]
+  change (M.measurePrepare _).asCPHom ≫ _ = _
+  rw [asCPHom_measurePrepare]
+  exact CQM.measurePrepare_comp_readout _ _ i _ (fun j => toCPState_ofBasis_comp_effect b j i)
+
 /-- In the Heisenberg picture a classical outcome projection pulls back to its POVM
 effect. This is the classical-to-quantum bridge, with the direction explicit. -/
 lemma dual_outcomeChannel_projection (M : POVM H ι) (b : OrthonormalBasis ι ℂ C.state)
     (i : ι) :
     (M.outcomeChannel b).toCPMap.dual.toSuperoperator
         (Operator.outer (b i) (b i)) = M.op i := by
-  classical
-  apply Operator.ext_trace
-  intro A
-  rw [CPMap.trace_dual]
-  change (Operator.outer (b i) (b i) * (M.outcomeChannel b).toSuperoperator A).trace = _
-  rw [outcomeChannel_apply, Finset.mul_sum, Operator.trace, map_sum]
-  simp only [mul_smul_comm, map_smul]
-  change (∑ j, (M.op j * A).trace *
-    (Operator.outer (b i) (b i) * Operator.outer (b j) (b j)).trace) = _
-  simp [Operator.trace_mul_outer, b.inner_eq_ite, apply_ite]
-
-/-- Reading a classical outcome after the measurement channel recovers the original effect. -/
-lemma outcomeChannel_comp_effect (M : POVM H ι) (b : OrthonormalBasis ι ℂ C.state) (i : ι) :
-    (M.outcomeChannel b).toCPMap ≫ (ofBasis b).effect i = M.effect i := by
-  change (M.outcomeChannel b).toCPMap ≫
-    CPQudit.effectOfPositive (Operator.outer (b i) (b i)) (Operator.isPositive_outer (b i)) = _
-  rw [CPQudit.comp_effectOfPositive]
-  simp only [dual_outcomeChannel_projection, effect]
+  have h := M.outcomeChannel_comp_effect b i
+  rw [effect, CPQudit.comp_effectOfPositive] at h
+  exact CPQudit.eq_of_effectOfPositive_eq h
 
 /-- Reading the basis of the outcome register pulls back to the entire original measurement. -/
 lemma pullback_ofBasis_outcomeChannel (M : POVM H ι) (b : OrthonormalBasis ι ℂ C.state) :

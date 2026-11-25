@@ -15,7 +15,7 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Logic.Rules
-public import FQFP.QuantumProgram.Logic.SourceAssertion
+public import FQFP.QuantumProgram.Logic.Source.Assertion
 
 /-!
 # Source consequence for derivations and validity

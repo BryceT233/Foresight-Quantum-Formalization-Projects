@@ -6,15 +6,15 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.Algebra.Lie.BCH.Associative.QuinticTaylor
-public import FQFP.Analysis.Normed.Algebra.Word
+public import FQFP.Analysis.Normed.Algebra.WordTaylor
 public import FQFP.Analysis.Normed.Algebra.BinaryWord
 
 /-!
 # Difference and Taylor bounds for the quintic BCH term
 
 This file estimates changes in the homogeneous quintic BCH polynomial. The first-order
-Lipschitz estimates and the second-order Taylor remainder use the same binary word groups
-and the same weighted bracket norm bound. Algebraic Taylor decompositions are defined in
+Lipschitz estimates count occurrences in the four binary word groups. The Taylor remainder
+uses the weighted substitution counts of the quintic coefficient table. Its decomposition is in
 `FQFP.Algebra.Lie.BCH.Associative.QuinticTaylor`.
 
 ## Main results
@@ -32,7 +32,7 @@ and `16/720`.
 
 @[expose] public noncomputable section
 
-open Finset
+open Finset FQFP.WordTable
 
 namespace FQFP.BCH
 
@@ -40,18 +40,23 @@ namespace FQFP.BCH
 lemma norm_bchQuinticBracket_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸]
     (v1 v4 v6 v24 : 𝔸) :
     ‖bchQuinticBracket v1 v4 v6 v24‖ ≤ ‖v1‖ + 4 * ‖v4‖ + 6 * ‖v6‖ + 24 * ‖v24‖ := by
-  have h4 : ‖(4 : ℚ) • v4‖ ≤ 4 * ‖v4‖ := by
-    calc ‖(4 : ℚ) • v4‖ ≤ ‖(4 : ℚ)‖ * ‖v4‖ := norm_smul_le _ _
-      _ = 4 * ‖v4‖ := by simp [← Rat.norm_cast_real]
-  have h6 : ‖(6 : ℚ) • v6‖ ≤ 6 * ‖v6‖ := by
-    calc ‖(6 : ℚ) • v6‖ ≤ ‖(6 : ℚ)‖ * ‖v6‖ := norm_smul_le _ _
-      _ = 6 * ‖v6‖ := by simp [← Rat.norm_cast_real]
-  have h24 : ‖(24 : ℚ) • v24‖ ≤ 24 * ‖v24‖ := by
-    calc ‖(24 : ℚ) • v24‖ ≤ ‖(24 : ℚ)‖ * ‖v24‖ := norm_smul_le _ _
-      _ = 24 * ‖v24‖ := by simp [← Rat.norm_cast_real]
-  simpa only [bchQuinticBracket, norm_neg] using
-    norm_add_le_of_le
-      (norm_sub_le_of_le (norm_add_le_of_le (le_refl ‖-v1‖) h4) h6) h24
+  have h := norm_add_le_of_le
+    (norm_sub_le_of_le (norm_add_le (-v1) ((4 : ℚ) • v4)) (le_refl ‖(6 : ℚ) • v6‖))
+    (le_refl ‖(24 : ℚ) • v24‖)
+  simpa only [bchQuinticBracket, norm_neg, norm_smul, ← Rat.norm_cast_real, Rat.cast_ofNat,
+    Real.norm_ofNat] using h
+
+/-- Combine the four group estimates at their BCH coefficients, including the factor `1/720`. -/
+lemma norm_inv_smul_bchQuinticBracket_le_of_le {A : Type*} [NormedRing A] [NormedAlgebra ℚ A]
+    {v1 v4 v6 v24 : A} {n1 n4 n6 n24 R : ℝ}
+    (h1 : ‖v1‖ ≤ n1 * R) (h4 : ‖v4‖ ≤ n4 * R) (h6 : ‖v6‖ ≤ n6 * R)
+    (h24 : ‖v24‖ ≤ n24 * R) :
+    ‖(720 : ℚ)⁻¹ • bchQuinticBracket v1 v4 v6 v24‖ ≤
+      ((n1 + 4 * n4 + 6 * n6 + 24 * n24) / 720) * R := by
+  have h := norm_bchQuinticBracket_le v1 v4 v6 v24
+  rw [norm_smul, norm_inv, ← Rat.norm_cast_real]
+  norm_num only [Rat.cast_ofNat, Real.norm_ofNat]
+  linarith only [h, h1, h4, h6, h24]
 
 /-- The Lipschitz constant of a quintic word group counts its `a`-positions. -/
 private lemma norm_quintic_group_diff_le {𝔸 : Type*} [NormedRing 𝔸] {m : ℕ}
@@ -115,20 +120,7 @@ The four group constants enter with the weights of `bchQuinticTerm`:
 is `1` while the group constants are larger. -/
 theorem norm_bchQuinticTerm_diff_le (z x y : 𝔸) :
     ‖bchQuinticTerm z y - bchQuinticTerm x y‖ ≤ (‖z‖ + ‖x‖ + ‖y‖) ^ 4 * ‖z - x‖ := by
-  let M := ‖z‖ + ‖x‖ + ‖y‖
-  let d := ‖z - x‖
-  have hinner : ‖bchQuinticBracket
-      (bchQuinticGroup1 z y - bchQuinticGroup1 x y)
-      (bchQuinticGroup4 z y - bchQuinticGroup4 x y)
-      (bchQuinticGroup6 z y - bchQuinticGroup6 x y)
-      (bchQuinticGroup24 z y - bchQuinticGroup24 x y)‖ ≤ 440 * M ^ 4 * d := by
-    apply (norm_bchQuinticBracket_le _ _ _ _).trans
-    have h1 := norm_bchQuinticGroup1_diff_le z x y
-    have h4 := norm_bchQuinticGroup4_diff_le z x y
-    have h6 := norm_bchQuinticGroup6_diff_le z x y
-    have h24 := norm_bchQuinticGroup24_diff_le z x y
-    dsimp only [M, d]
-    linarith only [h1, h4, h6, h24]
+  let R := (‖z‖ + ‖x‖ + ‖y‖) ^ 4 * ‖z - x‖
   have htel : bchQuinticTerm z y - bchQuinticTerm x y = (720 : ℚ)⁻¹ •
       bchQuinticBracket (bchQuinticGroup1 z y - bchQuinticGroup1 x y)
         (bchQuinticGroup4 z y - bchQuinticGroup4 x y)
@@ -137,237 +129,94 @@ theorem norm_bchQuinticTerm_diff_le (z x y : 𝔸) :
     unfold bchQuinticTerm bchQuinticBracket
     module
   rw [htel]
-  calc
-    _ ≤ ‖(720 : ℚ)⁻¹‖ * (440 * M ^ 4 * d) :=
-      (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left hinner (norm_nonneg _))
-    _ = (440 / 720) * (M ^ 4 * d) := by
-      rw [← Rat.norm_cast_real]
-      norm_num
-      ring
-    _ ≤ M ^ 4 * d := mul_le_of_le_one_left (by positivity) (by norm_num)
+  apply (norm_inv_smul_bchQuinticBracket_le_of_le (R := R) (n1 := 10) (n4 := 25)
+    (n6 := 35) (n24 := 5) ?_ ?_ ?_ ?_).trans (mul_le_of_le_one_left (by positivity) (by norm_num))
+  · simpa only [R, mul_assoc] using norm_bchQuinticGroup1_diff_le z x y
+  · simpa only [R, mul_assoc] using norm_bchQuinticGroup4_diff_le z x y
+  · simpa only [R, mul_assoc] using norm_bchQuinticGroup6_diff_le z x y
+  · simpa only [R, mul_assoc] using norm_bchQuinticGroup24_diff_le z x y
 
 end Term
 
-/-! ### The norm bounds
+/-! ### Taylor component bounds -/
 
-Each piece is bounded in three steps, none of which needs a case analysis on the words:
+/-- Numerators of the bounds for the components with two, three and four perturbations. -/
+private def quinticRemainderNumerator : Fin 3 → ℕ := ![1680, 720, 30]
 
-1. every substituted word of the `k`-th piece carries exactly `k` letters `V` and `5 - k` letters
-   from `{x, y}`. The positive-length bound `norm_prod_piecewise_le_of_pos` gives
-   `M ^ (5 - k) * ‖V‖ ^ k`;
-2. the number of such words in a group is `∑ i, (#a-positions).choose k`, evaluated by `decide`;
-3. use `‖V‖ ≤ M` to obtain `M ^ 3 * ‖V‖ ^ 2`, then enlarge `‖V‖` to an independent
-   bound `Vn`. This does not require `Vn ≤ M`.
+private lemma quintic_taylorWeight_le (i : Fin 3) :
+    taylorWeight coefficientScale bchQuinticTermTable 0 (i + 2 : ℕ) ≤
+      (quinticRemainderNumerator i : ℝ) / 720 := by
+  simp only [taylorWeight, card_wordPositions_get, List.sum_map_norm_mul_natCast]
+  have h : (bchQuinticTermTable.map fun p ↦
+      |(p.2 : ℚ) / coefficientScale ^ p.1.length| * (p.1.count 0).choose (i + 2 : ℕ)).sum ≤
+      (quinticRemainderNumerator i : ℚ) / 720 := by
+    fin_cases i <;> decide +kernel
+  simpa only [Rat.cast_div, Rat.cast_natCast, Rat.cast_ofNat] using (Rat.cast_le (K := ℝ)).2 h
 
-The resulting constants (`384/720`, `136/720`, `16/720` for the three pieces) are sharper than the
-source's `1680/720`, `720/720`, `30/720`, which are kept in the statements. -/
+private lemma norm_quinticSubsetPiece_le_of_le {A : Type*} [NormedRing A] [NormedAlgebra ℚ A]
+    (i : Fin 3) (x V y : A) {M Vn : ℝ}
+    (hx : ‖x‖ ≤ M) (hV : ‖V‖ ≤ Vn) (hy : ‖y‖ ≤ M) (hVM : ‖V‖ ≤ M) :
+    ‖bchQuinticSubsetPiece (i + 2 : ℕ) x V y‖ ≤
+      (quinticRemainderNumerator i : ℝ) / 720 * Vn ^ 2 * M ^ 3 := by
+  have hM := (norm_nonneg V).trans hVM
+  rw [bchQuinticSubsetPiece_eq_taylorPiece, mul_assoc]
+  apply (norm_taylorPiece_le_of_le coefficientScale bchQuinticTermTable 0 ![x, y] V
+    (i + 2) 5 2 (by decide) (by lia) (by have := i.isLt; lia) (by decide +kernel)
+    (fun p _ j ↦ norm_pair_le x y hx hy (p.1.get j)) hVM hV).trans
+  exact mul_le_mul_of_nonneg_right (quintic_taylorWeight_le i) (by positivity)
 
-/-- **The group bound**: a group's `k`-subset piece is bounded by its number of terms times
-`M ^ (5 - k) * Vn ^ k`. -/
-private lemma norm_bchQuinticGroupSubsets_le {𝔸 : Type*} [NormedRing 𝔸] {m : ℕ}
-    (words : Fin m → Fin 5 → Fin 2) (k : ℕ) (x V y : 𝔸) {M Vn : ℝ} (hx : ‖x‖ ≤ M)
-    (hV : ‖V‖ ≤ Vn) (hy : ‖y‖ ≤ M) :
-    ‖bchQuinticGroupSubsets words k x V y‖
-      ≤ (∑ i : Fin m, (((wordPositions (words i) 0).card).choose k : ℝ))
-          * (M ^ (5 - k) * Vn ^ k) := by
-  have hxy : ∀ a : Fin 2, ‖![x, y] a‖ ≤ M := by
-    intro a
-    fin_cases a
-    · exact hx
-    · exact hy
-  calc ‖bchQuinticGroupSubsets words k x V y‖
-      ≤ ∑ i : Fin m, ∑ _s ∈ (wordPositions (words i) 0).powersetCard k,
-          M ^ (5 - k) * Vn ^ k := by
-        refine le_trans (norm_sum_le _ _) (Finset.sum_le_sum fun i _ => ?_)
-        refine le_trans (norm_sum_le _ _) (Finset.sum_le_sum fun s hs => ?_)
-        have hsk : s.card = k := (Finset.mem_powersetCard.mp hs).2
-        simpa only [hsk, mul_comm] using
-          norm_prod_piecewise_le_of_pos (by norm_num) s (fun _ => V) (fun j => ![x, y] (words i j))
-            (fun _ _ => hV) (fun j _ => hxy (words i j))
-    _ = (∑ i : Fin m, (((wordPositions (words i) 0).card).choose k : ℝ))
-          * (M ^ (5 - k) * Vn ^ k) := by
-        rw [Finset.sum_mul]
-        refine Finset.sum_congr rfl fun i _ => ?_
-        rw [Finset.sum_const, Finset.card_powersetCard, nsmul_eq_mul]
-
-/-- The relaxation `M ^ (5 - k) * Vn ^ k ≤ M ^ 3 * Vn ^ 2` for `2 ≤ k ≤ 5`. -/
-private lemma profile_le (M Vn : ℝ) (hM0 : 0 ≤ M) (hVn0 : 0 ≤ Vn) (hVnM : Vn ≤ M) {k : ℕ}
-    (hk : 2 ≤ k) (hk5 : k ≤ 5) : M ^ (5 - k) * Vn ^ k ≤ M ^ 3 * Vn ^ 2 := by
-  obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by lia⟩
-  have hj3 : j ≤ 3 := by lia
-  have hM : 5 - (j + 2) = 3 - j := by lia
-  rw [hM, pow_add]
-  calc M ^ (3 - j) * (Vn ^ j * Vn ^ 2)
-      ≤ M ^ (3 - j) * (M ^ j * Vn ^ 2) :=
-        mul_le_mul_of_nonneg_left
-          (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hVn0 hVnM j) (pow_nonneg hVn0 2))
-          (pow_nonneg hM0 (3 - j))
-    _ = M ^ 3 * Vn ^ 2 := by
-        rw [← mul_assoc, ← pow_add, Nat.sub_add_cancel hj3]
-
-/-- **The piece bound**: if the four groups of the `k`-th piece have `n1`, `n4`, `n6`, `n24` words
-respectively and `(n1 + 4n4 + 6n6 + 24n24)/720 ≤ C`, then the piece is bounded by
-`C * M ^ 3 * ‖V‖ ^ 2`. -/
-private lemma norm_bchQuinticSubsetPiece_le {𝔸 : Type*}
-    [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] {k : ℕ} (hk : 2 ≤ k) (hk5 : k ≤ 5)
-    {n1 n4 n6 n24 : ℕ}
-    (hc1 : (∑ i : Fin 4,
-      ((wordPositions (bchQuinticGroup1Words i) 0).card).choose k) = n1)
-    (hc4 : (∑ i : Fin 10,
-      ((wordPositions (bchQuinticGroup4Words i) 0).card).choose k) = n4)
-    (hc6 : (∑ i : Fin 14,
-      ((wordPositions (bchQuinticGroup6Words i) 0).card).choose k) = n6)
-    (hc24 : (∑ i : Fin 2,
-      ((wordPositions (bchQuinticGroup24Words i) 0).card).choose k) = n24)
-    {C : ℝ} (hC : ((n1 : ℝ) + 4 * n4 + 6 * n6 + 24 * n24) / 720 ≤ C)
-    (x V y : 𝔸) (M : ℝ) (hx : ‖x‖ ≤ M) (hy : ‖y‖ ≤ M) (hVM : ‖V‖ ≤ M) :
-    ‖bchQuinticSubsetPiece k x V y‖ ≤ C * (M ^ 3 * ‖V‖ ^ 2) := by
-  let Vn := ‖V‖
-  have hM0 : 0 ≤ M := (norm_nonneg x).trans hx
-  have hVn0 : 0 ≤ Vn := norm_nonneg _
-  have hVnM : Vn ≤ M := hVM
-  have hV : ‖V‖ ≤ Vn := le_refl _
-  have h1 := norm_bchQuinticGroupSubsets_le bchQuinticGroup1Words k x V y hx hV hy
-  have h4 := norm_bchQuinticGroupSubsets_le bchQuinticGroup4Words k x V y hx hV hy
-  have h6 := norm_bchQuinticGroupSubsets_le bchQuinticGroup6Words k x V y hx hV hy
-  have h24 := norm_bchQuinticGroupSubsets_le bchQuinticGroup24Words k x V y hx hV hy
-  simp only [← Nat.cast_sum, hc1, hc4, hc6, hc24] at h1 h4 h6 h24
-  have hbr := norm_bchQuinticBracket_le (bchQuinticGroupSubsets bchQuinticGroup1Words k x V y)
-    (bchQuinticGroupSubsets bchQuinticGroup4Words k x V y)
-    (bchQuinticGroupSubsets bchQuinticGroup6Words k x V y)
-    (bchQuinticGroupSubsets bchQuinticGroup24Words k x V y)
-  have hprof := profile_le M Vn hM0 hVn0 hVnM hk hk5
-  have hX : (0 : ℝ) ≤ M ^ 3 * Vn ^ 2 := by positivity
-  have h720 : ‖(720 : ℚ)⁻¹‖ = (720 : ℝ)⁻¹ := by
-    rw [← Rat.norm_cast_real, Real.norm_eq_abs]
-    norm_num
-  have hsm : ‖bchQuinticSubsetPiece k x V y‖
-      ≤ (720 : ℝ)⁻¹ * ‖bchQuinticBracket
-          (bchQuinticGroupSubsets bchQuinticGroup1Words k x V y)
-          (bchQuinticGroupSubsets bchQuinticGroup4Words k x V y)
-          (bchQuinticGroupSubsets bchQuinticGroup6Words k x V y)
-          (bchQuinticGroupSubsets bchQuinticGroup24Words k x V y)‖ := by
-    rw [bchQuinticSubsetPiece]
-    refine le_trans (norm_smul_le _ _) ?_
-    rw [h720]
-  have key : ‖bchQuinticSubsetPiece k x V y‖
-      ≤ (720 : ℝ)⁻¹ * (((n1 : ℝ) + 4 * n4 + 6 * n6 + 24 * n24) * (M ^ 3 * Vn ^ 2)) := by
-    refine le_trans hsm (mul_le_mul_of_nonneg_left ?_ (by norm_num))
-    have b1 : ‖bchQuinticGroupSubsets bchQuinticGroup1Words k x V y‖
-        ≤ (n1 : ℝ) * (M ^ 3 * Vn ^ 2) :=
-      le_trans h1 (mul_le_mul_of_nonneg_left hprof (Nat.cast_nonneg n1))
-    have b4 : ‖bchQuinticGroupSubsets bchQuinticGroup4Words k x V y‖
-        ≤ (n4 : ℝ) * (M ^ 3 * Vn ^ 2) :=
-      le_trans h4 (mul_le_mul_of_nonneg_left hprof (Nat.cast_nonneg n4))
-    have b6 : ‖bchQuinticGroupSubsets bchQuinticGroup6Words k x V y‖
-        ≤ (n6 : ℝ) * (M ^ 3 * Vn ^ 2) :=
-      le_trans h6 (mul_le_mul_of_nonneg_left hprof (Nat.cast_nonneg n6))
-    have b24 : ‖bchQuinticGroupSubsets bchQuinticGroup24Words k x V y‖
-        ≤ (n24 : ℝ) * (M ^ 3 * Vn ^ 2) :=
-      le_trans h24 (mul_le_mul_of_nonneg_left hprof (Nat.cast_nonneg n24))
-    calc ‖bchQuinticBracket _ _ _ _‖
-        ≤ ‖bchQuinticGroupSubsets bchQuinticGroup1Words k x V y‖
-          + 4 * ‖bchQuinticGroupSubsets bchQuinticGroup4Words k x V y‖
-          + 6 * ‖bchQuinticGroupSubsets bchQuinticGroup6Words k x V y‖
-          + 24 * ‖bchQuinticGroupSubsets bchQuinticGroup24Words k x V y‖ := hbr
-      _ ≤ (n1 : ℝ) * (M ^ 3 * Vn ^ 2) + 4 * ((n4 : ℝ) * (M ^ 3 * Vn ^ 2))
-          + 6 * ((n6 : ℝ) * (M ^ 3 * Vn ^ 2)) + 24 * ((n24 : ℝ) * (M ^ 3 * Vn ^ 2)) := by
-          linarith
-      _ = ((n1 : ℝ) + 4 * n4 + 6 * n6 + 24 * n24) * (M ^ 3 * Vn ^ 2) := by ring
-  calc ‖bchQuinticSubsetPiece k x V y‖
-      ≤ (720 : ℝ)⁻¹ * (((n1 : ℝ) + 4 * n4 + 6 * n6 + 24 * n24) * (M ^ 3 * Vn ^ 2)) := key
-    _ = (((n1 : ℝ) + 4 * n4 + 6 * n6 + 24 * n24) / 720) * (M ^ 3 * Vn ^ 2) := by ring
-    _ ≤ C * (M ^ 3 * Vn ^ 2) := mul_le_mul_of_nonneg_right hC hX
+private lemma norm_quinticSubsetPiece_le {A : Type*} [NormedRing A] [NormedAlgebra ℚ A]
+    (i : Fin 3) (x V y : A) :
+    ‖bchQuinticSubsetPiece (i + 2 : ℕ) x V y‖ ≤
+      (quinticRemainderNumerator i : ℝ) / 720 * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) := by
+  rw [mul_comm (_ ^ 3), ← mul_assoc]
+  apply norm_quinticSubsetPiece_le_of_le
+  all_goals linarith only [norm_nonneg x, norm_nonneg V, norm_nonneg y]
 
 /-- Bound for the `2V` piece at independent bounds for the base and perturbation.
 Only the actual perturbation norm, not its bound `Vn`, must be bounded by `M`. -/
 theorem norm_bchQuinticTermTaylor2Remainder2V_le_of_le {𝔸 : Type*}
     [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (x V y : 𝔸) (M Vn : ℝ)
     (hx : ‖x‖ ≤ M) (hV : ‖V‖ ≤ Vn) (hy : ‖y‖ ≤ M) (hVM : ‖V‖ ≤ M) :
-    ‖bchQuinticTermTaylor2Remainder2V x V y‖ ≤ (1680 / 720 : ℝ) * Vn ^ 2 * M ^ 3 := by
-  have hM : 0 ≤ M := (norm_nonneg x).trans hx
-  calc ‖bchQuinticTermTaylor2Remainder2V x V y‖
-      ≤ (1680 / 720 : ℝ) * (M ^ 3 * ‖V‖ ^ 2) :=
-        norm_bchQuinticSubsetPiece_le (k := 2) (by norm_num) (by norm_num)
-          (n1 := 12) (n4 := 24) (n6 := 30) (n24 := 4)
-          (by decide) (by decide) (by decide) (by decide)
-          (C := 1680 / 720) (by norm_num) x V y M hx hy hVM
-    _ ≤ (1680 / 720 : ℝ) * (M ^ 3 * Vn ^ 2) := by gcongr
-    _ = (1680 / 720 : ℝ) * Vn ^ 2 * M ^ 3 := by ring
+    ‖bchQuinticTermTaylor2Remainder2V x V y‖ ≤ (1680 / 720 : ℝ) * Vn ^ 2 * M ^ 3 :=
+  norm_quinticSubsetPiece_le_of_le 0 x V y hx hV hy hVM
 
 /-- The `2V` bound with the common scale `‖x‖ + ‖V‖ + ‖y‖`. -/
 theorem norm_bchQuinticTermTaylor2Remainder2V_le {𝔸 : Type*}
     [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (x V y : 𝔸) :
     ‖bchQuinticTermTaylor2Remainder2V x V y‖
-      ≤ (1680 / 720 : ℝ) * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) := by
-  have hx : ‖x‖ ≤ ‖x‖ + ‖V‖ + ‖y‖ := by
-    linarith [norm_nonneg x, norm_nonneg V, norm_nonneg y]
-  have hy : ‖y‖ ≤ ‖x‖ + ‖V‖ + ‖y‖ := by
-    linarith [norm_nonneg x, norm_nonneg V, norm_nonneg y]
-  have hVM : ‖V‖ ≤ ‖x‖ + ‖V‖ + ‖y‖ := by
-    linarith [norm_nonneg x, norm_nonneg V, norm_nonneg y]
-  simpa only [mul_assoc, mul_comm (‖V‖ ^ 2)] using
-    norm_bchQuinticTermTaylor2Remainder2V_le_of_le x V y (‖x‖ + ‖V‖ + ‖y‖) ‖V‖ hx le_rfl hy hVM
+      ≤ (1680 / 720 : ℝ) * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) :=
+  norm_quinticSubsetPiece_le 0 x V y
 
 /-- Bound for the `3V` piece at independent bounds for the base and perturbation.
 Only the actual perturbation norm, not its bound `Vn`, must be bounded by `M`. -/
 theorem norm_bchQuinticTermTaylor2Remainder3V_le_of_le {𝔸 : Type*}
     [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (x V y : 𝔸) (M Vn : ℝ)
     (hx : ‖x‖ ≤ M) (hV : ‖V‖ ≤ Vn) (hy : ‖y‖ ≤ M) (hVM : ‖V‖ ≤ M) :
-    ‖bchQuinticTermTaylor2Remainder3V x V y‖ ≤ (720 / 720 : ℝ) * Vn ^ 2 * M ^ 3 := by
-  have hM : 0 ≤ M := (norm_nonneg x).trans hx
-  calc ‖bchQuinticTermTaylor2Remainder3V x V y‖
-      ≤ (720 / 720 : ℝ) * (M ^ 3 * ‖V‖ ^ 2) :=
-        norm_bchQuinticSubsetPiece_le (k := 3) (by norm_num) (by norm_num)
-          (n1 := 8) (n4 := 11) (n6 := 10) (n24 := 1)
-          (by decide) (by decide) (by decide) (by decide)
-          (C := 720 / 720) (by norm_num) x V y M hx hy hVM
-    _ ≤ (720 / 720 : ℝ) * (M ^ 3 * Vn ^ 2) := by gcongr
-    _ = (720 / 720 : ℝ) * Vn ^ 2 * M ^ 3 := by ring
+    ‖bchQuinticTermTaylor2Remainder3V x V y‖ ≤ (720 / 720 : ℝ) * Vn ^ 2 * M ^ 3 :=
+  norm_quinticSubsetPiece_le_of_le 1 x V y hx hV hy hVM
 
 /-- The `3V` bound with the common scale `‖x‖ + ‖V‖ + ‖y‖`. -/
 theorem norm_bchQuinticTermTaylor2Remainder3V_le {𝔸 : Type*}
     [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (x V y : 𝔸) :
     ‖bchQuinticTermTaylor2Remainder3V x V y‖
-      ≤ (720 / 720 : ℝ) * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) := by
-  have hx : ‖x‖ ≤ ‖x‖ + ‖V‖ + ‖y‖ := by
-    linarith [norm_nonneg x, norm_nonneg V, norm_nonneg y]
-  have hy : ‖y‖ ≤ ‖x‖ + ‖V‖ + ‖y‖ := by
-    linarith [norm_nonneg x, norm_nonneg V, norm_nonneg y]
-  have hVM : ‖V‖ ≤ ‖x‖ + ‖V‖ + ‖y‖ := by
-    linarith [norm_nonneg x, norm_nonneg V, norm_nonneg y]
-  simpa only [mul_assoc, mul_comm (‖V‖ ^ 2)] using
-    norm_bchQuinticTermTaylor2Remainder3V_le_of_le x V y (‖x‖ + ‖V‖ + ‖y‖) ‖V‖ hx le_rfl hy hVM
+      ≤ (720 / 720 : ℝ) * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) :=
+  norm_quinticSubsetPiece_le 1 x V y
 
 /-- Bound for the `4V` piece at independent bounds for the base and perturbation.
 Only the actual perturbation norm, not its bound `Vn`, must be bounded by `M`. -/
 theorem norm_bchQuinticTermTaylor2Remainder4V_le_of_le {𝔸 : Type*}
     [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (x V y : 𝔸) (M Vn : ℝ)
     (hx : ‖x‖ ≤ M) (hV : ‖V‖ ≤ Vn) (hy : ‖y‖ ≤ M) (hVM : ‖V‖ ≤ M) :
-    ‖bchQuinticTermTaylor2Remainder4V x V y‖ ≤ (30 / 720 : ℝ) * Vn ^ 2 * M ^ 3 := by
-  have hM : 0 ≤ M := (norm_nonneg x).trans hx
-  calc ‖bchQuinticTermTaylor2Remainder4V x V y‖
-      ≤ (30 / 720 : ℝ) * (M ^ 3 * ‖V‖ ^ 2) :=
-        norm_bchQuinticSubsetPiece_le (k := 4) (by norm_num) (by norm_num)
-          (n1 := 2) (n4 := 2) (n6 := 1) (n24 := 0)
-          (by decide) (by decide) (by decide) (by decide)
-          (C := 30 / 720) (by norm_num) x V y M hx hy hVM
-    _ ≤ (30 / 720 : ℝ) * (M ^ 3 * Vn ^ 2) := by gcongr
-    _ = (30 / 720 : ℝ) * Vn ^ 2 * M ^ 3 := by ring
+    ‖bchQuinticTermTaylor2Remainder4V x V y‖ ≤ (30 / 720 : ℝ) * Vn ^ 2 * M ^ 3 :=
+  norm_quinticSubsetPiece_le_of_le 2 x V y hx hV hy hVM
 
 /-- The `4V` bound with the common scale `‖x‖ + ‖V‖ + ‖y‖`. -/
 theorem norm_bchQuinticTermTaylor2Remainder4V_le {𝔸 : Type*}
     [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (x V y : 𝔸) :
     ‖bchQuinticTermTaylor2Remainder4V x V y‖
-      ≤ (30 / 720 : ℝ) * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) := by
-  have hx : ‖x‖ ≤ ‖x‖ + ‖V‖ + ‖y‖ := by
-    linarith [norm_nonneg x, norm_nonneg V, norm_nonneg y]
-  have hy : ‖y‖ ≤ ‖x‖ + ‖V‖ + ‖y‖ := by
-    linarith [norm_nonneg x, norm_nonneg V, norm_nonneg y]
-  have hVM : ‖V‖ ≤ ‖x‖ + ‖V‖ + ‖y‖ := by
-    linarith [norm_nonneg x, norm_nonneg V, norm_nonneg y]
-  simpa only [mul_assoc, mul_comm (‖V‖ ^ 2)] using
-    norm_bchQuinticTermTaylor2Remainder4V_le_of_le x V y (‖x‖ + ‖V‖ + ‖y‖) ‖V‖ hx le_rfl hy hVM
+      ≤ (30 / 720 : ℝ) * ((‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2) :=
+  norm_quinticSubsetPiece_le 2 x V y
 
 /-- **Norm bound for the second-order Taylor remainder**:
 `‖C₅(x+V,y) - C₅(x,y) - linDiff‖ ≤ (2430/720) M³‖V‖²` with `M = ‖x‖ + ‖V‖ + ‖y‖`.
@@ -377,16 +226,9 @@ theorem norm_bchQuinticTermTaylor2Remainder_le {𝔸 : Type*}
     [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] (x V y : 𝔸) :
     ‖bchQuinticTermTaylor2Remainder x V y‖ ≤
       (2430 / 720 : ℝ) * (‖x‖ + ‖V‖ + ‖y‖) ^ 3 * ‖V‖ ^ 2 := by
-  have h2 := norm_bchQuinticTermTaylor2Remainder2V_le x V y
-  have h3 := norm_bchQuinticTermTaylor2Remainder3V_le x V y
-  have h4 := norm_bchQuinticTermTaylor2Remainder4V_le x V y
-  have s1 := norm_add_le (bchQuinticTermTaylor2Remainder2V x V y +
-    bchQuinticTermTaylor2Remainder3V x V y) (bchQuinticTermTaylor2Remainder4V x V y)
-  have s2 := norm_add_le (bchQuinticTermTaylor2Remainder2V x V y)
-    (bchQuinticTermTaylor2Remainder3V x V y)
-  have hsum : (2430 / 720 : ℝ) = 1680 / 720 + 720 / 720 + 30 / 720 := by norm_num
-  unfold bchQuinticTermTaylor2Remainder
-  rw [hsum]
-  linarith only [s1, s2, h2, h3, h4]
+  apply (norm_add_le_of_le (norm_add_le_of_le (norm_bchQuinticTermTaylor2Remainder2V_le x V y)
+    (norm_bchQuinticTermTaylor2Remainder3V_le x V y))
+    (norm_bchQuinticTermTaylor2Remainder4V_le x V y)).trans_eq
+  ring
 
 end FQFP.BCH

@@ -15,7 +15,7 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Examples.FourierLadder
-public import FQFP.QuantumProgram.Logic.CountedUnitary
+public import FQFP.QuantumProgram.Logic.Iteration.CountedUnitary
 
 /-!
 # The two counted loops of the Fourier circuit

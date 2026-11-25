@@ -71,6 +71,11 @@ lemma channel_eq_comp (d : Φ.Dilation E) :
     Φ = (partialTraceRight K E).comp (ofIsometry d.toHom) :=
   QuantumChannel.ext d.channel_eq
 
+/-- The isometric realization has the channel and its complement as its two marginals. -/
+lemma hasMarginals (d : Φ.Dilation E) :
+    CQM.HasMarginals (ofIsometry d.toHom).asHom Φ.asHom d.complementary.asHom :=
+  hasMarginals_iff.mpr ⟨d.channel_eq_comp.symm, rfl⟩
+
 /-- A dilation realizes the output density by its right partial trace. -/
 lemma map_eq_partialTraceRight (d : Φ.Dilation E) (ρ : Density H) :
     Φ.map ρ = (ρ.map d.toHom).partialTraceRight :=
@@ -80,21 +85,22 @@ lemma map_eq_partialTraceRight (d : Φ.Dilation E) (ρ : Density H) :
 lemma map_complementary (d : Φ.Dilation E) (ρ : Density H) :
     d.complementary.map ρ = (ρ.map d.toHom).partialTraceLeft := rfl
 
+/-- Swapping the isometry's outputs realizes the complementary marginal first. -/
+lemma hasMarginals_swap (d : Φ.Dilation E) :
+    CQM.HasMarginals (ofIsometry (d.toHom ≫ (β_ K E).hom)).asHom d.complementary.asHom Φ.asHom := by
+  rw [ofIsometry_comp]
+  exact d.hasMarginals.swap
+
 /-- Swapping the two outputs gives a dilation of the complementary channel. -/
 def symm (d : Φ.Dilation E) : d.complementary.Dilation K where
   toHom := d.toHom ≫ (β_ K E).hom
   isIsometry := inferInstance
-  channel_eq := by
-    have h : d.complementary = (partialTraceRight E K).comp
-        (ofIsometry (d.toHom ≫ (β_ K E).hom)) := by
-      rw [ofIsometry_comp, ← comp_assoc, partialTraceRight_comp_swap]
-      rfl
-    exact congrArg QuantumChannel.toSuperoperator h
+  channel_eq := congrArg QuantumChannel.toSuperoperator
+    (hasMarginals_iff.mp d.hasMarginals_swap).1.symm
 
 /-- For a fixed dilation, taking the complementary channel twice recovers the original. -/
-lemma complementary_symm (d : Φ.Dilation E) : d.symm.complementary = Φ := by
-  change (partialTraceLeft E K).comp (ofIsometry (d.toHom ≫ (β_ K E).hom)) = Φ
-  rw [ofIsometry_comp, ← comp_assoc, partialTraceLeft_comp_swap, ← d.channel_eq_comp]
+lemma complementary_symm (d : Φ.Dilation E) : d.symm.complementary = Φ :=
+  (hasMarginals_iff.mp d.hasMarginals_swap).2
 
 /-- Lift a dilation to an input with a reference system, grouped with the environment. -/
 def lift (d : Φ.Dilation E) (R : Qudit) : H ⊗ R ⟶ K ⊗ (E ⊗ R) :=
@@ -105,26 +111,29 @@ instance (d : Φ.Dilation E) (R : Qudit) : IsIsometry (d.lift R) := by
   unfold lift
   infer_instance
 
+/-- The lifted isometry discards the reference on the system side and retains it
+on the complementary side. Both equalities hold on all input operators. -/
+lemma hasMarginals_lift (d : Φ.Dilation E) (R : Qudit) :
+    CQM.HasMarginals (ofIsometry (d.lift R)).asHom
+      (Φ.comp (partialTraceRight H R)).asHom (d.complementary.tensor (id R)).asHom := by
+  dsimp only [lift]
+  rw [ofIsometry_comp, ofIsometry_tensor, ofIsometry_id]
+  simpa only [CausalQudit.fst_eq_partialTraceRight] using!
+    d.hasMarginals.tensorRight (𝟙 (⟨R⟩ : CausalQudit))
+
 /-- Discarding environment and reference after lifting gives the channel on the input marginal. -/
 lemma partialTraceRight_lift (d : Φ.Dilation E) (R : Qudit) :
     (Operator.partialTraceRight : Superoperator (K ⊗ (E ⊗ R)) K) ∘ₗ
         Superoperator.conjugate (d.lift R).hom =
-      Φ.toSuperoperator ∘ₗ (Operator.partialTraceRight : Superoperator (H ⊗ R) H) := by
-  change ((partialTraceRight K (E ⊗ R)).comp (ofIsometry (d.lift R))).toSuperoperator =
-    (Φ.comp (partialTraceRight H R)).toSuperoperator
-  dsimp only [lift]
-  rw [ofIsometry_comp, ← comp_assoc, partialTraceRight_comp_associator,
-    comp_assoc, ofIsometry_tensor, partialTraceRight_comp_tensor, ← comp_assoc, ← d.channel_eq_comp]
+      Φ.toSuperoperator ∘ₗ (Operator.partialTraceRight : Superoperator (H ⊗ R) H) :=
+  congrArg QuantumChannel.toSuperoperator (hasMarginals_iff.mp (d.hasMarginals_lift R)).1
 
 /-- The other marginal is the complementary channel with the reference left untouched. -/
 lemma partialTraceLeft_lift (d : Φ.Dilation E) (R : Qudit) :
     (Operator.partialTraceLeft : Superoperator (K ⊗ (E ⊗ R)) (E ⊗ R)) ∘ₗ
         Superoperator.conjugate (d.lift R).hom =
-      (d.complementary.tensor (id R)).toSuperoperator := by
-  change ((partialTraceLeft K (E ⊗ R)).comp (ofIsometry (d.lift R))).toSuperoperator = _
-  dsimp only [lift]
-  rw [ofIsometry_comp, ← comp_assoc, partialTraceLeft_comp_associator,
-    ofIsometry_tensor, ofIsometry_id, ← tensor_comp, id_comp, complementary]
+      (d.complementary.tensor (id R)).toSuperoperator :=
+  congrArg QuantumChannel.toSuperoperator (hasMarginals_iff.mp (d.hasMarginals_lift R)).2
 
 /-- A lifted pure state purifies the channel output on its input marginal. -/
 lemma partialTraceRight_pure_lift (d : Φ.Dilation E) {R : Qudit}

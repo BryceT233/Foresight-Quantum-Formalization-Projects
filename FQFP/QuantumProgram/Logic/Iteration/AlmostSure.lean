@@ -14,7 +14,7 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Logic.ExactExpectation
+public import FQFP.QuantumProgram.Logic.Assertion.ExactExpectation
 public import FQFP.QuantumProgram.Logic.Soundness
 import Mathlib.Analysis.SpecificLimits.Basic
 

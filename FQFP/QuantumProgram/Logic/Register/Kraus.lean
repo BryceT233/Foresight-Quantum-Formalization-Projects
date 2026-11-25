@@ -15,7 +15,7 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Semantics.RegisterFrame
-public import FQFP.QuantumProgram.Logic.SourceDomain
+public import FQFP.QuantumProgram.Logic.Source.Domain
 import FQFP.CQM.Qudit.State.OperatorNorm
 
 /-!

@@ -15,9 +15,9 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Logic.CQAssertion
+public import FQFP.QuantumProgram.Logic.Assertion.CQAssertion
 public import FQFP.QuantumProgram.Logic.Rules
-public import FQFP.QuantumProgram.Logic.While
+public import FQFP.QuantumProgram.Logic.Iteration.While
 
 /-!
 # Soundness of the QHL⁺ proof systems

@@ -18,9 +18,9 @@ module
 
 public import FQFP.CQM.Qudit.State.Pure.Qubit
 public import FQFP.CQM.Qudit.TensorPower
-public import FQFP.QuantumProgram.Logic.ExactExpectation
-public import FQFP.QuantumProgram.Logic.For
-public import FQFP.QuantumProgram.Logic.SourceUnitary
+public import FQFP.QuantumProgram.Logic.Assertion.ExactExpectation
+public import FQFP.QuantumProgram.Logic.Iteration.For
+public import FQFP.QuantumProgram.Logic.Source.Unitary
 public import FQFP.QuantumProgram.Trotter
 
 /-!

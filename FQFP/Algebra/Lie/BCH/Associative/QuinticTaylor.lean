@@ -37,11 +37,9 @@ gives one piece per `k`:
 * `k ≥ 2` is the second-order remainder, and the number of letters `V` in a substituted word is
   exactly `k`, which is what makes the pieces `{2V,3V,4V}`.
 
-So the pieces are **defined by the same `∑ i, ∑ s` shape that the expansion produces**, and
-`bchQuinticTermTaylor2Decomp` becomes a rearrangement of `Finset.sum`s rather than a noncommutative
-polynomial identity: no `noncomm_ring`, and no heartbeat bump. The uniform cardinality `k` is also
-what lets each piece be bounded by `(number of subsets) * (largest coefficient) * M^(5-k) * ‖V‖^k`,
-which relaxes to the source's constant via `‖V‖ ≤ M`.
+`bchQuinticSubsetPiece_eq_taylorPiece` identifies each grouped sum with the corresponding
+Taylor component of `bchQuinticTermTable`. The table expansion then gives the decomposition,
+and its weighted counts of size-`k` subsets give the norm bounds.
 
 ## Provenance
 
@@ -54,7 +52,7 @@ sum of the three pieces' constants.
 
 @[expose] public section
 
-open Finset
+open Finset FQFP.WordTable
 
 namespace FQFP.BCH
 
@@ -111,89 +109,29 @@ def bchQuinticTermTaylor2Remainder [Ring 𝔸] [Algebra ℚ 𝔸] (x V y : 𝔸)
   bchQuinticTermTaylor2Remainder2V x V y + bchQuinticTermTaylor2Remainder3V x V y +
     bchQuinticTermTaylor2Remainder4V x V y
 
-/-! ### The combinatorial bookkeeping -/
-
-/-- Every word of `bchQuinticTerm`'s coefficient-1 group has at most four letters `a`. -/
-private lemma card_group1 (i : Fin 4) :
-    (wordPositions (bchQuinticGroup1Words i) 0).card ≤ 4 := by
-  fin_cases i <;> decide
-
-/-- Every word of `bchQuinticTerm`'s coefficient-4 group has at most four letters `a`. -/
-private lemma card_group4 (i : Fin 10) :
-    (wordPositions (bchQuinticGroup4Words i) 0).card ≤ 4 := by
-  fin_cases i <;> decide
-
-/-- Every word of `bchQuinticTerm`'s coefficient-6 group has at most four letters `a`. -/
-private lemma card_group6 (i : Fin 14) :
-    (wordPositions (bchQuinticGroup6Words i) 0).card ≤ 4 := by
-  fin_cases i <;> decide
-
-/-- Every word of `bchQuinticTerm`'s coefficient-24 group has at most four letters `a`. -/
-private lemma card_group24 (i : Fin 2) :
-    (wordPositions (bchQuinticGroup24Words i) 0).card ≤ 4 := by
-  fin_cases i <;> decide
-
-/-! ### The algebraic bookkeeping -/
-
-/-- `bchQuinticTerm` is its bracket at `(1/720)`. -/
-private lemma bchQuinticTerm_eq_bracket [Ring 𝔸] [Algebra ℚ 𝔸] (a b : 𝔸) :
-    bchQuinticTerm a b = (720 : ℚ)⁻¹ • bchQuinticBracket
-      (bchQuinticGroup1 a b) (bchQuinticGroup4 a b) (bchQuinticGroup6 a b)
-      (bchQuinticGroup24 a b) := rfl
-
-/-- The bracket of four sums is the sum of the brackets. -/
-private lemma bracket_sum [Ring 𝔸] [Algebra ℚ 𝔸] {ι : Type*} {s : Finset ι} (A B C D : ι → 𝔸) :
-    bchQuinticBracket (∑ k ∈ s, A k) (∑ k ∈ s, B k) (∑ k ∈ s, C k) (∑ k ∈ s, D k)
-      = ∑ k ∈ s, bchQuinticBracket (A k) (B k) (C k) (D k) := by
-  simp only [bchQuinticBracket, Finset.smul_sum, ← Finset.sum_neg_distrib,
-    ← Finset.sum_add_distrib, ← Finset.sum_sub_distrib]
-
-/-- The sum of the pieces is `(1/720)` times the sum of the brackets. -/
-private lemma sum_pieces_eq [Ring 𝔸] [Algebra ℚ 𝔸] (x V y : 𝔸) :
-    ∑ k ∈ Finset.range 5, bchQuinticSubsetPiece k x V y
-      = (720 : ℚ)⁻¹ • ∑ k ∈ Finset.range 5, bchQuinticBracket
-          (bchQuinticGroupSubsets bchQuinticGroup1Words k x V y)
-          (bchQuinticGroupSubsets bchQuinticGroup4Words k x V y)
-          (bchQuinticGroupSubsets bchQuinticGroup6Words k x V y)
-          (bchQuinticGroupSubsets bchQuinticGroup24Words k x V y) := by
-  unfold bchQuinticSubsetPiece
-  rw [Finset.smul_sum]
-
-/-! ### The group expansion -/
-
-/-- **One group, fully expanded**: replacing `a` by `a + V` in a group of words distributes into
-the sum, over the size `k` of the substituted position set, of the group's `k`-subset pieces. -/
-private lemma group_add_eq_sum_subsets [Semiring 𝔸] {m : ℕ} (words : Fin m → Fin 5 → Fin 2)
-    (hcard : ∀ i : Fin m, (wordPositions (words i) 0).card ≤ 4) (x V y : 𝔸) :
-    (∑ i : Fin m, ((List.ofFn (words i)).map ![x + V, y]).prod)
-      = ∑ k ∈ Finset.range 5, bchQuinticGroupSubsets words k x V y := by
-  calc
-    _ = ∑ i : Fin m, ∑ k ∈ Finset.range 5,
-        wordTaylorPiece (words i) 0 ![x, y] V k :=
-      Finset.sum_congr rfl fun i _ ↦ by
-        simpa only [Matrix.vecCons, Fin.cons_zero, Fin.update_cons_zero, wordEval] using
-          word_update_add_eq_sum_taylorPiece (words i) 0 ![x, y] V (hcard i)
-    _ = _ := by
-      rw [Finset.sum_comm]
-      rfl
+/-- Each quintic subset piece is the Taylor component of the quintic coefficient table. -/
+theorem bchQuinticSubsetPiece_eq_taylorPiece [Ring 𝔸] [Algebra ℚ 𝔸] (k : ℕ) (x V y : 𝔸) :
+    bchQuinticSubsetPiece k x V y =
+      taylorPiece coefficientScale bchQuinticTermTable 0 ![x, y] V k := by
+  simp only [bchQuinticTermTable, taylorPiece_append, taylorPiece_ofFn, bchQuinticSubsetPiece,
+    bchQuinticBracket, bchQuinticGroupSubsets, wordTaylorPiece]
+  norm_num [coefficientScale]
+  module
 
 /-- **`bchQuinticTerm` at `x + V` is the sum of its subset pieces.** -/
 theorem bchQuinticTerm_add_eq_sum_pieces [Ring 𝔸] [Algebra ℚ 𝔸] (x V y : 𝔸) :
     bchQuinticTerm (x + V) y = ∑ k ∈ Finset.range 5, bchQuinticSubsetPiece k x V y := by
-  rw [bchQuinticTerm_eq_bracket, sum_pieces_eq, bchQuinticGroup1, bchQuinticGroup4,
-    bchQuinticGroup6, bchQuinticGroup24,
-    group_add_eq_sum_subsets _ card_group1, group_add_eq_sum_subsets _ card_group4,
-    group_add_eq_sum_subsets _ card_group6, group_add_eq_sum_subsets _ card_group24,
-    bracket_sum]
+  rw [← eval_bchQuinticTermTable]
+  simpa only [bchQuinticSubsetPiece_eq_taylorPiece, Matrix.vecCons, Fin.cons_zero,
+    Fin.update_cons_zero] using
+    eval_update_add_eq_sum_taylorPiece coefficientScale bchQuinticTermTable 0 ![x, y] V 4
+      (by decide +kernel)
 
 /-- **The `k = 0` piece is `bchQuinticTerm` itself**: substituting `V` at no position leaves the
 word alone. -/
 theorem bchQuinticSubsetPiece_zero [Ring 𝔸] [Algebra ℚ 𝔸] (x V y : 𝔸) :
     bchQuinticSubsetPiece 0 x V y = bchQuinticTerm x y := by
-  simp only [bchQuinticSubsetPiece, bchQuinticGroupSubsets, Finset.powersetCard_zero,
-    Finset.sum_singleton, Finset.piecewise_empty, bchQuinticTerm, bchQuinticBracket,
-    bchQuinticGroup1, bchQuinticGroup4, bchQuinticGroup6, bchQuinticGroup24,
-    wordEval, List.map_ofFn, Function.comp_def]
+  rw [bchQuinticSubsetPiece_eq_taylorPiece, taylorPiece_zero, eval_bchQuinticTermTable]
 
 /-! ### The matching identity -/
 

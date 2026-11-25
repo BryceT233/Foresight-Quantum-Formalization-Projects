@@ -36,26 +36,10 @@ theorem tendsto_nat_pow_four_mul_norm_of_remainder_le (F : ℕ → E) (K : E)
     (t B : ℝ) (ht : 0 ≤ t)
     (hF : ∀ᶠ n in atTop, ‖F n - (t / n) ^ 4 • K‖ ≤ (t / n) ^ 6 * B) :
     Tendsto (fun n : ℕ ↦ (n : ℝ) ^ 4 * ‖F n‖) atTop (𝓝 (t ^ 4 * ‖K‖)) := by
-  have hlim : Tendsto (fun n : ℕ ↦ t ^ 4 * (t / n) ^ 2 * B) atTop (𝓝 0) := by
-    simpa using ((tendsto_const_div_atTop_nhds_zero_nat t).pow 2).const_mul (t ^ 4)
-      |>.mul_const B
-  have hvec : Tendsto (fun n : ℕ ↦ (n : ℝ) ^ 4 • F n - t ^ 4 • K) atTop (𝓝 0) := by
-    apply squeeze_zero_norm' _ hlim
-    filter_upwards [hF, eventually_ge_atTop 1] with n hn hn1
-    have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast (show n ≠ 0 by lia)
-    have heq : (n : ℝ) ^ 4 • F n - t ^ 4 • K =
-        (n : ℝ) ^ 4 • (F n - (t / n) ^ 4 • K) := by
-      rw [smul_sub, smul_smul]
-      congr 1
-      congr 1
-      field_simp
-    rw [heq, norm_smul, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-    calc
-      _ ≤ (n : ℝ) ^ 4 * ((t / n) ^ 6 * B) :=
-        mul_le_mul_of_nonneg_left hn (by positivity)
-      _ = _ := by field_simp
-  have hnorm := (hvec.add_const (t ^ 4 • K)).norm
-  simpa [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht] using hnorm
+  have hvec : Tendsto (fun n : ℕ ↦ (n : ℝ) ^ 4 • F n) atTop (𝓝 (t ^ 4 • K)) := by
+    apply tendsto_nat_pow_smul_of_isBigO (by decide : 4 < 6)
+    simpa only [smul_smul, ← mul_pow, div_eq_inv_mul] using isBigO_inv_nat_pow_of_remainder_le hF
+  simpa only [norm_smul, norm_pow, Real.norm_natCast, Real.norm_of_nonneg ht] using hvec.norm
 
 omit [NormedSpace ℝ E] in
 /-- If the leading operator vanishes, a sixth-order remainder gives

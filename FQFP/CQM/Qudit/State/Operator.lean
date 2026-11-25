@@ -89,11 +89,16 @@ lemma outer_apply (v w x : H.state) : outer v w x = inner ℂ w x • v := rfl
 /-- An outer product is the composite of a bra followed by a ket. -/
 lemma outer_eq_ket_comp_bra (v w : H.state) : outer v w = ket v ∘ₗ bra w := rfl
 
+/-- A categorical outer product of kets interprets as a rectangular linear map. -/
+lemma hom_outerHom_ketArrow {K : Qudit} (u : K.state) (v : H.state) :
+    (MonoidalCategory.State.outerHom (ketArrow u) (ketArrow v)).hom = ket u ∘ₗ bra v := by
+  rw [MonoidalCategory.State.outerHom, ketArrow_dagger, hom_comp]
+  rfl
+
 /-- Interpreting a categorical outer product of kets gives the linear outer product. -/
 lemma endAlgEquiv_outer (v w : H.state) :
     endAlgEquiv H (End.outer (ketArrow v) (ketArrow w)) = outer v w := by
-  simp only [endAlgEquiv_apply, End.outer_asHom, ketArrow_dagger, hom_comp]
-  rfl
+  exact hom_outerHom_ketArrow v w
 
 /-- The adjoint of an outer product exchanges its vectors. -/
 @[simp]

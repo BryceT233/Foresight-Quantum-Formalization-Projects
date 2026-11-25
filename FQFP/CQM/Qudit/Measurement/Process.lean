@@ -88,6 +88,20 @@ lemma effect_ofBasis (b : OrthonormalBasis ι ℂ H.state) (i : ι) :
     (ofBasis b).effect i = CPQudit.pure.map (braArrow (b i)) :=
   CPQudit.effectOfPositive_outer (b i)
 
+/-- On a basis preparation the matching CP effect returns the identity scalar
+and each other effect returns zero. -/
+lemma toCPState_ofBasis_comp_effect [DecidableEq ι] (b : OrthonormalBasis ι ℂ H.state)
+    (i j : ι) :
+    (Density.pure (UnitState.ofBasis b i)).toCPState ≫ (ofBasis b).effect j =
+      if i = j then 𝟙 _ else 0 := by
+  apply CPQudit.state_ext
+  rw [CPQudit.hom_comp, LinearMap.comp_apply, Density.toCPState_one, effect_apply,
+    ← probability_eq_trace, probability_ofBasis_ofBasis]
+  split_ifs
+  · simp
+  · simp only [Complex.ofReal_zero, zero_smul]
+    rfl
+
 end POVM
 
 namespace Instrument

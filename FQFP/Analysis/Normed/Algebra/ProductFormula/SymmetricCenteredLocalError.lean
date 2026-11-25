@@ -27,6 +27,8 @@ A second-order conjugation remainder controls its change of frame.
 * `conjCoeff_one`: the linear coefficient is the bracket with the generator sum.
 * `centeredConjugationConstant_eq_sum`: the original diagonal and mixed bracket formula.
 * `norm_centered_half_transport_sub_conjugation_le`: the local error bounds the transport error.
+* `centered_symmetricExpProduct_sub_integral_eq`: integrate the centered defect after
+  subtracting a prescribed leading term.
 * `norm_centered_symmetricExpProduct_sub_quintic_le`: the centered local error bound.
 -/
 
@@ -178,6 +180,18 @@ lemma norm_centered_symmetricExpProduct_sub_one (l : List A) (G : A)
   rw [← exp_neg_half_mul_exp_mul_exp_neg_half G x, ← sub_mul, ← mul_sub,
     norm_mul_exp_smul_eq_of_le_one G _ hG, norm_exp_smul_mul_eq_of_le_one G _ hG]
 
+/-- The two centered exterior half-products preserve every input norm. -/
+lemma norm_centered_half_transport_eq (l : List A) (G B : A)
+    (hZ : ∀ Z ∈ l, ∀ t : ℝ, ‖exp (t • Z)‖ ≤ 1)
+    (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1) (x : ℝ) :
+    ‖exp ((-x / 2) • G) * expListProduct l x * B *
+      expListProduct l.reverse x * exp ((-x / 2) • G)‖ = ‖B‖ := by
+  rw [norm_mul_exp_smul_eq_of_le_one G _ hG,
+    norm_mul_expListProduct_eq_of_le_one l.reverse _
+      (fun Z hz ↦ hZ Z (by simpa using hz)), mul_assoc,
+    norm_exp_smul_mul_eq_of_le_one G _ hG,
+    norm_expListProduct_mul_eq_of_le_one l _ hZ]
+
 /-- The centered half-transport differs from its conjugation by at most the
 local distance times the norm of its input. -/
 theorem norm_centered_half_transport_sub_conjugation_le (l : List A) (G B : A)
@@ -255,6 +269,17 @@ theorem centered_symmetricExpProduct_sub_one_eq_integral (l : List A) (G : A) (h
     ((continuous_centeredSymmetricDefect l G).intervalIntegrable 0 h)]
   simp
 
+/-- Subtracting the integral of a leading term from the centered product error
+gives the integral of the remaining defect, for either orientation of the step. -/
+theorem centered_symmetricExpProduct_sub_integral_eq (l : List A) (G : A) (h : ℝ)
+    {P : ℝ → A} (hP : IntervalIntegrable P volume 0 h) :
+    exp ((-h / 2) • G) * (symmetricExpProduct l h - exp (h • G)) * exp ((-h / 2) • G) -
+      (∫ x in 0..h, P x) = ∫ x in 0..h, centeredSymmetricDefect l G x - P x := by
+  rw [intervalIntegral.integral_sub
+    ((continuous_centeredSymmetricDefect l G).intervalIntegrable 0 h) hP,
+    ← centered_symmetricExpProduct_sub_one_eq_integral, mul_sub, sub_mul,
+    exp_neg_half_mul_exp_mul_exp_neg_half]
+
 /-- The centered defect remainder retains only the paper's original commutator constants. -/
 theorem norm_centeredSymmetricDefect_sub_quartic_le (l : List A) (G L : A) (C : ℝ)
     (hC : 0 ≤ C) (hZ : ∀ Z ∈ l, ∀ t : ℝ, ‖exp (t • Z)‖ ≤ 1)
@@ -284,13 +309,7 @@ theorem norm_centeredSymmetricDefect_sub_quartic_le (l : List A) (G L : A) (C : 
       rw [norm_smul, Real.norm_eq_abs,
         abs_of_nonneg (by positivity : 0 ≤ 5 * x ^ 4)]
       congr 1
-      dsimp [U, V]
-      simp only [← mul_assoc]
-      rw [norm_mul_exp_smul_eq_of_le_one G _ hG,
-        norm_mul_expListProduct_eq_of_le_one l.reverse _
-          (fun Z hz ↦ hZ Z (by simpa using hz)),
-        mul_assoc, norm_exp_smul_mul_eq_of_le_one G _ hG,
-        norm_expListProduct_mul_eq_of_le_one l _ hZ]
+      simpa only [U, V, mul_assoc] using norm_centered_half_transport_eq l G _ hZ hG x
     _ ≤ _ := by
       apply add_le_add (hT x)
       apply mul_le_mul_of_nonneg_left _ (by positivity)
@@ -325,15 +344,8 @@ theorem norm_centered_symmetricExpProduct_sub_quintic_le (l : List A) (G L : A) 
     norm_num
     congr 1
     ring
-  have heq : exp ((-h / 2) • G) * (symmetricExpProduct l h - exp (h • G)) *
-        exp ((-h / 2) • G) - h ^ 5 • L =
-      ∫ x in 0..h, centeredSymmetricDefect l G x - (5 * x ^ 4) • L := by
-    rw [intervalIntegral.integral_sub
-      ((continuous_centeredSymmetricDefect l G).intervalIntegrable 0 h)
-      ((by fun_prop : Continuous (fun x : ℝ ↦ (5 * x ^ 4) • L)).intervalIntegrable 0 h),
-      hpoly, ← centered_symmetricExpProduct_sub_one_eq_integral]
-    simp only [mul_sub, sub_mul, exp_neg_half_mul_exp_mul_exp_neg_half]
-  rw [heq]
+  rw [← hpoly, centered_symmetricExpProduct_sub_integral_eq l G h
+    ((by fun_prop : Continuous (fun x : ℝ ↦ (5 * x ^ 4) • L)).intervalIntegrable 0 h)]
   calc
     _ ≤ ∫ x in 0..h, P x := by
       apply intervalIntegral.norm_integral_le_of_norm_le hh _

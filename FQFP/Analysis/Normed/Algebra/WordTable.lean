@@ -71,4 +71,23 @@ lemma norm_eval_one_le_of_length (letters : α → 𝔸) (t : Table α) {n : ℕ
   simpa only [one_pow, div_one, hnorm, Nat.cast_list_sum, List.map_map, Function.comp_def] using
     norm_eval_le 1 letters t hmon
 
+/-- A homogeneous two-letter polynomial is bounded by the total letter norm to its degree
+when the sum of its absolute coefficients, including the common multiplier, is at most one. -/
+lemma norm_smul_eval_one_pair_le (c : ℚ) (t : Table (Fin 2)) (a b : 𝔸) {n : ℕ}
+    (hn : 0 < n) (hlen : ∀ p ∈ t, p.1.length = n)
+    (hbudget : |c| * (((t.map fun p ↦ p.2.natAbs).sum : ℕ) : ℚ) ≤ 1) :
+    ‖c • eval 1 ![a, b] t‖ ≤ (‖a‖ + ‖b‖) ^ n := by
+  have hcoeff : ‖c‖ * (((t.map fun p ↦ p.2.natAbs).sum : ℕ) : ℝ) ≤ 1 := by
+    rw [← Rat.norm_cast_real, Real.norm_eq_abs]
+    simpa only [Rat.cast_mul, Rat.cast_abs, Rat.cast_natCast, Rat.cast_one] using
+      (Rat.cast_le (K := ℝ)).2 hbudget
+  rw [norm_smul]
+  calc
+    _ ≤ ‖c‖ * ((((t.map fun p ↦ p.2.natAbs).sum : ℕ) : ℝ) * (‖a‖ + ‖b‖) ^ n) :=
+      mul_le_mul_of_nonneg_left (norm_eval_one_le_of_length ![a, b] t hn hlen (M := ‖a‖ + ‖b‖)
+        (fun i ↦ by fin_cases i <;> simp)) (norm_nonneg c)
+    _ ≤ _ := by
+      rw [← mul_assoc]
+      exact mul_le_of_le_one_left (by positivity) hcoeff
+
 end FQFP.WordTable

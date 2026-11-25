@@ -66,6 +66,20 @@ theorem sandwich_sandwich [DecidableEq ι] (i j : ι) (f : X ⟶ X) :
 /-- The sum of the diagonal blocks of an endomorphism with respect to a resolution. -/
 def diagonalPart (f : X ⟶ X) : X ⟶ X := ∑ i, P.proj i ≫ f ≫ P.proj i
 
+/-- Taking the diagonal part retains a diagonal block and annihilates a cross block. -/
+theorem diagonalPart_block [DecidableEq ι] (i j : ι) (f : X ⟶ X) :
+    P.diagonalPart (P.proj i ≫ f ≫ P.proj j) =
+      if i = j then P.proj i ≫ f ≫ P.proj j else 0 := by
+  calc
+    _ = ∑ k, (P.proj k ≫ P.proj i) ≫ f ≫ (P.proj j ≫ P.proj k) := by
+      simp only [diagonalPart, Category.assoc]
+    _ = _ := by
+      rw [Finset.sum_eq_single i]
+      · by_cases h : i = j <;> simp [P.proj_comp_proj, h, Ne.symm]
+      · intro k _ h
+        rw [P.proj_comp_proj, ite_eq_right h, zero_comp]
+      · simp
+
 /-- Keeping only diagonal blocks is idempotent. -/
 theorem diagonalPart_idempotent (f : X ⟶ X) :
     P.diagonalPart (P.diagonalPart f) = P.diagonalPart f := by

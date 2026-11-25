@@ -268,54 +268,45 @@ theorem correctedTeleportation_corrections (i : Fin 4) :
 
 With a factor `1/√2` on the resource state and on the effect, the branch map is `(1/2) • 𝟙`. -/
 
+/-- The Bell resource is the qubit cup scaled by its normalization factor. -/
+lemma bellState_eq_smul_coevaluation :
+    bellState = scalarRingEquiv.symm bellFactor • η_ Qubit Qubit := by
+  apply hom_ext
+  rw [hom_scalar_smul, RingEquiv.apply_symm_apply]
+  apply LinearMap.ext_ring
+  change bellState (1 : ℂ) = bellFactor • basisCoevaluation (ZBasis 2) (1 : ℂ)
+  simp
+
+/-- The normalized effect scales the cap after the adjoint of the encoded map. -/
+lemma bellEffect_eq_smul_evaluation (U : Qubit ⟶ Qubit) :
+    bellEffect U = scalarRingEquiv.symm bellFactor • ((U† ▷ Qubit) ≫ ε_ Qubit Qubit) := by
+  apply hom_ext
+  rw [hom_scalar_smul, RingEquiv.apply_symm_apply]
+  rfl
+
+/-- With effect encoded by `U` and correction `V`, the branch realizes half of `U† ≫ V`. -/
+lemma hom_teleportationBranch_bell (U V : Qubit ⟶ Qubit) :
+    (teleportationBranch bellState (bellEffect U) V).hom = (1 / 2 : ℂ) • (U† ≫ V).hom := by
+  rw [bellState_eq_smul_coevaluation, bellEffect_eq_smul_evaluation, teleportationBranch_smul_smul,
+    teleportationBranch_evaluation_comp, hom_scalar_smul, map_mul, RingEquiv.apply_symm_apply,
+    bellFactor_mul_self]
+
 /-- The normalized branch, before applying the correction, sends `x` to `(1/2) • U† x`. -/
 lemma branch_no_correction (U : Qubit ⟶ Qubit) (x : Qubit.state) :
     (teleportationBranch bellState (bellEffect U) (𝟙 Qubit)) x
       = (1 / 2 : ℂ) • (U† x) := by
-  have hterm : ∀ i : Fin 2,
-      (λ_ Qubit).hom ((bellEffect U ▷ Qubit) ((α_ Qubit Qubit Qubit).inv
-        (x ⊗ₜ[ℂ] (ZBasis 2 i ⊗ₜ[ℂ] ZBasis 2 i))))
-        = (bellFactor * basisForm (ZBasis 2) (U† x) (ZBasis 2 i)) • ZBasis 2 i := by
-    intro i
-    rw [associator_inv_apply, whiskerRight_apply, bellEffect_apply, leftUnitor_hom_apply]
-  have hsum : ∑ i : Fin 2,
-      (bellFactor * basisForm (ZBasis 2) (U† x) (ZBasis 2 i)) • ZBasis 2 i
-      = bellFactor • (U† x) := by
-    calc ∑ i : Fin 2,
-          (bellFactor * basisForm (ZBasis 2) (U† x) (ZBasis 2 i)) • ZBasis 2 i
-        = ∑ i : Fin 2,
-            bellFactor • (basisForm (ZBasis 2) (U† x) (ZBasis 2 i) • ZBasis 2 i) :=
-          Finset.sum_congr rfl fun i _ => mul_smul ..
-      _ = bellFactor • ∑ i : Fin 2,
-            basisForm (ZBasis 2) (U† x) (ZBasis 2 i) • ZBasis 2 i := (Finset.smul_sum ..).symm
-      _ = bellFactor • (U† x) := by
-          congr 1
-          conv_rhs => rw [← (ZBasis 2).sum_repr' (U† x)]
-          exact Finset.sum_congr rfl fun i _ => by rw [basisForm_apply_basis, bra_apply]
-  rw [teleportationBranch, attachTeleportationResource, id_tensorHom]
-  simp only [comp_apply, Category.comp_id]
-  rw [rightUnitor_inv_apply, whiskerLeft_apply, bellState_apply, one_smul,
-    tmul_smul_sum_tmul]
-  rw [map_smul, map_sum, map_smul, map_sum, map_smul, map_sum]
-  simp only [hterm]
-  rw [hsum, smul_smul, bellFactor_mul_self]
-
-/-- The normalized branch of a unitary correction sends `x` to `(1/2) • x`. -/
-theorem normalizedBranch_apply (U : Qubit ⟶ Qubit) [IsUnitary U] (x : Qubit.state) :
-    (teleportationBranch bellState (bellEffect U) U) x = (1 / 2 : ℂ) • x := by
-  have hstep : teleportationBranch bellState (bellEffect U) U
-      = teleportationBranch bellState (bellEffect U) (𝟙 Qubit) ≫ U := by
-    rw [teleportationBranch_comp, Category.id_comp]
-  rw [hstep, comp_apply, branch_no_correction, map_smul,
-    show U (U† x) = x by
-      simpa only [comp_apply, id_apply] using
-        congrArg (fun f : Qubit ⟶ Qubit => f x) ‹IsUnitary U›.dagger_comp_eq_id]
+  simpa only [Category.comp_id, LinearMap.smul_apply] using
+    LinearMap.congr_fun (hom_teleportationBranch_bell U (𝟙 Qubit)) x
 
 /-- The normalized branch of a unitary correction is `(1/2) • 𝟙` as a linear map. -/
 theorem normalizedBranch_eq_smul (U : Qubit ⟶ Qubit) [IsUnitary U] :
-    (teleportationBranch bellState (bellEffect U) U).hom = (1 / 2 : ℂ) • LinearMap.id :=
-  LinearMap.ext fun x => by
-    simpa only [LinearMap.smul_apply, LinearMap.id_apply] using normalizedBranch_apply U x
+    (teleportationBranch bellState (bellEffect U) U).hom = (1 / 2 : ℂ) • LinearMap.id := by
+  rw [hom_teleportationBranch_bell, IsUnitary.dagger_comp_eq_id, hom_id]
+
+/-- The normalized branch of a unitary correction sends `x` to `(1/2) • x`. -/
+theorem normalizedBranch_apply (U : Qubit ⟶ Qubit) [IsUnitary U] (x : Qubit.state) :
+    (teleportationBranch bellState (bellEffect U) U) x = (1 / 2 : ℂ) • x :=
+  LinearMap.congr_fun (normalizedBranch_eq_smul U) x
 
 /-- For a unit input state, the normalized state of a unitary branch has squared norm `1/4`. -/
 theorem branch_probability (U : Qubit ⟶ Qubit) [IsUnitary U] (ψ : Qubit.state)

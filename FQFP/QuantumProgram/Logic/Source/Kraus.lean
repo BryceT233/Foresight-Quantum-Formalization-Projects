@@ -18,8 +18,8 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Logic.Kraus
-public import FQFP.QuantumProgram.Logic.SourceAssertion
+public import FQFP.QuantumProgram.Logic.Assertion.Kraus
+public import FQFP.QuantumProgram.Logic.Source.Assertion
 
 /-!
 # Kraus combinations of source predicates

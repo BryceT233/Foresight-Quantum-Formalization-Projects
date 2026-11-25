@@ -27,6 +27,7 @@ one factor without imposing a common bound on that direction.
 * `FQFP.norm_wordTaylorPiece_le`, `FQFP.norm_wordLinDiffShift_le`: ordered word estimates.
 * `FQFP.WordTable.norm_taylorPiece_le_of_le`: retain a chosen number of perturbation factors.
 * `FQFP.WordTable.norm_sum_taylorPiece_le_of_le`: combine finitely many perturbation degrees.
+* `FQFP.WordTable.norm_eval_pair_sub_eval_pair_le`: bound a change in the first letter.
 * `FQFP.WordTable.norm_linDiffShift_le`: estimate a derivative shift in a word table.
 -/
 
@@ -155,6 +156,15 @@ noncomputable def taylorWeight {κ : Type*} [DecidableEq κ]
   (t.map fun p ↦ ‖(p.2 : ℚ) / scale ^ p.1.length‖ *
     ((wordPositions p.1.get a).card.choose k : ℝ)).sum
 
+/-- A finite sum of Taylor weights can be bounded by checking the word counts over `ℚ`. -/
+lemma sum_taylorWeight_le_of_rat {κ ι : Type*} [DecidableEq κ]
+    (scale : ℚ) (t : Table κ) (a : κ) (s : Finset ι) (degree : ι → ℕ) (C : ℚ)
+    (h : ∑ i ∈ s, (t.map fun p ↦ |(p.2 : ℚ) / scale ^ p.1.length| *
+      ((p.1.count a).choose (degree i) : ℚ)).sum ≤ C) :
+    ∑ i ∈ s, taylorWeight scale t a (degree i) ≤ (C : ℝ) := by
+  simpa only [taylorWeight, card_wordPositions_get, List.sum_map_norm_mul_natCast,
+    ← Rat.cast_sum, Rat.cast_le] using h
+
 /-- The absolute coefficient budget for one derivative position and a nonempty base shift. -/
 noncomputable def linDiffShiftWeight {κ : Type*} [DecidableEq κ]
     (scale : ℚ) (t : Table κ) (a : κ) : ℝ :=
@@ -219,6 +229,43 @@ lemma norm_sum_taylorPiece_le_of_le {ι : Type*} (scale : ℚ) (t : Table κ) (a
     _ = (∑ i ∈ s, taylorWeight scale t a (degree i)) * (Vn ^ r * M ^ (n - r)) :=
       (sum_mul ..).symm
     _ ≤ _ := mul_le_mul_of_nonneg_right hC (by positivity)
+
+/-- Bound the Taylor terms of degrees `r` through `m` for a change in the first of two letters.
+Every term retains `r` factors of the independent perturbation bound `Vn`. -/
+lemma norm_sum_taylorPiece_pair_le (scale : ℚ) (t : Table (Fin 2)) (x V y : A)
+    (m r : ℕ) {n : ℕ} (hn : 0 < n) (hm : m ≤ n) (hlen : ∀ p ∈ t, p.1.length = n)
+    {M Vn C : ℝ} (hx : ‖x‖ ≤ M) (hy : ‖y‖ ≤ M) (hVM : ‖V‖ ≤ M) (hV : ‖V‖ ≤ Vn)
+    (hC : ∑ i ∈ range (m + 1 - r), taylorWeight scale t 0 (i + r) ≤ C) :
+    ‖∑ i ∈ range (m + 1 - r), taylorPiece scale t 0 ![x, y] V (i + r)‖ ≤
+      C * M ^ (n - r) * Vn ^ r := by
+  have hdeg (i : ℕ) (hi : i ∈ range (m + 1 - r)) : i + r ≤ n := by
+    have := mem_range.mp hi
+    lia
+  have h := norm_sum_taylorPiece_le_of_le scale t 0 ![x, y] V (range (m + 1 - r))
+    (fun i ↦ i + r) n r hn (fun i _ ↦ Nat.le_add_left r i)
+    hdeg hlen
+    (fun p _ i ↦ norm_pair_le x y hx hy (p.1.get i)) hVM hV hC
+  simpa only [mul_comm, mul_left_comm, mul_assoc] using h
+
+/-- Changing the first letter of a homogeneous two-letter table is controlled by the
+sum of its positive-degree Taylor weights, up to the maximal number of first-letter positions. -/
+lemma norm_eval_pair_sub_eval_pair_le (scale : ℚ) (t : Table (Fin 2)) (z x y : A)
+    (m : ℕ) {n : ℕ} (hn : 0 < n) (hm : m ≤ n) (hlen : ∀ p ∈ t, p.1.length = n)
+    (hcard : ∀ p ∈ t, (wordPositions p.1.get 0).card ≤ m) {C : ℝ}
+    (hC : ∑ i ∈ range m, taylorWeight scale t 0 (i + 1) ≤ C) :
+    ‖eval scale ![z, y] t - eval scale ![x, y] t‖ ≤
+      C * (‖z‖ + ‖x‖ + ‖y‖) ^ (n - 1) * ‖z - x‖ := by
+  have hexp : eval scale ![z, y] t =
+      ∑ k ∈ range (m + 1), taylorPiece scale t 0 ![x, y] (z - x) k := by
+    simpa only [Matrix.vecCons, Fin.cons_zero, Fin.update_cons_zero,
+      show x + (z - x) = z by abel] using
+      eval_update_add_eq_sum_taylorPiece scale t 0 ![x, y] (z - x) m hcard
+  rw [hexp, sum_range_succ', taylorPiece_zero, add_sub_cancel_right]
+  have hx : ‖x‖ ≤ ‖z‖ + ‖x‖ + ‖y‖ := by linarith only [norm_nonneg z, norm_nonneg y]
+  have hy : ‖y‖ ≤ ‖z‖ + ‖x‖ + ‖y‖ := le_add_of_nonneg_left (by positivity)
+  have hV := (norm_sub_le z x).trans (le_add_of_nonneg_right (norm_nonneg y))
+  simpa only [Nat.add_sub_cancel, pow_one] using
+    norm_sum_taylorPiece_pair_le scale t x (z - x) y m 1 hn hm hlen hx hy hV le_rfl hC
 
 /-- Bound a table derivative shift by the product of independent perturbation bounds. -/
 lemma norm_linDiffShift_le (scale : ℚ) (t : Table κ) (a : κ)

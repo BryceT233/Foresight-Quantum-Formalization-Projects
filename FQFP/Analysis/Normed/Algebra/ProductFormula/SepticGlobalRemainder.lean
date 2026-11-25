@@ -7,9 +7,8 @@ module
 
 public import FQFP.Analysis.Asymptotics.Pow
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.SepticRemainder
-public import Mathlib.Analysis.SpecificLimits.Basic
+public import FQFP.Analysis.Normed.Algebra.ProductFormula.StepBounds
 import Mathlib.Tactic.GCongr
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 
@@ -78,20 +77,13 @@ theorem septicGlobalRemainder_le_pow_eight {ℓ μ C D t h : ℝ} {r : ℕ}
     septicGlobalRemainder ℓ μ C D h r ≤ h ^ 8 *
       (t * (D + ℓ ^ 2 / 2 + ℓ * μ + (5 * ℓ * C + 7 * μ ^ 2) / 14 +
         7 * μ * C / 16) + t ^ 2 / 2 * (ℓ + μ + C) ^ 2) := by
-  have hr1 : (1 : ℝ) ≤ r := by exact_mod_cast hr
-  have hd0 : 0 ≤ septicStepBound ℓ μ C h := by
-    unfold septicStepBound
-    positivity
-  have hquad : (r : ℝ) * ((r : ℝ) - 1) / 2 * septicStepBound ℓ μ C h ^ 2 ≤
-      (r : ℝ) ^ 2 / 2 * (h ^ 5 * (ℓ + μ + C)) ^ 2 := by
-    gcongr
-    · nlinarith
-    · exact septicStepBound_le_pow_five hμ hC hh hh1
+  have hquad := quadratic_accumulation_le_of_step_le_pow (p := 4) hr ht
+    (septicStepBound_nonneg hℓ hμ hC hh) (septicStepBound_le_pow_five hμ hC hh hh1)
   unfold septicGlobalRemainder
   calc
     _ ≤ (r : ℝ) * (h ^ 9 *
           (D + ℓ ^ 2 / 2 + ℓ * μ + (5 * ℓ * C + 7 * μ ^ 2) / 14 +
-            7 * μ * C / 16)) + (r : ℝ) ^ 2 / 2 * (h ^ 5 * (ℓ + μ + C)) ^ 2 :=
+            7 * μ * C / 16)) + t ^ 2 / 2 * h ^ 8 * (ℓ + μ + C) ^ 2 :=
       add_le_add (mul_le_mul_of_nonneg_left
         (septicCenteredRemainder_le_pow_nine hℓ hμ hC hh hh1) (Nat.cast_nonneg _)) hquad
     _ = _ := by
@@ -103,13 +95,9 @@ theorem eventually_septicGlobalRemainder_le_pow_eight {ℓ μ C t : ℝ} (D : �
     (hℓ : 0 ≤ ℓ) (hμ : 0 ≤ μ) (hC : 0 ≤ C) (ht : 0 ≤ t) :
     ∀ᶠ r : ℕ in atTop, septicGlobalRemainder ℓ μ C D (t / r) r ≤ (t / r) ^ 8 *
       (t * (D + ℓ ^ 2 / 2 + ℓ * μ + (5 * ℓ * C + 7 * μ ^ 2) / 14 +
-        7 * μ * C / 16) + t ^ 2 / 2 * (ℓ + μ + C) ^ 2) := by
-  have hsmall := (tendsto_const_div_atTop_nhds_zero_nat t).eventually
-    (gt_mem_nhds (show (0 : ℝ) < 1 by norm_num))
-  filter_upwards [hsmall, eventually_ge_atTop 1] with r hsmall hr
-  apply septicGlobalRemainder_le_pow_eight hℓ hμ hC
-    (div_nonneg ht (Nat.cast_nonneg r)) hsmall.le hr
-  exact mul_div_cancel₀ t (by exact_mod_cast (show r ≠ 0 by lia))
+        7 * μ * C / 16) + t ^ 2 / 2 * (ℓ + μ + C) ^ 2) :=
+  eventually_div_natCast_of_forall_step ht zero_lt_one fun hh hh1 hr hrh ↦
+    septicGlobalRemainder_le_pow_eight hℓ hμ hC hh hh1 hr hrh
 
 /-- Any sequence dominated by the refined remainder has eighth-order decay
 in the inverse integer step count at fixed time. -/

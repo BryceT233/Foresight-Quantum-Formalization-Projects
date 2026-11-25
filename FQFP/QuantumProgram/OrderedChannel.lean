@@ -286,10 +286,9 @@ namespace Command
 variable {S : Type*} (cells : S → Fin k → Fin n)
 
 /-- Evaluate an ordered register and run a joint unitary when its operands are distinct. -/
-def unitaryOn (U : ∀ σ, Function.Injective (cells σ) →
-    (tensorMemory (D ∘ cells σ) ⟶ tensorMemory (D ∘ cells σ)))
-    [∀ σ hi, DaggerCategory.IsUnitary (U σ hi)] : Command S (Fin n) (tensorMemory D) :=
-  unitary cells fun σ hi => .liftGateHom (orderedLift D ⟨cells σ, hi⟩) (U σ hi)
+def unitaryOn (U : ∀ σ, Function.Injective (cells σ) → End (tensorMemory (D ∘ cells σ)))
+    [∀ σ hi, DaggerCategory.IsUnitary (U σ hi).asHom] : Command S (Fin n) (tensorMemory D) :=
+  unitary cells fun σ hi => .liftGate (orderedLift D ⟨cells σ, hi⟩) (U σ hi)
 
 /-- Measure a joint register, using the original instruction's alias check and outcome writes. -/
 def measureOn {m : ℕ} (I : ∀ σ, Function.Injective (cells σ) →
@@ -298,8 +297,8 @@ def measureOn {m : ℕ} (I : ∀ σ, Function.Injective (cells σ) →
   measure cells (fun σ hi => orderedInstrument D ⟨cells σ, hi⟩ (I σ hi)) upd
 
 /-- Run a joint gate on a fixed ordered tuple of distinct sites. -/
-def unitaryOnRegister (U : tensorMemory (D ∘ r) ⟶ tensorMemory (D ∘ r))
-    [DaggerCategory.IsUnitary U] : Command S (Fin n) (tensorMemory D) :=
+def unitaryOnRegister (U : End (tensorMemory (D ∘ r)))
+    [DaggerCategory.IsUnitary U.asHom] : Command S (Fin n) (tensorMemory D) :=
   unitaryOn D (fun _ => r) (fun _ _ => U)
 
 /-- Run a local instrument on a fixed ordered tuple and write back its original outcome. -/
@@ -318,12 +317,12 @@ theorem KrausFrame.measureOn {m : ℕ} (I : ∀ σ, Function.Injective (cells σ
 
 /-- The unitary frame only checks the lifted local gate on stores with distinct operands. -/
 theorem KrausFrame.unitaryOn (U : ∀ σ, Function.Injective (cells σ) →
-    (tensorMemory (D ∘ cells σ) ⟶ tensorMemory (D ∘ cells σ)))
-    [∀ σ hi, DaggerCategory.IsUnitary (U σ hi)] (K : S → Operator (tensorMemory D))
+    End (tensorMemory (D ∘ cells σ)))
+    [∀ σ hi, DaggerCategory.IsUnitary (U σ hi).asHom] (K : S → Operator (tensorMemory D))
     (hc : ∀ σ (hi : Function.Injective (cells σ)),
-      Commute (orderedLift D ⟨cells σ, hi⟩ (U σ hi).hom) (K σ)) :
+      Commute (orderedLift D ⟨cells σ, hi⟩ (endAlgEquiv _ (U σ hi))) (K σ)) :
     (Command.unitaryOn D cells U).KrausFrame K :=
-  unitary_of_commute cells (fun σ hi => .liftGateHom (orderedLift D ⟨cells σ, hi⟩) (U σ hi)) K hc
+  unitary_of_commute cells (fun σ hi => .liftGate (orderedLift D ⟨cells σ, hi⟩) (U σ hi)) K hc
 
 /-- Initialize the evaluated injection to its specified joint state. -/
 def initializeOn (p : S → Fin k ↪ Fin n) (τ : (σ : S) → Density (tensorMemory (D ∘ p σ))) :

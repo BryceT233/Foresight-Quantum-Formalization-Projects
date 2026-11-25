@@ -8,7 +8,7 @@ module
 public import FQFP.QuantumProgram.OrderedChannel
 public import FQFP.QuantumProgram.Semantics.WeakestPrecondition
 public import FQFP.QuantumProgram.Semantics.RegisterFrame
-public import FQFP.QuantumProgram.Logic.Kraus
+public import FQFP.QuantumProgram.Logic.Assertion.Kraus
 import FQFP.CQM.Qudit.State.OperatorNorm
 
 /-!
@@ -58,8 +58,8 @@ theorem orderedChannel_pullbackEffect_disjoint (r : Fin k ↪ Fin n) (s : Fin l 
 section Dynamic
 
 variable (cells : S → Fin k → Fin n)
-variable (U : ∀ σ, Function.Injective (cells σ) →
-  (tensorMemory (D ∘ cells σ) ⟶ tensorMemory (D ∘ cells σ))) [∀ σ hi, IsUnitary (U σ hi)]
+variable (U : ∀ σ, Function.Injective (cells σ) → End (tensorMemory (D ∘ cells σ)))
+  [∀ σ hi, IsUnitary (U σ hi).asHom]
 variable {m : ℕ} (I : ∀ σ, Function.Injective (cells σ) →
   Instrument (tensorMemory (D ∘ cells σ)) (tensorMemory (D ∘ cells σ)) (Fin m))
 variable (upd : Fin m → S → S)
@@ -69,9 +69,9 @@ theorem wp_unitaryOn_of_injective (B : Assertion S (tensorMemory D)) (σ : S)
     (hi : Function.Injective (cells σ)) :
     wp (Command.unitaryOn D cells U) B σ =
       (orderedChannel D ⟨cells σ, hi⟩
-        (QuantumChannel.ofIsometry (U σ hi))).pullbackEffect (B σ) := by
+        (QuantumChannel.ofIsometry (U σ hi).asHom)).pullbackEffect (B σ) := by
   simp only [Command.unitaryOn, wp_unitary, Assertion.unitaryPre, dite_eq_left hi, channelEffect,
-    toChannel_liftGateHom_orderedLift]
+    toChannel_liftGate_orderedLift]
 
 /-- At a valid address tuple each outcome uses its own branch and updated postcondition. -/
 theorem wp_measureOn_of_injective (B : Assertion S (tensorMemory D)) (σ : S)
@@ -115,10 +115,10 @@ variable (r : Fin k ↪ Fin n)
 
 /-- The precondition of a fixed local unitary has no address side condition. -/
 @[simp] theorem wp_unitaryOnRegister
-    (U : tensorMemory (D ∘ r) ⟶ tensorMemory (D ∘ r)) [IsUnitary U]
+    (U : End (tensorMemory (D ∘ r))) [IsUnitary U.asHom]
     (B : Assertion S (tensorMemory D)) (σ : S) :
     wp (Command.unitaryOnRegister D r U) B σ =
-      (orderedChannel D r (QuantumChannel.ofIsometry U)).pullbackEffect (B σ) :=
+      (orderedChannel D r (QuantumChannel.ofIsometry U.asHom)).pullbackEffect (B σ) :=
   wp_unitaryOn_of_injective D (fun _ => r) (fun _ _ => U) B σ r.injective
 
 /-- The precondition of a fixed local instrument sums over its original outcomes. -/
@@ -131,7 +131,7 @@ variable (r : Fin k ↪ Fin n)
 
 /-- A gate preserves any effect supported on disjoint sites. -/
 theorem wp_unitaryOnRegister_disjoint (s : Fin l ↪ Fin n) (hd : ∀ i j, r i ≠ s j)
-    (U : tensorMemory (D ∘ r) ⟶ tensorMemory (D ∘ r)) [IsUnitary U]
+    (U : End (tensorMemory (D ∘ r))) [IsUnitary U.asHom]
     (E : Set.Icc (0 : Operator (tensorMemory (D ∘ s))) 1) :
     wp (Command.unitaryOnRegister (S := S) D r U) (fun _ => orderedLiftEffect D s E) =
       fun _ => orderedLiftEffect D s E := by

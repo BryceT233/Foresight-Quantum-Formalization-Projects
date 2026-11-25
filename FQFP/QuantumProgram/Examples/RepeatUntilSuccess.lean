@@ -15,7 +15,7 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Logic.AlmostSure
+public import FQFP.QuantumProgram.Logic.Iteration.AlmostSure
 public import FQFP.QuantumProgram.ControlledPhase
 public import FQFP.CQM.Qudit.Teleportation.Basic
 import FQFP.CQM.Qudit.Channel.Process.Dual

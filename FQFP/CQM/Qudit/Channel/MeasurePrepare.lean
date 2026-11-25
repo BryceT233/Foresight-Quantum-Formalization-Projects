@@ -15,6 +15,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.CQM.Category.MeasurePrepare
 public import FQFP.CQM.Qudit.Channel.Ensemble
 public import FQFP.CQM.Qudit.Measurement.Process
 
@@ -96,6 +97,11 @@ lemma toCPMap_measurePrepare (M : POVM H ι) (σ : ι → Density K) :
     (M.measurePrepare σ).toCPMap = ∑ i, M.effect i ≫ (σ i).toCPState :=
   (M.measurePrepareInstrument σ).sum_branchCPMap_eq.symm
 
+/-- The underlying CP arrow realizes measure-and-prepare in the process category. -/
+lemma asCPHom_measurePrepare (M : POVM H ι) (σ : ι → Density K) :
+    (M.measurePrepare σ).asCPHom = CQM.measurePrepare M.effect (fun i => (σ i).toCPState) :=
+  M.toCPMap_measurePrepare σ
+
 /-- The measure-and-prepare formula holds on all operators, without positivity assumptions. -/
 lemma measurePrepare_apply (M : POVM H ι) (σ : ι → Density K) (A : Operator H) :
     (M.measurePrepare σ).toSuperoperator A = ∑ i, (M.op i * A).trace • (σ i).op := by
@@ -142,18 +148,16 @@ lemma measurePrepare_const (M : POVM H ι) (σ : Density K) :
 lemma comp_measurePrepare (M : POVM H ι) (σ : ι → Density K) (Φ : QuantumChannel K L) :
     Φ.comp (M.measurePrepare σ) = M.measurePrepare (fun i => Φ.map (σ i)) := by
   apply QuantumChannel.asCPHom_injective
-  rw [QuantumChannel.asCPHom_comp]
-  simp only [QuantumChannel.asCPHom, toCPMap_measurePrepare, Semiadditive.sum_comp,
-    Category.assoc, Density.toCPState_comp]
+  simp only [QuantumChannel.asCPHom_comp, asCPHom_measurePrepare, CQM.measurePrepare_comp,
+    QuantumChannel.asCPHom, Density.toCPState_comp]
 
 /-- Prior quantum processing pulls back the measurement and leaves the preparation family fixed. -/
 lemma measurePrepare_comp {G : Qudit} (M : POVM H ι) (σ : ι → Density K)
     (Φ : QuantumChannel G H) :
     (M.measurePrepare σ).comp Φ = (M.pullback Φ).measurePrepare σ := by
   apply QuantumChannel.asCPHom_injective
-  rw [QuantumChannel.asCPHom_comp]
-  simp only [QuantumChannel.asCPHom, toCPMap_measurePrepare, Semiadditive.comp_sum,
-    effect_pullback, Category.assoc]
+  simp only [QuantumChannel.asCPHom_comp, asCPHom_measurePrepare, CQM.comp_measurePrepare,
+    funext (M.effect_pullback Φ)]
 
 end POVM
 

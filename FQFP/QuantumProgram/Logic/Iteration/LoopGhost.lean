@@ -16,7 +16,7 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Semantics.GhostStore
-public import FQFP.QuantumProgram.Logic.SourceRules
+public import FQFP.QuantumProgram.Logic.Source.Rules
 
 /-!
 # Total loops with the old integer rank in the classical store

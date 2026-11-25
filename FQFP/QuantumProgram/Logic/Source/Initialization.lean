@@ -16,8 +16,8 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Initialization
-public import FQFP.QuantumProgram.Logic.SourceRules
-public import FQFP.QuantumProgram.Logic.For
+public import FQFP.QuantumProgram.Logic.Source.Rules
+public import FQFP.QuantumProgram.Logic.Iteration.For
 import FQFP.CQM.Qudit.Measurement.ClassicalRegister
 
 /-!

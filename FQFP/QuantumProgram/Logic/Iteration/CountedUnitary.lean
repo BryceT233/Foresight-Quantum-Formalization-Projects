@@ -15,8 +15,8 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Logic.SourceCounted
-public import FQFP.QuantumProgram.Logic.SourceUnitary
+public import FQFP.QuantumProgram.Logic.Source.Counted
+public import FQFP.QuantumProgram.Logic.Source.Unitary
 
 /-!
 # Counted circuits on arbitrary pure inputs

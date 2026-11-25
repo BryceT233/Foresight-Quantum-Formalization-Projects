@@ -28,10 +28,8 @@ variable {H K L E : Qudit}
 /-- Categorical compatibility means that one channel has the two prescribed partial traces. -/
 theorem compatible_iff_exists_joint_channel (Φ : QuantumChannel H K) (Γ : QuantumChannel H L) :
     CQM.Compatible Φ.asHom Γ.asHom ↔ ∃ Ψ : QuantumChannel H (K ⊗ L),
-      (partialTraceRight K L).comp Ψ = Φ ∧ (partialTraceLeft K L).comp Ψ = Γ := by
-  unfold CQM.Compatible
-  simp only [CausalQudit.fst_eq_partialTraceRight, CausalQudit.snd_eq_partialTraceLeft]
-  rfl
+      (partialTraceRight K L).comp Ψ = Φ ∧ (partialTraceLeft K L).comp Ψ = Γ :=
+  exists_congr fun _ => hasMarginals_iff
 
 /-- With zero-dimensional input the chosen environment also has dimension zero, so its
 complement can simulate any channel on the same input. -/
@@ -92,8 +90,7 @@ theorem compatible_iff_complementary_isDegradableTo (Φ : QuantumChannel H K)
     · exact complementary_isDegradableTo_of_finrank_eq_zero _ Γ (by lia)
   · intro h
     have hj : CQM.Compatible Φ.asHom Φ.complementary.asHom :=
-      (compatible_iff_exists_joint_channel _ _).mpr
-        ⟨ofIsometry Φ.dilation.toHom, Φ.dilation.channel_eq_comp.symm, rfl⟩
+      ⟨_, Φ.dilation.hasMarginals⟩
     exact hj.postprocess (CQM.IsDegradableTo.refl _) h
 
 /-- Simulating the other channel from the complementary output is a symmetric test. -/

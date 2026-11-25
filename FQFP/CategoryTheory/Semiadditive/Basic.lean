@@ -121,6 +121,18 @@ lemma sum_comp {X Y Z : C} {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y)) (
     (∑ i ∈ s, f i) ≫ g = ∑ i ∈ s, f i ≫ g :=
   map_sum (rightComp X g) f s
 
+/-- Postcomposing a sum of factorizations with a retraction of one component
+recovers that component when the retraction annihilates all the others. -/
+lemma sum_comp_retraction {X Z : C} {ι : Type*} [Fintype ι] {Y : ι → C}
+    (f : ∀ i, X ⟶ Y i) (s : ∀ i, Y i ⟶ Z) (j : ι) (r : Z ⟶ Y j)
+    (hj : s j ≫ r = 𝟙 (Y j)) (hij : ∀ i, i ≠ j → s i ≫ r = 0) :
+    (∑ i, f i ≫ s i) ≫ r = f j := by
+  rw [sum_comp, Finset.sum_eq_single j]
+  · rw [Category.assoc, hj, Category.comp_id]
+  · intro i _ h
+    rw [Category.assoc, hij i h, Limits.comp_zero]
+  · simp
+
 /-- Sum over pairs of outcomes by first summing the continuations of each branch. -/
 lemma sum_prod_comp {X Y Z : C} {ι κ : Type*} [Fintype ι] [Fintype κ]
     (f : ι → (X ⟶ Y)) (g : ι → κ → (Y ⟶ Z)) :

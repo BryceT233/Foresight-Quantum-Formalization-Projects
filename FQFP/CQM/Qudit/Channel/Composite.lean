@@ -16,8 +16,8 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.CQM.Category.Postprocessing
 public import FQFP.CQM.Qudit.Channel.Process.Causal
-public import FQFP.CategoryTheory.Monoidal.SemiCartesian
 
 /-!
 # Composite channel identities
@@ -73,6 +73,14 @@ noncomputable section
 open CausalQudit SemiCartesianMonoidalCategory
 
 variable {H K L M N P : Qudit}
+
+/-- The two categorical marginals of a joint channel are its partial traces. -/
+lemma hasMarginals_iff {j : QuantumChannel H (K ⊗ L)} {f : QuantumChannel H K}
+    {g : QuantumChannel H L} :
+    CQM.HasMarginals j.asHom f.asHom g.asHom ↔
+      (partialTraceRight K L).comp j = f ∧ (partialTraceLeft K L).comp j = g := by
+  simp only [CQM.HasMarginals, fst_eq_partialTraceRight, snd_eq_partialTraceLeft]
+  rfl
 
 /-- Sequential isometries induce sequential channels. -/
 lemma ofIsometry_comp (f : H ⟶ K) (g : K ⟶ L) [IsIsometry f] [IsIsometry g] :

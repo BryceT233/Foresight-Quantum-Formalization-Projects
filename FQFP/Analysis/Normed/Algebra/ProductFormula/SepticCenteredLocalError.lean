@@ -70,18 +70,6 @@ theorem norm_centeredConjugation_sub_le_grouped (l : List A) (G M : A)
   simpa only [sum_range_succ, sum_range_zero, zero_add, pow_zero, one_smul,
     conjCoeff_zero, h1, smul_zero, add_zero] using hb
 
-/-- The two centered exterior half-products preserve every input norm. -/
-lemma norm_centered_half_transport_eq (l : List A) (G B : A)
-    (hZ : ∀ Z ∈ l, ∀ t : ℝ, ‖exp (t • Z)‖ ≤ 1)
-    (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1) (x : ℝ) :
-    ‖exp ((-x / 2) • G) * expListProduct l x * B *
-      expListProduct l.reverse x * exp ((-x / 2) • G)‖ = ‖B‖ := by
-  rw [norm_mul_exp_smul_eq_of_le_one G _ hG,
-    norm_mul_expListProduct_eq_of_le_one l.reverse _
-      (fun Z hz ↦ hZ Z (by simpa using hz)), mul_assoc,
-    norm_exp_smul_mul_eq_of_le_one G _ hG,
-    norm_expListProduct_mul_eq_of_le_one l _ hZ]
-
 /-- The two transported coefficient polynomials have the combined eighth-order remainder. -/
 lemma norm_centeredConjugation_quartic_add_sextic_sub_le (l : List A) (G L M B : A)
     (R4 R2 : ℝ)
@@ -223,16 +211,8 @@ theorem norm_centered_symmetricExpProduct_sub_septic_le (l : List A) (G L M B : 
       integral_pow]
     norm_num
     congr 1 <;> module
-  have heq : exp ((-h / 2) • G) * (symmetricExpProduct l h - exp (h • G)) *
-        exp ((-h / 2) • G) - h ^ 5 • L - h ^ 7 • N =
-      ∫ x in 0..h, centeredSymmetricDefect l G x - P x := by
-    rw [intervalIntegral.integral_sub
-      ((continuous_centeredSymmetricDefect l G).intervalIntegrable 0 h)
-      ((by fun_prop : Continuous P).intervalIntegrable 0 h), hi,
-      ← centered_symmetricExpProduct_sub_one_eq_integral]
-    simp only [mul_sub, sub_mul, exp_neg_half_mul_exp_mul_exp_neg_half]
-    abel
-  rw [heq]
+  rw [← sub_add_eq_sub_sub, ← hi, centered_symmetricExpProduct_sub_integral_eq l G h
+    ((by fun_prop : Continuous P).intervalIntegrable 0 h)]
   calc
     _ ≤ ∫ x in 0..h, (9 * C + 5 * R4 + 7 * R2) * x ^ 8 +
         (5 * x ^ 4 * ‖L‖ + 7 * x ^ 6 * ‖M‖) * septicStepBound ‖L‖ ‖M‖ C x := by

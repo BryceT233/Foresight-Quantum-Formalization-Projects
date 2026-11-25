@@ -416,97 +416,38 @@ lemma additiveKernel_eq_commutatorRemainder_sum
     ∑ i : Fin Υ × Fin Γ, commutatorRemainder (suffixGenerators P H i) (P.generator H i) p σ
   let remAll : ℝ → 𝔸 := fun σ =>
     commutatorRemainder (orderedGenerators P H) (∑ γ : Fin Γ, H γ) p σ
-  have h_rearrange (τ : ℝ) :
-      (∑ i : Fin Υ × Fin Γ, ((∑ j ∈ range p,
-            conjCoeff (suffixGenerators P H i) (P.generator H i) j * (τ ^ j : 𝔸))
-          + commutatorRemainder (suffixGenerators P H i) (P.generator H i) p τ))
-        - ((∑ j ∈ range p,
-            conjCoeff (orderedGenerators P H) (∑ γ : Fin Γ, H γ) j * (τ ^ j : 𝔸))
-          + commutatorRemainder (orderedGenerators P H) (∑ γ : Fin Γ, H γ) p τ)
-        = (∑ j ∈ range p, T j * (τ ^ j : 𝔸))
-          + (∑ i : Fin Υ × Fin Γ,
-              commutatorRemainder (suffixGenerators P H i) (P.generator H i) p τ)
-          - commutatorRemainder (orderedGenerators P H) (∑ γ : Fin Γ, H γ) p τ := by
-    dsimp [T]
-    rw [sum_add_distrib]
-    have hpoly : (∑ i : Fin Υ × Fin Γ, ∑ j ∈ range p,
-          conjCoeff (suffixGenerators P H i) (P.generator H i) j * (τ ^ j : 𝔸))
-        - (∑ j ∈ range p,
-          conjCoeff (orderedGenerators P H) (∑ γ : Fin Γ, H γ) j * (τ ^ j : 𝔸))
-        = ∑ j ∈ range p,
-          ((∑ i : Fin Υ × Fin Γ, conjCoeff (suffixGenerators P H i) (P.generator H i) j)
-            - conjCoeff (orderedGenerators P H) (∑ γ : Fin Γ, H γ) j) * (τ ^ j : 𝔸) := by
-      rw [sum_comm, ← sum_sub_distrib]
-      apply sum_congr rfl
-      intro j _
-      rw [← sum_mul, sub_mul]
-    calc
-      (∑ i : Fin Υ × Fin Γ, ∑ j ∈ range p,
-          conjCoeff (suffixGenerators P H i) (P.generator H i) j * (τ ^ j : 𝔸))
-        + (∑ i : Fin Υ × Fin Γ,
-              commutatorRemainder (suffixGenerators P H i) (P.generator H i) p τ)
-        - ((∑ j ∈ range p,
-          conjCoeff (orderedGenerators P H) (∑ γ : Fin Γ, H γ) j * (τ ^ j : 𝔸))
-        + commutatorRemainder (orderedGenerators P H) (∑ γ : Fin Γ, H γ) p τ)
-          = ((∑ i : Fin Υ × Fin Γ, ∑ j ∈ range p,
-              conjCoeff (suffixGenerators P H i) (P.generator H i) j * (τ ^ j : 𝔸))
-            - (∑ j ∈ range p,
-              conjCoeff (orderedGenerators P H) (∑ γ : Fin Γ, H γ) j * (τ ^ j : 𝔸)))
-            + (∑ i : Fin Υ × Fin Γ,
-              commutatorRemainder (suffixGenerators P H i) (P.generator H i) p τ)
-            - commutatorRemainder (orderedGenerators P H) (∑ γ : Fin Γ, H γ) p τ := by abel
-      _ = (∑ j ∈ range p,
-            ((∑ i : Fin Υ × Fin Γ, conjCoeff (suffixGenerators P H i) (P.generator H i) j)
-              - conjCoeff (orderedGenerators P H) (∑ γ : Fin Γ, H γ) j) * (τ ^ j : 𝔸))
-          + (∑ i : Fin Υ × Fin Γ,
-              commutatorRemainder (suffixGenerators P H i) (P.generator H i) p τ)
-          - commutatorRemainder (orderedGenerators P H) (∑ γ : Fin Γ, H γ) p τ := by rw [hpoly]
-  have h_expand : ∀ τ : ℝ, additiveKernel P H τ = poly (-τ) + remSum (-τ) - remAll (-τ) := by
-    intro τ
-    dsimp [poly, remSum, remAll]
+  have h_expand (τ : ℝ) : additiveKernel P H τ = poly (-τ) + remSum (-τ) - remAll (-τ) := by
     rw [additiveKernel_eq_sum_multiConj P H τ]
-    conv_lhs =>
-      rw [sum_congr rfl (fun i _ =>
-        commutatorExpansion_conj (suffixGenerators P H i) (P.generator H i) p (-τ) hp)]
-      rw [commutatorExpansion_conj (orderedGenerators P H) (∑ γ : Fin Γ, H γ) p (-τ) hp]
-    exact h_rearrange (-τ)
+    simp only [commutatorExpansion_conj _ _ p _ hp, sum_add_distrib, poly, T, sub_mul,
+      sum_mul, sum_sub_distrib, remSum, remAll]
+    rw [sum_comm (s := univ) (t := range p)]
+    abel
   have hkernel : additiveKernel P H =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) :=
     ((errorOrderCond_additive_iff P p H).mp h_order).of_norm_left
-  have hrem_i : ∀ i : Fin Υ × Fin Γ,
+  have hrem_i (i : Fin Υ × Fin Γ) :
       (fun τ : ℝ => commutatorRemainder (suffixGenerators P H i) (P.generator H i) p (-τ))
-        =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := by
-    intro i
-    have hcomp := (commutatorRemainder_isBigO (suffixGenerators P H i)
-      (P.generator H i) p).of_norm_left.comp_tendsto tendsto_neg_nhds_zero
-    exact hcomp.trans (neg_pow_isBigO p)
+        =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) :=
+    isBigO_comp_neg_pow_iff.mpr
+      (commutatorRemainder_isBigO (suffixGenerators P H i) (P.generator H i) p).of_norm_left
   have hremSum : (fun τ : ℝ => remSum (-τ)) =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := by
     simpa only [remSum, Finset.sum_fn] using
       IsBigO.sum (s := (univ : Finset (Fin Υ × Fin Γ))) (fun i _ => hrem_i i)
   have hremAll : (fun τ : ℝ => remAll (-τ))
-      =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := by
-    have hcomp := (commutatorRemainder_isBigO (orderedGenerators P H)
-      (∑ γ : Fin Γ, H γ) p).of_norm_left.comp_tendsto tendsto_neg_nhds_zero
-    exact hcomp.trans (neg_pow_isBigO p)
+      =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) :=
+    isBigO_comp_neg_pow_iff.mpr
+      (commutatorRemainder_isBigO (orderedGenerators P H) (∑ γ : Fin Γ, H γ) p).of_norm_left
   have hpoly_neg : (fun τ : ℝ => poly (-τ)) =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := by
     refine ((hkernel.sub hremSum).add hremAll).congr_left fun τ => ?_
     rw [h_expand τ]
     abel
-  have hpoly_big : poly =O[𝓝 (0 : ℝ)] (fun σ : ℝ => σ ^ p) := by
-    have hcomp := hpoly_neg.comp_tendsto tendsto_neg_nhds_zero
-    exact (hcomp.trans (neg_pow_isBigO p)).congr_left (fun σ => by simp)
   have hT_zero : ∀ j : ℕ, j < p → T j = 0 :=
-    (polynomial_isBigO_iff_coeffs_zero p T).mp hpoly_big.norm_left
+    (polynomial_isBigO_iff_coeffs_zero p T).mp (isBigO_comp_neg_pow_iff.mp hpoly_neg).norm_left
   have hpoly_zero : poly = 0 := by
     funext σ
     dsimp [poly]
     apply sum_eq_zero
     intro j hj
     simp [hT_zero j (mem_range.mp hj)]
-  calc
-    additiveKernel P H τ = poly (-τ) + remSum (-τ) - remAll (-τ) := h_expand τ
-    _ = remSum (-τ) - remAll (-τ) := by simp [hpoly_zero]
-    _ = (∑ i : Fin Υ × Fin Γ,
-        commutatorRemainder (suffixGenerators P H i) (P.generator H i) p (-τ))
-        - commutatorRemainder (orderedGenerators P H) (∑ γ : Fin Γ, H γ) p (-τ) := rfl
+  simpa only [hpoly_zero, Pi.zero_apply, zero_add, remSum, remAll] using h_expand τ
 
 end TrotterError

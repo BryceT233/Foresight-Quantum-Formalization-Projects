@@ -62,6 +62,13 @@ def bchQuinticTermMixed2Remainder [Ring A] [Algebra ℚ A] (x V W y : A) : A :=
     bchQuinticMixedSubsetPiece 4 1 x V W y + bchQuinticMixedSubsetPiece 4 2 x V W y +
     bchQuinticMixedSubsetPiece 4 3 x V W y
 
+/-- The higher mixed remainder sums the pieces of total degree three or four,
+with both perturbations present. -/
+lemma bchQuinticTermMixed2Remainder_eq_sum [Ring A] [Algebra ℚ A] (x V W y : A) :
+    bchQuinticTermMixed2Remainder x V W y =
+      ∑ k ∈ Ico 3 5, ∑ p ∈ Ico 1 k, bchQuinticMixedSubsetPiece k p x V W y := by
+  norm_num [sum_Ico_eq_sum_range, sum_range_succ, bchQuinticTermMixed2Remainder, add_assoc]
+
 /-- Splitting a perturbation into two colors refines each one-color word-group piece. -/
 lemma bchQuinticGroupSubsets_add_eq_sum_mixed [Semiring A] {m : ℕ}
     (words : Fin m → Fin 5 → Fin 2) (k : ℕ) (x V W y : A) :

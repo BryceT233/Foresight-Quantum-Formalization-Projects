@@ -30,19 +30,6 @@ polynomial or remainder is defined.
 
 namespace FQFP.BCH
 
-private lemma mul_pow_div_le_mul_pow {K M r s c d D : ℝ} (n : ℕ)
-    (hK : 0 ≤ K) (hr : 0 ≤ r) (hs : 0 ≤ s) (hradius : r ≤ c * s)
-    (hd : 0 < d) (hden : d ≤ D) (hbudget : K * c ^ n ≤ M * d) :
-    K * r ^ n / D ≤ M * s ^ n := by
-  calc
-    _ ≤ K * (c * s) ^ n / d :=
-      div_le_div₀ (mul_nonneg hK (pow_nonneg (hr.trans hradius) n))
-        (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hr hradius n) hK) hd hden
-    _ = (K * c ^ n / d) * s ^ n := by
-      rw [mul_pow]
-      ring
-    _ ≤ _ := mul_le_mul_of_nonneg_right ((div_le_iff₀ hd).mpr hbudget) (pow_nonneg hs n)
-
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A]
   [CompleteSpace A] [NormOneClass A]
 

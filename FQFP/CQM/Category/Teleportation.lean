@@ -7,6 +7,7 @@ module
 
 public import FQFP.CategoryTheory.Monoidal.Dagger.Basic
 public import FQFP.CategoryTheory.Monoidal.Rigid.Basic
+public import FQFP.CategoryTheory.Monoidal.Scalar
 
 /-!
 # Teleportation
@@ -37,14 +38,11 @@ The theorems here are per branch: they say what a given outcome does *if it occu
 Completeness and disjointness of the branch effects are separate requirements, proved in the
 models for `RelCat.bitBellEffects` and the normalized `Qudit.qubitBellEffects`.
 
-## Normalization boundary
+## Scalar normalization
 
-Nothing here normalizes: the resource state `η` and the effect `x` are arbitrary arguments of
-`teleportationBranch`, so the unnormalized Bell data of the source — the cup `∑ᵢ |ii⟩` and the
-four Bell effects, each of norm `√2` for a qubit — gives an exact identity. The physically
-normalized data instead gives the scalar multiple `(1/2) • 𝟙` that `Qudit.Teleportation`
-computes; one cannot normalize the cup and keep the exact-pairing snake equations at the same
-time, which is why the two statements are kept apart.
+In a braided category, scaling the resource by `s` and the effect by `t` scales the branch by
+`s * t`. For the normalized Bell data of a qubit both factors are `1/√2`, giving amplitude
+`1/2` and probability `1/4` for each corrected branch.
 
 ## Main definitions
 
@@ -101,6 +99,14 @@ lemma teleportationBranch_comp {L R : C} (η : 𝟙_ C ⟶ R ⊗ L) (x : L ⊗ R
     (U V : L ⟶ L) : teleportationBranch η x U ≫ V = teleportationBranch η x (U ≫ V) := by
   simp only [teleportationBranch, Category.assoc]
 
+/-- Independent scalar factors on the resource and on the effect multiply in a branch. -/
+lemma teleportationBranch_smul_smul [BraidedCategory C] {L R : C} (s t : Scalar C)
+    (η : 𝟙_ C ⟶ R ⊗ L) (x : L ⊗ R ⟶ 𝟙_ C) (U : L ⟶ L) :
+    teleportationBranch (s • η) (t • x) U = (s * t) • teleportationBranch η x U := by
+  simp only [teleportationBranch, attachTeleportationResource, id_tensorHom,
+    whiskerLeft_scalar_smul, scalar_smul_whiskerRight, scalar_smul_comp, comp_scalar_smul,
+    ← mul_smul, mul_comm t s]
+
 section Pairing
 
 variable {L R : C} [ExactPairing R L]
@@ -118,17 +124,17 @@ theorem teleportationBranch_evaluation (V : L ⟶ L) :
   rw [key, h]
   simp
 
+/-- A branch with the effect induced by `V` followed by any correction `U` realizes `V ≫ U`. -/
+lemma teleportationBranch_evaluation_comp (V U : L ⟶ L) :
+    teleportationBranch (η_ R L) ((V ▷ R) ≫ ε_ R L) U = V ≫ U := by
+  simpa only [teleportationBranch_comp, Category.id_comp] using
+    congrArg (· ≫ U) (teleportationBranch_evaluation (R := R) V)
+
 /-- **Example 3.17**, single branch: for a unitary correction `U`, the branch with Bell effect
 `U† ▷ R ≫ ε` and correction `U` is the identity. -/
 theorem teleportationBranch_correction [DaggerCategory C] (U : L ⟶ L) [IsUnitary U] :
     teleportationBranch (η_ R L) ((U† ▷ R) ≫ ε_ R L) U = 𝟙 L := by
-  calc teleportationBranch (η_ R L) ((U† ▷ R) ≫ ε_ R L) U
-      = teleportationBranch (η_ R L) ((U† ▷ R) ≫ ε_ R L) (𝟙 L ≫ U) := by
-        rw [Category.id_comp]
-    _ = teleportationBranch (η_ R L) ((U† ▷ R) ≫ ε_ R L) (𝟙 L) ≫ U := by
-        rw [teleportationBranch_comp]
-    _ = U† ≫ U := by rw [teleportationBranch_evaluation]
-    _ = 𝟙 L := IsUnitary.dagger_comp_eq_id U
+  rw [teleportationBranch_evaluation_comp, IsUnitary.dagger_comp_eq_id]
 
 end Pairing
 

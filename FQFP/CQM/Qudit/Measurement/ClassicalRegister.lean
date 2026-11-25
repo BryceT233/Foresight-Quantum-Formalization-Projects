@@ -160,7 +160,7 @@ lemma probability_outcomeState (I : Instrument H K ι) (b : OrthonormalBasis ι 
     (POVM.ofBasis b).probability (I.outcomeState b ρ) i = I.probability ρ i := by
   classical
   rw [outcomeState, POVM.probability_mixture]
-  simp [POVM.probability_ofBasis_pure, UnitState.ofBasis, b.inner_eq_ite, apply_ite]
+  simp [POVM.probability_ofBasis_ofBasis, apply_ite]
 
 /-- Read a classical register and discard its carrier, retaining the quantum subsystem. -/
 def read (K : Qudit) (b : OrthonormalBasis ι ℂ C.state) : Instrument (K ⊗ C) K ι :=

@@ -70,6 +70,20 @@ theorem expListLogCoeff_eq_zero_of_reverse_eq (l : List A) (hl : l.reverse = l)
     simpa only [two_smul] using (neg_eq_iff_add_eq_zero.mp h.symm)
   exact (smul_eq_zero.mp htwo).resolve_left (by norm_num)
 
+/-- Including an even degree leaves the truncated logarithm of a palindrome unchanged. -/
+lemma sum_expListLogCoeff_succ_of_reverse_eq (l : List A) (hl : l.reverse = l)
+    (n : ℕ) (hn : Even n) :
+    ∑ d ∈ Finset.range (n + 1), expListLogCoeff l d =
+      ∑ d ∈ Finset.range n, expListLogCoeff l d := by
+  rw [Finset.sum_range_succ, expListLogCoeff_eq_zero_of_reverse_eq l hl n hn, add_zero]
+
+/-- The logarithm of a palindromic exponential product through degree two is the sum of its
+arguments. -/
+lemma sum_expListLogCoeff_three_of_reverse_eq (l : List A) (hl : l.reverse = l) :
+    ∑ d ∈ Finset.range 3, expListLogCoeff l d = l.sum := by
+  rw [sum_expListLogCoeff_succ_of_reverse_eq l hl 2 (by decide)]
+  simp [Finset.sum_range_succ, expListLogCoeff_one]
+
 /-- A palindromic exponential product agrees quadratically with the exponential of its sum. -/
 theorem expListTerm_two_of_reverse_eq (l : List A) (hl : l.reverse = l) :
     expListTerm l 2 = (2 : ℚ)⁻¹ • l.sum ^ 2 := by

@@ -16,6 +16,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.Channel.Basic
+public import FQFP.CQM.Qudit.Channel.RankOne
 
 /-!
 # Choi operators and completeness of finite Kraus representations
@@ -124,13 +125,6 @@ lemma choi_injective (b : OrthonormalBasis ι ℂ H.state) :
   apply ext_inner_left ℂ
   intro x
   rw [← inner_choi b Φ x y i j, ← inner_choi b Ψ x y i j, h]
-
-/-- Conjugating an outer product applies the process to both vectors. -/
-lemma conjugate_outer (f : H.state →ₗ[ℂ] K.state) (x y : H.state) :
-    conjugate f (Operator.outer x y) = Operator.outer (f x) (f y) := by
-  ext z
-  simp only [conjugate_apply, LinearMap.comp_apply, Operator.outer_apply, map_smul,
-    LinearMap.adjoint_inner_right]
 
 /-- Choi is amplification applied to the unnormalized maximally entangled projector. -/
 lemma choi_eq_tensor_apply (b : OrthonormalBasis ι ℂ H.state) (Φ : Superoperator H K) :

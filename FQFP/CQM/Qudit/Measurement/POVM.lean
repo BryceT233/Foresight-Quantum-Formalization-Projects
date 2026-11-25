@@ -215,6 +215,16 @@ lemma probability_ofBasis_pure_eq_scalar (b : OrthonormalBasis ι ℂ H.state)
   rw [probability_ofBasis_pure, scalarRingEquiv_probability_ketArrow_braArrow]
   exact Complex.ofReal_pow _ _
 
+/-- Preparing and then measuring in the same basis reads back the prepared label. -/
+lemma probability_ofBasis_ofBasis [DecidableEq ι] (b : OrthonormalBasis ι ℂ H.state) (i j : ι) :
+    (ofBasis b).probability (Density.pure (UnitState.ofBasis b i)) j =
+      if i = j then 1 else 0 := by
+  have h := CQM.probability_of_disjoint (disjoint_braArrow_orthonormalBasis b) i j
+  rw [braArrow_dagger] at h
+  apply Complex.ofReal_injective
+  rw [probability_ofBasis_pure_eq_scalar, UnitState.coe_ofBasis, h]
+  split_ifs <;> simp
+
 /-- Computational-basis measurement is normalized for arbitrary mixed inputs. -/
 lemma sum_probability_computational (n : ℕ) (ρ : Density (std n)) :
     ∑ i, (computational n).probability ρ i = 1 := (computational n).sum_probability ρ

@@ -15,7 +15,7 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Examples.BoundedRepeatUntilSuccess
-public import FQFP.QuantumProgram.Logic.HeraldedRUSSource
+public import FQFP.QuantumProgram.Logic.RepeatUntilSuccess.Source
 
 /-!
 # Paetznick–Svore bounded RUS in the source proof system

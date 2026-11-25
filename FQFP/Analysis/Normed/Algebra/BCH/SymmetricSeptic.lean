@@ -30,21 +30,9 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A]
 
 /-- The septic symmetric correction is bounded by the seventh power of the total input norm. -/
 theorem norm_symmetricBchSepticTerm_le (a b : A) :
-    ‖symmetricBchSepticTerm a b‖ ≤ (‖a‖ + ‖b‖) ^ 7 := by
-  have hbudget : (symmetricBchSepticTermTable.map fun p ↦ p.2.natAbs).sum = 83256 := by
-    decide +kernel
-  have heval := WordTable.norm_eval_one_le_of_length ![a, b] symmetricBchSepticTermTable
-    (by decide : 0 < 7) symmetricBchSepticTermTable_length (M := ‖a‖ + ‖b‖)
-    (fun i ↦ by fin_cases i <;> simp)
-  rw [hbudget] at heval
-  rw [symmetricBchSepticTerm]
-  calc
-    _ ≤ ‖(967680 : ℚ)⁻¹‖ * (83256 * (‖a‖ + ‖b‖) ^ 7) :=
-      (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left heval (norm_nonneg _))
-    _ = (83256 / 967680 : ℝ) * (‖a‖ + ‖b‖) ^ 7 := by
-      norm_num [← Rat.norm_cast_real]
-      ring
-    _ ≤ _ := mul_le_of_le_one_left (by positivity) (by norm_num)
+    ‖symmetricBchSepticTerm a b‖ ≤ (‖a‖ + ‖b‖) ^ 7 :=
+  WordTable.norm_smul_eval_one_pair_le _ symmetricBchSepticTermTable a b (by decide)
+    symmetricBchSepticTermTable_length (by decide +kernel)
 
 end PolynomialBounds
 
@@ -55,11 +43,8 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A]
 theorem norm_symmetric_bch_septic_sub_poly_le (a b : A) (hab : ‖a‖ + ‖b‖ < 1 / 4) :
     ‖symmetricBch a b - (a + b) - symmetricBchCubicTerm a b - symmetricBchQuinticTerm a b -
       symmetricBchSepticTerm a b‖ ≤ 1000000000000 * (‖a‖ + ‖b‖) ^ 9 := by
-  have ht := norm_symmetricBch_sub_sum_le a b hab 9
-  rw [sum_logCoeff_positivePowerTrunc_eq_symmetric_septic a b] at ht
-  norm_num at ht
-  calc
-    _ ≤ 3328 * (‖a‖ + ‖b‖) ^ 9 := by simpa only [sub_add_eq_sub_sub] using ht
-    _ ≤ _ := mul_le_mul_of_nonneg_right (by norm_num) (by positivity)
+  simpa only [sub_add_eq_sub_sub] using
+    norm_symmetricBch_sub_le_of_sum_eq a b hab 9 (C := 1000000000000)
+      (sum_logCoeff_positivePowerTrunc_eq_symmetric_septic a b) (by norm_num)
 
 end FQFP.BCH

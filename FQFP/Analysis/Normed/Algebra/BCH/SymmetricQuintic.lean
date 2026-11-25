@@ -63,21 +63,9 @@ theorem norm_symmetricBchCubicTerm_le (a b : A) :
 
 /-- The quintic symmetric correction is bounded by the fifth power of the total input norm. -/
 theorem norm_symmetricBchQuinticTerm_le (a b : A) :
-    ‖symmetricBchQuinticTerm a b‖ ≤ (‖a‖ + ‖b‖) ^ 5 := by
-  have hbudget : (symmetricBchQuinticTermTable.map fun p ↦ p.2.natAbs).sum = 1216 := by
-    decide
-  have heval := WordTable.norm_eval_one_le_of_length ![a, b] symmetricBchQuinticTermTable
-    (by decide : 0 < 5) symmetricBchQuinticTermTable_length (M := ‖a‖ + ‖b‖)
-    (fun i ↦ by fin_cases i <;> simp)
-  rw [hbudget] at heval
-  rw [symmetricBchQuinticTerm]
-  calc
-    _ ≤ ‖(5760 : ℚ)⁻¹‖ * (1216 * (‖a‖ + ‖b‖) ^ 5) :=
-      (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left heval (norm_nonneg _))
-    _ = (1216 / 5760 : ℝ) * (‖a‖ + ‖b‖) ^ 5 := by
-      norm_num [← Rat.norm_cast_real]
-      ring
-    _ ≤ _ := mul_le_of_le_one_left (by positivity) (by norm_num)
+    ‖symmetricBchQuinticTerm a b‖ ≤ (‖a‖ + ‖b‖) ^ 5 :=
+  WordTable.norm_smul_eval_one_pair_le _ symmetricBchQuinticTermTable a b (by decide)
+    symmetricBchQuinticTermTable_length (by decide +kernel)
 
 end PolynomialBounds
 
@@ -88,11 +76,8 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A]
 theorem norm_symmetric_bch_quintic_sub_poly_le (a b : A) (hab : ‖a‖ + ‖b‖ < 1 / 4) :
     ‖symmetricBch a b - (a + b) - symmetricBchCubicTerm a b - symmetricBchQuinticTerm a b‖ ≤
       20000000000 * (‖a‖ + ‖b‖) ^ 7 := by
-  have ht := norm_symmetricBch_sub_sum_le a b hab 7
-  rw [sum_logCoeff_positivePowerTrunc_eq_symmetric a b] at ht
-  norm_num at ht
-  calc
-    _ ≤ 704 * (‖a‖ + ‖b‖) ^ 7 := by simpa only [sub_add_eq_sub_sub] using ht
-    _ ≤ _ := mul_le_mul_of_nonneg_right (by norm_num) (by positivity)
+  simpa only [sub_add_eq_sub_sub] using
+    norm_symmetricBch_sub_le_of_sum_eq a b hab 7 (C := 20000000000)
+      (sum_logCoeff_positivePowerTrunc_eq_symmetric a b) (by norm_num)
 
 end FQFP.BCH

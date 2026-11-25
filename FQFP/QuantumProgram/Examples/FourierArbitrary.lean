@@ -15,7 +15,7 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Examples.FourierOperator
-public import FQFP.QuantumProgram.Logic.CountedUnitary
+public import FQFP.QuantumProgram.Logic.Iteration.CountedUnitary
 
 /-!
 # Total correctness of the counted Fourier circuit on superpositions

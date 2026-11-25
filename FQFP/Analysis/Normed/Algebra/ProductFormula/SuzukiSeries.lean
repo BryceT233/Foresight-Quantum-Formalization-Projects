@@ -415,15 +415,13 @@ theorem sum_expListLogCoeff_fiveStageStrang_eq {A : Type*} [Ring A] [Algebra ℚ
       t • (a + b) + t ^ 5 • suzukiQuinticTerm a b p := by
   rw [fiveStageStrangArguments_smul]
   simp only [expListLogCoeff_smul]
-  calc
-    _ = ∑ d ∈ range 6, t ^ d •
-        CoeffWordTable.eval (Int.castRingHom ℝ) (parameterLetters a b p) (targetTable d) := by
-      apply sum_congr rfl
-      intro d hd
-      rw [log_coefficient_eq_target a b p hp ⟨d, mem_range.mp hd⟩]
-    _ = _ := by
-      simp only [sum_range_succ, sum_range_zero]
-      rw [eval_targetTable_five]
-      norm_num [targetTable, parameterLetters, CoeffWordTable.eval, smul_smul]
+  trans ∑ d ∈ range 6, t ^ d •
+    (if d = 1 then a + b else if d = 5 then suzukiQuinticTerm a b p else 0)
+  · apply sum_congr rfl
+    intro d hd
+    congr 1
+    simpa [Fin.ext_iff] using
+      expListLogCoeff_fiveStageStrang_through_five a b p hp ⟨d, mem_range.mp hd⟩
+  · norm_num [sum_range_succ]
 
 end FQFP.BCH

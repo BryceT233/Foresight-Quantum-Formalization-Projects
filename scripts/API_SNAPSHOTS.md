@@ -53,7 +53,8 @@ python scripts/api_snapshot.py compare scratch/before.jsonl scratch/after.jsonl 
 ```
 
 `api_migrations.json` records the original 109 file relocations, the five
-generic category modules moved out of `CQM`, and fourteen Carleman module moves. Its `modules`
+generic category modules moved out of `CQM`, fourteen Carleman module moves,
+and 23 modules reorganized under `QuantumProgram.Logic`. Its `modules`
 dictionary remaps only module-qualified private identities and references;
 public declaration namespaces are not automatically renamed. `declarations`
 supports explicit identity moves for split modules. A custom map must identify

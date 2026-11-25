@@ -13,7 +13,7 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Logic.LoopGhost
+public import FQFP.QuantumProgram.Logic.Iteration.LoopGhost
 
 /-!
 # Incrementing to a bound with a read-only rank witness

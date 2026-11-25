@@ -40,6 +40,15 @@ def tensorPower (H : Qudit) : ℕ → Qudit
   | 0 => H
   | n + 1 => H ⊗ tensorPower H n
 
+/-- The register with `n + 1` sites has dimension equal to the corresponding power. -/
+lemma finrank_tensorPower (H : Qudit) (n : ℕ) :
+    Module.finrank ℂ (tensorPower H n).state = Module.finrank ℂ H.state ^ (n + 1) := by
+  induction n with
+  | zero => exact (pow_one _).symm
+  | succ n ih =>
+    change Module.finrank ℂ (H.state ⊗[ℂ] (tensorPower H n).state) = _
+    rw [Module.finrank_tensorProduct, ih, pow_succ' _ (n + 1)]
+
 /-- Embed the operators of one site into the full tensor power. -/
 def siteOp (H : Qudit) : (n : ℕ) → Fin (n + 1) →
     Operator H →⋆ₐ[ℂ] Operator (tensorPower H n)

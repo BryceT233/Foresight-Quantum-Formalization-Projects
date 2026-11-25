@@ -14,8 +14,8 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Logic.HeraldedRUS
-public import FQFP.QuantumProgram.Logic.SourceRules
+public import FQFP.QuantumProgram.Logic.RepeatUntilSuccess.Bounded
+public import FQFP.QuantumProgram.Logic.Source.Rules
 
 /-!
 # Source derivations for bounded heralded repeat until success

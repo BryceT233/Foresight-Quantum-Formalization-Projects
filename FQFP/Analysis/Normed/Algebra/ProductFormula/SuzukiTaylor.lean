@@ -34,25 +34,25 @@ open Finset NormedSpace
 
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A]
 
-/-- The actual five-stage Strang product is smooth for every real composition parameter. -/
-theorem contDiff_fiveStageStrangProduct (a b : A) (p : ℝ) :
-    ContDiff ℝ ∞ (fiveStageStrangProduct a b p) := by
-  convert contDiff_prod_exp_smul (fiveStageStrangArguments a b p 1) using 1
+private lemma fiveStageStrangProduct_eq_prod_exp_smul (a b : A) (p : ℝ) :
+    fiveStageStrangProduct a b p =
+      fun t : ℝ ↦ ((fiveStageStrangArguments a b p 1).map fun x ↦ exp (t • x)).prod := by
   funext t
   rw [fiveStageStrangProduct, fiveStageStrangArguments_smul]
   simp only [List.map_map, Function.comp_def]
+
+/-- The actual five-stage Strang product is smooth for every real composition parameter. -/
+theorem contDiff_fiveStageStrangProduct (a b : A) (p : ℝ) :
+    ContDiff ℝ ∞ (fiveStageStrangProduct a b p) := by
+  rw [fiveStageStrangProduct_eq_prod_exp_smul]
+  exact contDiff_prod_exp_smul _
 
 /-- The actual Suzuki product has the factorial-scaled formal coefficients as derivatives. -/
 theorem iteratedDeriv_fiveStageStrangProduct_zero (a b : A) (p : ℝ) (n : ℕ) :
     iteratedDeriv n (fiveStageStrangProduct a b p) 0 =
       (Nat.factorial n : ℝ) • expListTerm (fiveStageStrangArguments a b p 1) n := by
-  have hf : fiveStageStrangProduct a b p = fun t : ℝ ↦
-      ((fiveStageStrangArguments a b p 1).map fun x ↦ exp (t • x)).prod := by
-    funext t
-    rw [fiveStageStrangProduct, fiveStageStrangArguments_smul]
-    simp only [List.map_map, Function.comp_def]
-  rw [hf]
-  exact iteratedDeriv_prod_exp_smul_zero (fiveStageStrangArguments a b p 1) n
+  rw [fiveStageStrangProduct_eq_prod_exp_smul]
+  exact iteratedDeriv_prod_exp_smul_zero _ n
 
 /-- The controlled sixth-order Taylor jet, valid for all real times. -/
 theorem norm_fiveStageStrangProduct_sub_taylor_le [NormOneClass A]
@@ -92,21 +92,11 @@ theorem norm_fiveStageStrangLog_sub_quintic_le_septic [NormOneClass A]
     (ht : fiveStageStrangArgNormBound a b p t < 1 / 4) :
     ‖fiveStageStrangLog a b p t - t • (a + b) - t ^ 5 • suzukiQuinticTerm a b p‖ ≤
       704 * fiveStageStrangArgNormBound a b p t ^ 7 := by
-  have hj : (∑ k ∈ range 7, expListLogCoeff (fiveStageStrangArguments a b p t) k) =
-      t • (a + b) + t ^ 5 • suzukiQuinticTerm a b p := by
-    rw [fiveStageStrangArguments_smul]
-    simp only [expListLogCoeff_smul]
-    trans ∑ k ∈ range 7, t ^ k •
-      (if k = 1 then a + b else if k = 5 then suzukiQuinticTerm a b p else 0)
-    · apply sum_congr rfl
-      intro k hk
-      congr 1
-      simpa [Fin.ext_iff] using
-        expListLogCoeff_fiveStageStrang_through_six a b p hp ⟨k, mem_range.mp hk⟩
-    norm_num [sum_range_succ]
   have h := norm_log_prod_exp_sub_sum_le (fiveStageStrangArguments a b p t)
     (by rwa [sum_norm_fiveStageStrangArguments]) 7
-  rw [hj, sum_norm_fiveStageStrangArguments] at h
+  rw [sum_expListLogCoeff_succ_of_reverse_eq _ (fiveStageStrangArguments_reverse a b p t) 6
+    (by decide), sum_expListLogCoeff_fiveStageStrang_eq a b p t hp,
+    sum_norm_fiveStageStrangArguments] at h
   norm_num only [Nat.cast_ofNat, Nat.reduceSub, Nat.reduceAdd, Nat.reducePow] at h
   simpa only [fiveStageStrangLog, fiveStageStrangProduct, sub_add_eq_sub_sub] using h
 

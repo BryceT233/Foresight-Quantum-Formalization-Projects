@@ -14,7 +14,7 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Logic.CQAssertion
+public import FQFP.QuantumProgram.Logic.Assertion.CQAssertion
 
 /-!
 # Source assertions with explicit quantum definedness

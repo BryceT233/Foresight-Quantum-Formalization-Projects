@@ -23,7 +23,10 @@ Power comparison, arithmetic and boundedness near zero, and inverse-power decay 
 * `TrotterError.orderCond_mul_left`.
 * `TrotterError.neg_pow_isBigO`.
 * `TrotterError.tendsto_neg_nhds_zero`.
+* `TrotterError.isBigO_comp_neg_pow_iff`.
+* `FQFP.tendsto_inv_smul_of_isLittleO_sub`.
 * `FQFP.isBigO_inv_nat_pow_of_remainder_le`.
+* `FQFP.tendsto_nat_pow_smul_of_isBigO`.
 -/
 
 @[expose] public section
@@ -88,23 +91,55 @@ lemma orderCond_mul_left {𝔸 : Type*} [NormedRing 𝔸] {F G : ℝ → 𝔸} (
 
 /-- `(-τ)^p = O(τ^p)` as `τ → 0`: the two functions have the same absolute value. -/
 lemma neg_pow_isBigO (p : ℕ) :
-    (fun τ : ℝ => (-τ) ^ p) =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) := by
-  refine IsBigO.of_bound 1 ?_
-  filter_upwards with τ
-  rw [one_mul]
-  exact le_of_eq (by
-    rw [Real.norm_eq_abs ((-τ) ^ p), Real.norm_eq_abs (τ ^ p), abs_pow (-τ) p, abs_pow τ p,
-      abs_neg τ])
+    (fun τ : ℝ => (-τ) ^ p) =O[𝓝 (0 : ℝ)] (fun τ : ℝ => τ ^ p) :=
+  isBigO_of_le _ fun τ => by simp [norm_pow]
 
 /-- `τ ↦ -τ` tends to `0` as `τ → 0`. -/
 lemma tendsto_neg_nhds_zero : Filter.Tendsto (fun a : ℝ => -a) (𝓝 (0 : ℝ)) (𝓝 (0 : ℝ)) := by
   simpa using continuous_neg.tendsto (0 : ℝ)
+
+/-- Reversing the sign of the argument preserves a power-order bound at zero. -/
+lemma isBigO_comp_neg_pow_iff {E : Type*} [Norm E] {f : ℝ → E} {p : ℕ} :
+    (fun τ => f (-τ)) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) ↔
+      f =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) := by
+  have reflect {g : ℝ → E} (hg : g =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p)) :
+      (fun τ => g (-τ)) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) :=
+    (hg.comp_tendsto tendsto_neg_nhds_zero).trans (neg_pow_isBigO p)
+  exact ⟨fun h => by simpa only [neg_neg] using reflect h, reflect⟩
 
 end TrotterError
 
 namespace FQFP
 
 open Asymptotics Filter
+open scoped Topology
+
+/-- If `F` has leading term `g • v` with an `o(g)` remainder, dividing by an
+eventually nonzero `g` recovers the coefficient `v`. -/
+theorem tendsto_inv_smul_of_isLittleO_sub {ι 𝕜 E : Type*} [NormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] {l : Filter ι}
+    {F : ι → E} {g : ι → 𝕜} {v : E} (hg : ∀ᶠ i in l, g i ≠ 0)
+    (hF : (fun i ↦ F i - g i • v) =o[l] g) :
+    Tendsto (fun i ↦ (g i)⁻¹ • F i) l (𝓝 v) := by
+  apply tendsto_sub_nhds_zero_iff.mp
+  refine hF.tendsto_inv_smul_nhds_zero.congr' ?_
+  filter_upwards [hg] with i hi
+  simp [smul_sub, hi]
+
+/-- An inverse-power expansion with a strictly higher-order remainder determines
+the limit of the rescaled sequence. -/
+theorem tendsto_nat_pow_smul_of_isBigO {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] {F : ℕ → E} {v : E} {p q : ℕ} (hpq : p < q)
+    (hF : (fun n : ℕ ↦ F n - ((n : ℝ)⁻¹) ^ p • v) =O[atTop]
+      (fun n : ℕ ↦ ((n : ℝ)⁻¹) ^ q)) :
+    Tendsto (fun n : ℕ ↦ (n : ℝ) ^ p • F n) atTop (𝓝 v) := by
+  have hpow : (fun n : ℕ ↦ ((n : ℝ)⁻¹) ^ q) =o[atTop] (fun n : ℕ ↦ ((n : ℝ)⁻¹) ^ p) :=
+    (isLittleO_pow_pow hpq).comp_tendsto tendsto_inv_atTop_nhds_zero_nat
+  have hn : ∀ᶠ n : ℕ in atTop, ((n : ℝ)⁻¹) ^ p ≠ 0 :=
+    (eventually_gt_atTop 0).mono fun n hn ↦
+      pow_ne_zero p (inv_ne_zero (Nat.cast_ne_zero.mpr hn.ne'))
+  simpa only [inv_pow, inv_inv] using
+    tendsto_inv_smul_of_isLittleO_sub hn (hF.trans_isLittleO hpow)
 
 /-- An eventual norm bound by a constant times `(t / n) ^ p` gives inverse-power decay
 of order `p` along natural indices. -/

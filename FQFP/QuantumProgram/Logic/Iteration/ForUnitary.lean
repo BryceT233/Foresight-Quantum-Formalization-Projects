@@ -14,8 +14,8 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Logic.For
-public import FQFP.QuantumProgram.Logic.SourceUnitary
+public import FQFP.QuantumProgram.Logic.Iteration.For
+public import FQFP.QuantumProgram.Logic.Source.Unitary
 public import FQFP.QuantumProgram.TensorRegister
 
 /-!

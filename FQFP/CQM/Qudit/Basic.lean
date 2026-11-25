@@ -414,6 +414,14 @@ noncomputable def braArrow {H : Qudit} (a : H.state) : H ⟶ of ℂ := ofHom (br
 /-- Morphism in `Qudit` corresponding to the ket map `∣b⟩`. -/
 noncomputable def ketArrow {H : Qudit} (b : H.state) : of ℂ ⟶ H := ofHom (ket b)
 
+/-- Applying a process after preparing a vector prepares its image. -/
+lemma ketArrow_comp {H K : Qudit} (v : H.state) (f : H ⟶ K) :
+    ketArrow v ≫ f = ketArrow (f v) := by
+  apply hom_ext
+  apply LinearMap.ext_ring
+  change f ((1 : ℂ) • v) = (1 : ℂ) • f v
+  rw [one_smul, one_smul]
+
 lemma ketArrow_comp_braArrow {H : Qudit} (a b : H.state) :
     ketArrow a ≫ braArrow b = ofHom (.lsmul ℂ ℂ ⟨b‖a⟩) := by
   ext1; rw [hom_comp]; exact ket_comp_bra a b

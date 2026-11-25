@@ -18,9 +18,9 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Logic.Soundness
-public import FQFP.QuantumProgram.Logic.SourceConsequence
-public import FQFP.QuantumProgram.Logic.SourceConvex
-public import FQFP.QuantumProgram.Logic.SourceKraus
+public import FQFP.QuantumProgram.Logic.Source.Consequence
+public import FQFP.QuantumProgram.Logic.Source.Convex
+public import FQFP.QuantumProgram.Logic.Source.Kraus
 
 /-!
 # Source correctness rules on evaluated operands

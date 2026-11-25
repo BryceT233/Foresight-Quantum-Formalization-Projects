@@ -15,6 +15,7 @@ Authors: Foresight Quantum
 -/
 module
 
+public import FQFP.CQM.Qudit.Channel.RankOne
 public import FQFP.CQM.Qudit.Measurement.Instrument
 public import FQFP.CQM.Qudit.Measurement.POVM
 public import FQFP.CQM.Qudit.State.Spectral.OperatorSqrt
@@ -104,6 +105,21 @@ theorem luders_toChannel_ofOrthogonalResolution (P : CategoryTheory.OrthogonalRe
     CategoryTheory.OrthogonalResolution.diagonalPart, hom_sum]
   rfl
 
+/-- The unread Lüders channel keeps an outer product exactly within a single outcome block. -/
+theorem luders_toChannel_outer [DecidableEq ι] (P : CategoryTheory.OrthogonalResolution H ι)
+    {i j : ι} {x y : H.state} (hx : (P.proj i).hom x = x) (hy : (P.proj j).hom y = y) :
+    (ofOrthogonalResolution P).luders.toChannel.toSuperoperator (Operator.outer x y) =
+      if i = j then Operator.outer x y else 0 := by
+  have h := CQM.diagonalPart_outerHom P
+    (u := ketArrow x) (v := ketArrow y) (i := i) (j := j)
+    (by rw [ketArrow_comp, hx]) (by rw [ketArrow_comp, hy])
+  have hxy : ofHom (Operator.outer x y) =
+      CategoryTheory.MonoidalCategory.State.outerHom (ketArrow x) (ketArrow y) :=
+    hom_ext (Operator.hom_outerHom_ketArrow x y).symm
+  rw [luders_toChannel_ofOrthogonalResolution, hxy]
+  simpa only [apply_ite, Operator.hom_outerHom_ketArrow, ← Operator.outer_eq_ket_comp_bra,
+    hom_zero] using congrArg Hom.hom h
+
 /-- Forgetting the outcome of a projective measurement defines an idempotent channel. -/
 theorem luders_toChannel_idempotent (P : CategoryTheory.OrthogonalResolution H ι) :
     let Φ := (ofOrthogonalResolution P).luders.toChannel
@@ -119,8 +135,9 @@ lemma luders_ofBasis_branch (b : OrthonormalBasis ι ℂ H.state) (i : ι) (A : 
     (ofBasis b).luders.branch i A = inner ℂ (b i) (A (b i)) • Operator.outer (b i) (b i) := by
   rw [← ofOrthogonalResolution_basisResolution, luders_branch_ofOrthogonalResolution,
     hom_basisResolution_proj]
-  ext x
-  simp [smul_smul, mul_comm]
+  simpa only [Superoperator.conjugate_apply, ← Operator.outer_eq_ket_comp_bra,
+    Operator.adjoint_outer, Module.End.mul_eq_comp, LinearMap.comp_assoc] using
+    Superoperator.conjugate_ket_comp_bra_apply (b i) (b i) A
 
 /-- Conditioning a basis measurement gives the observed pure basis state. -/
 lemma conditional_luders_ofBasis (b : OrthonormalBasis ι ℂ H.state) (ρ : Density H)

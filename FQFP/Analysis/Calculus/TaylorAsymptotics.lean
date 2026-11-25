@@ -6,6 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.Analysis.Calculus.Taylor
+import FQFP.Analysis.Asymptotics.Pow
 
 /-!
 # Leading Taylor terms and sharp norm limits
@@ -46,24 +47,16 @@ punctured neighborhood, without requiring a nonzero leading coefficient. -/
 theorem tendsto_inv_pow_smul_of_isLittleO {F : ℝ → E} {n : ℕ} {L : E}
     (hF : (fun t ↦ F t - t ^ n • L) =o[𝓝 (0 : ℝ)] (fun t ↦ t ^ n)) :
     Tendsto (fun t ↦ (t ^ n)⁻¹ • F t) (𝓝[≠] (0 : ℝ)) (𝓝 L) := by
-  have hrem := hF.tendsto_inv_smul_nhds_zero.mono_left
-    (show 𝓝[≠] (0 : ℝ) ≤ 𝓝 (0 : ℝ) from nhdsWithin_le_nhds)
-  have hlimit := hrem.add_const L
-  simp only [zero_add] at hlimit
-  apply hlimit.congr'
+  apply FQFP.tendsto_inv_smul_of_isLittleO_sub _ (hF.mono nhdsWithin_le_nhds)
   filter_upwards [self_mem_nhdsWithin] with t ht
-  have ht0 : t ≠ 0 := ht
-  simp [smul_sub, smul_smul, pow_ne_zero n ht0]
+  exact pow_ne_zero n ht
 
 /-- The norm of a curve with a leading power term has the sharp coefficient as
 its normalized limit from positive times. -/
 theorem tendsto_inv_pow_mul_norm_of_isLittleO {F : ℝ → E} {n : ℕ} {L : E}
     (hF : (fun t ↦ F t - t ^ n • L) =o[𝓝 (0 : ℝ)] (fun t ↦ t ^ n)) :
     Tendsto (fun t ↦ (t ^ n)⁻¹ * ‖F t‖) (𝓝[>] (0 : ℝ)) (𝓝 ‖L‖) := by
-  have hfilter : 𝓝[>] (0 : ℝ) ≤ 𝓝[≠] (0 : ℝ) :=
-    nhdsWithin_mono _ (fun _ hx ↦ ne_of_gt hx)
-  have hlimit := (tendsto_inv_pow_smul_of_isLittleO hF).norm.mono_left hfilter
-  apply hlimit.congr'
+  apply ((tendsto_inv_pow_smul_of_isLittleO hF).norm.mono_left (nhdsGT_le_nhdsNE 0)).congr'
   filter_upwards [self_mem_nhdsWithin] with t ht
   rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr (pow_pos ht n))]
 

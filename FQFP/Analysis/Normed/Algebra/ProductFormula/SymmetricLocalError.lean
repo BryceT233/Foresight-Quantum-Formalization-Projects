@@ -17,6 +17,7 @@ fifth- and seventh-degree local error bound for every real step.
 ## Main results
 
 * `norm_symmetricExpProduct_sub_exp_le`: integrate a bound for the middle defect.
+* `norm_symmetricExpProduct_sub_exp_le_abs_integral`: integrate an arbitrary scalar majorant.
 * `norm_halfDefect_add_sub_sum_le`: grouped remainder for the even middle defect.
 * `norm_symmetricExpProduct_sub_exp_le_grouped`: the grouped seventh-degree constant.
 -/
@@ -61,6 +62,20 @@ lemma norm_symmetricDefect_eq_of_le_one (l : List A) (G : A)
       (fun Z hmem ↦ hZ Z (by simpa using hmem)),
     norm_expListProduct_mul_eq_of_le_one l _ hZ]
 
+/-- An integrable majorant for the middle defect bounds the local error for either sign of `h`. -/
+theorem norm_symmetricExpProduct_sub_exp_le_abs_integral (l : List A) (G : A)
+    (hZ : ∀ Z ∈ l, ∀ t : ℝ, ‖exp (t • Z)‖ ≤ 1) (hG : ∀ t : ℝ, ‖exp (t • G)‖ ≤ 1)
+    (h : ℝ) {g : ℝ → ℝ} (hg : IntervalIntegrable g volume 0 h)
+    (hbound : ∀ x ∈ Set.uIoc 0 h, ‖halfDefect l G x + halfDefect l G (-x)‖ ≤ g x) :
+    ‖symmetricExpProduct l h - exp (h • G)‖ ≤ |∫ x in 0..h, g x| := by
+  rw [symmetricExpProduct_sub_exp_eq_integral]
+  apply intervalIntegral.norm_integral_le_abs_of_norm_le _ hg
+  rw [ae_restrict_iff' measurableSet_uIoc]
+  filter_upwards with x hx
+  rw [norm_mul_exp_smul_eq_of_le_one G _ hG, norm_exp_smul_mul_eq_of_le_one G _ hG,
+    norm_symmetricDefect_eq_of_le_one l G hZ]
+  exact hbound x hx
+
 /-- Integrating the positive even polynomial gives the two local error powers,
 with an absolute value accounting for either interval orientation. -/
 lemma abs_integral_localError_polynomial_le (N C : ℝ) (hN : 0 ≤ N) (hC : 0 ≤ C) (h : ℝ) :
@@ -90,25 +105,17 @@ theorem norm_symmetricExpProduct_sub_exp_le (l : List A) (G L : A) (C : ℝ)
     (hT : ∀ x : ℝ, ‖halfDefect l G x + halfDefect l G (-x) - (5 * x ^ 4) • L‖ ≤
       7 * C * |x| ^ 6) (h : ℝ) :
     ‖symmetricExpProduct l h - exp (h • G)‖ ≤ |h| ^ 5 * ‖L‖ + |h| ^ 7 * C := by
-  rw [symmetricExpProduct_sub_exp_eq_integral]
   calc
     _ ≤ |∫ x in 0..h, 5 * |x| ^ 4 * ‖L‖ + 7 * C * |x| ^ 6| := by
-      apply intervalIntegral.norm_integral_le_abs_of_norm_le
-      · rw [ae_restrict_iff' measurableSet_uIoc]
-        filter_upwards with x _
-        rw [norm_mul_exp_smul_eq_of_le_one G _ hG,
-          norm_exp_smul_mul_eq_of_le_one G _ hG,
-          norm_symmetricDefect_eq_of_le_one l G hZ]
-        calc
-          _ ≤ ‖halfDefect l G x + halfDefect l G (-x) - (5 * x ^ 4) • L‖ +
-              ‖(5 * x ^ 4) • L‖ := norm_le_norm_sub_add _ _
-          _ ≤ 7 * C * |x| ^ 6 + 5 * |x| ^ 4 * ‖L‖ := by
-            gcongr
-            · exact hT x
-            · simp [norm_smul, Real.norm_eq_abs]
-          _ = _ := add_comm _ _
-      · exact (by fun_prop : Continuous
-          (fun x : ℝ ↦ 5 * |x| ^ 4 * ‖L‖ + 7 * C * |x| ^ 6)).intervalIntegrable 0 h
+      apply norm_symmetricExpProduct_sub_exp_le_abs_integral l G hZ hG h
+      · apply Continuous.intervalIntegrable
+        fun_prop
+      intro x _
+      calc
+        _ ≤ ‖halfDefect l G x + halfDefect l G (-x) - (5 * x ^ 4) • L‖ +
+            ‖(5 * x ^ 4) • L‖ := norm_le_norm_sub_add _ _
+        _ ≤ 7 * C * |x| ^ 6 + ‖(5 * x ^ 4) • L‖ := add_le_add_left (hT x) _
+        _ = _ := by simp [norm_smul, Real.norm_eq_abs, add_comm]
     _ ≤ _ := abs_integral_localError_polynomial_le ‖L‖ C (norm_nonneg _) hC h
 
 /-- The grouped finite remainder controls the even middle defect without
@@ -128,19 +135,8 @@ theorem norm_halfDefect_add_sub_sum_le {s : ℕ} (Z : Fin s → A) (G : A)
     exact norm_groupedConj_sub_sum_le _ _ _
       (fun i u ↦ by simpa only [smul_neg, neg_smul] using hZ i (-u)) p hp t
   change ‖_ + _ - ∑ k ∈ range p, (x ^ k + (-x) ^ k) • c k‖ ≤ 2 * |x| ^ p * B
-  simp_rw [add_smul]
-  rw [sum_add_distrib]
-  rw [show halfDefect (List.ofFn Z) G x + halfDefect (List.ofFn Z) G (-x) -
-      ((∑ k ∈ range p, x ^ k • c k) + ∑ k ∈ range p, (-x) ^ k • c k) =
-      (halfDefect (List.ofFn Z) G x - ∑ k ∈ range p, x ^ k • c k) +
-        (halfDefect (List.ofFn Z) G (-x) - ∑ k ∈ range p, (-x) ^ k • c k) by abel]
-  calc
-    _ ≤ ‖halfDefect (List.ofFn Z) G x - ∑ k ∈ range p, x ^ k • c k‖ +
-        ‖halfDefect (List.ofFn Z) G (-x) - ∑ k ∈ range p, (-x) ^ k • c k‖ := norm_add_le _ _
-    _ ≤ |x| ^ p * B + |-x| ^ p * B := add_le_add (hb x) (hb (-x))
-    _ = _ := by
-      rw [abs_neg]
-      ring
+  simpa only [add_smul, sum_add_distrib, add_sub_add_comm, abs_neg, two_mul, add_mul] using
+    norm_add_le_of_le (hb x) (hb (-x))
 
 /-- The even polynomial through degree five is determined by its three even coefficients. -/
 lemma sum_even_pow_smul_eq_quartic {E : Type*} [AddCommGroup E] [Module ℝ E]

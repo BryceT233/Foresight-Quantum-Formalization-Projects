@@ -66,6 +66,14 @@ private lemma mixed_profile {M v w : ℝ} (hv : 0 ≤ v) (hw : 0 ≤ w)
 
 variable {A : Type*} [NormedRing A]
 
+/-- Choose the perturbed positions in each word, then the positions carrying the first increment. -/
+private def mixedGroupCount {m : ℕ} (words : Fin m → Fin 5 → Fin 2) (k p : ℕ) : ℕ :=
+  ∑ i, (wordPositions (words i) 0).card.choose k * k.choose p
+
+private def mixedSubsetCount (k p : ℕ) : ℕ :=
+  mixedGroupCount bchQuinticGroup1Words k p + 4 * mixedGroupCount bchQuinticGroup4Words k p +
+    6 * mixedGroupCount bchQuinticGroup6Words k p + 24 * mixedGroupCount bchQuinticGroup24Words k p
+
 /-- Count the two-color substitutions in a word group and bound each ordered product. -/
 private lemma norm_bchQuinticMixedGroupSubsets_le {m : ℕ}
     (words : Fin m → Fin 5 → Fin 2) (k p : ℕ)
@@ -74,7 +82,7 @@ private lemma norm_bchQuinticMixedGroupSubsets_le {m : ℕ}
     (hx : ‖x‖ ≤ M) (hy : ‖y‖ ≤ M) (hVM : ‖V‖ ≤ M) (hWM : ‖W‖ ≤ M)
     (hV : ‖V‖ ≤ Vn) (hW : ‖W‖ ≤ Wn) :
     ‖bchQuinticMixedGroupSubsets words k p x V W y‖ ≤
-      (∑ i, ((wordPositions (words i) 0).card).choose k * k.choose p : ℕ) *
+      (mixedGroupCount words k p : ℝ) *
         (Vn * Wn * (Vn + Wn) * M ^ 2) := by
   have hM : 0 ≤ M := (norm_nonneg V).trans hVM
   have hVn : 0 ≤ Vn := (norm_nonneg V).trans hV
@@ -87,17 +95,12 @@ private lemma norm_bchQuinticMixedGroupSubsets_le {m : ℕ}
           mixed_profile (norm_nonneg V) (norm_nonneg W) hVM hWM 5 p (k - p)
             hp (by lia) (by lia) (by lia)
       _ ≤ _ := by gcongr
-  have hxy : ∀ a : Fin 2, ‖![x, y] a‖ ≤ M := by
-    intro a
-    fin_cases a
-    · exact hx
-    · exact hy
+  have hxy := norm_pair_le x y hx hy
   calc
     _ ≤ ∑ i : Fin m, ∑ s ∈ (wordPositions (words i) 0).powersetCard k,
         ∑ _t ∈ s.powersetCard p, Vn * Wn * (Vn + Wn) * M ^ 2 := by
-      refine (norm_sum_le _ _).trans (sum_le_sum fun i _ ↦ ?_)
-      refine (norm_sum_le _ _).trans (sum_le_sum fun s hs ↦ ?_)
-      refine (norm_sum_le _ _).trans (sum_le_sum fun t ht ↦ ?_)
+      refine norm_sum_le_of_le _ fun i _ ↦ norm_sum_le_of_le _ fun s hs ↦ ?_
+      refine norm_sum_le_of_le _ fun t ht ↦ ?_
       obtain ⟨hts, htp⟩ := mem_powersetCard.mp ht
       have hsk := (mem_powersetCard.mp hs).2
       have hterm : ‖(List.ofFn (t.piecewise (fun _ ↦ V)
@@ -109,7 +112,7 @@ private lemma norm_bchQuinticMixedGroupSubsets_le {m : ℕ}
             (fun _ _ ↦ le_rfl) (fun _ _ _ ↦ le_rfl) (fun j _ ↦ hxy (words i j))
       exact hterm.trans hprofile
     _ = _ := by
-      rw [Nat.cast_sum, sum_mul]
+      rw [mixedGroupCount, Nat.cast_sum, sum_mul]
       apply sum_congr rfl
       intro i _
       calc
@@ -124,49 +127,19 @@ private lemma norm_bchQuinticMixedGroupSubsets_le {m : ℕ}
 variable [NormedAlgebra ℚ A]
 
 /-- The weighted substitution count bounds one mixed piece at independent perturbation bounds. -/
-private lemma norm_bchQuinticMixedSubsetPiece_le (k p N : ℕ)
+private lemma norm_bchQuinticMixedSubsetPiece_le (k p : ℕ)
     (hk : 3 ≤ k) (hk5 : k ≤ 5) (hp : 1 ≤ p) (hpk : p < k)
-    (hN : (∑ i, ((wordPositions (bchQuinticGroup1Words i) 0).card).choose k * k.choose p) +
-      4 * (∑ i, ((wordPositions (bchQuinticGroup4Words i) 0).card).choose k * k.choose p) +
-      6 * (∑ i, ((wordPositions (bchQuinticGroup6Words i) 0).card).choose k * k.choose p) +
-      24 * (∑ i, ((wordPositions (bchQuinticGroup24Words i) 0).card).choose k * k.choose p) = N)
     (x V W y : A) {M Vn Wn : ℝ}
     (hx : ‖x‖ ≤ M) (hy : ‖y‖ ≤ M) (hVM : ‖V‖ ≤ M) (hWM : ‖W‖ ≤ M)
     (hV : ‖V‖ ≤ Vn) (hW : ‖W‖ ≤ Wn) :
     ‖bchQuinticMixedSubsetPiece k p x V W y‖ ≤
-      (N / 720 : ℝ) * (Vn * Wn * (Vn + Wn) * M ^ 2) := by
-  let R := Vn * Wn * (Vn + Wn) * M ^ 2
-  let n1 := ∑ i, ((wordPositions (bchQuinticGroup1Words i) 0).card).choose k * k.choose p
-  let n4 := ∑ i, ((wordPositions (bchQuinticGroup4Words i) 0).card).choose k * k.choose p
-  let n6 := ∑ i, ((wordPositions (bchQuinticGroup6Words i) 0).card).choose k * k.choose p
-  let n24 := ∑ i, ((wordPositions (bchQuinticGroup24Words i) 0).card).choose k * k.choose p
-  have hc : (n1 : ℝ) + 4 * n4 + 6 * n6 + 24 * n24 = N := by exact_mod_cast hN
-  have h1 := norm_bchQuinticMixedGroupSubsets_le bchQuinticGroup1Words k p hk hk5 hp hpk
-    x V W y hx hy hVM hWM hV hW
-  have h4 := norm_bchQuinticMixedGroupSubsets_le bchQuinticGroup4Words k p hk hk5 hp hpk
-    x V W y hx hy hVM hWM hV hW
-  have h6 := norm_bchQuinticMixedGroupSubsets_le bchQuinticGroup6Words k p hk hk5 hp hpk
-    x V W y hx hy hVM hWM hV hW
-  have h24 := norm_bchQuinticMixedGroupSubsets_le bchQuinticGroup24Words k p hk hk5 hp hpk
-    x V W y hx hy hVM hWM hV hW
-  have hbr : ‖bchQuinticBracket
-      (bchQuinticMixedGroupSubsets bchQuinticGroup1Words k p x V W y)
-      (bchQuinticMixedGroupSubsets bchQuinticGroup4Words k p x V W y)
-      (bchQuinticMixedGroupSubsets bchQuinticGroup6Words k p x V W y)
-      (bchQuinticMixedGroupSubsets bchQuinticGroup24Words k p x V W y)‖ ≤ N * R := by
-    apply (norm_bchQuinticBracket_le _ _ _ _).trans
-    calc
-      _ ≤ (n1 : ℝ) * R + 4 * ((n4 : ℝ) * R) + 6 * ((n6 : ℝ) * R) +
-          24 * ((n24 : ℝ) * R) := by linarith only [h1, h4, h6, h24]
-      _ = ((n1 : ℝ) + 4 * n4 + 6 * n6 + 24 * n24) * R := by ring
-      _ = _ := by rw [hc]
-  rw [bchQuinticMixedSubsetPiece]
-  calc
-    _ ≤ ‖(720 : ℚ)⁻¹‖ * (N * R) :=
-      (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left hbr (norm_nonneg _))
-    _ = _ := by
-      norm_num [← Rat.norm_cast_real]
-      ring
+      (mixedSubsetCount k p / 720 : ℝ) * (Vn * Wn * (Vn + Wn) * M ^ 2) := by
+  have groupBound {m : ℕ} (words : Fin m → Fin 5 → Fin 2) :=
+    norm_bchQuinticMixedGroupSubsets_le words k p hk hk5 hp hpk x V W y hx hy hVM hWM hV hW
+  simpa only [bchQuinticMixedSubsetPiece, mixedSubsetCount, Nat.cast_add, Nat.cast_mul,
+    Nat.cast_ofNat] using norm_inv_smul_bchQuinticBracket_le_of_le
+      (groupBound bchQuinticGroup1Words) (groupBound bchQuinticGroup4Words)
+      (groupBound bchQuinticGroup6Words) (groupBound bchQuinticGroup24Words)
 
 /-- The mixed second-difference remainder at independent base and perturbation bounds.
 Only the actual norms of `V` and `W`, not the bounds `Vn` and `Wn`, must lie below `M`. -/
@@ -175,29 +148,21 @@ theorem norm_bchQuinticTermMixed2Remainder_le_of_le (x V W y : A) (M Vn Wn : ℝ
     (hV : ‖V‖ ≤ Vn) (hW : ‖W‖ ≤ Wn) :
     ‖bchQuinticTermMixed2Remainder x V W y‖ ≤
       (4488 / 720 : ℝ) * (Vn * Wn * (Vn + Wn) * M ^ 2) := by
-  have hM : 0 ≤ M := (norm_nonneg V).trans hVM
-  have hVn : 0 ≤ Vn := (norm_nonneg V).trans hV
-  have hWn : 0 ≤ Wn := (norm_nonneg W).trans hW
-  have h31 := norm_bchQuinticMixedSubsetPiece_le 3 1 408
-    (by decide) (by decide) (by decide) (by decide) (by decide) x V W y hx hy hVM hWM hV hW
-  have h32 := norm_bchQuinticMixedSubsetPiece_le 3 2 408
-    (by decide) (by decide) (by decide) (by decide) (by decide) x V W y hx hy hVM hWM hV hW
-  have h41 := norm_bchQuinticMixedSubsetPiece_le 4 1 64
-    (by decide) (by decide) (by decide) (by decide) (by decide) x V W y hx hy hVM hWM hV hW
-  have h42 := norm_bchQuinticMixedSubsetPiece_le 4 2 96
-    (by decide) (by decide) (by decide) (by decide) (by decide) x V W y hx hy hVM hWM hV hW
-  have h43 := norm_bchQuinticMixedSubsetPiece_le 4 3 64
-    (by decide) (by decide) (by decide) (by decide) (by decide) x V W y hx hy hVM hWM hV hW
+  let R := Vn * Wn * (Vn + Wn) * M ^ 2
+  have hcount : ∑ k ∈ Ico 3 5, ∑ p ∈ Ico 1 k, mixedSubsetCount k p = 1040 := by decide +kernel
+  rw [bchQuinticTermMixed2Remainder_eq_sum]
   calc
-    _ ≤ (408 / 720 : ℝ) * (Vn * Wn * (Vn + Wn) * M ^ 2) +
-        (408 / 720 : ℝ) * (Vn * Wn * (Vn + Wn) * M ^ 2) +
-        (64 / 720 : ℝ) * (Vn * Wn * (Vn + Wn) * M ^ 2) +
-        (96 / 720 : ℝ) * (Vn * Wn * (Vn + Wn) * M ^ 2) +
-        (64 / 720 : ℝ) * (Vn * Wn * (Vn + Wn) * M ^ 2) :=
-      norm_add_le_of_le (norm_add_le_of_le (norm_add_le_of_le
-        (norm_add_le_of_le h31 h32) h41) h42) h43
-    _ = (1040 / 720 : ℝ) * (Vn * Wn * (Vn + Wn) * M ^ 2) := by ring
-    _ ≤ _ := mul_le_mul_of_nonneg_right (by norm_num) (by positivity)
+    _ ≤ ∑ k ∈ Ico 3 5, ∑ p ∈ Ico 1 k, (mixedSubsetCount k p / 720 : ℝ) * R := by
+      refine norm_sum_le_of_le _ fun k hk ↦ norm_sum_le_of_le _ fun p hp ↦ ?_
+      obtain ⟨hk3, hk5⟩ := mem_Ico.mp hk
+      obtain ⟨hp1, hpk⟩ := mem_Ico.mp hp
+      exact norm_bchQuinticMixedSubsetPiece_le k p hk3 hk5.le hp1 hpk x V W y hx hy hVM hWM hV hW
+    _ = (1040 / 720 : ℝ) * R := by
+      simp only [← sum_mul, ← sum_div, ← Nat.cast_sum, hcount, Nat.cast_ofNat]
+    _ ≤ _ := by
+      have hv := (norm_nonneg V).trans hV
+      have hw := (norm_nonneg W).trans hW
+      exact mul_le_mul_of_nonneg_right (by norm_num) (by dsimp [R]; positivity)
 
 /-- **Mixed second-difference remainder bound** with the source coefficient `4488/720`:
 the common scale is `M = ‖x‖ + ‖V‖ + ‖W‖ + ‖y‖`. -/

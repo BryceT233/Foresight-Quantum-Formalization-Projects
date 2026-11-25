@@ -6,6 +6,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.Analysis.Normed.Algebra.BCH.Commutator
+import FQFP.Analysis.Normed.Algebra.Commutator
 
 /-!
 # Input and denominator control for nested BCH compositions
@@ -19,6 +20,7 @@ Taking `x = a/2`, `y = b` gives the input control shared by symmetric BCH estima
 
 * `norm_half_smul_le`, `norm_half_commutator_le`: half-scaled norm estimates.
 * `eleven_sixteenths_le_two_sub_exp`, `one_third_le_two_sub_exp`: denominator bounds.
+* `mul_pow_div_le_mul_pow`: rescale a power bound using a positive denominator lower bound.
 * `half_lt_log_two`: the outer scale `1/2` lies inside the sufficient logarithm radius.
 * `norm_bch_add_norm_le_two_mul`: norm control for a nested BCH input.
 * `norm_bch_add_norm_lt_log_two`: convergence of the outer BCH pair.
@@ -30,33 +32,35 @@ namespace FQFP.BCH
 
 /-! ### Scalar denominator estimates -/
 
-/-- The exponential estimates the Strang bound consumes: `eˢ ≤ 1 + s + s²`,
-`2 - e^{s₁} ≥ 11/16`, and the two power bounds `s² ≤ s/4`, `s³ ≤ s²/4` for `s ≤ 1/4`. -/
-private lemma exp_bounds {s s₁ : ℝ} (hs_nn : 0 ≤ s) (hs14 : s < 1 / 4) (hs₁_le : s₁ ≤ s) :
-    Real.exp s ≤ 1 + s + s ^ 2 ∧ (11 : ℝ) / 16 ≤ 2 - Real.exp s₁ ∧
-      s ^ 2 ≤ s / 4 ∧ s ^ 3 ≤ s ^ 2 / 4 := by
-  have hs56 : s < 5 / 6 := by linarith only [hs14]
-  have hs_le : s ≤ 1 / 4 := le_of_lt hs14
-  have hs2_le : s ^ 2 ≤ s / 4 :=
-    calc s ^ 2 = s * s := by ring
-      _ ≤ s * (1 / 4) := mul_le_mul_of_nonneg_left hs_le hs_nn
-      _ = s / 4 := by ring
-  have hs3_le : s ^ 3 ≤ s ^ 2 / 4 :=
-    calc s ^ 3 = s ^ 2 * s := by ring
-      _ ≤ s ^ 2 * (1 / 4) := mul_le_mul_of_nonneg_left hs_le (sq_nonneg s)
-      _ = s ^ 2 / 4 := by ring
-  have hexp_le : Real.exp s ≤ 1 + s + s ^ 2 := by
-    have hcube := real_exp_third_order_le_cube hs_nn hs56
-    linarith only [hcube, hs3_le, sq_nonneg s]
-  refine ⟨hexp_le, ?_, hs2_le, hs3_le⟩
-  have h₁ : Real.exp s₁ ≤ Real.exp s := Real.exp_le_exp.mpr hs₁_le
-  have h₂ : 1 + s + s ^ 2 ≤ 21 / 16 := by linarith only [hs2_le, hs_le]
-  linarith only [h₁, h₂, hexp_le]
+/-- A radius bound `r ≤ c * s` and a denominator bound `0 < d ≤ D` give
+a remainder coefficient `M` whenever `K * c ^ n ≤ M * d`. -/
+lemma mul_pow_div_le_mul_pow {K M r s c d D : ℝ} (n : ℕ)
+    (hK : 0 ≤ K) (hr : 0 ≤ r) (hs : 0 ≤ s) (hradius : r ≤ c * s)
+    (hd : 0 < d) (hden : d ≤ D) (hbudget : K * c ^ n ≤ M * d) :
+    K * r ^ n / D ≤ M * s ^ n := by
+  calc
+    _ ≤ K * (c * s) ^ n / d :=
+      div_le_div₀ (mul_nonneg hK (pow_nonneg (hr.trans hradius) n))
+        (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hr hradius n) hK) hd hden
+    _ = (K * c ^ n / d) * s ^ n := by
+      rw [mul_pow]
+      ring
+    _ ≤ _ := mul_le_mul_of_nonneg_right ((div_le_iff₀ hd).mpr hbudget) (pow_nonneg hs n)
 
 /-- The logarithm denominator is at least `11/16` below a nonnegative scale `s < 1/4`. -/
 lemma eleven_sixteenths_le_two_sub_exp {s t : ℝ} (hs0 : 0 ≤ s) (hs : s < 1 / 4)
-    (ht : t ≤ s) : (11 : ℝ) / 16 ≤ 2 - Real.exp t :=
-  (exp_bounds hs0 hs ht).2.1
+    (ht : t ≤ s) : (11 : ℝ) / 16 ≤ 2 - Real.exp t := by
+  have hTaylor := real_exp_third_order_le_cube hs0 (by linarith only [hs] : s < 5 / 6)
+  have hsq := pow_le_pow_left₀ hs0 hs.le 2
+  have hcube := pow_le_pow_left₀ hs0 hs.le 3
+  linarith only [Real.exp_le_exp.mpr ht, hTaylor, hs, hsq, hcube]
+
+/-- The cubic BCH remainder at an inner radius `t ≤ s < 1/4` is at most `(160/11) s³`. -/
+lemma ten_mul_cube_div_two_sub_exp_le {t s : ℝ} (ht : 0 ≤ t) (hts : t ≤ s) (hs : s < 1 / 4) :
+    10 * t ^ 3 / (2 - Real.exp t) ≤ 160 / 11 * s ^ 3 :=
+  mul_pow_div_le_mul_pow (c := 1) (d := 11 / 16) 3 (by norm_num) ht (ht.trans hts)
+    (by simpa only [one_mul] using hts) (by norm_num)
+    (eleven_sixteenths_le_two_sub_exp (ht.trans hts) hs hts) (by norm_num)
 
 /-- The logarithm denominator is at least `1/3` at every scale at most `1/2`. -/
 lemma one_third_le_two_sub_exp {t : ℝ} (ht : t ≤ 1 / 2) :
@@ -73,29 +77,13 @@ lemma half_lt_log_two : (1 : ℝ) / 2 < Real.log 2 := by
   have h := one_third_le_two_sub_exp (t := 1 / 2) le_rfl
   linarith only [h]
 
-/-- The scalar facts used before the final assembly: `2 - e^{s₁}` is bounded below, the cubic
-correction at scale `s₁` is at most `(160/11) s³`, and `s²/8 + (160/11) s³ ≤ s`. -/
-private lemma bch_scale_bounds {s s₁ : ℝ} (hs_nn : 0 ≤ s) (hs14 : s < 1 / 4)
-    (hs₁_nn : 0 ≤ s₁) (hs₁_le : s₁ ≤ s) :
-    (11 : ℝ) / 16 ≤ 2 - Real.exp s₁ ∧
-      10 * s₁ ^ 3 / (2 - Real.exp s₁) ≤ 160 / 11 * s ^ 3 ∧
-      s ^ 2 / 8 + 160 / 11 * s ^ 3 ≤ s := by
-  obtain ⟨_, hdenom₁_lb, hs2_le, hs3_le⟩ := exp_bounds hs_nn hs14 hs₁_le
-  have hdenom₁ : 0 < 2 - Real.exp s₁ := by linarith only [hdenom₁_lb]
-  have hcubic_div_bound : 10 * s₁ ^ 3 / (2 - Real.exp s₁) ≤ 160 / 11 * s ^ 3 := by
-    rw [div_le_iff₀ hdenom₁]
-    have hs₁3 : s₁ ^ 3 ≤ s ^ 3 := pow_le_pow_left₀ hs₁_nn hs₁_le 3
-    have h1 : 10 * s₁ ^ 3 ≤ 10 * s ^ 3 := mul_le_mul_of_nonneg_left hs₁3 (by norm_num)
-    have h2 : 160 / 11 * s ^ 3 * (11 / 16) = 10 * s ^ 3 := by ring
-    have h3 : 160 / 11 * s ^ 3 * (11 / 16) ≤ 160 / 11 * s ^ 3 * (2 - Real.exp s₁) :=
-      mul_le_mul_of_nonneg_left hdenom₁_lb (by positivity)
-    linarith only [h1, h2, h3]
-  refine ⟨hdenom₁_lb, hcubic_div_bound, ?_⟩
-  have h1 : s ^ 2 / 8 ≤ s / 32 := by linarith only [hs2_le]
-  have h2 : 160 / 11 * s ^ 3 ≤ 10 / 11 * s := by
-    have h3 : s ^ 3 ≤ s / 16 := by linarith only [hs3_le, hs2_le]
-    linarith only [h3]
-  linarith only [h1, h2, hs_nn]
+/-- At scales up to `1/4`, the quadratic and cubic corrections fit inside `s`. -/
+private lemma quadratic_add_cubic_le_self {s : ℝ} (hs0 : 0 ≤ s) (hs : s ≤ 1 / 4) :
+    s ^ 2 / 8 + 160 / 11 * s ^ 3 ≤ s := by
+  calc
+    _ = s * (s / 8 + 160 / 11 * s ^ 2) := by ring
+    _ ≤ s * ((1 / 4) / 8 + 160 / 11 * (1 / 4) ^ 2) := by gcongr
+    _ ≤ s := mul_le_of_le_one_right hs0 (by norm_num)
 
 /-! ### Norm control for two consecutive BCH applications -/
 
@@ -118,13 +106,9 @@ lemma two_mul_norm_half_smul_add_norm_le (a b : A) :
 /-- The half-scaled commutator is bounded by the product of the two input norms. -/
 lemma norm_half_commutator_le (x y : A) :
     ‖(2 : ℚ)⁻¹ • (x * y - y * x)‖ ≤ ‖x‖ * ‖y‖ := by
-  calc
-    _ ≤ ‖x * y - y * x‖ / 2 := norm_half_smul_le _
-    _ ≤ (‖x * y‖ + ‖y * x‖) / 2 :=
-      div_le_div_of_nonneg_right (norm_sub_le _ _) (by norm_num)
-    _ ≤ (‖x‖ * ‖y‖ + ‖y‖ * ‖x‖) / 2 :=
-      div_le_div_of_nonneg_right (add_le_add (norm_mul_le _ _) (norm_mul_le _ _)) (by norm_num)
-    _ = ‖x‖ * ‖y‖ := by ring
+  simpa [TrotterError.nestedCommOfList, Ring.lie_def, mul_comm] using
+    norm_smul_nestedCommOfList_le_of_le_one y [x] (c := (2 : ℚ)⁻¹)
+      (by norm_num [← Rat.norm_cast_real])
 
 variable [CompleteSpace A] [NormOneClass A]
 
@@ -141,7 +125,7 @@ lemma norm_bch_add_norm_le_two_mul (x y : A) {s : ℝ}
   have hs₁_log : s₁ < Real.log 2 := by
     have hhalf := half_lt_log_two
     linarith only [hs₁, hs, hhalf]
-  obtain ⟨_, hcubic, hscale⟩ := bch_scale_bounds hs0 hs hs₁0 hs₁
+  have hcubic := ten_mul_cube_div_two_sub_exp_le hs₁0 hs₁ hs
   have herr := norm_bch_sub_add_sub_bracket_le x y hs₁_log
   have hδ : ‖bch x y - (x + y)‖ ≤ ‖x‖ * ‖y‖ + 10 * s₁ ^ 3 / (2 - Real.exp s₁) := by
     have hdecomp : bch x y - (x + y) =
@@ -165,7 +149,7 @@ lemma norm_bch_add_norm_le_two_mul (x y : A) {s : ℝ}
     _ ≤ s + (s ^ 2 / 8 + 160 / 11 * s ^ 3) := by
       dsimp only [s₁] at *
       linarith only [hxy, hprod, hcubic]
-    _ ≤ 2 * s := by linarith only [hscale]
+    _ ≤ 2 * s := by linarith only [quadratic_add_cubic_le_self hs0 hs.le]
 
 /-- The weighted input bound places the outer BCH pair in the logarithm convergence range. -/
 lemma norm_bch_add_norm_lt_log_two (x y : A) {s : ℝ}

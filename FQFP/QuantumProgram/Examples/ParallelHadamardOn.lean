@@ -16,8 +16,8 @@ module
 
 public import FQFP.CQM.Qudit.Measurement.Basic
 public import FQFP.CQM.Qudit.TensorPower
-public import FQFP.QuantumProgram.Logic.SourceCounted
-public import FQFP.QuantumProgram.Logic.SourceUnitary
+public import FQFP.QuantumProgram.Logic.Source.Counted
+public import FQFP.QuantumProgram.Logic.Source.Unitary
 
 /-!
 # Parallel Hadamard on a subregister

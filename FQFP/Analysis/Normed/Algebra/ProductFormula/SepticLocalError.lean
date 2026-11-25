@@ -86,28 +86,22 @@ theorem norm_symmetricExpProduct_sub_exp_le_septic (l : List A) (G L M : A) (C :
     (hT : ∀ x : ℝ, ‖halfDefect l G x + halfDefect l G (-x) -
       (5 * x ^ 4) • L - (7 * x ^ 6) • M‖ ≤ 9 * C * |x| ^ 8) (h : ℝ) :
     ‖symmetricExpProduct l h - exp (h • G)‖ ≤ septicStepBound ‖L‖ ‖M‖ C |h| := by
-  rw [symmetricExpProduct_sub_exp_eq_integral]
   calc
     _ ≤ |∫ x in 0..h, 5 * |x| ^ 4 * ‖L‖ + 7 * |x| ^ 6 * ‖M‖ +
         9 * C * |x| ^ 8| := by
-      apply intervalIntegral.norm_integral_le_abs_of_norm_le
-      · rw [ae_restrict_iff' measurableSet_uIoc]
-        filter_upwards with x _
-        rw [norm_mul_exp_smul_eq_of_le_one G _ hG,
-          norm_exp_smul_mul_eq_of_le_one G _ hG,
-          norm_symmetricDefect_eq_of_le_one l G hZ]
-        calc
-          _ ≤ ‖halfDefect l G x + halfDefect l G (-x) -
-                ((5 * x ^ 4) • L + (7 * x ^ 6) • M)‖ +
-              ‖(5 * x ^ 4) • L + (7 * x ^ 6) • M‖ := norm_le_norm_sub_add _ _
-          _ ≤ 9 * C * |x| ^ 8 +
-              (5 * |x| ^ 4 * ‖L‖ + 7 * |x| ^ 6 * ‖M‖) := by
-            apply add_le_add
-            · simpa only [sub_add_eq_sub_sub] using hT x
-            · exact (norm_add_le _ _).trans_eq (by simp [norm_smul, Real.norm_eq_abs])
-          _ = _ := by ring
-      · exact (by fun_prop : Continuous (fun x : ℝ ↦ 5 * |x| ^ 4 * ‖L‖ +
-          7 * |x| ^ 6 * ‖M‖ + 9 * C * |x| ^ 8)).intervalIntegrable 0 h
+      apply norm_symmetricExpProduct_sub_exp_le_abs_integral l G hZ hG h
+      · apply Continuous.intervalIntegrable
+        fun_prop
+      intro x _
+      calc
+        _ ≤ ‖halfDefect l G x + halfDefect l G (-x) -
+              ((5 * x ^ 4) • L + (7 * x ^ 6) • M)‖ +
+            ‖(5 * x ^ 4) • L + (7 * x ^ 6) • M‖ := norm_le_norm_sub_add _ _
+        _ ≤ 9 * C * |x| ^ 8 + (5 * |x| ^ 4 * ‖L‖ + 7 * |x| ^ 6 * ‖M‖) := by
+          apply add_le_add
+          · simpa only [sub_add_eq_sub_sub] using hT x
+          · exact (norm_add_le _ _).trans_eq (by simp [norm_smul, Real.norm_eq_abs])
+        _ = _ := add_comm _ _
     _ ≤ _ := abs_integral_septicError_polynomial_le _ _ _ _ (norm_nonneg _) (norm_nonneg _) hC
 
 end FQFP

@@ -15,8 +15,8 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Logic.SourceAssertion
-public import FQFP.QuantumProgram.Logic.Convex
+public import FQFP.QuantumProgram.Logic.Source.Assertion
+public import FQFP.QuantumProgram.Logic.Assertion.Convex
 
 /-!
 # Finite convex combinations of source predicates

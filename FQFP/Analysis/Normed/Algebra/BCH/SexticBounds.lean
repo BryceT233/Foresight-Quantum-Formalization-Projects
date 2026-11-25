@@ -104,24 +104,12 @@ Only the actual perturbation norm, not `Vn`, must be at most `M`. -/
 theorem norm_bchSexticTermTaylor2Remainder_le_of_le (x V y : A) (M Vn : ℝ)
     (hx : ‖x‖ ≤ M) (hy : ‖y‖ ≤ M) (hVM : ‖V‖ ≤ M) (hV : ‖V‖ ≤ Vn) :
     ‖bchSexticTermTaylor2Remainder x V y‖ ≤ (3312 / 1440 : ℝ) * M ^ 4 * Vn ^ 2 := by
-  have hweights : ∑ i ∈ range 3,
-      taylorWeight coefficientScale bchSexticTermTable 0 (i + 2) ≤ (3312 / 1440 : ℝ) := by
-    simp only [sum_range_succ, sum_range_zero, zero_add]
-    rw [sextic_taylor_weight ⟨2, by decide⟩, sextic_taylor_weight ⟨3, by decide⟩,
-      sextic_taylor_weight ⟨4, by decide⟩]
-    norm_num
-  have h := norm_sum_taylorPiece_le_of_le coefficientScale bchSexticTermTable 0 ![x, y]
-    V (range 3) (fun i ↦ i + 2) 6 2 (by decide)
-    (by
-      intro i _
-      lia) (by
-      intro i hi
-      simp only [mem_range] at hi
-      lia) sextic_length
-    (fun p _ i ↦ norm_pair_le x y hx hy (p.1.get i)) hVM hV hweights
+  have hweights := sum_taylorWeight_le_of_rat coefficientScale bchSexticTermTable 0
+    (range 3) (fun i ↦ i + 2) (3312 / 1440) (by decide +kernel)
   simpa [sum_range_succ, bchSexticTermTaylor2Remainder, bchSexticTermTaylor2Remainder2V,
-    bchSexticTermTaylor2Remainder3V, bchSexticTermTaylor2Remainder4V, bchSexticSubsetPiece,
-    mul_comm, mul_left_comm, mul_assoc] using h
+    bchSexticTermTaylor2Remainder3V, bchSexticTermTaylor2Remainder4V, bchSexticSubsetPiece] using
+    norm_sum_taylorPiece_pair_le coefficientScale bchSexticTermTable x V y 4 2
+      (by decide) (by decide) sextic_length hx hy hVM hV hweights
 
 /-- **Second-order Taylor remainder bound** with the source coefficient `3312/1440`. -/
 theorem norm_bchSexticTermTaylor2Remainder_le (x V y : A) :
@@ -167,33 +155,10 @@ theorem norm_bchSexticTermMixedDiff_le (x V W y : A) :
 theorem norm_bchSexticTerm_diff_le (z x y : A) :
     ‖bchSexticTerm z y - bchSexticTerm x y‖ ≤
       (‖z‖ + ‖x‖ + ‖y‖) ^ 5 * ‖z - x‖ := by
-  let M := ‖z‖ + ‖x‖ + ‖y‖
-  have hx : ‖x‖ ≤ M := by
-    dsimp only [M]
-    linarith only [norm_nonneg z, norm_nonneg y]
-  have hy : ‖y‖ ≤ M := by
-    dsimp only [M]
-    linarith only [norm_nonneg z, norm_nonneg x]
-  have hVM : ‖z - x‖ ≤ M :=
-    (norm_sub_le z x).trans (le_add_of_nonneg_right (norm_nonneg y))
-  have h1 := norm_sextic_piece_le 1 1 (by decide) (492 / 1440) (by norm_num)
-    x (z - x) y hx hy hVM le_rfl
-  have h2 := norm_sextic_piece_le 2 1 (by decide) (522 / 1440) (by norm_num)
-    x (z - x) y hx hy hVM le_rfl
-  have h3 := norm_sextic_piece_le 3 1 (by decide) (224 / 1440) (by norm_num)
-    x (z - x) y hx hy hVM le_rfl
-  have h4 := norm_sextic_piece_le 4 1 (by decide) (30 / 1440) (by norm_num)
-    x (z - x) y hx hy hVM le_rfl
-  have hdecomp := bchSexticTermTaylor2Decomp x (z - x) y
-  rw [show x + (z - x) = z by abel] at hdecomp
-  rw [hdecomp]
-  calc
-    _ ≤ (492 / 1440 : ℝ) * (‖z - x‖ ^ 1 * M ^ (6 - 1)) +
-        ((522 / 1440 : ℝ) * (‖z - x‖ ^ 1 * M ^ (6 - 1)) +
-          (224 / 1440 : ℝ) * (‖z - x‖ ^ 1 * M ^ (6 - 1)) +
-          (30 / 1440 : ℝ) * (‖z - x‖ ^ 1 * M ^ (6 - 1))) :=
-      norm_add_le_of_le h1 (norm_add_le_of_le (norm_add_le_of_le h2 h3) h4)
-    _ = (1268 / 1440 : ℝ) * (M ^ 5 * ‖z - x‖) := by ring
-    _ ≤ M ^ 5 * ‖z - x‖ := mul_le_of_le_one_left (by positivity) (by norm_num)
+  have hweights := sum_taylorWeight_le_of_rat coefficientScale bchSexticTermTable 0
+    (range 4) (fun i ↦ i + 1) (1) (by decide +kernel)
+  simpa only [bchSexticTerm, Rat.cast_one, one_mul] using
+    norm_eval_pair_sub_eval_pair_le coefficientScale bchSexticTermTable z x y 4
+      (by decide) (by decide) sextic_length card_wordPositions_bchSexticTermTable hweights
 
 end FQFP.BCH

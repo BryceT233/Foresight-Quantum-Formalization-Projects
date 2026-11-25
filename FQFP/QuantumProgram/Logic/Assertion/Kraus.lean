@@ -17,7 +17,7 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Semantics.KrausFrame
-public import FQFP.QuantumProgram.Logic.Convex
+public import FQFP.QuantumProgram.Logic.Assertion.Convex
 
 /-!
 # Finite Kraus accumulation

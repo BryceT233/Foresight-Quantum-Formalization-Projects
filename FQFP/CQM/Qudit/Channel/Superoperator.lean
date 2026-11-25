@@ -170,6 +170,11 @@ def conjugate (f : H.state →ₗ[ℂ] K.state) : Superoperator H K where
 lemma conjugate_apply (f : H.state →ₗ[ℂ] K.state) (A : Operator H) :
     conjugate f A = f ∘ₗ A ∘ₗ f.adjoint := rfl
 
+/-- The underlying linear map of a categorical dagger conjugation. -/
+lemma hom_dagger_comp_comp (f : H ⟶ K) (A : H ⟶ H) :
+    (f† ≫ A ≫ f).hom = conjugate f.hom A.hom := by
+  rw [hom_comp, hom_comp, hom_dagger, conjugate_apply, LinearMap.comp_assoc]
+
 /-- Conjugation by the identity is the identity superoperator. -/
 lemma conjugate_id (H : Qudit) :
     conjugate (LinearMap.id : Operator H) = LinearMap.id := by

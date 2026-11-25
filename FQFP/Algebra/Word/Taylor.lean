@@ -166,6 +166,18 @@ lemma taylorPiece_append (scale : ℚ) (s t : Table κ) (a : κ) (letters : κ �
       taylorPiece scale s a letters V k + taylorPiece scale t a letters V k := by
   simp only [taylorPiece, List.map_append, List.sum_append]
 
+/-- For a family of words of equal length and coefficient, the common scalar factors out
+of each Taylor component. -/
+lemma taylorPiece_ofFn (scale : ℚ) {m n : ℕ} (words : Fin m → Fin n → κ) (c : ℤ)
+    (a : κ) (letters : κ → A) (V : A) (k : ℕ) :
+    taylorPiece scale (List.ofFn fun i ↦ (List.ofFn (words i), c)) a letters V k =
+      ((c : ℚ) / scale ^ n) • ∑ i, wordTaylorPiece (words i) a letters V k := by
+  simp only [taylorPiece, List.map_ofFn, List.sum_ofFn, Function.comp_def, List.length_ofFn,
+    Finset.smul_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ congrArg (_ • ·) ?_
+  exact congrArg (fun w : Σ d, Fin d → κ ↦ wordTaylorPiece w.2 a letters V k)
+    (List.equivSigmaTuple.apply_symm_apply ⟨n, words i⟩)
+
 /-- Reordering coefficient rows preserves every Taylor component. -/
 lemma taylorPiece_eq_of_perm (scale : ℚ) {s t : Table κ} (h : s.Perm t)
     (a : κ) (letters : κ → A) (V : A) (k : ℕ) :

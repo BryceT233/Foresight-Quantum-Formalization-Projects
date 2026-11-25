@@ -41,6 +41,13 @@ variable {H : Qudit}
 /-- Distinct eigenvalues of a density, with each spectral block counted once. -/
 def spectralValues (σ : Density H) : Finset ℝ := Finset.univ.image σ.eigenvalue
 
+/-- The eigenvalue of a nonzero eigenvector indexes a spectral block. -/
+lemma mem_spectralValues_of_hasEigenvector (σ : Density H) {a : ℝ} {x : H.state}
+    (hx : σ.op.HasEigenvector (a : ℂ) x) : a ∈ σ.spectralValues := by
+  obtain ⟨i, hi⟩ := σ.positive.isSymmetric.exists_eigenvalues_eq rfl
+    (Module.End.hasEigenvalue_of_hasEigenvector hx)
+  exact Finset.mem_image.mpr ⟨i, Finset.mem_univ _, Complex.ofReal_injective hi⟩
+
 /-- The distinct spectral values can be computed in any orthonormal diagonalization. -/
 lemma spectralValues_eq_image_of_eigenbasis {ι : Type*} [Fintype ι] (σ : Density H)
     (b : OrthonormalBasis ι ℂ H.state) (w : ι → ℝ)
@@ -209,50 +216,27 @@ lemma pinching_outer_of_eigenvectors (σ : Density H) {x y : H.state} {a b : ℝ
     (hx : σ.op x = (a : ℂ) • x) (hy : σ.op y = (b : ℂ) • y) :
     σ.pinching.toSuperoperator (Operator.outer x y) = if a = b then Operator.outer x y else 0 := by
   classical
-  change (∑ k : σ.spectralValues, Superoperator.conjugate (σ.spectralProjection k))
-    (Operator.outer x y) = _
-  simp only [LinearMap.sum_apply, Superoperator.conjugate_outer]
-  by_cases hab : a = b
-  · subst b
-    rw [ite_eq_left rfl]
-    calc
-      _ = ∑ k : σ.spectralValues, Operator.outer (σ.spectralProjection k x) y := by
-        refine Finset.sum_congr rfl fun k _ => ?_
-        by_cases h : a = k.val <;> ext z <;>
-          simp [σ.spectralProjection_apply_of_eigenvector _ hx,
-            σ.spectralProjection_apply_of_eigenvector _ hy, h]
-      _ = Operator.outer x y := by
-        rw [← Operator.outer_sum_left, ← LinearMap.sum_apply, Finset.sum_coe_sort,
-          σ.sum_spectralProjection, one_apply_eq_self]
-  · rw [ite_eq_right hab]
-    refine Finset.sum_eq_zero fun k _ => ?_
-    by_cases ha : a = k.val
-    · have hb : b ≠ k.val := fun h => hab (ha.trans h.symm)
-      ext z
-      simp [σ.spectralProjection_apply_of_eigenvector _ hy, hb]
-    · ext z
-      simp [σ.spectralProjection_apply_of_eigenvector _ hx, ha]
+  rcases eq_or_ne x 0 with rfl | hx₀
+  · simp [show Operator.outer (0 : H.state) y = 0 by ext z; simp]
+  rcases eq_or_ne y 0 with rfl | hy₀
+  · simp [show Operator.outer x 0 = 0 by ext z; simp]
+  have ha := σ.mem_spectralValues_of_hasEigenvector ⟨Module.End.mem_eigenspace_iff.mpr hx, hx₀⟩
+  have hb := σ.mem_spectralValues_of_hasEigenvector ⟨Module.End.mem_eigenspace_iff.mpr hy, hy₀⟩
+  rw [pinching_eq_luders_toChannel]
+  simpa only [Subtype.mk.injEq] using POVM.luders_toChannel_outer σ.spectralResolution
+    (i := ⟨a, ha⟩) (j := ⟨b, hb⟩) (x := x) (y := y)
+    ((σ.spectralProjection_apply_of_eigenvector a hx).trans (ite_eq_left rfl))
+    ((σ.spectralProjection_apply_of_eigenvector b hy).trans (ite_eq_left rfl))
 
 /-- For simple spectrum, pinching is dephasing in the eigenbasis. -/
 lemma pinching_eq_dephase_of_injective (σ : Density H) (hs : Function.Injective σ.eigenvalue) :
     σ.pinching = QuantumChannel.dephase σ.eigenbasis := by
   classical
-  have hP (i) : σ.spectralProjection (σ.eigenvalue i) =
-      Operator.outer (σ.eigenbasis i) (σ.eigenbasis i) := by
-    apply σ.eigenbasis.toBasis.ext
-    intro j
-    change σ.spectralProjection _ (σ.eigenbasis j) = Operator.outer _ _ (σ.eigenbasis j)
-    simp only [σ.spectralProjection_apply_of_eigenvector _ (σ.apply_eigenbasis j), hs.eq_iff,
-      Operator.outer_apply, σ.eigenbasis.inner_eq_ite]
-    by_cases h : i = j <;> simp_all [eq_comm]
   apply QuantumChannel.ext
-  rw [QuantumChannel.dephase_eq_kraus]
-  apply LinearMap.ext
-  intro A
-  rw [pinching_apply, spectralValues, Finset.sum_image (fun i _ j _ h => hs h),
-    Superoperator.kraus_apply]
-  simp only [hP, Operator.adjoint_outer]
-  rfl
+  apply Operator.basis_outer_ext σ.eigenbasis
+  intro i j
+  simp only [σ.pinching_outer_of_eigenvectors (σ.apply_eigenbasis i) (σ.apply_eigenbasis j),
+    QuantumChannel.dephase_basis_outer, hs.eq_iff]
 
 /-- The maximally mixed reference has a single spectral block. -/
 lemma pinching_maximallyMixed (h : Module.finrank ℂ H.state ≠ 0) :

@@ -49,6 +49,6 @@ lemma probability_toQuantumChannel_basis (C : MemorylessChannel I O)
         (C.row i).weights o := by
   classical
   rw [probability_toQuantumChannel]
-  simp [POVM.probability_ofBasis_pure, b.inner_eq_ite, apply_ite]
+  simp [POVM.probability_ofBasis_ofBasis]
 
 end Qudit.MemorylessChannel

@@ -48,6 +48,16 @@ def scalarRingEquiv : Scalar Qudit ≃+* ℂ where
   map_mul' _ _ := by simp
   map_add' _ _ := by simp
 
+/-- Categorical scalar multiplication acts by complex scalar multiplication on linear maps
+(Example 2.7). -/
+lemma hom_scalar_smul {H K : Qudit} (s : Scalar Qudit) (f : H ⟶ K) :
+    (s • f).hom = scalarRingEquiv s • f.hom := by
+  apply LinearMap.ext
+  intro x
+  change (s • f) x = scalarRingEquiv s • f x
+  rw [smul_def, comp_apply, comp_apply, leftUnitor_inv_apply, tensorHom_tmul, leftUnitor_hom_apply]
+  rfl
+
 /-- In the qudit model the categorical overlap of kets is the complex inner product. -/
 theorem scalarRingEquiv_overlap {H : Qudit} (v w : H.state) :
     scalarRingEquiv (CQM.overlap (ketArrow v) (ketArrow w)) = inner ℂ v w := by

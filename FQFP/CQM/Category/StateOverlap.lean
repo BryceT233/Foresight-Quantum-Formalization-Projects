@@ -34,11 +34,33 @@ variable [MonoidalCategory C] [DaggerCategory C]
 /-- The scalar obtained by preparing `b` and applying the effect adjoint to `a`. -/
 def overlap (a b : State X) : Scalar C := .of (b ≫ a†)
 
+/-- A branch that tests against `v` and prepares `u` returns the matrix coefficient of
+the input times the outer square of `u`. This is the single-outcome form of the
+measurement followed by preparation in §0.3.5, with arbitrary preparations. -/
+lemma conjugate_by_outerHom (u : State Y) (v : State X) (A : X ⟶ X) :
+    (u.outerHom v)† ≫ A ≫ u.outerHom v = overlap v (v ≫ A) • u.outerHom u := by
+  rw [State.dagger_outerHom, State.outerHom, State.outerHom, State.outerHom, ← comp_scalar_smul,
+    ← scalar_asHom_comp]
+  simp only [overlap, Category.assoc]
+
 /-- The Born scalar for a state tested against another state's dagger (§2.4.1). -/
 lemma probability_dagger (a b : State X) :
     probability a b† = overlap a b * overlap b a := by
   apply End.ext
   simp [overlap, End.mul_asHom]
+
+/-- Reading back the dagger preparation of a disjoint effect gives the Kronecker
+delta of the labels, as in equation (0.41). -/
+lemma probability_of_disjoint [Semiadditive C] {ι : Type*} [DecidableEq ι]
+    {e : ι → Effect X} (h : Effect.Disjoint e) (i j : ι) :
+    probability (e i)† (e j) = if i = j then 1 else 0 := by
+  split_ifs with hij
+  · subst j
+    apply End.ext
+    simp only [involutive_dagger, ← Category.assoc, h.1, Category.id_comp, End.one_asHom]
+  · apply End.ext
+    change (e i)† ≫ e j ≫ (e j)† ≫ (e i)†† = 0
+    simp only [← Category.assoc, h.2 (Ne.symm hij), Limits.zero_comp]
 
 /-- Applying the same isometry to both preparations preserves their overlap. -/
 lemma overlap_comp_isometry (a b : State X) (f : X ⟶ Y) [IsIsometry f] :

@@ -169,6 +169,29 @@ end CategoryTheory.DaggerCategory
 
 end DaggerCategory
 
+namespace CategoryTheory.MonoidalCategory.State
+
+open DaggerCategory
+
+variable {C : Type*} [Category* C] [MonoidalCategory C] [DaggerCategory C] {H K : C}
+
+/-- The outer product `|v⟩⟨w|` as a morphism between the two state spaces. -/
+def outerHom (v : State K) (w : State H) : H ⟶ K :=
+  w† ≫ v
+
+/-- Taking the dagger of a rectangular outer product exchanges its states. -/
+lemma dagger_outerHom (v : State K) (w : State H) :
+    (v.outerHom w)† = w.outerHom v := by
+  simp [State.outerHom]
+
+/-- Acting on the ket and bra of an outer product applies the corresponding processes
+to the two preparations. -/
+lemma dagger_comp_outerHom_comp {X Y : C} (v : State H) (w : State K) (f : K ⟶ X) (g : H ⟶ Y) :
+    f† ≫ v.outerHom w ≫ g = State.outerHom (v ≫ g) (w ≫ f) := by
+  simp [State.outerHom]
+
+end CategoryTheory.MonoidalCategory.State
+
 namespace CategoryTheory.End
 
 open DaggerCategory
@@ -259,7 +282,7 @@ open MonoidalCategory
 variable [MonoidalCategory C]
 
 /-- The outer product of states `v` and `w`, with underlying arrow `w† ≫ v`. -/
-def outer (v w : State H) : End H := .of (w† ≫ v)
+def outer (v w : State H) : End H := .of (v.outerHom w)
 
 @[simp] theorem outer_asHom (v w : State H) : (outer v w).asHom = w† ≫ v := rfl
 

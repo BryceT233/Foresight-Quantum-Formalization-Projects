@@ -57,4 +57,14 @@ theorem sum_overlap_comp_proj (P : OrthogonalResolution X ι) (a : State X) :
   change ∑ i, (a ≫ P.proj i ≫ a†) = a ≫ a†
   rw [← Semiadditive.comp_sum, ← Semiadditive.sum_comp, P.sum_proj, Category.id_comp]
 
+/-- An unread projective measurement preserves coherence between states in the
+same outcome subspace and removes coherence between different outcomes.
+This extends the basis decoherence formula (0.42) to arbitrary projection ranks. -/
+theorem diagonalPart_outerHom [DecidableEq ι] (P : OrthogonalResolution X ι)
+    {u v : State X} {i j : ι} (hu : u ≫ P.proj i = u) (hv : v ≫ P.proj j = v) :
+    P.diagonalPart (u.outerHom v) = if i = j then u.outerHom v else 0 := by
+  have h := State.dagger_comp_outerHom_comp u v (P.proj j) (P.proj i)
+  rw [(P.isStarProjection j).isSelfAdjoint.dagger_asHom, hu, hv] at h
+  simpa only [h, eq_comm] using P.diagonalPart_block j i (u.outerHom v)
+
 end CQM

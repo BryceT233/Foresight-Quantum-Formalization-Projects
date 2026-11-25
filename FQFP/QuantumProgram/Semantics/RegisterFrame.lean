@@ -46,8 +46,8 @@ inductive AvoidsRegister (support : S → Set (Fin n)) : Command S (Fin n) (tens
       AvoidsRegister support (.channel (fun σ => orderedChannel D (p σ) (Φ σ)))
   /-- Check the support of the gate whenever the evaluated tuple is distinct. -/
   | unitary {k : ℕ} (p : S → Fin k → Fin n) (U : ∀ σ, Function.Injective (p σ) →
-      (tensorMemory (D ∘ p σ) ⟶ tensorMemory (D ∘ p σ)))
-      [∀ σ hi, DaggerCategory.IsUnitary (U σ hi)]
+      End (tensorMemory (D ∘ p σ)))
+      [∀ σ hi, DaggerCategory.IsUnitary (U σ hi).asHom]
       (hd : ∀ σ, Function.Injective (p σ) → ∀ j, p σ j ∉ support σ) :
       AvoidsRegister support (unitaryOn D p U)
   /-- The instrument operates on a disjoint register at each executable store. -/

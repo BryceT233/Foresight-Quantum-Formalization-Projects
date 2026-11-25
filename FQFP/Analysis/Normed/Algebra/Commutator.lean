@@ -118,6 +118,19 @@ theorem norm_nestedCommOfList_le (b : 𝔸) (L : List 𝔸) :
         _ = 2 ^ L.length * 2 * (‖x‖ * (‖b‖ * (L.map norm).prod)) := by ring
         _ = 2 * 2 ^ L.length * (‖b‖ * (‖x‖ * (L.map norm).prod)) := by ring
 
+/-- A scalar that absorbs the factor of two from each bracket leaves the product of input norms
+as a bound for the scaled commutator. -/
+theorem norm_smul_nestedCommOfList_le_of_le_one {K : Type*} [NormedField K] [NormedSpace K 𝔸]
+    (b : 𝔸) (L : List 𝔸) {c : K} (hc : ‖c‖ * 2 ^ L.length ≤ 1) :
+    ‖c • nestedCommOfList b L‖ ≤ ‖b‖ * (L.map norm).prod := by
+  rw [norm_smul]
+  apply (mul_le_mul_of_nonneg_left (norm_nestedCommOfList_le b L) (norm_nonneg c)).trans
+  rw [← mul_assoc]
+  apply mul_le_of_le_one_left _ hc
+  exact mul_nonneg (norm_nonneg _) (List.prod_nonneg fun a ha ↦ by
+    obtain ⟨x, _, rfl⟩ := List.mem_map.mp ha
+    exact norm_nonneg x)
+
 /-- The norm of a `p`-fold nested commutator is bounded by `2 ^ p` times the product of the
 norms of its arguments. For `p = 1` this is `norm_commutator_le`. -/
 theorem norm_nestedComm_le {p : ℕ} (H : Fin (p + 1) → 𝔸) :

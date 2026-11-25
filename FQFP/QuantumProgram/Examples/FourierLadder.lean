@@ -16,7 +16,7 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.ControlledPhase
-public import FQFP.QuantumProgram.Logic.ForUnitary
+public import FQFP.QuantumProgram.Logic.Iteration.ForUnitary
 
 /-!
 # The controlled-phase ladder of a Fourier stage

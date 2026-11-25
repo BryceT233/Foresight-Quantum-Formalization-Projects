@@ -26,17 +26,6 @@ noncomputable section
 
 variable {H K : Qudit} {ι : Type*} [Fintype ι]
 
-/-- A rectangular outer product acts on operators as one measurement and preparation term. -/
-lemma Superoperator.conjugate_ket_comp_bra (u : K.state) (v : H.state) (A : Operator H) :
-    conjugate (ket u ∘ₗ bra v) A = (Operator.outer v v * A).trace • Operator.outer u u := by
-  rw [show (Operator.outer v v * A).trace = (A * Operator.outer v v).trace from
-    LinearMap.trace_mul_comm ℂ _ _, Operator.trace_mul_outer]
-  ext x
-  simp only [conjugate_apply, LinearMap.adjoint_comp, ket, bra, LinearMap.adjoint_toSpanSingleton,
-    LinearMap.adjoint_innerₛₗ_apply, LinearMap.comp_apply, LinearMap.toSpanSingleton_apply,
-    innerₛₗ_apply_apply, map_smul, LinearMap.smul_apply, Operator.outer_apply, smul_smul]
-  rw [mul_comm]
-
 /-- Removing zero Kraus operators preserves their sum of conjugations. -/
 lemma Superoperator.kraus_subtype_ne_zero (f : ι → H.state →ₗ[ℂ] K.state)
     [DecidablePred (fun i => f i ≠ 0)] :

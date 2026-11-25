@@ -16,7 +16,7 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.QuantumProgram.Logic.PrimitiveRules
-public import FQFP.QuantumProgram.Logic.Kraus
+public import FQFP.QuantumProgram.Logic.Assertion.Kraus
 
 /-!
 # QHL⁺ derivations of partial and total correctness

@@ -5,10 +5,9 @@ Authors: Foresight Quantum
 -/
 module
 
-public import Mathlib.Analysis.SpecificLimits.Basic
+public import FQFP.Analysis.Normed.Algebra.ProductFormula.StepBounds
 public import Mathlib.Analysis.Asymptotics.Defs
 import Mathlib.Tactic.GCongr
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 
@@ -69,8 +68,6 @@ theorem quinticGlobalRemainder_le_pow_six {ℓ C alpha J t h : ℝ} {r : ℕ}
       (t * (C + 5 / 14 * alpha + J / 24) + t / 2 * ℓ ^ 2 +
         5 * t / 12 * ℓ * C + t ^ 2 / 2 * (ℓ + C) ^ 2) := by
   have ht0 : 0 ≤ t := ht ▸ mul_nonneg (Nat.cast_nonneg _) hh
-  have hr1 : (1 : ℝ) ≤ r := by exact_mod_cast hr
-  have hd0 := quinticStepBound_nonneg hℓ hC hh
   have hd : quinticStepBound ℓ C h ≤ h ^ 5 * (ℓ + C) := by
     calc
       _ ≤ h ^ 5 * ℓ + h ^ 7 * C := min_le_right _ _
@@ -82,12 +79,9 @@ theorem quinticGlobalRemainder_le_pow_six {ℓ C alpha J t h : ℝ} {r : ℕ}
   have hquad : (r : ℝ) * ((r : ℝ) - 1) / 2 * quinticStepBound ℓ C h ^ 2 ≤
       t ^ 2 / 2 * h ^ 6 * (ℓ + C) ^ 2 := by
     calc
-      _ ≤ (r : ℝ) ^ 2 / 2 * (h ^ 5 * (ℓ + C)) ^ 2 := by
-        gcongr
-        nlinarith
-      _ = t ^ 2 / 2 * h ^ 8 * (ℓ + C) ^ 2 := by
-        rw [← ht]
-        ring
+      _ ≤ t ^ 2 / 2 * h ^ 8 * (ℓ + C) ^ 2 :=
+        quadratic_accumulation_le_of_step_le_pow (p := 4) hr ht
+          (quinticStepBound_nonneg hℓ hC hh) hd
       _ ≤ t ^ 2 / 2 * h ^ 6 * (ℓ + C) ^ 2 := by
         gcongr t ^ 2 / 2 * ?_ * (ℓ + C) ^ 2
         exact hpow (by decide)
@@ -107,14 +101,9 @@ theorem eventually_quinticGlobalRemainder_le_pow_six {ℓ C t : ℝ} (alpha J : 
     ∀ᶠ r : ℕ in Filter.atTop,
       quinticGlobalRemainder ℓ C alpha J t (t / r) r ≤ (t / r) ^ 6 *
         (t * (C + 5 / 14 * alpha + J / 24) + t / 2 * ℓ ^ 2 +
-          5 * t / 12 * ℓ * C + t ^ 2 / 2 * (ℓ + C) ^ 2) := by
-  have hsmall := (tendsto_const_div_atTop_nhds_zero_nat t).eventually
-    (gt_mem_nhds (show (0 : ℝ) < 1 by norm_num))
-  filter_upwards [hsmall, Filter.eventually_ge_atTop 1] with r hsmall hr
-  apply quinticGlobalRemainder_le_pow_six hℓ hC
-    (div_nonneg ht (Nat.cast_nonneg r)) hsmall.le hr
-  have hr0 : (r : ℝ) ≠ 0 := by exact_mod_cast (show r ≠ 0 by lia)
-  exact mul_div_cancel₀ t hr0
+          5 * t / 12 * ℓ * C + t ^ 2 / 2 * (ℓ + C) ^ 2) :=
+  eventually_div_natCast_of_forall_step ht zero_lt_one fun hh hh1 hr hrh ↦
+    quinticGlobalRemainder_le_pow_six hℓ hC hh hh1 hr hrh
 
 /-- A sequence bounded by the quintic global remainder at positive step counts
 is eventually bounded by a constant times the sixth power of the step size. -/

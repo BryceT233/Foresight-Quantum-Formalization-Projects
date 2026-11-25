@@ -15,7 +15,7 @@ Modified by Foresight Quantum in 2026
 module
 
 public import FQFP.CQM.Qudit.Measurement.Basic
-public import FQFP.QuantumProgram.Logic.ForUnitary
+public import FQFP.QuantumProgram.Logic.Iteration.ForUnitary
 
 /-!
 # Parallel Hadamard as a finite list of commands

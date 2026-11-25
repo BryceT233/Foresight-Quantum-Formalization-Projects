@@ -7,6 +7,7 @@ module
 
 public import FQFP.CQM.Qudit.State.Composite.SchmidtRank
 public import FQFP.Analysis.InnerProductSpace.Orthonormal
+import FQFP.Data.Fintype.Fibers
 
 /-!
 # Local unitary equivalence of pure states
@@ -127,23 +128,12 @@ def LocallyUnitaryEquivalent (ψ φ : UnitState (H ⊗ K)) : Prop :=
   ∃ (f : H ⟶ H) (g : K ⟶ K) (_ : IsUnitary f) (_ : IsUnitary g),
     φ = ψ.map (f ⊗ₘ g)
 
-private lemma exists_equiv_of_multiset_eq {ι κ : Type*} [Fintype ι] [Fintype κ]
-    (f : ι → ℝ) (g : κ → ℝ) (h : Finset.univ.val.map f = Finset.univ.val.map g) :
-    ∃ e : ι ≃ κ, ∀ i, g (e i) = f i := by
-  classical
-  have hc (r : ℝ) : Fintype.card {i // f i = r} = Fintype.card {j // g j = r} := by
-    have := congrArg (Multiset.count r) h
-    simpa [Multiset.count_map, Fintype.card_subtype, Finset.filter_val,
-      Finset.card_def, eq_comm] using this
-  exact ⟨Equiv.ofFiberEquiv (fun r => Fintype.equivOfCardEq (hc r)),
-    Equiv.ofFiberEquiv_map _⟩
-
 /-- Equal Schmidt coefficient multisets construct local unitaries taking one vector to the other. -/
 lemma locallyUnitaryEquivalent_of_schmidtCoefficients_eq
     (ψ φ : UnitState (H ⊗ K)) (h : ψ.schmidtCoefficients = φ.schmidtCoefficients) :
     ψ.LocallyUnitaryEquivalent φ := by
   classical
-  obtain ⟨e, he⟩ := exists_equiv_of_multiset_eq ψ.schmidtCoefficient φ.schmidtCoefficient h
+  obtain ⟨e, he⟩ := Fintype.exists_equiv_of_multiset_eq ψ.schmidtCoefficient φ.schmidtCoefficient h
   obtain ⟨U, hU⟩ := ψ.orthonormal_schmidtLeft.exists_linearIsometryEquiv
     (φ.orthonormal_schmidtLeft.comp e e.injective) rfl
   obtain ⟨V, hV⟩ := ψ.orthonormal_schmidtRight.exists_linearIsometryEquiv
