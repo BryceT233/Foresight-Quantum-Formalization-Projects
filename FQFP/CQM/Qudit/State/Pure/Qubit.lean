@@ -47,7 +47,7 @@ lemma endToMatrix_matrixToEnd {n : ℕ} (M : Matrix (Fin n) (Fin n) ℂ) :
 namespace Qubit
 
 /-- The Hadamard is its own adjoint. -/
-instance : DaggerCategory.IsSelfAdjoint Qubit.H.asHom := by
+theorem isSelfAdjoint_H : IsSelfAdjoint Qubit.H := by
   rw [Qubit.H, isSelfAdjoint_matrixToEnd_iff]
   apply Matrix.IsHermitian.ext
   intro i j
@@ -59,6 +59,10 @@ theorem phaseShift_neg (θ : ℝ) : (phaseShift (-θ)).asHom = (phaseShift θ).a
   congr 2
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Matrix.conjTranspose_apply, ← Complex.exp_conj]
+
+/-- The adjoint phase shift negates its angle. -/
+theorem star_phaseShift (θ : ℝ) : star (phaseShift θ) = phaseShift (-θ) :=
+  End.ext (phaseShift_neg θ).symm
 
 instance (θ : ℝ) : IsUnitary (phaseShift θ).asHom := by
   rw [phaseShift, isUnitary_matrixToEnd_iff_fin_two]
@@ -100,19 +104,21 @@ theorem phaseShift_mul (a b : ℝ) : phaseShift a * phaseShift b = phaseShift (a
 theorem phaseShift_pi : phaseShift Real.pi = pauliZ := by
   simp [phaseShift, pauliZ]
 
-private theorem mul_self_of_selfAdjoint_unitary {J : Qudit} (U : End J)
-    [DaggerCategory.IsSelfAdjoint U.asHom] [IsUnitary U.asHom] : U * U = 1 :=
-  End.ext (by
-    change U.asHom ≫ U.asHom = 𝟙 J
-    simpa only [IsSelfAdjoint.dagger_eq] using IsIsometry.comp_dagger_eq_id U.asHom)
+private theorem mul_self_of_selfAdjoint_unitary {J : Qudit} {U : End J}
+    (hU : IsSelfAdjoint U) [IsUnitary U.asHom] : U * U = 1 := by
+  simpa only [hU.star_eq] using
+    Unitary.star_mul_self_of_mem ((End.mem_unitary_iff U).2 inferInstance)
 
-theorem pauliX_mul_self : pauliX * pauliX = 1 := mul_self_of_selfAdjoint_unitary _
+theorem pauliX_mul_self : pauliX * pauliX = 1 :=
+  mul_self_of_selfAdjoint_unitary isSelfAdjoint_pauliX
 
-theorem pauliY_mul_self : pauliY * pauliY = 1 := mul_self_of_selfAdjoint_unitary _
+theorem pauliY_mul_self : pauliY * pauliY = 1 :=
+  mul_self_of_selfAdjoint_unitary isSelfAdjoint_pauliY
 
-theorem pauliZ_mul_self : pauliZ * pauliZ = 1 := mul_self_of_selfAdjoint_unitary _
+theorem pauliZ_mul_self : pauliZ * pauliZ = 1 :=
+  mul_self_of_selfAdjoint_unitary isSelfAdjoint_pauliZ
 
-theorem H_mul_self : H * H = 1 := mul_self_of_selfAdjoint_unitary _
+theorem H_mul_self : H * H = 1 := mul_self_of_selfAdjoint_unitary isSelfAdjoint_H
 
 theorem S_mul_self : S * S = pauliZ := by
   rw [S, phaseShift_mul, add_halves, phaseShift_pi]

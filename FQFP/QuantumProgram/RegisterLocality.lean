@@ -137,14 +137,7 @@ theorem liftChannel_toSuperoperator (r : Register H A) (Φ : QuantumChannel A A)
 def liftInstrument {ι : Type*} [Fintype ι] :
     {H A : Qudit} → Register H A → Instrument A A ι → Instrument H H ι
   | _, _, .whole, I => I
-  | _, _, .left r, I =>
-    let J := r.liftInstrument I
-    { branch := fun i => Superoperator.tensor (J.branch i) LinearMap.id
-      completelyPositive := fun i => (J.completelyPositive i).tensor
-        (Superoperator.isCompletelyPositive_id _)
-      tracePreserving := by
-        rw [← Superoperator.tensor_sum_left]
-        exact J.tracePreserving.tensor (Superoperator.isTracePreserving_id _) }
+  | _, _, .left r, I => (r.liftInstrument I).tensorRight (.id _)
   | _, _, .right r, I => (r.liftInstrument I).tensorLeft (.id _)
 
 /-- Each full-memory branch is the extension of the corresponding local operation. -/

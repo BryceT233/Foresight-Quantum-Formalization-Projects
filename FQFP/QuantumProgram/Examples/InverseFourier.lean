@@ -130,7 +130,7 @@ theorem hadamardGate_twice (k : ℕ) (v : (Memory n).state) :
     (hadamardGate n k).toOperator ((hadamardGate n k).toOperator v) = v := by
   let H := hadamardGate n k
   have h : H.denoteHom.hom.adjoint = H.denoteHom.hom :=
-    ((isSelfAdjoint_iff_hom _).mp (Register.isSelfAdjoint_liftHom _ Qubit.H.asHom)).star_eq
+    (isSelfAdjoint_hom (Register.isSelfAdjoint_liftEnd _ Qubit.isSelfAdjoint_H)).star_eq
   change H.denoteHom.hom (H.denoteHom.hom v) = v
   simpa only [h] using hom_adjoint_apply_of_isIsometry H.denoteHom v
 

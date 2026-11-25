@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Category.Operator
+public import FQFP.CategoryTheory.Dagger.Basic
 public import FQFP.CategoryTheory.Monoidal.Dagger.Basic
 public import Mathlib.Algebra.BigOperators.Group.List.Defs
 
@@ -38,7 +38,8 @@ inductive Register : C → C → Type u where
   /-- Select a register in the right factor. -/
   | right {A B S : C} (r : Register B S) : Register (A ⊗ B) S
 
-/-- Act on the selected factor and as the identity on every spectator. -/
+/-- Morphism underlying register extension, computed by whiskering along the path.
+For operators use `Register.liftEnd`. -/
 def Register.liftHom : {H S : C} → Register H S → (S ⟶ S) → (H ⟶ H)
   | _, _, .whole, f => f
   | _, _, .left (B := B) r, f => r.liftHom f ▷ B
@@ -54,12 +55,15 @@ theorem Register.liftHom_comp {H S : C} (r : Register H S) (f g : S ⟶ S) :
   induction r <;> simp [liftHom, *, comp_whiskerRight, MonoidalCategory.whiskerLeft_comp]
 
 /-- Extend operators on a register to operators on the entire memory. -/
-def Register.liftEnd {H S : C} (r : Register H S) : CQM.Operator S →* CQM.Operator H where
+def Register.liftEnd {H S : C} (r : Register H S) : End S →* End H where
   toFun A := .of (r.liftHom A.asHom)
   map_one' := End.ext r.liftHom_id
   map_mul' A B := End.ext (r.liftHom_comp B.asHom A.asHom)
 
-@[simp] theorem Register.liftEnd_whole {H : C} (A : CQM.Operator H) :
+@[simp] theorem Register.liftEnd_asHom {H S : C} (r : Register H S) (A : End S) :
+    (r.liftEnd A).asHom = r.liftHom A.asHom := rfl
+
+@[simp] theorem Register.liftEnd_whole {H : C} (A : End H) :
     Register.whole.liftEnd A = A := rfl
 
 end Monoidal
@@ -71,14 +75,14 @@ theorem Register.dagger_liftHom (r : Register H S) (f : S ⟶ S) :
     (r.liftHom f)† = r.liftHom f† := by
   induction r <;> simp [liftHom, *]
 
-/-- A self-adjoint register operation remains self-adjoint on the entire memory. -/
-instance Register.isSelfAdjoint_liftHom (r : Register H S) (f : S ⟶ S)
-    [DaggerCategory.IsSelfAdjoint f] : DaggerCategory.IsSelfAdjoint (r.liftHom f) :=
-  ⟨by rw [r.dagger_liftHom, IsSelfAdjoint.dagger_eq f]⟩
-
 /-- Extending an operator commutes with taking its adjoint. -/
-theorem Register.liftEnd_star (r : Register H S) (A : CQM.Operator S) :
+theorem Register.liftEnd_star (r : Register H S) (A : End S) :
     r.liftEnd (star A) = star (r.liftEnd A) := End.ext (r.dagger_liftHom A.asHom).symm
+
+/-- A self-adjoint register operation remains self-adjoint on the entire memory. -/
+theorem Register.isSelfAdjoint_liftEnd (r : Register H S) {A : End S} (hA : IsSelfAdjoint A) :
+    IsSelfAdjoint (r.liftEnd A) := by
+  rw [isSelfAdjoint_iff, ← r.liftEnd_star, hA.star_eq]
 
 /-- Extending a unitary gate along a register preserves unitarity. -/
 instance Register.isUnitary_liftHom (r : Register H S) (f : S ⟶ S) [IsUnitary f] :
@@ -86,32 +90,48 @@ instance Register.isUnitary_liftHom (r : Register H S) (f : S ⟶ S) [IsUnitary 
   rw [isUnitary_iff, r.dagger_liftHom, ← r.liftHom_comp, ← r.liftHom_comp]
   simp [r.liftHom_id]
 
+/-- The morphism underlying a lifted unitary operator is unitary. -/
+instance Register.isUnitary_liftEnd_asHom (r : Register H S) (A : End S) [IsUnitary A.asHom] :
+    IsUnitary (r.liftEnd A).asHom := by
+  rw [r.liftEnd_asHom]
+  infer_instance
+
 /-- A straight-line program of local unitary gates in a monoidal dagger category. -/
 inductive UnitaryProgram (H : C) : Type (max u v) where
-  /-- Apply a unitary morphism to its selected register. -/
-  | gateHom {S : C} (r : Register H S) (U : S ⟶ S) [unitary : IsUnitary U]
+  /-- Apply a unitary endomorphism to its selected register. -/
+  | gate {S : C} (r : Register H S) (U : End S) [unitary : IsUnitary U.asHom]
   /-- Execute the first program and then the second. -/
   | seq (first second : UnitaryProgram H)
 
 namespace UnitaryProgram
 
-/-- The endomorphism of memory obtained by executing the program. -/
-def denoteHom : UnitaryProgram H → (H ⟶ H)
-  | .gateHom r U (unitary := _) => r.liftHom U
-  | .seq p q => p.denoteHom ≫ q.denoteHom
+/-- Apply a local gate given by its underlying unitary morphism. -/
+abbrev gateHom (r : Register H S) (U : S ⟶ S) [unitary : IsUnitary U] : UnitaryProgram H :=
+  .gate r (.of U)
+
+/-- The operator on the whole memory denoted by a program, in order of action on states. -/
+def denoteEnd : UnitaryProgram H → End H
+  | .gate r U (unitary := _) => r.liftEnd U
+  | .seq p q => q.denoteEnd * p.denoteEnd
+
+/-- The underlying morphism of the program operator. -/
+abbrev denoteHom (p : UnitaryProgram H) : H ⟶ H := p.denoteEnd.asHom
 
 /-- The denotation of every unitary program is unitary. -/
 instance isUnitary_denoteHom (p : UnitaryProgram H) : IsUnitary p.denoteHom := by
-  induction p <;> unfold denoteHom <;> infer_instance
-
-/-- The operator on the whole memory denoted by a program. -/
-def denoteEnd (p : UnitaryProgram H) : CQM.Operator H := .of p.denoteHom
+  induction p with
+  | gate r U => exact inferInstanceAs (IsUnitary (r.liftEnd U).asHom)
+  | seq p q hp hq => exact inferInstanceAs (IsUnitary (p.denoteHom ≫ q.denoteHom))
 
 /-- The program operator belongs to the unitary group of the endomorphism monoid. -/
-theorem denoteEnd_mem_unitary (p : UnitaryProgram H) : p.denoteEnd ∈ unitary (CQM.Operator H) :=
+theorem denoteEnd_mem_unitary (p : UnitaryProgram H) : p.denoteEnd ∈ unitary (End H) :=
   (End.mem_unitary_iff _).mpr (isUnitary_denoteHom p)
 
 /-- The operator of a local gate is its register extension. -/
+theorem denoteEnd_gate (r : Register H S) (U : End S) [IsUnitary U.asHom] :
+    (gate r U).denoteEnd = r.liftEnd U := rfl
+
+/-- Operator semantics of a gate supplied as a morphism. -/
 theorem denoteEnd_gateHom (r : Register H S) (U : S ⟶ S) [IsUnitary U] :
     (gateHom r U).denoteEnd = r.liftEnd (.of U) := rfl
 
@@ -119,9 +139,17 @@ theorem denoteEnd_gateHom (r : Register H S) (U : S ⟶ S) [IsUnitary U] :
 theorem denoteEnd_seq (p q : UnitaryProgram H) :
     (p.seq q).denoteEnd = q.denoteEnd * p.denoteEnd := rfl
 
+/-- Sequential execution composes the underlying morphisms in execution order. -/
+theorem denoteHom_seq (p q : UnitaryProgram H) :
+    (p.seq q).denoteHom = p.denoteHom ≫ q.denoteHom := rfl
+
+/-- The underlying morphism of a local gate is its register extension. -/
+theorem denoteHom_gate (r : Register H S) (U : End S) [IsUnitary U.asHom] :
+    (gate r U).denoteHom = r.liftHom U.asHom := rfl
+
 /-- Execute a list of programs in order. The empty sequence acts as the identity. -/
 def sequence : List (UnitaryProgram H) → UnitaryProgram H
-  | [] => .gateHom .whole (𝟙 H)
+  | [] => .gate .whole 1
   | [p] => p
   | p :: q :: ps => p.seq (sequence (q :: ps))
 

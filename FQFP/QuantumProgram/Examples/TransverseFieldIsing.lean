@@ -38,7 +38,7 @@ noncomputable section
 theorem isSelfAdjoint_of_hermitian_qubit_matrix (M : Matrix (Fin 2) (Fin 2) ℂ)
     (hM : M.conjTranspose = M) :
     _root_.IsSelfAdjoint (matrixToEnd M).asHom.hom :=
-  (isSelfAdjoint_iff_hom _).1 ((isSelfAdjoint_matrixToEnd_iff M).2 hM)
+  isSelfAdjoint_hom ((isSelfAdjoint_matrixToEnd_iff M).2 hM)
 
 namespace TransverseFieldIsing
 
@@ -64,19 +64,18 @@ def terms (a b J : ℝ) : Fin 3 → selfAdjoint (Operator (Qubit ⊗ Qubit)) :=
 
 /-- One physical slice, with the left qubit controlling both CNOT gates. -/
 def step (a b J δ : ℝ) : UnitaryProgram (Qubit ⊗ Qubit) :=
-  .sequence [.gateHom (.left .whole) (rx (2 * a * δ)), .gateHom (.right .whole) (rx (2 * b * δ)),
-    .gateHom .whole controlledNot, .gateHom (.right .whole) (rz (2 * J * δ)),
-    .gateHom .whole controlledNot]
+  .sequence [.gate (.left .whole) (rx (2 * a * δ)), .gate (.right .whole) (rx (2 * b * δ)),
+    .gateHom .whole Qubit.CNOT, .gate (.right .whole) (rz (2 * J * δ)), .gateHom .whole Qubit.CNOT]
 
-private abbrev cnotOp : Operator (Qubit ⊗ Qubit) := controlledNot.hom
+private abbrev cnotOp : Operator (Qubit ⊗ Qubit) := Qubit.CNOT.hom
 
 open scoped TensorProduct in
 private theorem cnot_sq : cnotOp * cnotOp = 1 := by
   apply ((ZBasis 2).tensorProduct (ZBasis 2)).toBasis.ext
   rintro ⟨i, j⟩
-  change controlledNot.hom (controlledNot.hom _) = _
+  change Qubit.CNOT.hom (Qubit.CNOT.hom _) = _
   simp only [OrthonormalBasis.coe_toBasis, OrthonormalBasis.tensorProduct_apply]
-  rw [controlledNot_basis, controlledNot_basis]
+  rw [Qubit.CNOT_basis, Qubit.CNOT_basis]
   have h : i + (i + j) = j := by lia
   rw [h]
   rfl
@@ -98,12 +97,12 @@ private theorem cnot_z :
   rintro ⟨i, j⟩
   simp only [OrthonormalBasis.coe_toBasis, OrthonormalBasis.tensorProduct_apply,
     mul_apply_eq_comp, Operator.oneTensorHom_apply]
-  change controlledNot.hom _ = Operator.tensor pauliZHamiltonian.val pauliZHamiltonian.val
-    (controlledNot.hom _)
-  rw [controlledNot_basis, Operator.tensor_apply]
+  change Qubit.CNOT.hom _ = Operator.tensor pauliZHamiltonian.val pauliZHamiltonian.val
+    (Qubit.CNOT.hom _)
+  rw [Qubit.CNOT_basis, Operator.tensor_apply]
   fin_cases i <;> fin_cases j <;>
     simp [pauliZ_zero, pauliZ_one, TensorProduct.tmul_neg, TensorProduct.neg_tmul,
-      controlledNot_basis]
+      Qubit.CNOT_basis]
 
 private theorem lift_evolution (L : Operator Qubit →⋆ₐ[ℂ] Operator (Qubit ⊗ Qubit))
     (P : selfAdjoint (Operator Qubit)) (c δ : ℝ) :
@@ -127,7 +126,8 @@ private theorem term_evolution (P : selfAdjoint (Operator (Qubit ⊗ Qubit))) (c
 
 /-- Computing parity, rotating its target, and uncomputing implements the ZZ exponential. -/
 theorem controlledNot_rz_controlledNot (c δ : ℝ) :
-    controlledNot.hom * Operator.oneTensorHom Qubit Qubit (rz (2 * c * δ)).hom * controlledNot.hom =
+    Qubit.CNOT.hom * Operator.oneTensorHom Qubit Qubit (endAlgEquiv Qubit (rz (2 * c * δ))) *
+        Qubit.CNOT.hom =
       exp (((-Complex.I) * (δ : ℂ) * (c : ℂ)) • zz.val) := by
   let k := (-Complex.I) * (δ : ℂ) * (c : ℂ)
   let : NormedAlgebra ℚ (Operator (Qubit ⊗ Qubit)) := .restrictScalars ℚ ℂ _
@@ -143,14 +143,14 @@ theorem toOperator_step (a b J δ : ℝ) :
   have hleft := lift_evolution (Operator.tensorOneHom Qubit Qubit) pauliXHamiltonian a δ
   have hright := lift_evolution (Operator.oneTensorHom Qubit Qubit) pauliXHamiltonian b δ
   have hzz := controlledNot_rz_controlledNot J δ
-  simp only [rz] at hzz
-  simp only [UnitaryProgram.toOperator, UnitaryProgram.denoteEnd] at hleft hright
+  simp only [rz, endAlgEquiv_apply] at hzz
+  simp only [UnitaryProgram.toOperator] at hleft hright
   have hlist : List.finRange 3 = [0, 1, 2] := by decide
   simp only [step, trotterStep, hlist, List.map_cons, List.map_nil,
     UnitaryProgram.toOperator_sequence, List.reverse_cons, List.reverse_nil,
     List.nil_append, List.cons_append, List.prod_cons, List.prod_nil, mul_one, rx, rz,
-    UnitaryProgram.toOperator_gateHom, Register.endAlgEquiv_liftEnd_left,
-    Register.endAlgEquiv_liftEnd_right, Register.liftEnd_whole]
+    UnitaryProgram.toOperator_gate,
+    Register.endAlgEquiv_liftEnd_left, Register.endAlgEquiv_liftEnd_right, Register.liftEnd_whole]
   rw [hleft, hright]
   simp only [endAlgEquiv_apply, terms, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons]

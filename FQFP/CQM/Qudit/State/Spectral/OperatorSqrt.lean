@@ -52,12 +52,12 @@ lemma adjoint_sqrt (A : Operator H) : A.sqrt.adjoint = A.sqrt :=
 lemma sqrt_mul_sqrt (A : Operator H) (hA : A.IsPositive) : A.sqrt * A.sqrt = A :=
   CFC.sqrt_mul_sqrt_self A (LinearMap.nonneg_iff_isPositive.mpr hA)
 
-/-- A qudit arrow is dagger-positive exactly when its linear map is positive. -/
-theorem _root_.Qudit.isPositive_iff_hom_isPositive (f : H ⟶ H) :
-    CategoryTheory.DaggerCategory.IsPositive f ↔ f.hom.IsPositive := by
-  refine ⟨fun hf ↦ hom_isPositive_of_isPositive f, fun hf ↦ ?_⟩
-  refine ⟨H, ofHom (Operator.sqrt f.hom), hom_ext ?_⟩
-  change f.hom = (Operator.sqrt f.hom).adjoint * Operator.sqrt f.hom
+/-- A qudit operator is dagger-positive exactly when its linear map is positive. -/
+theorem _root_.Qudit.isPositive_iff_hom_isPositive (A : CategoryTheory.End H) :
+    A.IsPositive ↔ A.asHom.hom.IsPositive := by
+  refine ⟨hom_isPositive_of_isPositive, fun hf ↦ ?_⟩
+  refine ⟨H, ofHom (Operator.sqrt A.asHom.hom), hom_ext ?_⟩
+  change A.asHom.hom = (Operator.sqrt A.asHom.hom).adjoint * Operator.sqrt A.asHom.hom
   rw [adjoint_sqrt, sqrt_mul_sqrt _ hf]
 
 /-- The quadratic form of a positive operator is the squared norm of its square root. -/

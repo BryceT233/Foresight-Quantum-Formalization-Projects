@@ -48,7 +48,7 @@ theorem controlledNot_basis (a b : Fin 2) :
 
 /-- Hadamard on the first qubit, followed by controlled NOT on the ordered pair. -/
 def bellPreparation : UnitaryProgram (Qubit ⊗ Qubit) :=
-  .seq (.gateHom (.left .whole) Qubit.H.asHom) (.gateHom .whole controlledNot)
+  .seq (.gate (.left .whole) Qubit.H) (.gateHom .whole controlledNot)
 
 /-- The initial unit vector in the two-qubit computational basis. -/
 def zeroZero : UnitState (Qubit ⊗ Qubit) :=

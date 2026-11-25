@@ -58,7 +58,7 @@ def angle (t : ℕ) : ℝ := 2 * Real.pi / 2 ^ (t + 2)
 
 /-- Hadamard on the wire selected by the stage counter. -/
 def hadamardGate (k : ℕ) : UnitaryProgram (Memory n) :=
-  .gateHom (Register.site (fun _ => Qubit) (control n k)) Qubit.H.asHom
+  .gate (Register.site (fun _ => Qubit) (control n k)) Qubit.H
 
 /-- Controlled phase selected by the stage and rung counters. -/
 def rungGate (k t : ℕ) : UnitaryProgram (Memory n) :=
@@ -179,9 +179,9 @@ def ladderState (k t : ℕ) : UnitState (Memory n) := product (mid x k t)
 /-- The Hadamard pass initializes the ladder vector, with its exact phase. -/
 theorem hadamardGate_stageState (k : ℕ) (hk : k < n) :
     (hadamardGate n k).toOperator (stageState x k).val = (ladderState x k 0).val := by
-  change ((Register.site (fun _ => Qubit) (control n k)).liftHom Qubit.H.asHom)
+  change ((Register.site (fun _ => Qubit) (control n k)).liftEnd Qubit.H).asHom
     (product (factors x k)).val = (product (mid x k 0)).val
-  rw [Register.liftHom_site_productState]
+  rw [Register.liftEnd_site_productState]
   have hc : (control n k).val = k := Nat.mod_eq_of_lt hk
   have hv : factors x k (control n k) = UnitState.ofBasis (ZBasis 2) (x (control n k)) := by
     simp [factors, hc]

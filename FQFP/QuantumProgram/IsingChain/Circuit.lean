@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.QuantumProgram.Examples.TransverseFieldIsing
+public import FQFP.QuantumProgram.IsingChain.Instruction
 
 /-!
 # Native gate counts for the open transverse-field Ising chain

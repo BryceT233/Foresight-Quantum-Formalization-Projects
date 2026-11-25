@@ -71,7 +71,7 @@ theorem wp_unitaryOn_of_injective (B : Assertion S (tensorMemory D)) (σ : S)
       (orderedChannel D ⟨cells σ, hi⟩
         (QuantumChannel.ofIsometry (U σ hi))).pullbackEffect (B σ) := by
   simp only [Command.unitaryOn, wp_unitary, Assertion.unitaryPre, dite_eq_left hi, channelEffect,
-    toChannel_liftGate_orderedLift]
+    toChannel_liftGateHom_orderedLift]
 
 /-- At a valid address tuple each outcome uses its own branch and updated postcondition. -/
 theorem wp_measureOn_of_injective (B : Assertion S (tensorMemory D)) (σ : S)

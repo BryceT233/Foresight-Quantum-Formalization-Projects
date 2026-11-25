@@ -60,7 +60,7 @@ private theorem hadamard_plus : UnitState.map Qubit.H.asHom plusBit = zeroBit :=
   apply Subtype.ext
   have hh := hom_adjoint_apply_of_isIsometry Qubit.H.asHom (zeroBit).val
   have hs : Qubit.H.asHom.hom.adjoint = Qubit.H.asHom.hom :=
-    ((isSelfAdjoint_iff_hom _).mp inferInstance).star_eq
+    (isSelfAdjoint_hom Qubit.isSelfAdjoint_H).star_eq
   rw [hs] at hh
   exact hh
 
@@ -117,8 +117,8 @@ theorem fourierState_zero : fourierState (fun _ : Fin n => 0) = uniformState n :
 private theorem hadamard_zeroPrefix (k : ℕ) (hk : k < n) :
     (hadamardGate n k).toOperator (product (zeroPrefix n k)).val =
       (product (zeroPrefix n (k + 1))).val := by
-  change ((Register.site (fun _ => Qubit) (control n k)).liftHom Qubit.H.asHom) _ = _
-  rw [Register.liftHom_site_productState]
+  change ((Register.site (fun _ => Qubit) (control n k)).liftEnd Qubit.H).asHom _ = _
+  rw [Register.liftEnd_site_productState]
   apply congrArg (fun w => (product w).val)
   have hc : (control n k).val = k := Nat.mod_eq_of_lt hk
   funext i

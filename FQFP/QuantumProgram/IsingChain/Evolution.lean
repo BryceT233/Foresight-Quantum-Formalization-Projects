@@ -14,6 +14,7 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
+import FQFP.QuantumProgram.Examples.TransverseFieldIsing
 public import FQFP.QuantumProgram.IsingChain.Circuit
 
 /-!
@@ -95,8 +96,8 @@ private theorem edge_rotation (j : Fin e) (c δ : ℝ) :
     (program (edgeGates j (2 * c * δ))).toOperator =
       exp (phase δ • ((c : ℂ) • edgeZZ j)) := by
   let F := adjacentOp Qubit e j
-  let R := (QuantumProgram.rz (2 * c * δ)).hom
-  let C := controlledNot.hom
+  let R := endAlgEquiv Qubit (QuantumProgram.rz (2 * c * δ))
+  let C := Qubit.CNOT.hom
   have ht := adjacentOp_right Qubit e j R
   have h := congrArg F (TransverseFieldIsing.controlledNot_rz_controlledNot c δ)
   rw [lift_exp, adjacent_zz] at h

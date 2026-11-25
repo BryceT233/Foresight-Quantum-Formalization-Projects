@@ -74,6 +74,13 @@ theorem Register.liftHom_site_productState {n : ℕ} (D : Fin n → Qudit) (i : 
         Function.update_of_ne (Ne.symm (Fin.succ_ne_zero j)), Fin.tail_update_succ]
       exact congrArg (fun x => (v 0).val ⊗ₜ[ℂ] x) (ih (fun l => D l.succ) j U (Fin.tail v))
 
+/-- A lifted isometric endomorphism acts on the selected factor of a product state. -/
+theorem Register.liftEnd_site_productState {n : ℕ} (D : Fin n → Qudit) (i : Fin n)
+    (A : End (D i)) [IsIsometry A.asHom] (v : (j : Fin n) → UnitState (D j)) :
+    ((site D i).liftEnd A).asHom (registerProductState D v).val =
+      (registerProductState D (Function.update v i (UnitState.map A.asHom (v i)))).val :=
+  liftHom_site_productState D i A.asHom v
+
 /-- A local eigenvalue is also the eigenvalue on a product with arbitrary spectator factors. -/
 theorem Register.liftHom_site_productState_eigen {n : ℕ} (D : Fin n → Qudit) (i : Fin n)
     (U : D i ⟶ D i) (v : (j : Fin n) → UnitState (D j)) {z : ℂ}
@@ -95,6 +102,14 @@ theorem Register.liftHom_site_productState_eigen {n : ℕ} (D : Fin n → Qudit)
       rw [TensorProduct.map_tmul, LinearMap.id_apply]
       exact (congrArg (fun w => (v 0).val ⊗ₜ[ℂ] w)
         (ih (Fin.tail D) j U (Fin.tail v) hv)).trans (TensorProduct.tmul_smul ..)
+
+/-- Extending a local operator preserves its eigenvalue on a product with spectator factors. -/
+theorem Register.liftEnd_site_productState_eigen {n : ℕ} (D : Fin n → Qudit) (i : Fin n)
+    (A : End (D i)) (v : (j : Fin n) → UnitState (D j)) {z : ℂ}
+    (hv : A.asHom (v i).val = z • (v i).val) :
+    ((site D i).liftEnd A).asHom (registerProductState D v).val =
+      z • (registerProductState D v).val :=
+  liftHom_site_productState_eigen D i A.asHom v hv
 
 end
 

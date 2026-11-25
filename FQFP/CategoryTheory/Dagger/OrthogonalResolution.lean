@@ -25,31 +25,31 @@ variable {C : Type*} [Category* C] [DaggerCategory C] [Semiadditive C]
 
 /-- A finite family of pairwise orthogonal dagger projections resolving the identity. -/
 structure OrthogonalResolution (X : C) (ι : Type*) [Fintype ι] where
-  /-- The projection indexed by an outcome. -/
-  proj : ι → (X ⟶ X)
-  /-- Every component is an idempotent self-adjoint arrow. -/
-  isProj : ∀ i, IsProj (proj i)
+  /-- The operator indexed by an outcome. -/
+  op : ι → End X
+  /-- Every outcome operator is a projection. -/
+  isStarProjection : ∀ i, IsStarProjection (op i)
   /-- Distinct components annihilate one another. -/
-  orthogonal : Pairwise (fun i j ↦ proj i ≫ proj j = 0)
+  orthogonal : Pairwise (fun i j ↦ (op i).asHom ≫ (op j).asHom = 0)
   /-- The components sum to the identity. -/
-  sum_proj : ∑ i, proj i = 𝟙 X
-
-attribute [instance] OrthogonalResolution.isProj
+  sum_proj : ∑ i, (op i).asHom = 𝟙 X
 
 namespace OrthogonalResolution
 
 variable {X : C} {ι : Type*} [Fintype ι] (P : OrthogonalResolution X ι)
 
-/-- Each projection factors through its own dagger. -/
-instance (i : ι) : IsPositive (P.proj i) :=
-  ⟨X, P.proj i, by rw [IsProj.selfAdjoint, IsProj.comp_self]⟩
+/-- The outcome projection as an arrow, for composition with states and processes. -/
+abbrev proj (i : ι) : X ⟶ X := (P.op i).asHom
+
+/-- Each outcome operator admits a dagger factorization. -/
+theorem isPositive (i : ι) : (P.op i).IsPositive := (P.isStarProjection i).isPositive
 
 /-- Two successive projections retain exactly the common outcome. -/
 theorem proj_comp_proj [DecidableEq ι] (i j : ι) :
     P.proj i ≫ P.proj j = if i = j then P.proj i else 0 := by
   split_ifs with h
   · subst j
-    exact IsProj.comp_self _
+    exact (P.isStarProjection i).isIdempotentElem.asHom_comp_self
   · exact P.orthogonal h
 
 /-- Projecting both sides of an endomorphism twice retains precisely the first block

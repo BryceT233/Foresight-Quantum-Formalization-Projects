@@ -1,24 +1,29 @@
 /-
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Bingyu Xia
+Authors: Bingyu Xia, Foresight Quantum
 -/
 module
 
+public import FQFP.CategoryTheory.Monoidal.State
+public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.CategoryTheory.Endomorphism
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 public import Mathlib.Combinatorics.Quiver.ReflQuiver
 
 /-!
-# Dagger categories and their morphisms
+# Dagger categories, morphisms and operators
 
 A dagger reverses composition, fixes identities, and is involutive.
 
 ## Main definitions
 
 * `DaggerCategory`: a category with a dagger.
-* `DaggerCategory.IsSelfAdjoint`, `DaggerCategory.IsProj`, `DaggerCategory.IsIsometry`,
-  `DaggerCategory.IsUnitary`, and `DaggerCategory.IsPositive`: classes of morphisms.
+* `DaggerCategory.IsIsometry` and `DaggerCategory.IsUnitary`: properties of arrows.
+* `CategoryTheory.End`: the endomorphism monoid, with the dagger as its star.
+* `IsStarProjection`: a self-adjoint idempotent in the endomorphism monoid.
+* `CategoryTheory.End.IsPositive`: endomorphisms admitting a dagger factorization.
+* `CategoryTheory.End.outer`: the outer product of states in a monoidal dagger category.
 
 ## Main results
 
@@ -67,35 +72,6 @@ def daggerEquiv (c c' : C) : (c ⟶ c') ≃ (c' ⟶ c) where
   left_inv _ := involutive_dagger _
   right_inv _ := involutive_dagger _
 
-/-- An endomorphism fixed by the dagger. -/
-@[mk_iff]
-class IsSelfAdjoint {c : C} (f : c ⟶ c) : Prop where
-  /-- Taking the dagger of a self-adjoint endomorphism fixes it. -/
-  dagger_eq (f) : f† = f
-
-attribute [simp low] IsSelfAdjoint.dagger_eq
-
-instance IsSelfAdjoint.id (c : C) : IsSelfAdjoint (𝟙 c) := ⟨dagger_id c⟩
-
-instance IsSelfAdjoint.dagger {c : C} (f : c ⟶ c) [IsSelfAdjoint f] : IsSelfAdjoint f† :=
-  ⟨(involutive_dagger f).trans (IsSelfAdjoint.dagger_eq f).symm⟩
-
-/-- An idempotent self-adjoint endomorphism, i.e. a projection. -/
-@[mk_iff]
-class IsProj {c : C} (f : c ⟶ c) where
-  idem (f) : f ≫ f = f
-  selfAdjoint (f) : f† = f
-
-instance IsProj.isSelfAdjoint {c : C} (f : c ⟶ c) [IsProj f] : IsSelfAdjoint f :=
-  ⟨IsProj.selfAdjoint f⟩
-
-@[simp]
-lemma IsProj.comp_self {c : C} (f : c ⟶ c) [IsProj f] : f ≫ f = f := IsProj.idem f
-
-lemma IsProj.id (c : C) : IsProj (𝟙 c) := ⟨by simp, by simp⟩
-
-instance IsProj.dagger {c : C} (f : c ⟶ c) [IsProj f] : IsProj f† := by cat_disch
-
 /-- A morphism satisfying `f ≫ f† = 𝟙`, i.e. an isometry. -/
 @[mk_iff]
 class IsIsometry {c₁ c₂ : C} (f : c₁ ⟶ c₂) where
@@ -111,10 +87,6 @@ instance IsIsometry.comp {c₁ c₂ c₃ : C} (f : c₁ ⟶ c₂) (g : c₂ ⟶ 
 /-- An isometry is a split monomorphism with retraction its dagger. -/
 instance IsIsometry.isSplitMono {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsIsometry f] : IsSplitMono f :=
   .mk' { retraction := f†, id := IsIsometry.comp_dagger_eq_id f }
-
-/-- The composite `f† ≫ f` of an isometry is a projection (onto its image). -/
-instance IsIsometry.isProj_dagger_comp {c₁ c₂ : C} (f : c₁ ⟶ c₂) [IsIsometry f] :
-    IsProj (f† ≫ f) := by simp [isProj_iff]
 
 /-- If `f` is an isometry, a factorization `m ≫ f = x` determines `m` uniquely: `m = x ≫ f†`. -/
 lemma IsIsometry.eq_dagger_comp_of_comp_eq {c₁ c₂ c₃ : C} (f : c₁ ⟶ c₂) [IsIsometry f]
@@ -176,31 +148,6 @@ instance IsUnitary.iso_inv {c₁ c₂ : C} (e : c₁ ≅ c₂) [IsUnitary e.hom]
   rw [← IsUnitary.dagger_hom_eq_inv e]
   infer_instance
 
-/-- An endomorphism of the form `g ≫ g†` for some morphism `g`, i.e. a positive morphism. -/
-@[mk_iff]
-class IsPositive {c : C} (f : c ⟶ c) where
-  out (f) : ∃ (c' : C) (g : c ⟶ c'), f = g ≫ g†
-
-instance IsPositive.id (c : C) : IsPositive (𝟙 c) := ⟨c, 𝟙 c, by simp⟩
-
-instance IsPositive.comp_dagger {c₁ c₂ : C} (f : c₁ ⟶ c₂) : IsPositive (f ≫ f†) :=
-  ⟨c₂, f, rfl⟩
-
-instance IsPositive.dagger_comp {c₁ c₂ : C} (f : c₁ ⟶ c₂) : IsPositive (f† ≫ f) :=
-  ⟨c₁, f†, by simp⟩
-
-instance IsPositive.dagger {c : C} (f : c ⟶ c) [IsPositive f] : IsPositive f† := by
-  rcases IsPositive.out f with ⟨c', g, rfl⟩
-  simpa
-
-/-- A positive endomorphism is self-adjoint. -/
-instance IsPositive.isSelfAdjoint {c : C} (f : c ⟶ c) [IsPositive f] : IsSelfAdjoint f := by
-  rcases IsPositive.out f with ⟨c', g, rfl⟩
-  exact ⟨by rw [DaggerCategory.dagger_comp, involutive_dagger]⟩
-
-lemma IsPositive.selfAdjoint {c : C} (f : c ⟶ c) [IsPositive f] : f† = f :=
-  IsSelfAdjoint.dagger_eq f
-
 open Limits
 
 @[simp]
@@ -209,9 +156,6 @@ lemma dagger_zero [HasZeroMorphisms C] {c c' : C} : (0 : c ⟶ c')† = 0 := by
   have hd := congrArg dagger h
   rw [dagger_comp, dagger_comp, involutive_dagger] at hd
   simpa only [comp_zero, zero_comp] using hd.symm
-
-instance IsSelfAdjoint.zero [HasZeroMorphisms C] (c : C) : IsSelfAdjoint (0 : c ⟶ c) :=
-  ⟨dagger_zero⟩
 
 lemma isZero_of_isInitial {c : C} (init : IsInitial c) : IsZero c where
   unique_to c' := ⟨isInitialEquivUnique _ _ init c'⟩
@@ -224,3 +168,111 @@ lemma isZero_of_isTerminal {c : C} (term : IsTerminal c) : IsZero c where
 end CategoryTheory.DaggerCategory
 
 end DaggerCategory
+
+namespace CategoryTheory.End
+
+open DaggerCategory
+
+variable {C : Type*} [Category* C]
+
+/-- Idempotence in categorical composition order. -/
+theorem _root_.IsIdempotentElem.asHom_comp_self {X : C} {P : End X} (h : IsIdempotentElem P) :
+    P.asHom ≫ P.asHom = P.asHom := congrArg End.asHom h.eq
+
+variable [DaggerCategory C] {X : C}
+
+instance instStarMulOfDaggerCategory : StarMul (End X) where
+  star A := .of A.asHom†
+  star_involutive A := End.ext (involutive_dagger A.asHom)
+  star_mul A B := End.ext (dagger_comp B.asHom A.asHom)
+
+/-- The underlying arrow of the star is the dagger of the underlying arrow. -/
+@[simp] theorem star_asHom (A : End X) : (star A).asHom = A.asHom† := rfl
+
+/-- An endomorphism is self-adjoint exactly when the dagger fixes its underlying arrow. -/
+theorem isSelfAdjoint_iff (A : End X) : IsSelfAdjoint A ↔ A.asHom† = A.asHom :=
+  End.ext_iff
+
+/-- The dagger fixes the arrow of a self-adjoint endomorphism. -/
+theorem _root_.IsSelfAdjoint.dagger_asHom {A : End X} (h : IsSelfAdjoint A) :
+    A.asHom† = A.asHom := (End.isSelfAdjoint_iff A).mp h
+
+/-- The zero arrow gives a self-adjoint endomorphism in any dagger category with zeros. -/
+theorem isSelfAdjoint_of_zero [Limits.HasZeroMorphisms C] : IsSelfAdjoint (End.of (0 : X ⟶ X)) :=
+  End.ext dagger_zero
+
+/-- Unitary elements of the endomorphism monoid correspond to unitary arrows. -/
+theorem mem_unitary_iff (A : End X) : A ∈ unitary (End X) ↔ IsUnitary A.asHom := by
+  rw [Unitary.mem_iff, isUnitary_iff]
+  simp only [End.ext_iff, mul_asHom, star_asHom, one_asHom]
+
+instance (U : unitary (End X)) : IsUnitary U.val.asHom :=
+  (mem_unitary_iff U.val).mp U.property
+
+instance : IsUnitary (1 : End X).asHom := inferInstanceAs (IsUnitary (𝟙 X))
+
+variable {H K : C}
+
+/-- A positive endomorphism factors through an arbitrary object as a morphism
+followed by its dagger. -/
+def IsPositive (A : End H) : Prop :=
+  ∃ (K : C) (g : H ⟶ K), A.asHom = g ≫ g†
+
+theorem isPositive_iff (A : End H) :
+    A.IsPositive ↔ ∃ (K : C) (g : H ⟶ K), A.asHom = g ≫ g† := Iff.rfl
+
+/-- Every projection gives its own Gram factorization. -/
+theorem _root_.IsStarProjection.isPositive {P : End H} (h : IsStarProjection P) : IsPositive P :=
+  ⟨H, P.asHom, by rw [h.isSelfAdjoint.dagger_asHom, h.isIdempotentElem.asHom_comp_self]⟩
+
+theorem IsPositive.one (H : C) : IsPositive (1 : End H) := (IsStarProjection.one (End H)).isPositive
+
+/-- The range projection of an isometry. -/
+theorem isStarProjection_dagger_comp (f : H ⟶ K) [IsIsometry f] :
+    IsStarProjection (End.of (f† ≫ f)) := by
+  exact ⟨End.ext (by simp), End.ext (by simp)⟩
+
+theorem IsPositive.comp_dagger (f : H ⟶ K) : IsPositive (.of (f ≫ f†)) := ⟨K, f, rfl⟩
+
+theorem IsPositive.dagger_comp (f : H ⟶ K) : IsPositive (.of (f† ≫ f)) :=
+  ⟨H, f†, by simp⟩
+
+theorem IsPositive.star_mul_self (A : End H) : IsPositive (star A * A) :=
+  IsPositive.comp_dagger A.asHom
+
+theorem IsPositive.mul_star_self (A : End H) : IsPositive (A * star A) :=
+  IsPositive.dagger_comp A.asHom
+
+/-- A positive endomorphism is self-adjoint. -/
+theorem IsPositive.isSelfAdjoint {A : End H} (h : IsPositive A) : IsSelfAdjoint A := by
+  obtain ⟨K, g, hg⟩ := h
+  rw [End.isSelfAdjoint_iff, hg, DaggerCategory.dagger_comp, involutive_dagger]
+
+/-- A positive operator is fixed by the operator star. -/
+theorem IsPositive.star_eq {A : End H} (h : IsPositive A) : star A = A := h.isSelfAdjoint.star_eq
+
+theorem IsPositive.star {A : End H} (h : IsPositive A) : IsPositive (star A) :=
+  h.star_eq.symm ▸ h
+
+open MonoidalCategory
+
+variable [MonoidalCategory C]
+
+/-- The outer product of states `v` and `w`, with underlying arrow `w† ≫ v`. -/
+def outer (v w : State H) : End H := .of (w† ≫ v)
+
+@[simp] theorem outer_asHom (v w : State H) : (outer v w).asHom = w† ≫ v := rfl
+
+/-- Taking the adjoint of an outer product exchanges its two states. -/
+@[simp] theorem star_outer (v w : State H) : star (outer v w) = outer w v := by
+  apply End.ext
+  simp
+
+/-- The outer square of any state is positive. -/
+theorem isPositive_outer_self (v : State H) : IsPositive (outer v v) := IsPositive.dagger_comp v
+
+/-- A normalized state determines the projection onto its image. -/
+theorem isStarProjection_outer_self (v : State H) [IsIsometry v] :
+    IsStarProjection (outer v v) := isStarProjection_dagger_comp v
+
+end CategoryTheory.End

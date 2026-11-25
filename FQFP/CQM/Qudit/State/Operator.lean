@@ -5,7 +5,7 @@ Authors: Foresight Quantum
 -/
 module
 
-public import FQFP.CQM.Category.Operator
+public import FQFP.CategoryTheory.Dagger.Basic
 public import FQFP.CQM.Qudit.Dagger
 public import FQFP.CQM.Qudit.Monoidal
 public import FQFP.Analysis.InnerProductSpace.PositiveTrace
@@ -56,18 +56,18 @@ instance : Linear ℂ Qudit where
   comp_smul _ _ _ _ _ _ := hom_ext rfl
 
 /-- Categorical operators on a qudit form the complex algebra of linear endomorphisms. -/
-def endAlgEquiv (H : Qudit) : CQM.Operator H ≃ₐ[ℂ] Operator H :=
+def endAlgEquiv (H : Qudit) : End H ≃ₐ[ℂ] Operator H :=
   AlgEquiv.ofLinearEquiv
     { toEquiv := End.homEquiv.trans homEquiv
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl } rfl (fun _ _ ↦ rfl)
 
 /-- The linear operator represented by a categorical endomorphism. -/
-@[simp] lemma endAlgEquiv_apply {H : Qudit} (A : CQM.Operator H) :
+@[simp] lemma endAlgEquiv_apply {H : Qudit} (A : End H) :
     endAlgEquiv H A = A.asHom.hom := rfl
 
 /-- The categorical star is represented by the Hilbert space adjoint. -/
-lemma endAlgEquiv_star {H : Qudit} (A : CQM.Operator H) :
+lemma endAlgEquiv_star {H : Qudit} (A : End H) :
     endAlgEquiv H (star A) = (endAlgEquiv H A).adjoint := rfl
 
 end
@@ -91,14 +91,14 @@ lemma outer_eq_ket_comp_bra (v w : H.state) : outer v w = ket v ∘ₗ bra w := 
 
 /-- Interpreting a categorical outer product of kets gives the linear outer product. -/
 lemma endAlgEquiv_outer (v w : H.state) :
-    endAlgEquiv H (CQM.Operator.outer (ketArrow v) (ketArrow w)) = outer v w := by
-  simp only [endAlgEquiv_apply, CQM.Operator.outer_asHom, ketArrow_dagger, hom_comp]
+    endAlgEquiv H (End.outer (ketArrow v) (ketArrow w)) = outer v w := by
+  simp only [endAlgEquiv_apply, End.outer_asHom, ketArrow_dagger, hom_comp]
   rfl
 
 /-- The adjoint of an outer product exchanges its vectors. -/
 @[simp]
 lemma adjoint_outer (v w : H.state) : (outer v w).adjoint = outer w v := by
-  rw [← endAlgEquiv_outer, ← endAlgEquiv_star, CQM.Operator.star_outer, endAlgEquiv_outer]
+  rw [← endAlgEquiv_outer, ← endAlgEquiv_star, End.star_outer, endAlgEquiv_outer]
 
 /-- The trace of an outer product is the corresponding inner product. -/
 @[simp]
@@ -108,7 +108,7 @@ lemma trace_outer (v w : H.state) : (outer v w).trace = inner ℂ w v :=
 /-- The outer square of any vector is positive. -/
 lemma isPositive_outer (v : H.state) : (outer v v).IsPositive := by
   rw [← endAlgEquiv_outer]
-  exact hom_isPositive_of_isPositive (CQM.Operator.outer (ketArrow v) (ketArrow v)).asHom
+  exact hom_isPositive_of_isPositive (End.isPositive_outer_self (ketArrow v))
 
 /-- Multiplying an outer product on the left applies the operator to its ket. -/
 lemma mul_outer (A : Operator H) (v w : H.state) : A * outer v w = outer (A v) w := by

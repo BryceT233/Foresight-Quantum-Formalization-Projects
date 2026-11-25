@@ -97,14 +97,12 @@ lemma mul_spectralProjection (σ : Density H) (a : ℝ) :
 the zero eigenvalue when the reference has a kernel. -/
 def spectralResolution (σ : Density H) :
     CategoryTheory.OrthogonalResolution H σ.spectralValues where
-  proj a := ofHom (σ.spectralProjection a)
-  isProj a := by
-    constructor
-    · apply hom_ext
-      change σ.spectralProjection a * σ.spectralProjection a = _
-      rw [spectralProjection_mul, ite_eq_left rfl]
-      rfl
-    · exact hom_ext (σ.adjoint_spectralProjection a)
+  op a := .of (ofHom (σ.spectralProjection a))
+  isStarProjection a := by
+    apply (isStarProjection_iff_hom _).mpr
+    change IsStarProjection (σ.spectralProjection a)
+    exact ⟨by rw [IsIdempotentElem, spectralProjection_mul, ite_eq_left rfl],
+      σ.adjoint_spectralProjection a⟩
   orthogonal := by
     intro a b hab
     apply hom_ext

@@ -41,7 +41,7 @@ variable {e : ℕ}
 
 private theorem norm_local_le_one {S H : Qudit} (F : Operator S →⋆ₐ[ℂ] Operator H)
     (U : S ⟶ S) [IsUnitary U] : ‖F U.hom‖ ≤ 1 :=
-  (LIOfIsIsometry (UnitaryProgram.liftGate F U).denoteHom).norm_toContinuousLinearMap_le
+  (LIOfIsIsometry (UnitaryProgram.liftGateHom F U).denoteHom).norm_toContinuousLinearMap_le
 
 private theorem norm_edgeZZ_le_one (j : Fin e) : ‖edgeZZ j‖ ≤ 1 := by
   unfold edgeZZ
@@ -55,8 +55,7 @@ theorem isSelfAdjoint_fieldHamiltonian (h : Fin (e + 1) → ℝ) :
   apply isSelfAdjoint_sum
   intro i _
   exact (show IsSelfAdjoint (h i : ℂ) by simp [IsSelfAdjoint]).smul
-    (IsSelfAdjoint.map (siteOp Qubit e i)
-      ((isSelfAdjoint_iff_hom Qubit.pauliX.asHom).1 inferInstance))
+    ((isSelfAdjoint_hom Qubit.isSelfAdjoint_pauliX).map (siteOp Qubit e i))
 
 /-- The interaction Hamiltonian is self-adjoint for signed real couplings. -/
 theorem isSelfAdjoint_interactionHamiltonian (J : Fin e → ℝ) :
@@ -64,8 +63,7 @@ theorem isSelfAdjoint_interactionHamiltonian (J : Fin e → ℝ) :
   apply isSelfAdjoint_sum
   intro j _
   have hz (i : Fin (e + 1)) : IsSelfAdjoint (siteZ i) :=
-    IsSelfAdjoint.map (siteOp Qubit e i) ((isSelfAdjoint_iff_hom Qubit.pauliZ.asHom).1
-      inferInstance)
+    (isSelfAdjoint_hom Qubit.isSelfAdjoint_pauliZ).map (siteOp Qubit e i)
   exact (show IsSelfAdjoint (J j : ℂ) by simp [IsSelfAdjoint]).smul
     ((hz j.castSucc).commute_iff (hz j.succ) |>.mp (commute_siteOp e (by
       exact Fin.ne_of_val_ne (by simp)) _ _))

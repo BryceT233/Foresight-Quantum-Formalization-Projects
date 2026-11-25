@@ -34,29 +34,30 @@ namespace QuantumProgram
 variable {Store : Type*} {n : ℕ} {D : Fin n → Qudit}
 
 /-- Apply a unitary to a single site of a heterogeneous tensor register. -/
-noncomputable def Command.unitaryAt (i : Fin n) (U : D i ⟶ D i) [IsUnitary U] :
+noncomputable def Command.unitaryAt (i : Fin n) (U : End (D i)) [IsUnitary U.asHom] :
     Command Store (Fin n) (tensorMemory D) :=
-  .unitary (fun _ (_ : Fin 1) => i) (fun _ _ => .gateHom (Register.site D i) U)
+  .unitary (fun _ (_ : Fin 1) => i) (fun _ _ => .gate (Register.site D i) U)
 
 /-- A gate at one site maps the corresponding factor of a product-state assertion. -/
-theorem DerivTot.unitaryAt_productState (i : Fin n) (U : D i ⟶ D i) [IsUnitary U]
+theorem DerivTot.unitaryAt_productState (i : Fin n) (U : End (D i)) [IsUnitary U.asHom]
     (v : (j : Fin n) → UnitState (D j)) :
     DerivTot (Store := Store) (Assertion.pure (registerProductState D v)) (.unitaryAt i U)
-      (Assertion.pure (registerProductState D (Function.update v i (UnitState.map U (v i))))) := by
+      (Assertion.pure (registerProductState D
+        (Function.update v i (UnitState.map U.asHom (v i))))) := by
   have h := SourceDerivTot.unitary_pure (fun (_ : Store) (_ : Fin 1) => i)
-    (fun _ _ => UnitaryProgram.gateHom (Register.site D i) U)
+    (fun _ _ => UnitaryProgram.gate (Register.site D i) U)
     (φ := fun _ => True) (fun _ => registerProductState D v)
-    (fun _ => registerProductState D (Function.update v i (UnitState.map U (v i))))
+    (fun _ => registerProductState D (Function.update v i (UnitState.map U.asHom (v i))))
     (fun _ _ => Function.injective_of_subsingleton _)
-    (fun _ _ => Register.liftHom_site_productState D i U v)
+    (fun _ _ => Register.liftEnd_site_productState D i U v)
   simpa only [CQAssertion.toAssn_ofEffect_true, Command.unitaryAt] using h.toDerivTot
 
-variable (U : (i : Fin n) → D i ⟶ D i) [∀ i, IsUnitary (U i)]
+variable (U : (i : Fin n) → End (D i)) [∀ i, IsUnitary (U i).asHom]
 
 /-- Map the local factors at the listed sites, retaining the input factors off the list. -/
 noncomputable def applyAtSites (l : List (Fin n)) (v : (i : Fin n) → UnitState (D i))
     (i : Fin n) : UnitState (D i) :=
-  if i ∈ l then UnitState.map (U i) (v i) else v i
+  if i ∈ l then UnitState.map (U i).asHom (v i) else v i
 
 /-- No local factor changes when the list is empty. -/
 theorem applyAtSites_nil (v : (i : Fin n) → UnitState (D i)) : applyAtSites U [] v = v :=
@@ -65,7 +66,7 @@ theorem applyAtSites_nil (v : (i : Fin n) → UnitState (D i)) : applyAtSites U 
 /-- Updating a fresh head and then applying the tail gives the transformation on the cons list. -/
 theorem applyAtSites_cons {a : Fin n} {l : List (Fin n)} (ha : a ∉ l)
     (v : (i : Fin n) → UnitState (D i)) :
-    applyAtSites U l (Function.update v a (UnitState.map (U a) (v a))) =
+    applyAtSites U l (Function.update v a (UnitState.map (U a).asHom (v a))) =
       applyAtSites U (a :: l) v := by
   funext i
   by_cases hi : i = a
@@ -75,7 +76,7 @@ theorem applyAtSites_cons {a : Fin n} {l : List (Fin n)} (ha : a ∉ l)
 
 /-- Full coverage applies the specified unitary at every site. -/
 theorem applyAtSites_finRange (v : (i : Fin n) → UnitState (D i)) :
-    applyAtSites U (List.finRange n) v = fun i => UnitState.map (U i) (v i) := by
+    applyAtSites U (List.finRange n) v = fun i => UnitState.map (U i).asHom (v i) := by
   funext i
   simp [applyAtSites]
 

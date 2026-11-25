@@ -90,7 +90,7 @@ variable [NeZero n] (c : CounterLens Store)
 def hadamardBodyOn : Command Store (Fin (m + 1)) (tensorPower Qubit m) :=
   let site := fun σ => r (Fin.ofNat n (c.get σ))
   .unitary (fun σ (_ : Fin 1) => site σ)
-    (fun σ _ => .liftGate (siteOp Qubit m (site σ)) Qubit.H.asHom)
+    (fun σ _ => .liftGate (siteOp Qubit m (site σ)) Qubit.H)
 
 /-- Traverse the selected register in its given order, starting at counter zero. -/
 def hadamardLoopOn : Command Store (Fin (m + 1)) (tensorPower Qubit m) :=

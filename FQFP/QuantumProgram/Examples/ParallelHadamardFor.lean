@@ -35,7 +35,7 @@ variable {Store : Type*}
 /-- Visit all `n` sites in order, using one Hadamard at each. -/
 noncomputable def hadamardFor (n : ℕ) :
     Command Store (Fin n) (tensorMemory fun _ : Fin n => Qubit) :=
-  .forList (List.finRange n) fun i => .unitaryAt (D := fun _ => Qubit) i Qubit.H.asHom
+  .forList (List.finRange n) fun i => .unitaryAt (D := fun _ => Qubit) i Qubit.H
 
 /-- The finite list of Hadamards derives the all-plus projector from the all-zero projector. -/
 theorem derivTot_hadamardFor (n : ℕ) :
@@ -45,7 +45,7 @@ theorem derivTot_hadamardFor (n : ℕ) :
       (Assertion.pure (prod fun _ => UnitState.map Qubit.H.asHom zero)) := by
   intro zero prod
   have h := DerivTot.forList_unitaryAt (D := fun _ : Fin n => Qubit) (Store := Store)
-    (fun _ => Qubit.H.asHom) (List.finRange n) (List.nodup_finRange n) (fun _ => zero)
+    (fun _ => Qubit.H) (List.finRange n) (List.nodup_finRange n) (fun _ => zero)
   rw [applyAtSites_finRange] at h
   exact h
 

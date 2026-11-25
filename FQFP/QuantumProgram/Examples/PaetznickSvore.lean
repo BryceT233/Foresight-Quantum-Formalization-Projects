@@ -48,8 +48,8 @@ instance : IsUnitary tGate := by
 
 /-- The seven gates of the repeated circuit, in execution order. -/
 def circuit : UnitaryProgram Memory :=
-  let h := UnitaryProgram.gateHom (.left .whole) Qubit.H.asHom
-  let t := UnitaryProgram.gateHom (.left .whole) tGate
+  let h := UnitaryProgram.gate (.left .whole) Qubit.H
+  let t := UnitaryProgram.gate (.left .whole) Qubit.T
   let cx := UnitaryProgram.gateHom .whole controlledNot
   .sequence [h, t, cx, h, cx, t, h]
 
@@ -90,7 +90,7 @@ private theorem h_basis (j : Fin 2) :
   fin_cases j <;> simp [bellFactor, smul_add]
 
 private theorem t_basis (j : Fin 2) :
-    tGate (ZBasis 2 j) = (if j = 0 then 1 else phase : ℂ) • ZBasis 2 j := by
+    Qubit.T.asHom (ZBasis 2 j) = (if j = 0 then 1 else phase : ℂ) • ZBasis 2 j := by
   exact Qubit.phaseShift_basis _ j
 
 private theorem target_basis (j : Fin 2) :
@@ -110,8 +110,9 @@ theorem decomp (x : Qubit.state) :
     LinearMap.congr_fun hm x
   apply (ZBasis 2).toBasis.ext
   intro j
-  simp only [circuit, UnitaryProgram.sequence, UnitaryProgram.denoteHom, Register.liftHom,
-    hom_comp, LinearMap.comp_apply, OrthonormalBasis.coe_toBasis]
+  simp only [circuit, UnitaryProgram.sequence, UnitaryProgram.denoteHom_seq, UnitaryProgram.gateHom,
+    UnitaryProgram.denoteHom_gate, Register.liftHom, hom_comp, LinearMap.comp_apply,
+    OrthonormalBasis.coe_toBasis]
   have ins (i : Fin 2) (v : Qubit.state) :
       (RepeatUntilSuccess.insert i).hom v = ZBasis 2 i ⊗ₜ[ℂ] v := rfl
   have out (v : Qubit.state) :

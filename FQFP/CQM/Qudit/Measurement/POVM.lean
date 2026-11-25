@@ -68,7 +68,7 @@ variable {H : Qudit} {ι : Type*} [Fintype ι]
 /-- Every projection-valued measure is a POVM with the same outcome operators (§0.3.4). -/
 def ofOrthogonalResolution (P : OrthogonalResolution H ι) : POVM H ι where
   op i := (P.proj i).hom
-  positive i := hom_isPositive_of_isPositive _
+  positive i := hom_isPositive_of_isPositive (P.isPositive i)
   sum_op := by
     change ∑ i, (P.proj i).hom = LinearMap.id
     rw [← hom_sum, P.sum_proj, hom_id]

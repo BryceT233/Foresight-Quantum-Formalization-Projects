@@ -45,8 +45,8 @@ def state (x : Fin n → Fin 2) (φ : ℝ) : UnitState (tensorMemory (fun _ : Fi
 /-- The controlled phase with its first operand at the head of the register. -/
 def headPhaseGate (j : Fin n) (θ : ℝ) :
     UnitaryProgram (tensorMemory (fun _ : Fin (n + 1) => Qubit)) :=
-  let V := (Register.site (fun _ : Fin n => Qubit) j).liftHom (Qubit.phaseShift θ).asHom
-  (UnitaryProgram.gateHom .whole (Qubit.controlled V) :
+  let V := (Register.site (fun _ : Fin n => Qubit) j).liftEnd (Qubit.phaseShift θ)
+  (UnitaryProgram.gateHom .whole (Qubit.controlled V.asHom) :
     UnitaryProgram (Qubit ⊗ tensorMemory (fun _ : Fin n => Qubit)))
 
 /-- Controlled phase on a pair of register sites, with identity on coincident sites. -/
@@ -54,28 +54,29 @@ def phaseGate : {m : ℕ} → Fin m → Fin m → ℝ →
     UnitaryProgram (tensorMemory (fun _ : Fin m => Qubit))
   | 0, i, _, _ => i.elim0
   | m + 1, i, j, θ => Fin.cases
-      (Fin.cases (.gateHom .whole (𝟙 _)) (fun b => headPhaseGate b θ) j)
+      (Fin.cases (.gate .whole 1) (fun b => headPhaseGate b θ) j)
       (fun a => Fin.cases (headPhaseGate a θ)
-        (fun b => .gateHom (.right (.whole (H := tensorMemory (fun _ : Fin m => Qubit))))
-          (phaseGate (m := m) a b θ).denoteHom) j) i
+        (fun b => .gate (.right (.whole (H := tensorMemory (fun _ : Fin m => Qubit))))
+          (phaseGate (m := m) a b θ).denoteEnd) j) i
 
 private theorem headPhaseGate_neg {m : ℕ} (j : Fin m) (θ : ℝ) :
-    (headPhaseGate j (-θ)).denoteHom = (headPhaseGate j θ).denoteHom† := by
+    (headPhaseGate j (-θ)).denoteEnd = star (headPhaseGate j θ).denoteEnd := by
   let r := Register.site (fun _ : Fin m => Qubit) j
-  change Qubit.controlled (r.liftHom (Qubit.phaseShift (-θ)).asHom) =
-    (Qubit.controlled (r.liftHom (Qubit.phaseShift θ).asHom))†
-  rw [Qubit.phaseShift_neg, ← Register.dagger_liftHom, Qubit.controlled_dagger]
+  apply End.ext
+  change Qubit.controlled (r.liftEnd (Qubit.phaseShift (-θ))).asHom =
+    (Qubit.controlled (r.liftEnd (Qubit.phaseShift θ)).asHom)†
+  rw [← Qubit.star_phaseShift, Register.liftEnd_star, End.star_asHom, Qubit.controlled_dagger]
 
 /-- A negative-angle rung is the adjoint of the positive-angle rung on the same sites. -/
-theorem phaseGate_neg (i j : Fin n) (θ : ℝ) :
-    (phaseGate i j (-θ)).denoteHom = (phaseGate i j θ).denoteHom† := by
+theorem denoteEnd_phaseGate_neg (i j : Fin n) (θ : ℝ) :
+    (phaseGate i j (-θ)).denoteEnd = star (phaseGate i j θ).denoteEnd := by
   induction n with
   | zero => exact i.elim0
   | succ m ih =>
     cases i using Fin.cases with
     | zero =>
       cases j using Fin.cases with
-      | zero => exact (dagger_id _).symm
+      | zero => exact (star_one (End _)).symm
       | succ j => exact headPhaseGate_neg j θ
     | succ i =>
       cases j using Fin.cases with
@@ -83,8 +84,14 @@ theorem phaseGate_neg (i j : Fin n) (θ : ℝ) :
       | succ j =>
         let r : Register (Qubit ⊗ tensorMemory (fun _ : Fin m => Qubit)) _ :=
           .right (.whole (H := tensorMemory (fun _ : Fin m => Qubit)))
-        change r.liftHom (phaseGate i j (-θ)).denoteHom = (r.liftHom (phaseGate i j θ).denoteHom)†
-        rw [Register.dagger_liftHom, ih]
+        change r.liftEnd (phaseGate i j (-θ)).denoteEnd =
+          star (r.liftEnd (phaseGate i j θ).denoteEnd)
+        rw [ih, Register.liftEnd_star]
+
+/-- The underlying morphism of a negative-angle rung is the dagger of the forward rung. -/
+theorem phaseGate_neg (i j : Fin n) (θ : ℝ) :
+    (phaseGate i j (-θ)).denoteHom = (phaseGate i j θ).denoteHom† :=
+  congrArg End.asHom (denoteEnd_phaseGate_neg i j θ)
 
 /-- A rung adds the phase selected by its basis target and fixes every spectator factor. -/
 theorem phaseGate_productState (i j : Fin n) (hij : i < j) (θ φ : ℝ) (b : Fin 2)
@@ -101,16 +108,16 @@ theorem phaseGate_productState (i j : Fin n) (hij : i < j) (θ φ : ℝ) (b : Fi
     | succ j =>
       cases i using Fin.cases with
       | zero =>
-        let V := (Register.site (fun _ : Fin n => Qubit) j).liftHom (Qubit.phaseShift θ).asHom
+        let V := (Register.site (fun _ : Fin n => Qubit) j).liftEnd (Qubit.phaseShift θ)
         let w := registerProductState (fun _ : Fin n => Qubit) (Fin.tail v)
         let δ : ℝ := if b = 0 then 0 else θ
-        have hw : V.hom w.val = Complex.exp (δ * Complex.I) • w.val := by
-          apply Register.liftHom_site_productState_eigen
+        have hw : V.asHom w.val = Complex.exp (δ * Complex.I) • w.val := by
+          apply Register.liftEnd_site_productState_eigen
           change (Qubit.phaseShift θ).asHom (v j.succ).val = _ • (v j.succ).val
           rw [hj]
           by_cases h : b = 0 <;> simpa [δ, h] using Qubit.phaseShift_basis θ b
         simp only [registerProductState, Function.update_self, Fin.tail_update_zero]
-        change Qubit.controlledOp V.hom ((v 0).val ⊗ₜ[ℂ] w.val) =
+        change Qubit.controlledOp V.asHom.hom ((v 0).val ⊗ₜ[ℂ] w.val) =
           (Qubit.phaseState (φ + δ)).val ⊗ₜ[ℂ] w.val
         rw [hi, Qubit.controlledOp_tmul_eigen _ hw, Qubit.phaseShift_phaseState]
       | succ i =>
@@ -134,9 +141,9 @@ theorem phaseGate_productState_of_control_zero (i j : Fin n) (hij : i < j) (θ :
     | succ j =>
       cases i using Fin.cases with
       | zero =>
-        let V := (Register.site (fun _ : Fin n => Qubit) j).liftHom (Qubit.phaseShift θ).asHom
+        let V := (Register.site (fun _ : Fin n => Qubit) j).liftEnd (Qubit.phaseShift θ)
         let w := (registerProductState (fun _ => Qubit) (Fin.tail v)).val
-        change Qubit.controlledOp V.hom ((v 0).val ⊗ₜ[ℂ] w) = (v 0).val ⊗ₜ[ℂ] w
+        change Qubit.controlledOp V.asHom.hom ((v 0).val ⊗ₜ[ℂ] w) = (v 0).val ⊗ₜ[ℂ] w
         rw [hi, UnitState.coe_ofBasis, Qubit.controlledOp_basis, ite_eq_left rfl]
       | succ i =>
         change TensorProduct.map LinearMap.id (phaseGate i j θ).toOperator
@@ -194,7 +201,7 @@ def basisAngle {k : ℕ} (x : Fin k → Fin 2) : ℝ :=
 
 /-- Apply Hadamard to the first bit, then the dyadic controlled phases in increasing order. -/
 def stage (n : ℕ) : Command Store (Fin (n + 1)) (tensorMemory (fun _ : Fin (n + 1) => Qubit)) :=
-  (.unitaryAt (D := fun _ => Qubit) 0 Qubit.H.asHom : Command Store (Fin (n + 1)) _).seq
+  (.unitaryAt (D := fun _ => Qubit) 0 Qubit.H : Command Store (Fin (n + 1)) _).seq
     (.forList (List.finRange n) fun j => rung j (2 * Real.pi / 2 ^ (j.val + 2)))
 
 /-- A complete Fourier stage converts the leading basis bit to the phase of the whole word.
@@ -206,7 +213,7 @@ theorem derivTot_stage (x : Fin (n + 1) → Fin 2) :
   let D := fun _ : Fin (n + 1) => Qubit
   let v := fun i => UnitState.ofBasis (ZBasis 2) (x i)
   let φ : ℝ := if x 0 = 0 then 0 else Real.pi
-  have head := DerivTot.unitaryAt_productState (Store := Store) (D := D) 0 Qubit.H.asHom v
+  have head := DerivTot.unitaryAt_productState (Store := Store) (D := D) 0 Qubit.H v
   have he : registerProductState D (Function.update v 0 (UnitState.map Qubit.H.asHom (v 0))) =
       state (Fin.tail x) φ := by
     simp only [registerProductState, Function.update_self, Fin.tail_update_zero]

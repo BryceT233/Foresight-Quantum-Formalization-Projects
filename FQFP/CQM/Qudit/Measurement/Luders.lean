@@ -82,7 +82,8 @@ lemma luders_branch_of_idempotent (M : POVM H ι) (i : ι)
 lemma luders_branch_ofOrthogonalResolution (P : CategoryTheory.OrthogonalResolution H ι)
     (i : ι) (A : Operator H) :
     (ofOrthogonalResolution P).luders.branch i A = (P.proj i).hom * A * (P.proj i).hom :=
-  luders_branch_of_idempotent _ _ (hom_idem_of_isProj (P.proj i)) _
+  luders_branch_of_idempotent _ _
+    ((isStarProjection_iff_hom _).mp (P.isStarProjection i)).isIdempotentElem.eq _
 
 /-- An immediate repetition of a projective measurement gives the same outcome.
 The unnormalized branch formula also covers impossible outcomes. -/

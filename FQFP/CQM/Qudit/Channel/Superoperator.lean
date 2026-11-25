@@ -92,12 +92,12 @@ variable {H K L M N P : Qudit}
 
 /-- Interpret a linear map between categorical endomorphism spaces as a qudit superoperator. -/
 def endLinearEquiv (H K : Qudit) :
-    (CQM.Operator H →ₗ[ℂ] CQM.Operator K) ≃ₗ[ℂ] Superoperator H K :=
+    (End H →ₗ[ℂ] End K) ≃ₗ[ℂ] Superoperator H K :=
   (endAlgEquiv H).toLinearEquiv.arrowCongr (endAlgEquiv K).toLinearEquiv
 
 /-- Interpretation commutes with applying a superoperator to a categorical operator. -/
-@[simp] lemma endLinearEquiv_apply (Φ : CQM.Operator H →ₗ[ℂ] CQM.Operator K)
-    (A : CQM.Operator H) :
+@[simp] lemma endLinearEquiv_apply (Φ : End H →ₗ[ℂ] End K)
+    (A : End H) :
     endLinearEquiv H K Φ A.asHom.hom = (Φ A).asHom.hom := by
   change endAlgEquiv K (Φ ((endAlgEquiv H).symm (endAlgEquiv H A))) = endAlgEquiv K (Φ A)
   rw [AlgEquiv.symm_apply_apply]

@@ -22,7 +22,7 @@ the mixed output. Tensoring an instrument with an independent channel retains th
   fallback.
 * `Qudit.Instrument.mix_outputEnsemble`: mixing outputs agrees with forgetting the instrument
   outcome.
-* `Qudit.Instrument.tensorLeft`: parallel composition of an instrument with a channel.
+* `Qudit.Instrument.tensorLeft` and `Qudit.Instrument.tensorRight` adjoin an independent channel.
 -/
 
 @[expose] public section
@@ -75,6 +75,21 @@ lemma toChannel_tensorLeft (I : Instrument H K ι) (Φ : QuantumChannel R S) :
     (I.tensorLeft Φ).toChannel = Φ.tensor I.toChannel := by
   apply QuantumChannel.ext
   exact (Superoperator.tensor_sum_right _ _ _).symm
+
+/-- Run an independent channel on the right while retaining the instrument's outcomes. -/
+def tensorRight (I : Instrument H K ι) (Φ : QuantumChannel R S) :
+    Instrument (H ⊗ R) (K ⊗ S) ι where
+  branch i := Superoperator.tensor (I.branch i) Φ.toSuperoperator
+  completelyPositive i := (I.completelyPositive i).tensor Φ.completelyPositive
+  tracePreserving := by
+    rw [← Superoperator.tensor_sum_left]
+    exact I.tracePreserving.tensor Φ.tracePreserving
+
+/-- Forgetting the outcome commutes with adjoining a channel on the right. -/
+lemma toChannel_tensorRight (I : Instrument H K ι) (Φ : QuantumChannel R S) :
+    (I.tensorRight Φ).toChannel = I.toChannel.tensor Φ := by
+  apply QuantumChannel.ext
+  exact (Superoperator.tensor_sum_left _ _ _).symm
 
 end
 

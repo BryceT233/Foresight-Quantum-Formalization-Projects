@@ -52,10 +52,12 @@ namespace CategoryTheory.MonoidalDaggerCategory
 variable [MonoidalDaggerCategory C]
 
 /-- Tensor products preserve self-adjointness. -/
-instance isSelfAdjoint_tensorHom {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y)
-    [DaggerCategory.IsSelfAdjoint f] [DaggerCategory.IsSelfAdjoint g] :
-    DaggerCategory.IsSelfAdjoint (f ⊗ₘ g) :=
-  ⟨by rw [dagger_tensor, IsSelfAdjoint.dagger_eq f, IsSelfAdjoint.dagger_eq g]⟩
+theorem isSelfAdjoint_tensorHom {X Y : C} {A : End X} {B : End Y}
+    (hA : IsSelfAdjoint A) (hB : IsSelfAdjoint B) :
+    IsSelfAdjoint (End.of (A.asHom ⊗ₘ B.asHom)) := by
+  apply End.ext
+  change (A.asHom ⊗ₘ B.asHom)† = _
+  rw [dagger_tensor, hA.dagger_asHom, hB.dagger_asHom]
 
 /-- The tensor product of isometries is an isometry. -/
 instance isIsometry_tensorHom {X₁ X₂ Y₁ Y₂ : C} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂)

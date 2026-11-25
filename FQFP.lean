@@ -201,7 +201,6 @@ public import FQFP.Basic.Rel
 public import FQFP.CQM.Category.DataProcessing
 public import FQFP.CQM.Category.Discarding
 public import FQFP.CQM.Category.Instrument
-public import FQFP.CQM.Category.Operator
 public import FQFP.CQM.Category.Postprocessing
 public import FQFP.CQM.Category.ProjectiveMeasurement
 public import FQFP.CQM.Category.StateOverlap
@@ -354,7 +353,6 @@ public import FQFP.CategoryTheory.Category.RelCat.Rigid
 public import FQFP.CategoryTheory.Category.RelCat.Semiadditive
 public import FQFP.CategoryTheory.Dagger.Basic
 public import FQFP.CategoryTheory.Dagger.Biproducts
-public import FQFP.CategoryTheory.Dagger.Endomorphism
 public import FQFP.CategoryTheory.Dagger.Kernels
 public import FQFP.CategoryTheory.Dagger.OrthogonalResolution
 public import FQFP.CategoryTheory.Limits.Shapes.Biproducts

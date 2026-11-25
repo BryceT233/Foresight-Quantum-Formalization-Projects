@@ -18,7 +18,7 @@ isometries, projections and positive morphisms — in terms of the underlying re
 * `isUnitary_iff_isIso`: unitary morphisms are exactly the isomorphisms.
 * `isIsometry_iff_leftTotal_leftUnique`: isometries are exactly left-total, left-unique
   relations.
-* `isProj_iff_symm_trans`: projections are exactly partial equivalence relations.
+* `isStarProjection_iff_symm_trans`: projections are exactly partial equivalence relations.
 * `isPositive_iff_isSymm_reflOnDom`: positive morphisms are exactly symmetric relations that are
   reflexive on their domain.
 -/
@@ -55,41 +55,41 @@ theorem isIsometry_iff_leftTotal_leftUnique (f : X ⟶ Y) : DaggerCategory.IsIso
     exact ⟨Hom.ext _ _ (by simpa only [Hom.rel_comp, rel_dagger, Hom.rel_id] using h)⟩
 
 /-- In `RelCat`, a self-adjoint endomorphism is exactly a symmetric relation. -/
-theorem isSelfAdjoint_iff_isSymm (f : X ⟶ X) : DaggerCategory.IsSelfAdjoint f ↔
-    f.rel.IsSymm := by
-  exact ⟨fun h ↦ SetRel.inv_eq_self_iff.1 (congrArg Hom.rel h.dagger_eq),
-    fun h ↦ ⟨Hom.ext _ _ (SetRel.inv_eq_self_iff.2 h)⟩⟩
+theorem isSelfAdjoint_iff_isSymm (A : End X) : IsSelfAdjoint A ↔ A.asHom.rel.IsSymm := by
+  rw [End.isSelfAdjoint_iff]
+  exact ⟨fun h ↦ SetRel.inv_eq_self_iff.1 (congrArg Hom.rel h),
+    fun h ↦ Hom.ext _ _ (SetRel.inv_eq_self_iff.2 h)⟩
 
 /-- In `RelCat`, a projection is exactly a symmetric and transitive relation, i.e. a partial
 equivalence relation. -/
-theorem isProj_iff_symm_trans (f : X ⟶ X) : DaggerCategory.IsProj f ↔
-    f.rel.IsSymm ∧ f.rel.IsTrans := by
+theorem isStarProjection_iff_symm_trans (P : End X) : IsStarProjection P ↔
+    P.asHom.rel.IsSymm ∧ P.asHom.rel.IsTrans := by
   constructor
   · intro h
     constructor
-    · exact (isSelfAdjoint_iff_isSymm f).1 inferInstance
+    · exact (isSelfAdjoint_iff_isSymm P).1 h.isSelfAdjoint
     · apply SetRel.isTrans_iff_comp_subset_self.2
-      exact (congrArg Hom.rel h.idem : f.rel.comp f.rel = f.rel).le
+      exact (congrArg Hom.rel h.isIdempotentElem.asHom_comp_self).le
   · rintro ⟨hsymm, htrans⟩
-    constructor
-    · exact Hom.ext _ _ (SetRel.comp_eq_self_of_isSymm_of_isTrans f.rel)
-    · exact Hom.ext _ _ (SetRel.inv_eq_self f.rel)
+    refine ⟨End.ext ?_, End.ext ?_⟩
+    · exact Hom.ext _ _ (SetRel.comp_eq_self_of_isSymm_of_isTrans P.asHom.rel)
+    · exact Hom.ext _ _ (SetRel.inv_eq_self P.asHom.rel)
 
 /-- In `RelCat`, a positive morphism is exactly a symmetric relation that is reflexive on its
 domain. -/
-theorem isPositive_iff_isSymm_reflOnDom (f : X ⟶ X) : DaggerCategory.IsPositive f ↔
-    f.rel.IsSymm ∧ ∀ x : X, (∃ x' : X, (x, x') ∈ f.rel) → (x, x) ∈ f.rel := by
+theorem isPositive_iff_isSymm_reflOnDom (A : End X) : A.IsPositive ↔
+    A.asHom.rel.IsSymm ∧ ∀ x : X, (∃ x' : X, (x, x') ∈ A.asHom.rel) → (x, x) ∈ A.asHom.rel := by
   constructor
   · intro h
-    obtain ⟨Y, g, hfg⟩ := h.out
     constructor
-    · exact (isSelfAdjoint_iff_isSymm f).1 inferInstance
+    · exact (isSelfAdjoint_iff_isSymm A).1 h.isSelfAdjoint
     · rintro x ⟨x', hxx'⟩
+      obtain ⟨Y, g, hfg⟩ := h
       rw [hfg, Hom.rel_comp] at hxx' ⊢
       rcases hxx' with ⟨y, hxy, _⟩
       exact ⟨y, hxy, (mem_dagger g x y).2 hxy⟩
   · rintro ⟨hsymm, hrefl⟩
-    let E : RelCat.{u} := {p : X × X // p ∈ f.rel}
+    let E : RelCat.{u} := {p : X × X // p ∈ A.asHom.rel}
     let g : X ⟶ E := .ofRel {q : X × E | q.1 = q.2.1.1 ∨ q.1 = q.2.1.2}
     have hg : ∀ a e, (a, e) ∈ g.rel ↔ a = e.1.1 ∨ a = e.1.2 := fun _ _ ↦ Iff.rfl
     refine ⟨E, g, ?_⟩

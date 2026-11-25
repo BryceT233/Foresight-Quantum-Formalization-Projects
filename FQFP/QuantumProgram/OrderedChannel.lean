@@ -138,11 +138,18 @@ def orderedInstrument {ι : Type*} [Fintype ι]
 
 /-- Lifting a local gate induces the lifted local unitary channel. -/
 theorem toChannel_liftGate_orderedLift
-    (U : tensorMemory (D ∘ r) ⟶ tensorMemory (D ∘ r)) [DaggerCategory.IsUnitary U] :
+    (U : End (tensorMemory (D ∘ r))) [DaggerCategory.IsUnitary U.asHom] :
     (UnitaryProgram.liftGate (orderedLift D r) U).toChannel =
-      orderedChannel D r (QuantumChannel.ofIsometry U) := by
+      orderedChannel D r (QuantumChannel.ofIsometry U.asHom) := by
   apply QuantumChannel.ext
-  exact (orderedSuperoperator_conjugate D r U.hom).symm
+  exact (orderedSuperoperator_conjugate D r (endAlgEquiv _ U)).symm
+
+/-- Channel semantics of an ordered lift supplied as a unitary morphism. -/
+theorem toChannel_liftGateHom_orderedLift
+    (U : tensorMemory (D ∘ r) ⟶ tensorMemory (D ∘ r)) [DaggerCategory.IsUnitary U] :
+    (UnitaryProgram.liftGateHom (orderedLift D r) U).toChannel =
+      orderedChannel D r (QuantumChannel.ofIsometry U) :=
+  toChannel_liftGate_orderedLift D r (.of U)
 
 /-- Initialize an ordered selection, possibly noncontiguous, to the given joint density. -/
 def orderedInitialize (τ : Density (tensorMemory (D ∘ r))) :
@@ -282,7 +289,7 @@ variable {S : Type*} (cells : S → Fin k → Fin n)
 def unitaryOn (U : ∀ σ, Function.Injective (cells σ) →
     (tensorMemory (D ∘ cells σ) ⟶ tensorMemory (D ∘ cells σ)))
     [∀ σ hi, DaggerCategory.IsUnitary (U σ hi)] : Command S (Fin n) (tensorMemory D) :=
-  unitary cells fun σ hi => .liftGate (orderedLift D ⟨cells σ, hi⟩) (U σ hi)
+  unitary cells fun σ hi => .liftGateHom (orderedLift D ⟨cells σ, hi⟩) (U σ hi)
 
 /-- Measure a joint register, using the original instruction's alias check and outcome writes. -/
 def measureOn {m : ℕ} (I : ∀ σ, Function.Injective (cells σ) →
@@ -316,7 +323,7 @@ theorem KrausFrame.unitaryOn (U : ∀ σ, Function.Injective (cells σ) →
     (hc : ∀ σ (hi : Function.Injective (cells σ)),
       Commute (orderedLift D ⟨cells σ, hi⟩ (U σ hi).hom) (K σ)) :
     (Command.unitaryOn D cells U).KrausFrame K :=
-  unitary_of_commute cells (fun σ hi => .liftGate (orderedLift D ⟨cells σ, hi⟩) (U σ hi)) K hc
+  unitary_of_commute cells (fun σ hi => .liftGateHom (orderedLift D ⟨cells σ, hi⟩) (U σ hi)) K hc
 
 /-- Initialize the evaluated injection to its specified joint state. -/
 def initializeOn (p : S → Fin k ↪ Fin n) (τ : (σ : S) → Density (tensorMemory (D ∘ p σ))) :

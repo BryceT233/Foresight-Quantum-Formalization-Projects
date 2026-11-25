@@ -29,10 +29,10 @@ variable {C : Type*} [Category* C] [MonoidalCategory C] [DaggerCategory C] [Semi
 the corresponding dagger state. -/
 def projectiveMeasurementOfEffects (x : ι → Effect X) (hd : Effect.Disjoint x)
     (hs : ∑ i, x i ≫ (x i)† = 𝟙 X) : OrthogonalResolution X ι where
-  proj i := x i ≫ (x i)†
-  isProj i := by
+  op i := .of (x i ≫ (x i)†)
+  isStarProjection i := by
     let := hd.isIsometry_dagger x i
-    simpa only [involutive_dagger] using IsIsometry.isProj_dagger_comp (x i)†
+    simpa only [involutive_dagger] using End.isStarProjection_dagger_comp (x i)†
   orthogonal := by
     intro i j hij
     rw [Category.assoc, ← Category.assoc ((x i)†), hd.2 hij.symm, zero_comp, comp_zero]
@@ -43,8 +43,9 @@ def projectiveMeasurementOfEffects (x : ι → Effect X) (hd : Effect.Disjoint x
 theorem overlap_comp_proj (P : OrthogonalResolution X ι) (a : State X) (i : ι) :
     overlap (a ≫ P.proj i) (a ≫ P.proj i) = .of (a ≫ P.proj i ≫ a†) := by
   apply End.ext
-  simp only [overlap, dagger_comp, IsProj.selfAdjoint, Category.assoc]
-  rw [← Category.assoc (P.proj i), IsProj.comp_self]
+  have hi := P.isStarProjection i
+  simp only [overlap, dagger_comp, hi.isSelfAdjoint.dagger_asHom, Category.assoc]
+  rw [← Category.assoc (P.proj i), hi.isIdempotentElem.asHom_comp_self]
 
 /-- The Born weights of a projective measurement sum to the squared norm of its input.
 For an isometric state the right-hand side is the identity scalar (equation 0.37). -/

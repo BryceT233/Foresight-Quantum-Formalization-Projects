@@ -24,12 +24,12 @@ namespace QuantumProgram.Register
 variable {H S : Qudit}
 
 /-- Extending a register into the left tensor factor tensors its operator with the identity. -/
-theorem endAlgEquiv_liftEnd_left (r : Register H S) (K : Qudit) (A : CQM.Operator S) :
+theorem endAlgEquiv_liftEnd_left (r : Register H S) (K : Qudit) (A : End S) :
     endAlgEquiv (H ⊗ K) (r.left.liftEnd A) =
       Operator.tensorOneHom H K (endAlgEquiv H (r.liftEnd A)) := rfl
 
 /-- Extending a register into the right tensor factor tensors the identity with its operator. -/
-theorem endAlgEquiv_liftEnd_right (r : Register H S) (K : Qudit) (A : CQM.Operator S) :
+theorem endAlgEquiv_liftEnd_right (r : Register H S) (K : Qudit) (A : End S) :
     endAlgEquiv (K ⊗ H) (r.right.liftEnd A) =
       Operator.oneTensorHom K H (endAlgEquiv H (r.liftEnd A)) := rfl
 
@@ -47,27 +47,41 @@ noncomputable def toChannel (p : UnitaryProgram H) : QuantumChannel H H :=
 noncomputable def toOperator (p : UnitaryProgram H) : Qudit.Operator H :=
   endAlgEquiv H p.denoteEnd
 
-/-- Lift a local unitary through a unital star-algebra embedding of operator algebras. -/
+/-- Lift a local unitary endomorphism through a unital star-algebra homomorphism. -/
 noncomputable def liftGate {S H : Qudit} (F : Operator S →⋆ₐ[ℂ] Operator H)
-    (U : S ⟶ S) [DaggerCategory.IsUnitary U] : UnitaryProgram H :=
-  let e (K : Qudit) : CQM.Operator K ≃⋆ₐ[ℂ] Operator K :=
+    (U : End S) [DaggerCategory.IsUnitary U.asHom] : UnitaryProgram H :=
+  let e (K : Qudit) : End K ≃⋆ₐ[ℂ] Operator K :=
     .ofAlgEquiv (endAlgEquiv K) endAlgEquiv_star
-  let A := (e H).symm (F (e S (.of U)))
-  have hA : A ∈ unitary (CQM.Operator H) :=
-    Unitary.map_mem (e H).symm (Unitary.map_mem F (Unitary.map_mem (e S)
-      ((End.mem_unitary_iff (.of U)).mpr inferInstance)))
-  haveI : DaggerCategory.IsUnitary A.asHom := (End.mem_unitary_iff A).mp hA
-  .gateHom .whole A.asHom
+  let lift := ((e S).arrowCongr (e H)).symm F
+  haveI : DaggerCategory.IsUnitary (lift U).asHom :=
+    (End.mem_unitary_iff _).mp (Unitary.map_mem lift ((End.mem_unitary_iff U).mpr inferInstance))
+  .gate .whole (lift U)
+
+/-- Lift a local gate supplied as a unitary morphism. -/
+noncomputable abbrev liftGateHom {S H : Qudit} (F : Operator S →⋆ₐ[ℂ] Operator H)
+    (U : S ⟶ S) [DaggerCategory.IsUnitary U] : UnitaryProgram H :=
+  liftGate F (.of U)
 
 /-- A lifted gate acts by its specified operator embedding. -/
 theorem toOperator_liftGate {S H : Qudit} (F : Operator S →⋆ₐ[ℂ] Operator H)
-    (U : S ⟶ S) [DaggerCategory.IsUnitary U] : (liftGate F U).toOperator = F U.hom := rfl
+    (U : End S) [DaggerCategory.IsUnitary U.asHom] :
+    (liftGate F U).toOperator = F (endAlgEquiv S U) := rfl
+
+/-- Linear operator semantics of a lifted unitary morphism. -/
+theorem toOperator_liftGateHom {S H : Qudit} (F : Operator S →⋆ₐ[ℂ] Operator H)
+    (U : S ⟶ S) [DaggerCategory.IsUnitary U] : (liftGateHom F U).toOperator = F U.hom :=
+  toOperator_liftGate F (.of U)
 
 /-- Interpret a gate on a register as a linear operator on memory. -/
+theorem toOperator_gate {S : Qudit} (r : Register H S) (U : End S)
+    [DaggerCategory.IsUnitary U.asHom] :
+    (gate r U).toOperator = endAlgEquiv H (r.liftEnd U) := rfl
+
+/-- Linear operator semantics of a gate supplied as a morphism. -/
 theorem toOperator_gateHom {S : Qudit} (r : Register H S) (U : S ⟶ S)
     [DaggerCategory.IsUnitary U] :
     (gateHom r U).toOperator = endAlgEquiv H (r.liftEnd (.of U)) :=
-  congrArg (endAlgEquiv H) (denoteEnd_gateHom r U)
+  toOperator_gate r (.of U)
 
 /-- The first gate executed is the rightmost factor in the operator product. -/
 theorem toOperator_sequence (ps : List (UnitaryProgram H)) :
@@ -106,7 +120,7 @@ theorem toChannel_seq (p q : UnitaryProgram H) :
   QuantumChannel.ofIsometry_comp p.denoteHom q.denoteHom
 
 /-- The channel acts on every operator by conjugation with the program's denotation. -/
-theorem toSuperoperator_toChannel_apply (p : UnitaryProgram H) (A : CQM.Operator H) :
+theorem toSuperoperator_toChannel_apply (p : UnitaryProgram H) (A : End H) :
     p.toChannel.toSuperoperator (endAlgEquiv H A) =
       endAlgEquiv H (p.denoteEnd * A * star p.denoteEnd) := rfl
 

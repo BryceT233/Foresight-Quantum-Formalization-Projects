@@ -40,7 +40,7 @@ noncomputable section
 def hadamardPrefix (n : ℕ) : (k : ℕ) → k ≤ n + 1 → UnitaryProgram (tensorPower Qubit n)
   | 0, _ => .sequence []
   | k + 1, hk => (hadamardPrefix n k (by lia)).seq
-      (.liftGate (siteOp Qubit n ⟨k, hk⟩) Qubit.H.asHom)
+      (.liftGate (siteOp Qubit n ⟨k, hk⟩) Qubit.H)
 
 /-- After `k` gates the visited sites are in the plus state and the rest are in the zero state. -/
 theorem hadamardPrefix_apply_zero (n k : ℕ) (hk : k ≤ n + 1) :
@@ -103,7 +103,7 @@ theorem frontier_hadamardLoop (n : ℕ) (input : CQState ℕ (tensorPower Qubit 
   · intro k hk
     have hi : Fin.ofNat (n + 1) k = (⟨k, hk⟩ : Fin (n + 1)) :=
       Fin.ext (Nat.mod_eq_of_lt hk)
-    let gate := UnitaryProgram.liftGate (siteOp Qubit n ⟨k, hk⟩) Qubit.H.asHom
+    let gate := UnitaryProgram.liftGate (siteOp Qubit n ⟨k, hk⟩) Qubit.H
     refine ⟨(s k hk.le).map gate.toChannel, ?_, ?_⟩
     · simp only [hadamardBody, hadamardBodyOn, CounterLens.nat, id_eq,
         Function.Embedding.refl_apply, Command.step, s,

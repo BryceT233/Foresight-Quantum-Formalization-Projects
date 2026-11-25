@@ -16,8 +16,8 @@ Modified by Foresight Quantum in 2026
 -/
 module
 
+public import FQFP.CQM.Qudit.State.Pure.Qubit
 public import FQFP.CQM.Qudit.TensorPower
-public import FQFP.QuantumProgram.Examples.BellPreparation
 public import FQFP.QuantumProgram.Logic.ExactExpectation
 public import FQFP.QuantumProgram.Logic.For
 public import FQFP.QuantumProgram.Logic.SourceUnitary
@@ -41,23 +41,23 @@ noncomputable section
 
 /-- Pauli X as a self-adjoint single-qubit Hamiltonian. -/
 def pauliXHamiltonian : selfAdjoint (Operator Qubit) :=
-  ⟨_, (isSelfAdjoint_iff_hom Qubit.pauliX.asHom).1 inferInstance⟩
+  ⟨_, isSelfAdjoint_hom Qubit.isSelfAdjoint_pauliX⟩
 
 /-- Pauli Z as a self-adjoint single-qubit Hamiltonian. -/
 def pauliZHamiltonian : selfAdjoint (Operator Qubit) :=
-  ⟨_, (isSelfAdjoint_iff_hom Qubit.pauliZ.asHom).1 inferInstance⟩
+  ⟨_, isSelfAdjoint_hom Qubit.isSelfAdjoint_pauliZ⟩
 
 /-- The rotation `exp(-i θ X/2)` on one qubit. -/
-def rx (θ : ℝ) : Qubit ⟶ Qubit :=
-  (hamiltonianGate (S := Qubit) pauliXHamiltonian (θ / 2)).denoteHom
+def rx (θ : ℝ) : End Qubit :=
+  (hamiltonianGate pauliXHamiltonian (θ / 2)).denoteEnd
 
-instance (θ : ℝ) : IsUnitary (rx θ) := by unfold rx; infer_instance
+instance (θ : ℝ) : IsUnitary (rx θ).asHom := by unfold rx; infer_instance
 
 /-- The rotation `exp(-i θ Z/2)` on one qubit. -/
-def rz (θ : ℝ) : Qubit ⟶ Qubit :=
-  (hamiltonianGate (S := Qubit) pauliZHamiltonian (θ / 2)).denoteHom
+def rz (θ : ℝ) : End Qubit :=
+  (hamiltonianGate pauliZHamiltonian (θ / 2)).denoteEnd
 
-instance (θ : ℝ) : IsUnitary (rz θ) := by unfold rz; infer_instance
+instance (θ : ℝ) : IsUnitary (rz θ).asHom := by unfold rz; infer_instance
 
 namespace IsingChain
 
@@ -76,7 +76,7 @@ inductive Gate (e : ℕ) where
 def Gate.program : Gate e → UnitaryProgram (tensorPower Qubit e)
   | .rx i θ => .liftGate (siteOp Qubit e i) (QuantumProgram.rx θ)
   | .rz i θ => .liftGate (siteOp Qubit e i) (QuantumProgram.rz θ)
-  | .cnot j => .liftGate (adjacentOp Qubit e j) controlledNot
+  | .cnot j => .liftGateHom (adjacentOp Qubit e j) Qubit.CNOT
 
 /-- Emit the compute-rotate-uncompute implementation of an edge rotation. -/
 def edgeGates (j : Fin e) (θ : ℝ) : List (Gate e) :=

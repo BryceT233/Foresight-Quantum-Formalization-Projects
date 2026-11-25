@@ -127,12 +127,12 @@ lemma dagger_cup : A.cup† = A.cap := by
   simp [FrobeniusObj.cup, FrobeniusObj.cap, h, A.dagger_one]
 
 /-- The elementary two-input, two-output spider is self-adjoint. -/
-instance isSelfAdjoint_mul_comul : DaggerCategory.IsSelfAdjoint (A.mul ≫ A.comul) := by
+theorem isSelfAdjoint_mul_comul : IsSelfAdjoint (End.of (A.mul ≫ A.comul)) := by
   rw [← A.dagger_mul]
-  infer_instance
+  exact (End.IsPositive.comp_dagger A.mul).isSelfAdjoint
 
 lemma dagger_mul_comul : (A.mul ≫ A.comul)† = A.mul ≫ A.comul :=
-  IsSelfAdjoint.dagger_eq _
+  A.isSelfAdjoint_mul_comul.dagger_asHom
 
 end DaggerFrobeniusObj
 
@@ -162,8 +162,8 @@ lemma mul_comul_idempotent : (A.mul ≫ A.comul) ≫ (A.mul ≫ A.comul) =
     Category.id_comp]
 
 /-- The merge-then-split spider is an orthogonal projection. -/
-lemma isProj_mul_comul : IsProj (A.mul ≫ A.comul) :=
-  ⟨A.mul_comul_idempotent, A.toDaggerFrobeniusObj.dagger_mul_comul⟩
+lemma isStarProjection_mul_comul : IsStarProjection (End.of (A.mul ≫ A.comul)) :=
+  ⟨End.ext A.mul_comul_idempotent, A.toDaggerFrobeniusObj.isSelfAdjoint_mul_comul⟩
 
 /-- Copying is an isometry in every classical structure. -/
 lemma isIsometry_comul : IsIsometry A.comul := by

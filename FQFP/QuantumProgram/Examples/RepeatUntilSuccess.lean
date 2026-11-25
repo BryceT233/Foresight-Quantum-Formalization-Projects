@@ -73,8 +73,8 @@ instance (V : Qubit ⟶ Qubit) [IsUnitary V] : IsUnitary (controlledGate V) := b
 
 /-- The RUS block in execution order: Hadamard, controlled target, then ancilla bit flip. -/
 def block (V : Qubit ⟶ Qubit) [IsUnitary V] : UnitaryProgram Memory :=
-  .seq (.gateHom (.left .whole) Qubit.H.asHom)
-    (.seq (.gateHom .whole (controlledGate V)) (.gateHom (.left .whole) Qubit.pauliX.asHom))
+  .seq (.gate (.left .whole) Qubit.H)
+    (.seq (.gateHom .whole (controlledGate V)) (.gate (.left .whole) Qubit.pauliX))
 
 /-- Inserting an ancilla basis state leaves the data untouched. -/
 def insert (i : Fin 2) : Qubit ⟶ Memory :=
