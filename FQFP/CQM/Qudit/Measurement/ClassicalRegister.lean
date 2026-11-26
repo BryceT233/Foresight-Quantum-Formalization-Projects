@@ -196,6 +196,20 @@ lemma read_record (I : Instrument H K ι) (b : OrthonormalBasis ι ℂ C.state)
   simp only [read_branch_tensor]
   simp
 
+/-- Reading the register of a recorded measurement recovers the original outcome probability. -/
+lemma probability_read_record (I : Instrument H K ι) (b : OrthonormalBasis ι ℂ C.state)
+    (ρ : Density H) (i : ι) :
+    (read K b).probability ((I.record b).map ρ) i = I.probability ρ i := by
+  simp only [probability, QuantumChannel.op_map, read_record]
+
+/-- Reading a recorded positive-probability outcome recovers its original conditional state. -/
+lemma conditional_read_record (I : Instrument H K ι) (b : OrthonormalBasis ι ℂ C.state)
+    (ρ : Density H) (i : ι) (hp : 0 < I.probability ρ i) :
+    (read K b).conditional ((I.record b).map ρ) i
+      (by simpa only [probability_read_record] using hp) = I.conditional ρ i hp := by
+  apply Density.ext
+  simp only [op_conditional, probability_read_record, QuantumChannel.op_map, read_record]
+
 end Instrument
 
 namespace QuantumChannel
@@ -214,7 +228,7 @@ lemma controlled_tensor (b : OrthonormalBasis ι ℂ C.state) (Φ : ι → Quant
       Operator.tensor ((Φ j).toSuperoperator A) (Operator.outer (b j) (b j)) := by
   classical
   rw [controlled, Instrument.record_apply]
-  simp only [Instrument.postprocess, LinearMap.comp_apply, Instrument.read_branch_tensor]
+  simp only [Instrument.postprocess_branch_apply, Instrument.read_branch_tensor]
   simp [apply_ite, Operator.tensor, ← TensorProduct.mapBilinear_apply, ite_apply]
 
 end QuantumChannel
@@ -231,7 +245,17 @@ lemma record_postprocess {H K L C : Qudit} {ι : Type*} [Fintype ι]
   intro A
   change _ = (QuantumChannel.controlled b Φ).toSuperoperator ((I.record b).toSuperoperator A)
   rw [record_apply, record_apply, map_sum]
-  simp only [QuantumChannel.controlled_tensor, postprocess, LinearMap.comp_apply]
+  simp only [QuantumChannel.controlled_tensor, postprocess_branch_apply]
+
+/-- Reading the register after classical control selects the processed branch at that label. -/
+lemma read_controlled_record {H K L C : Qudit} {ι : Type*} [Fintype ι]
+    (I : Instrument H K ι) (b : OrthonormalBasis ι ℂ C.state)
+    (Φ : ι → QuantumChannel K L) (A : Operator H) (i : ι) :
+    (read L b).branch i ((QuantumChannel.controlled b Φ).toSuperoperator
+      ((I.record b).toSuperoperator A)) = (Φ i).toSuperoperator (I.branch i A) := by
+  change (read L b).branch i (((QuantumChannel.controlled b Φ).comp (I.record b)).toSuperoperator A)
+    = _
+  rw [← I.record_postprocess b Φ, read_record, postprocess_branch_apply]
 
 end Instrument
 

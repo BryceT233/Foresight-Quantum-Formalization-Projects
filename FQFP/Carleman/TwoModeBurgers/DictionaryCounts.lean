@@ -88,13 +88,10 @@ theorem firstDictionary_ncard (N : ℕ) :
   rw [Fin.sum_univ_eq_sum_range (fun r => N - 2 * r)]
   exact odd_row_sum N
 
-private def evenTail (N : ℕ) : Set (Fin 2 →₀ ℕ) :=
-  {d | 0 < d 0 ∧ d 0 % 2 = 0 ∧ d.degree ≤ N}
-
-private lemma evenTail_finite (N : ℕ) : (evenTail N).Finite :=
+private lemma positiveEvenIndices_finite (N : ℕ) : (positiveEvenIndices N).Finite :=
   (Finsupp.finite_of_degree_le N).subset fun _ hd ↦ hd.2.2
 
-private def evenTailEquiv (N : ℕ) : evenTail N ≃ firstDictionary (N - 1) where
+private def evenTailEquiv (N : ℕ) : positiveEvenIndices N ≃ firstDictionary (N - 1) where
   toFun d := by
     refine ⟨Finsupp.single 0 (d.val 0 - 1) + Finsupp.single 1 (d.val 1), ?_⟩
     have hpos : 0 < d.val 0 := d.property.1
@@ -130,45 +127,41 @@ private def evenTailEquiv (N : ℕ) : evenTail N ≃ firstDictionary (N - 1) whe
     ext i
     fin_cases i <;> simp
 
-private lemma evenTail_ncard (N : ℕ) : (evenTail N).ncard = N ^ 2 / 4 := by
+private lemma positiveEvenIndices_ncard (N : ℕ) : (positiveEvenIndices N).ncard = N ^ 2 / 4 := by
   rw [Set.ncard_congr' (evenTailEquiv N), firstDictionary_ncard]
   cases N with
   | zero => norm_num
   | succ N => simp
 
-private lemma ncard_insert_evenTail (N k : ℕ) :
-    (insert (Finsupp.single 1 k) (evenTail N)).ncard = 1 + N ^ 2 / 4 := by
-  have h : Finsupp.single (1 : Fin 2) k ∉ evenTail N := by simp [evenTail]
-  rw [Set.ncard_insert_of_notMem h (evenTail_finite N), evenTail_ncard, Nat.add_comm]
+/-- The seed adds one monomial to the positive even exponents, regardless of its degree. -/
+theorem evenDictionary_ncard (N k : ℕ) : (evenDictionary N k).ncard = 1 + N ^ 2 / 4 := by
+  have h : Finsupp.single (1 : Fin 2) k ∉ positiveEvenIndices N := by simp [positiveEvenIndices]
+  rw [evenDictionary, Set.ncard_insert_of_notMem h (positiveEvenIndices_finite N),
+    positiveEvenIndices_ncard, Nat.add_comm]
 
 /-- The second-coordinate dictionary has `1 + ⌊N²/4⌋` monomials. -/
 theorem secondDictionary_ncard (N : ℕ) :
     (secondDictionary N).ncard = 1 + N ^ 2 / 4 :=
-  ncard_insert_evenTail N 1
+  evenDictionary_ncard N 1
 
 /-- The energy dictionary has the same cardinality as the second-coordinate dictionary. -/
 theorem energyDictionary_ncard (N : ℕ) :
     (energyDictionary N).ncard = 1 + N ^ 2 / 4 :=
-  ncard_insert_evenTail N 2
+  evenDictionary_ncard N 2
 
 /-- The two state-coordinate dictionaries contain no common monomial. -/
 theorem first_second_dictionaries_disjoint (N : ℕ) :
     Disjoint (firstDictionary N) (secondDictionary N) := by
   rw [Set.disjoint_left]
   intro d hfirst hsecond
-  rcases hsecond with hseed | htail
-  · have hzero : d 0 = 0 := by rw [hseed]; simp
-    have hodd := hfirst.1
-    simp [hzero] at hodd
-  · have hodd := hfirst.1
-    have heven := htail.2.1
-    lia
+  exact zero_ne_one ((mod_two_eq_zero_of_mem_evenDictionary hsecond).symm.trans hfirst.1)
 
 /-- The union of the two state dictionaries has the sum of their sizes. -/
 theorem stateDictionaries_union_ncard (N : ℕ) :
     (firstDictionary N ∪ secondDictionary N).ncard =
       (N + 1) ^ 2 / 4 + (1 + N ^ 2 / 4) := by
-  have hsecond : (secondDictionary N).Finite := (evenTail_finite N).insert (Finsupp.single 1 1)
+  have hsecond : (secondDictionary N).Finite :=
+    (positiveEvenIndices_finite N).insert (Finsupp.single 1 1)
   rw [Set.ncard_union_eq (first_second_dictionaries_disjoint N) (firstDictionary_finite N) hsecond,
     firstDictionary_ncard, secondDictionary_ncard]
 

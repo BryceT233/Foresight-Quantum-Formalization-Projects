@@ -123,20 +123,8 @@ private lemma exists_cost_eq (ρ σ : Density H) {t : ℝ} (ht : t ∈ Set.Icc 0
 
 private lemma cost_partialTraceRight (ρ σ : Density (H ⊗ K)) (t : ℝ) (X : Operator H) :
     cost ρ.partialTraceRight σ.partialTraceRight t X = cost ρ σ t (Operator.tensor X 1) := by
-  have hsub : Operator.tensor (1 - X) (1 : Operator K) = 1 - Operator.tensor X 1 := by
-    rw [Operator.tensor, ← TensorProduct.mapBilinear_apply, map_sub]
-    simp only [LinearMap.sub_apply, TensorProduct.mapBilinear_apply, TensorProduct.map_one,
-      Operator.tensor]
-  rw [cost, cost, expectation_partialTraceRight, expectation_partialTraceRight, ← hsub]
-  have hmul (A B : Operator H) :
-      Operator.tensor (A * B) (1 : Operator K) = Operator.tensor A 1 * Operator.tensor B 1 := by
-    change TensorProduct.map (A * B) 1 = TensorProduct.map A 1 * TensorProduct.map B 1
-    rw [← TensorProduct.map_mul, one_mul]
-  have hadj (A : Operator H) :
-      (Operator.tensor A (1 : Operator K)).adjoint = Operator.tensor A.adjoint 1 := by
-    change (TensorProduct.map A (1 : Operator K)).adjoint = TensorProduct.map A.adjoint 1
-    rw [TensorProduct.adjoint_map, LinearMap.adjoint_one]
-  rw [hadj, hadj, hmul, hmul X]
+  simp only [cost, expectation_partialTraceRight, ← Operator.tensorOneHom_apply,
+    ← LinearMap.star_eq_adjoint, map_mul, map_star, map_sub, map_one]
 
 private lemma minimumCost_partialTraceRight (ρ σ : Density (H ⊗ K)) {t : ℝ}
     (ht : t ∈ Set.Icc 0 1) : minimumCost ρ σ t ≤ minimumCost ρ.partialTraceRight

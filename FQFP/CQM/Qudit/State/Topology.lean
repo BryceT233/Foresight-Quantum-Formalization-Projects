@@ -117,6 +117,13 @@ instance : CompactSpace (Density H) := by
   change dist (halfTraceFunctional H ρ.op) 0 ≤ 1 / 2
   rw [dist_zero_right, norm_halfTraceFunctional, traceNorm_op]
 
+/-- The expectation in a fixed state depends continuously on the observable. -/
+@[fun_prop]
+lemma continuous_expectation (ρ : Density H) :
+    Continuous (fun A : Operator H => ρ.expectation A) :=
+  Complex.continuous_re.comp <| LinearMap.continuous_of_finiteDimensional
+    ((LinearMap.trace ℂ H.state) ∘ₗ LinearMap.mulRight ℂ ρ.op)
+
 /-- An effect's acceptance probability is 1-Lipschitz in the input density operator. -/
 lemma lipschitzWith_expectation {A : Operator H} (h₀ : 0 ≤ A) (h₁ : A ≤ 1) :
     LipschitzWith 1 (fun ρ : Density H => ρ.expectation A) := by

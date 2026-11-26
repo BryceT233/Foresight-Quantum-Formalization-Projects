@@ -113,11 +113,9 @@ private theorem adjoint_conjugate_le {k j B : Operator H} (hB : B.IsPositive)
     ((Superoperator.isCompletelyPositive_conjugate f.adjoint).isPositive B hB).isSymmetric
   apply LinearMap.le_def.mpr
   refine (LinearMap.isPositive_iff _).mpr ⟨(hs j).sub (hs k), fun x => ?_⟩
-  have ht := hB.trace_mul_nonneg (LinearMap.le_def.mp (h (Operator.outer x x)
-    (Operator.isPositive_outer x)))
-  rw [mul_sub, map_sub, sub_nonneg] at ht
-  change (B * Superoperator.conjugate k (Operator.outer x x)).trace ≤
-    (B * Superoperator.conjugate j (Operator.outer x x)).trace at ht
+  have ht : (B * Superoperator.conjugate k (Operator.outer x x)).trace ≤
+      (B * Superoperator.conjugate j (Operator.outer x x)).trace :=
+    hB.trace_mul_le_trace_mul_left (h (Operator.outer x x) (Operator.isPositive_outer x))
   rw [← Superoperator.trace_conjugate_adjoint,
     ← Superoperator.trace_conjugate_adjoint, Operator.trace_mul_outer, Operator.trace_mul_outer,
     ← hs k x x, ← hs j x x] at ht

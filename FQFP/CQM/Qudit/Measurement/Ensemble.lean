@@ -42,6 +42,23 @@ def outputEnsemble (I : Instrument H K ι) (ρ : Density H) (fallback : Density 
   Ensemble.ofWeights (I.probability ρ) (I.probability_nonneg ρ) (I.sum_probability ρ)
     (fun i => if hp : 0 < I.probability ρ i then I.conditional ρ i hp else fallback)
 
+/-- Applying the same channel to every outcome maps the entire output ensemble,
+including the fallback at zero-weight labels. -/
+lemma outputEnsemble_postprocess_const (I : Instrument H K ι) (Φ : QuantumChannel K R)
+    (ρ : Density H) (fallback : Density K) :
+    (I.postprocess (fun _ => Φ)).outputEnsemble ρ (Φ.map fallback) =
+      (I.outputEnsemble ρ fallback).map Φ := by
+  apply Ensemble.ext
+  · ext i
+    exact I.probability_postprocess _ ρ i
+  · funext i
+    have h := I.probability_postprocess (fun _ => Φ) ρ i
+    simp only [outputEnsemble, Ensemble.map, Ensemble.ofWeights]
+    by_cases hp : 0 < I.probability ρ i
+    · rw [dite_eq_left hp, dite_eq_left (h.symm ▸ hp)]
+      exact I.conditional_postprocess (fun _ => Φ) ρ i hp
+    · rw [dite_eq_right hp, dite_eq_right (h.symm ▸ hp)]
+
 /-- Multiplying an ensemble member by its weight recovers the unnormalized branch. -/
 lemma weight_smul_outputEnsemble (I : Instrument H K ι) (ρ : Density H)
     (fallback : Density K) (i : ι) :

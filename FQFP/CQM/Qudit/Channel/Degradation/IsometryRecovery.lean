@@ -52,21 +52,14 @@ theorem exists_leftInverse_ofIsometry (J : H ⟶ K) [IsIsometry J] (Γ : Quantum
       ((Γ.completelyPositive.comp (Superoperator.isCompletelyPositive_conjugate Q)).choi_positive b)
   have htp : S.IsTracePreserving := by
     intro A
-    have h₁ := Superoperator.trace_conjugate_adjoint J.hom (1 : Operator H) A
-    have h₂ := Superoperator.trace_conjugate_adjoint Q (1 : Operator K) A
-    simp only [Superoperator.conjugate_apply, Module.End.one_eq_id,
-      LinearMap.id_comp] at h₁ h₂
-    change (Superoperator.conjugate J.hom.adjoint A).trace = (A * P).trace at h₁
-    rw [hQadj] at h₂
-    change (Superoperator.conjugate Q A).trace = (A * (Q * Q)).trace at h₂
-    rw [hQ] at h₂
     change (LinearMap.trace ℂ H.state) (_ + _) = _
     rw [map_add]
     change (Superoperator.conjugate J.hom.adjoint A).trace +
       (Γ.toSuperoperator (Superoperator.conjugate Q A)).trace = _
-    rw [Γ.tracePreserving, h₁, h₂]
-    simp only [Q, mul_sub, mul_one, Operator.trace, map_sub]
-    abel
+    rw [Γ.tracePreserving, Superoperator.trace_conjugate, Superoperator.trace_conjugate,
+      LinearMap.adjoint_adjoint, hQadj, show Q ∘ₗ Q = Q from hQ]
+    change Operator.trace (P * A) + Operator.trace (Q * A) = _
+    rw [← map_add, ← add_mul, show P + Q = 1 by simp [Q], one_mul]
   refine ⟨⟨S, hcp, htp⟩, QuantumChannel.ext ?_⟩
   change S ∘ₗ Superoperator.conjugate J.hom = LinearMap.id
   dsimp only [S]

@@ -170,6 +170,11 @@ def conjugate (f : H.state →ₗ[ℂ] K.state) : Superoperator H K where
 lemma conjugate_apply (f : H.state →ₗ[ℂ] K.state) (A : Operator H) :
     conjugate f A = f ∘ₗ A ∘ₗ f.adjoint := rfl
 
+/-- Taking the trace of a conjugation inserts the adjoint square on the input space. -/
+lemma trace_conjugate (f : H.state →ₗ[ℂ] K.state) (A : Operator H) :
+    (conjugate f A).trace = Operator.trace ((f.adjoint ∘ₗ f) * A) :=
+  LinearMap.trace_comp_cycle' A f f.adjoint
+
 /-- The underlying linear map of a categorical dagger conjugation. -/
 lemma hom_dagger_comp_comp (f : H ⟶ K) (A : H ⟶ H) :
     (f† ≫ A ≫ f).hom = conjugate f.hom A.hom := by
@@ -197,6 +202,38 @@ lemma conjugate_tensor (f : H.state →ₗ[ℂ] K.state) (g : L.state →ₗ[ℂ
     (TensorProduct.map f g).adjoint =
       TensorProduct.map (f ∘ₗ A ∘ₗ f.adjoint) (g ∘ₗ B ∘ₗ g.adjoint)
   rw [TensorProduct.adjoint_map, TensorProduct.map_comp, TensorProduct.map_comp]
+
+/-- Tracing out the right output replaces its conjugation by an adjoint-square weight. -/
+lemma partialTraceRight_conjugate_tensor (f : H.state →ₗ[ℂ] K.state)
+    (g : L.state →ₗ[ℂ] M.state) (A : Operator (H ⊗ L)) :
+    Operator.partialTraceRight (conjugate (TensorProduct.map f g) A) =
+      conjugate f (Operator.partialTraceRight
+        (Operator.oneTensorHom H L (g.adjoint ∘ₗ g) * A)) := by
+  have h : Operator.partialTraceRight ∘ₗ conjugate (TensorProduct.map f g) =
+      conjugate f ∘ₗ Operator.partialTraceRight ∘ₗ
+        LinearMap.mulLeft ℂ (Operator.oneTensorHom H L (g.adjoint ∘ₗ g)) := by
+    apply Operator.tensor_ext
+    intro B C
+    simp only [LinearMap.comp_apply, conjugate_tensor, tensor_apply,
+      Operator.partialTraceRight_tensor, trace_conjugate, LinearMap.mulLeft_apply,
+      Operator.oneTensorHom_apply, Operator.tensor_mul_tensor, one_mul, map_smul]
+  exact LinearMap.congr_fun h A
+
+/-- Tracing out the left output replaces its conjugation by an adjoint-square weight. -/
+lemma partialTraceLeft_conjugate_tensor (f : H.state →ₗ[ℂ] K.state)
+    (g : L.state →ₗ[ℂ] M.state) (A : Operator (H ⊗ L)) :
+    Operator.partialTraceLeft (conjugate (TensorProduct.map f g) A) =
+      conjugate g (Operator.partialTraceLeft
+        (Operator.tensorOneHom H L (f.adjoint ∘ₗ f) * A)) := by
+  have h : Operator.partialTraceLeft ∘ₗ conjugate (TensorProduct.map f g) =
+      conjugate g ∘ₗ Operator.partialTraceLeft ∘ₗ
+        LinearMap.mulLeft ℂ (Operator.tensorOneHom H L (f.adjoint ∘ₗ f)) := by
+    apply Operator.tensor_ext
+    intro B C
+    simp only [LinearMap.comp_apply, conjugate_tensor, tensor_apply,
+      Operator.partialTraceLeft_tensor, trace_conjugate, LinearMap.mulLeft_apply,
+      Operator.tensorOneHom_apply, Operator.tensor_mul_tensor, one_mul, map_smul]
+  exact LinearMap.congr_fun h A
 
 /-- Isometric change of coordinates on operator spaces. -/
 def relabel (e : H.state ≃ₗᵢ[ℂ] K.state) : Superoperator H K :=

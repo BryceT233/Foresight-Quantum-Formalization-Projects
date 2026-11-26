@@ -98,15 +98,9 @@ lemma probability_le_one (I : Instrument H K ι) (ρ : Density H) (i : ι) :
 
 /-- The conditional quantum state, defined only for an outcome with positive probability. -/
 def conditional (I : Instrument H K ι) (ρ : Density H) (i : ι)
-    (hp : 0 < I.probability ρ i) : Density K where
-  op := ((I.probability ρ i : ℂ)⁻¹) • I.branch i ρ.op
-  positive := (I.branch_positive i ρ.positive).smul_of_nonneg (by
-    exact_mod_cast inv_nonneg.mpr hp.le)
-  trace_one := by
-    rw [Operator.trace, map_smul]
-    change (I.probability ρ i : ℂ)⁻¹ * (I.branch i ρ.op).trace = 1
-    rw [← I.probability_eq_trace, inv_mul_cancel₀]
-    exact_mod_cast hp.ne'
+    (hp : 0 < I.probability ρ i) : Density K :=
+  Density.normalize (I.branch_positive i ρ.positive) (I.probability_eq_trace ρ i).symm
+    (by exact_mod_cast hp.ne')
 
 /-- Conditioning divides the branch operator by its probability. -/
 lemma op_conditional (I : Instrument H K ι) (ρ : Density H) (i : ι)
@@ -120,12 +114,21 @@ lemma probability_smul_conditional (I : Instrument H K ι) (ρ : Density H) (i :
   rw [op_conditional, smul_smul, mul_inv_cancel₀, one_smul]
   exact_mod_cast hp.ne'
 
+/-- A positive-probability branch proportional to a density state conditions to that state. -/
+lemma conditional_eq_of_branch_eq_smul (I : Instrument H K ι) (ρ : Density H) (i : ι)
+    (hp : 0 < I.probability ρ i) {σ : Density K} {a : ℂ} (h : I.branch i ρ.op = a • σ.op) :
+    I.conditional ρ i hp = σ :=
+  Density.normalize_eq_of_eq_smul _ _ _ h
+
+/-- An outcome has zero probability exactly when its unnormalized output vanishes. -/
+lemma probability_eq_zero_iff (I : Instrument H K ι) (ρ : Density H) (i : ι) :
+    I.probability ρ i = 0 ↔ I.branch i ρ.op = 0 :=
+  (I.branch_positive i ρ.positive).re_trace_eq_zero_iff
+
 /-- An impossible outcome has the zero unnormalized output, not a chosen density state. -/
 lemma branch_eq_zero_of_probability_eq_zero (I : Instrument H K ι) (ρ : Density H) (i : ι)
-    (hp : I.probability ρ i = 0) : I.branch i ρ.op = 0 := by
-  apply (LinearMap.traceNorm_eq_zero_iff _).mp
-  rw [(I.branch_positive i ρ.positive).traceNorm_eq_re_trace]
-  exact hp
+    (hp : I.probability ρ i = 0) : I.branch i ρ.op = 0 :=
+  (I.probability_eq_zero_iff ρ i).mp hp
 
 /-- The unread output is the sum of unnormalized branches. -/
 lemma op_toChannel_map (I : Instrument H K ι) (ρ : Density H) :
@@ -157,11 +160,24 @@ def postprocess (I : Instrument H K ι) (Φ : ι → QuantumChannel K L) : Instr
     exact (Finset.sum_congr rfl fun i _ => (Φ i).tracePreserving (I.branch i A)).trans
       (I.sum_trace_branch A)
 
+/-- The unnormalized output of a processed branch is the image under its selected channel. -/
+lemma postprocess_branch_apply (I : Instrument H K ι) (Φ : ι → QuantumChannel K L)
+    (i : ι) (A : Operator H) :
+    (I.postprocess Φ).branch i A = (Φ i).toSuperoperator (I.branch i A) := rfl
+
 /-- Outcome-dependent trace-preserving processing leaves the recorded probabilities unchanged. -/
 lemma probability_postprocess (I : Instrument H K ι) (Φ : ι → QuantumChannel K L)
-    (ρ : Density H) (i : ι) : (I.postprocess Φ).probability ρ i = I.probability ρ i := by
-  unfold probability postprocess
-  rw [LinearMap.comp_apply, (Φ i).tracePreserving]
+    (ρ : Density H) (i : ι) : (I.postprocess Φ).probability ρ i = I.probability ρ i :=
+  congrArg Complex.re ((Φ i).tracePreserving (I.branch i ρ.op))
+
+/-- Conditioning on a positive-probability outcome commutes with its selected channel. -/
+lemma conditional_postprocess (I : Instrument H K ι) (Φ : ι → QuantumChannel K L)
+    (ρ : Density H) (i : ι) (hp : 0 < I.probability ρ i) :
+    (I.postprocess Φ).conditional ρ i (by simpa only [probability_postprocess] using hp) =
+      (Φ i).map (I.conditional ρ i hp) := by
+  apply Density.ext
+  simp only [op_conditional, postprocess_branch_apply, probability_postprocess,
+    QuantumChannel.op_map, map_smul]
 
 end
 

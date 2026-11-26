@@ -9,6 +9,18 @@ Physlib reference for the sandwiched divergence and its trace functional.
 leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
 QuantumInfo/Entropy/Relative.lean
 QuantumInfo/Entropy/DPI.lean
+-/
+
+/-
+Copyright (c) 2025 Alex Meiburg. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alex Meiburg, Leonardo A. Lessa, Rodolfo R. Soldati
+-/
+
+/-
+leanprover-community/physlib @ 101e93cf91f0304f5ab9bfbfdec6cebcc031f7cd
+QuantumInfo/ResourceTheory/HypothesisTesting.lean: the classical Rényi sum used in
+the measurement converse, stated here for any common eigenbasis.
 
 Modified by Foresight Quantum in 2026
 Copyright (c) 2026 Foresight Quantum. All rights reserved.
@@ -148,6 +160,32 @@ lemma sandwichedTraceFunctional_eq_sum_of_common_eigenbasis {ι : Type*} [Fintyp
       σ.spectralMap_apply_of_eigenvector _ (hq i), map_smul, hp, smul_smul, w, Complex.ofReal_mul,
       mul_assoc]
   exact ρ.sandwichedTraceFunctional_eq_sum_of_eigenbasis σ α b w hw
+
+/-- On commuting states the sandwiched trace functional is a sum over eigenvalue pairs.
+Terms at zero reference eigenvalues vanish by the pseudoinverse convention. -/
+lemma sandwichedTraceFunctional_eq_rpow_sum_of_common_eigenbasis {ι : Type*} [Fintype ι]
+    (ρ σ : Density H) {α : ℝ} (hα : 1 < α) (b : OrthonormalBasis ι ℂ H.state) (p q : ι → ℝ)
+    (hp : ∀ i, ρ.op (b i) = (p i : ℂ) • b i) (hq : ∀ i, σ.op (b i) = (q i : ℂ) • b i)
+    (hp₀ : ∀ i, 0 ≤ p i) (hq₀ : ∀ i, 0 ≤ q i) :
+    ρ.sandwichedTraceFunctional σ α = ∑ i, p i ^ α * q i ^ (1 - α) := by
+  rw [sandwichedTraceFunctional_eq_sum_of_common_eigenbasis ρ σ α b p q hp hq]
+  apply Finset.sum_congr rfl
+  intro i _
+  let t := -(1 - α⁻¹) / 2
+  have hα₀ : 0 < α := zero_lt_one.trans hα
+  change (q i ^ t * (p i * q i ^ t)) ^ α = _
+  rcases (hq₀ i).eq_or_lt with he | hqpos
+  · have ht : t < 0 := div_neg_of_neg_of_pos
+      (neg_lt_zero.mpr (sub_pos.mpr (inv_lt_one_of_one_lt₀ hα))) (by norm_num)
+    rw [← he, Real.zero_rpow ht.ne, mul_zero, mul_zero, Real.zero_rpow hα₀.ne',
+      Real.zero_rpow (sub_neg.mpr hα).ne, mul_zero]
+  · rw [mul_left_comm, ← Real.rpow_add hqpos, Real.mul_rpow (hp₀ i) (Real.rpow_nonneg hqpos.le _),
+      ← Real.rpow_mul hqpos.le]
+    have he : (t + t) * α = 1 - α := by
+      dsimp [t]
+      field_simp [hα₀.ne']
+      ring
+    rw [he]
 
 /-- Identical densities have unit sandwiched trace functional at every order above one. -/
 lemma sandwichedTraceFunctional_self (ρ : Density H) {α : ℝ} (hα : 1 < α) :

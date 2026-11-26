@@ -32,21 +32,14 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V
 
 lemma existsUnique_trajectory (A : V →L[ℝ] V) (v₀ : V) :
     ∃! y : ℝ → V, y 0 = v₀ ∧ ∀ t, HasDerivAt y (A (y t)) t := by
-  refine ⟨fun t => NormedSpace.exp (t • A) v₀, ⟨by simp, ?_⟩, ?_⟩
-  · intro t
-    simpa using (hasDerivAt_exp_smul_const' A t).clm_apply
-      (hasDerivAt_const t v₀)
-  · intro y hy
-    apply ODE_solution_unique_univ (s := fun _ => Set.univ)
-      (v := fun _ v => A v) (K := ‖A‖₊) (t₀ := 0)
-    · intro t
-      exact A.lipschitzWith.lipschitzOnWith
-    · intro t
-      exact ⟨hy.2 t, Set.mem_univ _⟩
-    · intro t
-      refine ⟨?_, Set.mem_univ _⟩
-      simpa using (hasDerivAt_exp_smul_const' A t).clm_apply (hasDerivAt_const t v₀)
-    · simpa using hy.1
+  let y := fun t : ℝ => NormedSpace.exp (t • A) v₀
+  have hy (t : ℝ) : HasDerivAt y (A (y t)) t := by
+    simpa [y] using (hasDerivAt_exp_smul_const' A t).clm_apply (hasDerivAt_const t v₀)
+  have h₀ : y 0 = v₀ := by simp [y]
+  refine ⟨y, ⟨h₀, hy⟩, fun z hz => ?_⟩
+  exact ODE_solution_unique_univ (s := fun _ => Set.univ) (v := fun _ v => A v)
+    (fun _ => A.lipschitzWith.lipschitzOnWith) (fun t => ⟨hz.2 t, Set.mem_univ _⟩)
+    (fun t => ⟨hy t, Set.mem_univ _⟩) (hz.1.trans h₀.symm)
 
 end ContinuousLinearMap
 

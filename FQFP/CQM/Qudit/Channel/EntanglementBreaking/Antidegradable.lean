@@ -55,7 +55,7 @@ theorem IsEntanglementBreaking.isSeparable_choiState (hΦ : Φ.IsEntanglementBre
       ((Module.finrank ℂ H.state : ℂ)⁻¹ • Superoperator.choi b LinearMap.id)) at h
   simpa only [swap, Density.op_mixture, Density.op_tensor, map_sum, map_smul,
     Superoperator.choi_apply, Superoperator.tensor_apply, LinearMap.id_apply,
-    Superoperator.relabel_comm_tensor, choiState] using h
+    Superoperator.relabel_comm_tensor, op_choiState] using h
 
 /-- A separable normalized Choi state yields a channel with two copies of the original
 channel as its marginals. The prepared output states may be mixed and nonorthogonal. -/

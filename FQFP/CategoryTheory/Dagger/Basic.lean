@@ -252,8 +252,7 @@ theorem IsPositive.one (H : C) : IsPositive (1 : End H) := (IsStarProjection.one
 
 /-- The range projection of an isometry. -/
 theorem isStarProjection_dagger_comp (f : H ⟶ K) [IsIsometry f] :
-    IsStarProjection (End.of (f† ≫ f)) := by
-  exact ⟨End.ext (by simp), End.ext (by simp)⟩
+    IsStarProjection (End.of (f† ≫ f)) := ⟨End.ext (by simp), End.ext (by simp)⟩
 
 theorem IsPositive.comp_dagger (f : H ⟶ K) : IsPositive (.of (f ≫ f†)) := ⟨K, f, rfl⟩
 

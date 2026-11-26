@@ -94,9 +94,7 @@ lemma sqrt_tensor {K : Qudit} (A : Operator H) (B : Operator K)
     (hA : A.IsPositive) (hB : B.IsPositive) :
     (tensor A B).sqrt = tensor A.sqrt B.sqrt := by
   apply sqrt_unique _ (isPositive_tensor A.sqrt_positive B.sqrt_positive)
-  change TensorProduct.map A.sqrt B.sqrt * TensorProduct.map A.sqrt B.sqrt = _
-  rw [← TensorProduct.map_mul, A.sqrt_mul_sqrt hA, B.sqrt_mul_sqrt hB]
-  rfl
+  rw [tensor_mul_tensor, A.sqrt_mul_sqrt hA, B.sqrt_mul_sqrt hB]
 
 end Operator
 

@@ -56,15 +56,14 @@ lemma mkDerivation_mem_range_truncTotal_of_totalDegree_le_one
     (F : σ → MvPolynomial σ R) (hF : ∀ i, (F i).totalDegree ≤ 1)
     (n : ℕ) {p : MvPolynomial σ R} (hp : p ∈ (truncTotal σ R n).range) :
     mkDerivation R F p ∈ (truncTotal σ R n).range := by
-  by_cases hn : n = 0
-  · subst n
+  cases n with
+  | zero =>
     have hpzero : p = 0 := by simpa using hp
     simp [hpzero]
-  · have hpdeg : p.totalDegree < n :=
-      (truncTotal_eq_self_iff n hn p).mp (truncTotal_eq_self_of_mem_range n hp)
-    have hDdeg : (mkDerivation R F p).totalDegree < n :=
-      lt_of_le_of_lt (by simpa using totalDegree_mkDerivation_le F 1 hF p) hpdeg
-    exact ⟨mkDerivation R F p, (truncTotal_eq_self_iff n hn _).mpr hDdeg⟩
+  | succ d =>
+    rw [mem_range_truncTotal_succ_iff] at hp ⊢
+    apply le_trans _ hp
+    simpa using totalDegree_mkDerivation_le F 1 hF p
 
 section CommRing
 variable {S : Type*} [CommRing S]

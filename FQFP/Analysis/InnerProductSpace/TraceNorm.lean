@@ -289,6 +289,11 @@ lemma IsPositive.traceNorm_eq_re_trace {A : E →ₗ[ℂ] E} (hA : A.IsPositive)
   rw [hA.isSymmetric.re_trace_eq_sum_eigenvalues rfl]
   exact Finset.sum_congr rfl fun i _ ↦ abs_of_nonneg (hA.nonneg_eigenvalues rfl i)
 
+/-- A positive operator has zero real trace exactly when the operator is zero. -/
+lemma IsPositive.re_trace_eq_zero_iff {A : E →ₗ[ℂ] E} (hA : A.IsPositive) :
+    (trace ℂ E A).re = 0 ↔ A = 0 := by
+  rw [← hA.traceNorm_eq_re_trace, traceNorm_eq_zero_iff]
+
 /-- Spectral decomposition of a self-adjoint operator into rank-one orthogonal projections. -/
 lemma IsSymmetric.eq_sum_smul_rankOne {A : E →ₗ[ℂ] E} (hA : A.IsSymmetric) :
     A = ∑ i, (hA.eigenvalues rfl i : ℂ) •

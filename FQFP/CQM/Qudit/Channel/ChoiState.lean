@@ -57,14 +57,15 @@ lemma trace_choi (b : OrthonormalBasis ι ℂ H.state) (Φ : QuantumChannel H K)
 
 /-- The Choi density operator, with the reference on the right. -/
 def choiState (b : OrthonormalBasis ι ℂ H.state) (Φ : QuantumChannel H K)
-    (hH : 0 < Module.finrank ℂ H.state) : Density (K ⊗ H) where
-  op := (Module.finrank ℂ H.state : ℂ)⁻¹ • Superoperator.choi b Φ.toSuperoperator
-  positive := (Φ.completelyPositive.choi_positive b).smul_of_nonneg (by positivity)
-  trace_one := by
-    change LinearMap.trace ℂ (K ⊗ H).state (_ • _) = 1
-    rw [map_smul]
-    change _ * (Superoperator.choi b Φ.toSuperoperator).trace = 1
-    rw [trace_choi, inv_mul_cancel₀ (by exact_mod_cast hH.ne')]
+    (hH : 0 < Module.finrank ℂ H.state) : Density (K ⊗ H) :=
+  Density.normalize (Φ.completelyPositive.choi_positive b) (Φ.trace_choi b)
+    (by exact_mod_cast hH.ne')
+
+/-- The operator of the Choi state is the Choi operator divided by the input dimension. -/
+lemma op_choiState (b : OrthonormalBasis ι ℂ H.state) (Φ : QuantumChannel H K)
+    (hH : 0 < Module.finrank ℂ H.state) :
+    (Φ.choiState b hH).op =
+      (Module.finrank ℂ H.state : ℂ)⁻¹ • Superoperator.choi b Φ.toSuperoperator := rfl
 
 end QuantumChannel
 

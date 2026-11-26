@@ -22,6 +22,7 @@ with its canonical monomial basis and finite-generation property.
 ## Main results
 
 * `MvPolynomial.truncTotal_idempotent`: idempotence of the projection.
+* `MvPolynomial.range_truncTotal_succ`: the image below `d + 1` is `restrictTotalDegree σ R d`.
 * `MvPolynomial.finite_range_truncTotal`: finite generation for finitely many variables.
 * `MvPolynomial.coeff_eq_basis_repr`: coefficients in a monomial basis.
 -/
@@ -45,31 +46,20 @@ lemma coeff_truncTotal (n : ℕ) (p : MvPolynomial σ R) (d : σ →₀ ℕ) :
 @[simp] lemma truncTotal_zero : truncTotal σ R 0 = 0 := by
   simp [truncTotal]
 
-lemma truncTotal_monomial (n : ℕ) (d : σ →₀ ℕ) (r : R) :
-    truncTotal σ R n (monomial d r) = if d.degree < n then monomial d r else 0 := by
-  classical
-  by_cases h : d.degree < n
-  · ext e
-    by_cases he : d = e
-    · subst e
-      simp [coeff_truncTotal, h]
-    · simp [coeff_truncTotal, coeff_monomial, h, he]
-  · ext e
-    by_cases he : d = e
-    · subst e
-      simp [coeff_truncTotal, h]
-    · simp [coeff_truncTotal, coeff_monomial, h, he]
-
-lemma truncTotal_X (n : ℕ) (hn : 1 < n) (i : σ) :
-    truncTotal σ R n (X i) = X i := by
-  simpa [X, Finsupp.degree_single, hn] using
-    truncTotal_monomial (R := R) n (Finsupp.single i 1) 1
-
 lemma truncTotal_of_isHomogeneous (n k : ℕ) {p : MvPolynomial σ R}
     (hp : p.IsHomogeneous k) :
     truncTotal σ R n p = if k < n then p else 0 := by
   classical
   simp [truncTotal, homogeneousComponent_of_mem hp]
+
+lemma truncTotal_monomial (n : ℕ) (d : σ →₀ ℕ) (r : R) :
+    truncTotal σ R n (monomial d r) = if d.degree < n then monomial d r else 0 :=
+  truncTotal_of_isHomogeneous n d.degree (isHomogeneous_monomial r rfl)
+
+lemma truncTotal_X (n : ℕ) (hn : 1 < n) (i : σ) :
+    truncTotal σ R n (X i) = X i := by
+  simpa [X, Finsupp.degree_single, hn] using
+    truncTotal_monomial (R := R) n (Finsupp.single i 1) 1
 
 lemma truncTotal_comp (m n : ℕ) :
     (truncTotal σ R m).comp (truncTotal σ R n) = truncTotal σ R (min m n) := by
@@ -77,9 +67,14 @@ lemma truncTotal_comp (m n : ℕ) :
   simp only [LinearMap.comp_apply, coeff_truncTotal, lt_min_iff]
   split_ifs <;> simp_all
 
+/-- Total-degree truncation is an idempotent linear endomorphism. -/
+lemma isIdempotentElem_truncTotal (n : ℕ) : IsIdempotentElem (truncTotal σ R n) := by
+  simpa [IsIdempotentElem, Module.End.mul_eq_comp] using
+    (truncTotal_comp (σ := σ) (R := R) n n)
+
 @[simp] lemma truncTotal_idempotent (n : ℕ) (p : MvPolynomial σ R) :
-    truncTotal σ R n (truncTotal σ R n p) = truncTotal σ R n p := by
-  simpa using LinearMap.congr_fun (truncTotal_comp (σ := σ) (R := R) n n) p
+    truncTotal σ R n (truncTotal σ R n p) = truncTotal σ R n p :=
+  LinearMap.congr_fun (isIdempotentElem_truncTotal n).eq p
 
 lemma truncTotal_eq_powerSeries_truncTotal [Finite σ] (n : ℕ)
     (p : MvPolynomial σ R) :
@@ -87,54 +82,39 @@ lemma truncTotal_eq_powerSeries_truncTotal [Finite σ] (n : ℕ)
   ext d
   simp [coeff_truncTotal, MvPowerSeries.coeff_truncTotal_eq_ite]
 
-lemma truncTotal_eq_self_iff (n : ℕ) (hn : n ≠ 0) (p : MvPolynomial σ R) :
-    truncTotal σ R n p = p ↔ p.totalDegree < n := by
-  classical
-  constructor
-  · intro h
-    apply (Finset.sup_lt_iff (Nat.pos_of_ne_zero hn)).mpr
-    intro d hd
-    change d.degree < n
-    by_contra hdn
-    have hc := congrArg (fun q : MvPolynomial σ R => q.coeff d) h
-    rw [coeff_truncTotal, ite_eq_right hdn] at hc
-    exact mem_support_iff.mp hd hc.symm
-  · intro h
-    ext d
-    by_cases hd : d.degree < n
-    · simp [coeff_truncTotal, hd]
-    · have hz : p.coeff d = 0 := coeff_eq_zero_of_totalDegree_lt
-        (show p.totalDegree < d.degree by lia)
-      simp [coeff_truncTotal, hd, hz]
-
 lemma mem_range_truncTotal_iff (n : ℕ) (p : MvPolynomial σ R) :
     p ∈ (truncTotal σ R n).range ↔ ∀ d, n ≤ d.degree → p.coeff d = 0 := by
-  constructor
-  · rintro ⟨q, rfl⟩ d hd
-    simp [coeff_truncTotal, not_lt.mpr hd]
-  · intro h
-    refine ⟨p, ?_⟩
-    ext d
-    by_cases hd : d.degree < n
-    · simp [coeff_truncTotal, hd]
-    · simp [coeff_truncTotal, hd, h d (not_lt.mp hd)]
+  rw [LinearMap.IsIdempotentElem.mem_range_iff (isIdempotentElem_truncTotal n),
+    MvPolynomial.ext_iff]
+  simp only [coeff_truncTotal, ite_eq_left_iff, not_lt, eq_comm (a := (0 : R))]
 
 lemma truncTotal_eq_self_of_mem_range (n : ℕ) {p : MvPolynomial σ R}
-    (hp : p ∈ (truncTotal σ R n).range) : truncTotal σ R n p = p := by
-  obtain ⟨q, rfl⟩ := hp
-  exact truncTotal_idempotent n q
+    (hp : p ∈ (truncTotal σ R n).range) : truncTotal σ R n p = p :=
+  (LinearMap.IsIdempotentElem.mem_range_iff (isIdempotentElem_truncTotal n)).mp hp
 
 lemma range_truncTotal_eq_restrictSupport (n : ℕ) :
     (truncTotal σ R n).range = restrictSupport R {d : σ →₀ ℕ | d.degree < n} := by
   ext p
-  rw [mem_range_truncTotal_iff, mem_restrictSupport_iff]
-  constructor
-  · intro h d hd
-    by_contra hdn
-    exact mem_support_iff.mp hd (h d (not_lt.mp hdn))
-  · intro h d hd
-    by_contra hc
-    exact (not_lt.mpr hd) (h (mem_support_iff.mpr hc))
+  rw [mem_range_truncTotal_iff, restrictSupport, AddMonoidAlgebra.mem_supported']
+  simp
+
+/-- The image of truncation below `d + 1` is the total-degree-`≤ d` submodule. -/
+lemma range_truncTotal_succ (d : ℕ) :
+    (truncTotal σ R (d + 1)).range = restrictTotalDegree σ R d := by
+  rw [range_truncTotal_eq_restrictSupport, restrictTotalDegree]
+  simp only [Nat.lt_succ_iff]
+  rfl
+
+/-- Truncating below `d + 1` has as its range the polynomials of total degree at most `d`. -/
+lemma mem_range_truncTotal_succ_iff (d : ℕ) (p : MvPolynomial σ R) :
+    p ∈ (truncTotal σ R (d + 1)).range ↔ p.totalDegree ≤ d := by
+  rw [range_truncTotal_succ, mem_restrictTotalDegree]
+
+lemma truncTotal_eq_self_iff (n : ℕ) (hn : n ≠ 0) (p : MvPolynomial σ R) :
+    truncTotal σ R n p = p ↔ p.totalDegree < n := by
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  rw [← LinearMap.IsIdempotentElem.mem_range_iff (isIdempotentElem_truncTotal (d + 1)),
+    mem_range_truncTotal_succ_iff, Nat.lt_succ_iff]
 
 /-- The canonical monomial basis of the projected observable space. -/
 def basisRangeTruncTotal (n : ℕ) :
@@ -144,20 +124,20 @@ def basisRangeTruncTotal (n : ℕ) :
 
 @[simp] lemma basisRangeTruncTotal_apply (n : ℕ) (d : {d : σ →₀ ℕ // d.degree < n}) :
     (basisRangeTruncTotal (R := R) n d : MvPolynomial σ R) = monomial d.val 1 := by
-  simp only [basisRangeTruncTotal, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply]
-  change ((AddMonoidAlgebra.supportedEquivFinsupp (R := R) (S := R)
-    {d : σ →₀ ℕ | d.degree < n}).symm (Finsupp.single d 1) : MvPolynomial σ R) = _
   apply AddMonoidAlgebra.coeff_injective
-  change ((Finsupp.supportedEquivFinsupp (M := R) (R := R)
-    {d : σ →₀ ℕ | d.degree < n}).symm (Finsupp.single d 1) : (σ →₀ ℕ) →₀ R) = _
-  exact Finsupp.supportedEquivFinsupp_symm_single ..
+  exact Finsupp.supportedEquivFinsupp_symm_single (R := R) {d : σ →₀ ℕ | d.degree < n} d 1
+
+/-- Coordinates in the truncated monomial basis are the coefficients at the retained exponents. -/
+lemma basisRangeTruncTotal_repr (n : ℕ) (p : (truncTotal σ R n).range)
+    (e : {d : σ →₀ ℕ // d.degree < n}) :
+    (basisRangeTruncTotal n).repr p e = (p : MvPolynomial σ R).coeff e := rfl
 
 lemma exists_basis_range_truncTotal (n : ℕ) :
     ∃ B : Module.Basis {d : σ →₀ ℕ // d.degree < n} R (truncTotal σ R n).range,
       ∀ d, (B d : MvPolynomial σ R) = monomial d.val 1 :=
   ⟨basisRangeTruncTotal n, basisRangeTruncTotal_apply n⟩
 
-lemma finite_range_truncTotal [Finite σ] (n : ℕ) :
+instance finite_range_truncTotal [Finite σ] (n : ℕ) :
     Module.Finite R (truncTotal σ R n).range := by
   let : Finite {d : σ →₀ ℕ // d.degree < n} := (Finsupp.finite_of_degree_lt n).to_subtype
   exact Module.Finite.of_basis (basisRangeTruncTotal n)
@@ -167,12 +147,8 @@ lemma coeff_eq_basis_repr (n : ℕ)
     (hB : ∀ d, (B d : MvPolynomial σ R) = monomial d.val 1)
     (p : (truncTotal σ R n).range) (e : {d : σ →₀ ℕ // d.degree < n}) :
     (p : MvPolynomial σ R).coeff e.val = B.repr p e := by
-  classical
-  conv_lhs => rw [← B.linearCombination_repr p]
-  simp only [Finsupp.linearCombination_apply, Finsupp.sum, Submodule.coe_sum,
-    Submodule.coe_smul, hB, coeff_sum, coeff_smul, coeff_monomial, smul_eq_mul]
-  simp only [Subtype.coe_inj, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq',
-    Finsupp.mem_support_iff, ne_eq, ite_not, ite_eq_right_iff]
-  exact Eq.symm
+  have h : B = basisRangeTruncTotal n := DFunLike.ext _ _ fun d =>
+    Subtype.ext ((hB d).trans (basisRangeTruncTotal_apply n d).symm)
+  rw [h, basisRangeTruncTotal_repr]
 
 end MvPolynomial

@@ -36,11 +36,7 @@ namespace Operator
 /-- The trace norm is multiplicative for arbitrary tensor-product operators. -/
 lemma traceNorm_tensor (A : Operator H) (B : Operator K) :
     LinearMap.traceNorm (tensor A B) = LinearMap.traceNorm A * LinearMap.traceNorm B := by
-  have hg : (tensor A B).adjoint * tensor A B = tensor (A.adjoint * A) (B.adjoint * B) := by
-    change (TensorProduct.map A B).adjoint * TensorProduct.map A B =
-      TensorProduct.map (A.adjoint * A) (B.adjoint * B)
-    rw [TensorProduct.adjoint_map, ← TensorProduct.map_mul]
-  rw [traceNorm_eq_norm_trace_sqrt_adjoint_mul, hg,
+  rw [traceNorm_eq_norm_trace_sqrt_adjoint_mul, adjoint_tensor, tensor_mul_tensor,
     sqrt_tensor (H := H) (K := K) (A.adjoint * A) (B.adjoint * B)
       A.isPositive_adjoint_comp_self B.isPositive_adjoint_comp_self,
     trace_tensor, norm_mul, ← traceNorm_eq_norm_trace_sqrt_adjoint_mul,
@@ -54,11 +50,8 @@ namespace Density
 theorem fidelity_tensor (ρ₁ σ₁ : Density H) (ρ₂ σ₂ : Density K) :
     (ρ₁.tensor ρ₂).fidelity (σ₁.tensor σ₂) = ρ₁.fidelity σ₁ * ρ₂.fidelity σ₂ := by
   rw [fidelity, op_tensor, op_tensor, Operator.sqrt_tensor _ _ ρ₁.positive ρ₂.positive,
-    Operator.sqrt_tensor _ _ σ₁.positive σ₂.positive]
-  have hm : Operator.tensor ρ₁.op.sqrt ρ₂.op.sqrt * Operator.tensor σ₁.op.sqrt σ₂.op.sqrt =
-      Operator.tensor (ρ₁.op.sqrt * σ₁.op.sqrt) (ρ₂.op.sqrt * σ₂.op.sqrt) :=
-    (TensorProduct.map_mul _ _ _ _).symm
-  rw [hm, Operator.traceNorm_tensor]
+    Operator.sqrt_tensor _ _ σ₁.positive σ₂.positive, Operator.tensor_mul_tensor,
+    Operator.traceNorm_tensor]
   rfl
 
 /-- Appending the same density state to both inputs leaves fidelity unchanged. -/

@@ -19,6 +19,7 @@ algebraic observable space. State recovery uses finite basis coordinates.
 ## Main results
 
 * `MvPolynomial.norm_aeval_sub_carlemanLiftedApproximant_le_gronwallBound`: lifted error.
+* `MvPolynomial.norm_sub_carlemanApproximant_le_of_basis_contains_X`: coordinate selection.
 * `MvPolynomial.abs_sub_carlemanApproximant_le_mul_exp`: coordinate recovery.
 * `MvPolynomial.norm_sub_carlemanApproximant_le_mul_exp_of_basis_contains_X`: unit-factor recovery.
 -/
@@ -28,7 +29,26 @@ noncomputable section
 open scoped BigOperators
 
 namespace MvPolynomial
-variable {σ ι : Type*} [Finite σ] [Fintype ι] [DecidableEq ι]
+variable {σ ι : Type*}
+
+/-- Selecting the coordinate observables from the lifted error vector bounds the state error
+in the maximum norm at any time. -/
+lemma norm_sub_carlemanApproximant_le_of_basis_contains_X [Fintype σ] [Fintype ι]
+    (F : σ → MvPolynomial σ ℝ) (x₀ x : σ → ℝ) (N : ℕ) (hN : 1 ≤ N)
+    (B : Module.Basis ι ℝ (truncTotal σ ℝ (N + 1)).range)
+    (κ : σ → ι) (hB : ∀ i, (B (κ i) : MvPolynomial σ ℝ) = X i) (t : ℝ) :
+    ‖x - carlemanApproximant F x₀ N t‖ ≤
+      ‖fun j => aeval x (B j : MvPolynomial σ ℝ) - carlemanLiftedApproximant F x₀ N t (B j)‖ := by
+  let E := fun j => aeval x (B j : MvPolynomial σ ℝ) - carlemanLiftedApproximant F x₀ N t (B j)
+  have hobs (i : σ) : B (κ i) = (truncTotal σ ℝ (N + 1)).rangeRestrict (X i) :=
+    Subtype.ext ((hB i).trans (truncTotal_X (N + 1) (by lia) i).symm)
+  have hrecover : x - carlemanApproximant F x₀ N t = E ∘ κ := by
+    funext i
+    simp [E, hobs, carlemanApproximant, truncTotal_X (N + 1) (by lia)]
+  rw [hrecover]
+  exact pi_norm_comp_le E κ
+
+variable [Finite σ] [Fintype ι] [DecidableEq ι]
 
 /-- The existing scalar observable error equation assembled in finite basis coordinates. -/
 lemma hasDerivAt_aeval_sub_carlemanLiftedApproximant_coordinates
@@ -47,15 +67,8 @@ lemma hasDerivAt_aeval_sub_carlemanLiftedApproximant_coordinates
   intro i
   let E := (aeval (x t)).toLinearMap.comp (truncTotal σ ℝ (N + 1)).range.subtype -
     carlemanLiftedApproximant F x₀ N t
-  have hcoords := LinearMap.dualMap_coordinates B
-    (compressedDerivation (mkDerivation ℝ F) (N + 1)) E i
-  change HasDerivAt (fun s => aeval (x s) (B i : MvPolynomial σ ℝ) -
-    carlemanLiftedApproximant F x₀ N s (B i))
-    (((LinearMap.toMatrix B B (compressedDerivation (mkDerivation ℝ F) (N + 1))).transpose).mulVec
-      (fun j => E (B j)) i + aeval (x t)
-        (mkDerivation ℝ F (B i) - truncTotal σ ℝ (N + 1) (mkDerivation ℝ F (B i)))) t
-  rw [hcoords]
-  exact hasDerivAt_aeval_sub_carlemanLiftedApproximant F x₀ x t hx N (B i)
+  convert hasDerivAt_aeval_sub_carlemanLiftedApproximant F x₀ x t hx N (B i) using 1
+  exact congrArg (· + _) (LinearMap.dualMap_coordinates B _ E i)
 
 /-- A quantitative lifted error bound in any finite observable basis.
 The residual is exactly the evaluation of the discarded high-degree part. -/
@@ -151,24 +164,8 @@ lemma norm_sub_carlemanApproximant_le_mul_exp_of_basis_contains_X [Fintype σ]
     (hr : ∀ s ∈ Set.Ico 0 T, ‖fun i => aeval (x s)
       (mkDerivation ℝ F (B i) - truncTotal σ ℝ (N + 1) (mkDerivation ℝ F (B i)))‖ ≤ ε)
     (t : ℝ) (ht : t ∈ Set.Icc 0 T) :
-    ‖x t - carlemanApproximant F x₀ N t‖ ≤ ε * t * Real.exp (K * t) := by
-  have hbound := norm_aeval_sub_carlemanLiftedApproximant_le_mul_exp
-    F x₀ x N B T K ε hx₀ hx hK hε hr t ht
-  have hobs (i : σ) : B (κ i) = (truncTotal σ ℝ (N + 1)).rangeRestrict (X i) := by
-    apply Subtype.ext
-    change (B (κ i) : MvPolynomial σ ℝ) = truncTotal σ ℝ (N + 1) (X i)
-    rw [truncTotal_X (N + 1) (by lia)]
-    exact hB i
-  apply (pi_norm_le_iff_of_nonneg
-    (mul_nonneg (mul_nonneg hε ht.1) (Real.exp_nonneg _))).mpr
-  intro i
-  calc
-    ‖(x t - carlemanApproximant F x₀ N t) i‖ ≤
-        ‖fun j => aeval (x t) (B j : MvPolynomial σ ℝ) -
-          carlemanLiftedApproximant F x₀ N t (B j)‖ := by
-      have h := norm_le_pi_norm (fun j => aeval (x t) (B j : MvPolynomial σ ℝ) -
-        carlemanLiftedApproximant F x₀ N t (B j)) (κ i)
-      simpa [hobs i, carlemanApproximant, truncTotal_X (N + 1) (by lia)] using h
-    _ ≤ _ := hbound
+    ‖x t - carlemanApproximant F x₀ N t‖ ≤ ε * t * Real.exp (K * t) :=
+  (norm_sub_carlemanApproximant_le_of_basis_contains_X F x₀ (x t) N hN B κ hB t).trans
+    (norm_aeval_sub_carlemanLiftedApproximant_le_mul_exp F x₀ x N B T K ε hx₀ hx hK hε hr t ht)
 
 end MvPolynomial

@@ -49,10 +49,9 @@ noncomputable def recordedChannel : QuantumChannel H (K ⊗ std m) :=
 /-- Reading a block of the output recovers the same operator as executing that branch. -/
 theorem read_recordedChannel (s : CQState (Fin m) H) (i : Fin m) :
     (Instrument.read K (ZBasis m)).branch i (p.recordedChannel.toSuperoperator s.op) =
-      (p.runBranch s i).op := by
-  rw [recordedChannel, ← QuantumChannel.comp_assoc, ← Instrument.record_postprocess]
-  exact (p.measure.postprocess (fun j => (p.onResult j).toChannel)).read_record
-    (ZBasis m) (p.prepare.toSuperoperator s.op) i
+      (p.runBranch s i).op :=
+  p.measure.read_controlled_record (ZBasis m) (fun j => (p.onResult j).toChannel)
+    (p.prepare.toSuperoperator s.op) i
 
 end FeedForwardProgram
 

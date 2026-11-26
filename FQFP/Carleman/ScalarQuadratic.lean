@@ -132,32 +132,26 @@ private lemma coordinatePolynomial_hasDerivAt (a : ℝ) (k r : ℕ) (t : ℝ) :
 
 private lemma liftedCoordinate_eq_polynomial (a : ℝ) (N k r : ℕ) (hkr : k + r = N) :
     liftedCoordinate a N k = coordinatePolynomial a k r := by
+  have eq_of_deriv {k r : ℕ} (hk : k ≤ N)
+      (hpoly : ∀ t, HasDerivAt (coordinatePolynomial a k r)
+        ((k : ℝ) * liftedCoordinate a N (k + 1) t) t) :
+      liftedCoordinate a N k = coordinatePolynomial a k r := by
+    have hlift := liftedCoordinate_hasDerivAt a N k
+    apply eq_of_fderiv_eq (fun t => (hlift t).differentiableAt)
+      (fun t => (hpoly t).differentiableAt)
+    · intro t
+      rw [(hlift t).hasFDerivAt.fderiv, (hpoly t).hasFDerivAt.fderiv]
+    · exact (liftedCoordinate_initial a N k hk).trans (coordinatePolynomial_initial a k r).symm
   induction r generalizing k with
   | zero =>
-    have hdiff (t : ℝ) : HasDerivAt
-        (fun s => liftedCoordinate a N k s - coordinatePolynomial a k 0 s) 0 t := by
-      have hk : N < k + 1 := by lia
-      convert (liftedCoordinate_hasDerivAt a N k t).sub (hasDerivAt_const t (a ^ k)) using 1
-      · funext s
-        simp only [coordinatePolynomial_zero, Pi.sub_apply]
-      · simp only [liftedCoordinate_eq_zero a N (k + 1) hk, mul_zero, sub_zero]
-    funext t
-    have hconst := is_const_of_deriv_eq_zero (fun t => (hdiff t).differentiableAt)
-      (fun t => (hdiff t).deriv) t 0
-    rw [liftedCoordinate_initial a N k (by lia), coordinatePolynomial_initial, sub_self] at hconst
-    exact sub_eq_zero.mp hconst
+    apply eq_of_deriv (by lia)
+    intro t
+    rw [coordinatePolynomial_zero, liftedCoordinate_eq_zero a N (k + 1) (by lia), mul_zero]
+    exact hasDerivAt_const t (a ^ k)
   | succ r ih =>
-    have hnext := ih (k + 1) (by lia)
-    have hdiff (t : ℝ) : HasDerivAt
-        (fun s => liftedCoordinate a N k s - coordinatePolynomial a k (r + 1) s) 0 t := by
-      convert (liftedCoordinate_hasDerivAt a N k t).sub
-        (coordinatePolynomial_hasDerivAt a k r t) using 1
-      rw [hnext, sub_self]
-    funext t
-    have hconst := is_const_of_deriv_eq_zero (fun t => (hdiff t).differentiableAt)
-      (fun t => (hdiff t).deriv) t 0
-    rw [liftedCoordinate_initial a N k (by lia), coordinatePolynomial_initial, sub_self] at hconst
-    exact sub_eq_zero.mp hconst
+    apply eq_of_deriv (by lia)
+    rw [ih (k + 1) (by lia)]
+    exact coordinatePolynomial_hasDerivAt a k r
 
 /-- Every retained monomial coordinate has an explicit finite polynomial evolution. -/
 lemma carlemanLiftedApproximant_pow_eq (a : ℝ) (N k r : ℕ) (hkr : k + r = N) (t : ℝ) :

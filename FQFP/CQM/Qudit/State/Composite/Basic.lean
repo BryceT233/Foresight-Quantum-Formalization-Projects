@@ -105,6 +105,16 @@ def tensor (A : Operator H) (B : Operator K) : Operator (H ⊗ K) := TensorProdu
 lemma tensor_apply (A : Operator H) (B : Operator K) (x : H.state) (y : K.state) :
     tensor A B (x ⊗ₜ[ℂ] y) = A x ⊗ₜ[ℂ] B y := rfl
 
+/-- Multiplication of product operators acts separately on each factor. -/
+lemma tensor_mul_tensor (A C : Operator H) (B D : Operator K) :
+    tensor A B * tensor C D = tensor (A * C) (B * D) :=
+  (TensorProduct.map_mul A C B D).symm
+
+/-- The adjoint of a product operator is the product of the adjoints. -/
+lemma adjoint_tensor (A : Operator H) (B : Operator K) :
+    (tensor A B).adjoint = tensor A.adjoint B.adjoint :=
+  TensorProduct.adjoint_map A B
+
 /-- Tensor a qudit operator with the identity on the right, preserving products and adjoints. -/
 def tensorOneHom (H K : Qudit) : Operator H →⋆ₐ[ℂ] Operator (H ⊗ K) where
   toAlgHom := Module.End.rTensorAlgHom ℂ H.state K.state
@@ -214,10 +224,8 @@ end Operator
 namespace Density
 
 /-- The maximally mixed density operator; the dimension must be nonzero. -/
-def maximallyMixed (H : Qudit) (hn : Module.finrank ℂ H.state ≠ 0) : Density H where
-  op := (Module.finrank ℂ H.state : ℂ)⁻¹ • (1 : Operator H)
-  positive := LinearMap.isPositive_one.smul_of_nonneg (by positivity)
-  trace_one := by simp [Operator.trace, LinearMap.trace_one, hn]
+def maximallyMixed (H : Qudit) (hn : Module.finrank ℂ H.state ≠ 0) : Density H :=
+  normalize LinearMap.isPositive_one (LinearMap.trace_one ℂ H.state) (by exact_mod_cast hn)
 
 /-- The maximally mixed state is the identity divided by the dimension. -/
 @[simp]

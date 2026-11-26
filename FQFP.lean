@@ -272,6 +272,7 @@ public import FQFP.CQM.Qudit.Entropy.Basic
 public import FQFP.CQM.Qudit.Entropy.DataProcessing
 public import FQFP.CQM.Qudit.Entropy.EntanglementOfFormation
 public import FQFP.CQM.Qudit.Entropy.Relative
+public import FQFP.CQM.Qudit.Entropy.Relative.Continuity
 public import FQFP.CQM.Qudit.Entropy.Relative.JointConvexity
 public import FQFP.CQM.Qudit.Entropy.Relative.PartialTrace
 public import FQFP.CQM.Qudit.Entropy.Relative.Pinching
@@ -306,6 +307,8 @@ public import FQFP.CQM.Qudit.Measurement.Ensemble
 public import FQFP.CQM.Qudit.Measurement.HypothesisTesting
 public import FQFP.CQM.Qudit.Measurement.HypothesisTesting.Attainment
 public import FQFP.CQM.Qudit.Measurement.HypothesisTesting.Continuity
+public import FQFP.CQM.Qudit.Measurement.HypothesisTesting.Minimax
+public import FQFP.CQM.Qudit.Measurement.HypothesisTesting.RenyiBound
 public import FQFP.CQM.Qudit.Measurement.Instrument
 public import FQFP.CQM.Qudit.Measurement.Luders
 public import FQFP.CQM.Qudit.Measurement.POVM
@@ -313,6 +316,12 @@ public import FQFP.CQM.Qudit.Measurement.Process
 public import FQFP.CQM.Qudit.Measurement.Steering
 public import FQFP.CQM.Qudit.Measurement.Support
 public import FQFP.CQM.Qudit.Monoidal
+public import FQFP.CQM.Qudit.ResourceTheory.FreeState
+public import FQFP.CQM.Qudit.ResourceTheory.RelativeEntropy
+public import FQFP.CQM.Qudit.ResourceTheory.SteinsLemma
+public import FQFP.CQM.Qudit.ResourceTheory.SteinsLemma.Converse
+public import FQFP.CQM.Qudit.ResourceTheory.SteinsLemma.Likelihood
+public import FQFP.CQM.Qudit.ResourceTheory.SteinsLemma.SpectralRounding
 public import FQFP.CQM.Qudit.Rigid
 public import FQFP.CQM.Qudit.State.Composite.Basic
 public import FQFP.CQM.Qudit.State.Composite.LocalUnitary
@@ -334,11 +343,13 @@ public import FQFP.CQM.Qudit.State.Purification.Basic
 public import FQFP.CQM.Qudit.State.Purification.Minimal
 public import FQFP.CQM.Qudit.State.Purification.Mixture
 public import FQFP.CQM.Qudit.State.Spectral.Basic
+public import FQFP.CQM.Qudit.State.Spectral.Continuity
 public import FQFP.CQM.Qudit.State.Spectral.FunctionalCalculus
 public import FQFP.CQM.Qudit.State.Spectral.OperatorSqrt
 public import FQFP.CQM.Qudit.State.Spectral.Tensor
 public import FQFP.CQM.Qudit.State.StrictPositivity
 public import FQFP.CQM.Qudit.State.Support
+public import FQFP.CQM.Qudit.State.TensorPower
 public import FQFP.CQM.Qudit.State.Topology
 public import FQFP.CQM.Qudit.State.UnitState
 public import FQFP.CQM.Qudit.Teleportation.Basic

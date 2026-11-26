@@ -69,20 +69,18 @@ theorem Configuration.PostH_whileDo_of_true {b : Store → Bool} (p : Command St
 theorem validPar_while {b : Store → Bool} {J : Assertion Store H} {p : Command Store Cell H}
     (h : validPar (J.mand b) p J) : validPar J (.whileDo b p) (J.mandNot b) := by
   rw [validPar_iff_forall_le_Val] at h ⊢
-  have bound (s : CQState Store H) : ENNReal.ofReal (s.expectation (J s.store)) ≤ s.mass :=
-    (ENNReal.ofReal_le_ofReal ((s.expectation_mono (J s.store).2.2).trans_eq
-      s.expectation_one)).trans_eq ENNReal.ofReal_coe_nnreal
   intro s N
   induction N using Nat.strong_induction_on generalizing s with
   | _ N ih =>
     cases N with
-    | zero => rw [Configuration.Val_zero]; exact bound s
+    | zero => simpa only [Configuration.Val_zero] using s.ofReal_expectation_le_mass (J s.store).2.2
     | succ n =>
       cases hb : b s.store with
       | false =>
         rw [Configuration.Val_succ_singleton (next_whileDo_of_false p hb) rfl]
         cases n with
-        | zero => rw [Configuration.Val_zero]; exact bound s
+        | zero =>
+          simpa only [Configuration.Val_zero] using s.ofReal_expectation_le_mass (J s.store).2.2
         | succ n =>
           rw [Configuration.Val_succ_terminal, J.mandNot_of_false hb]
       | true =>

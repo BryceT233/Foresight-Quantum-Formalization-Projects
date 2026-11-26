@@ -60,11 +60,22 @@ theorem CQState.expectation_one (s : CQState Store H) : s.expectation 1 = s.mass
 theorem CQState.expectation_zero (s : CQState Store H) : s.expectation 0 = 0 := by
   simp [expectation, Operator.trace]
 
+/-- The real trace pairing is additive in the observable. -/
+theorem CQState.expectation_add (s : CQState Store H) (A B : Operator H) :
+    s.expectation (A + B) = s.expectation A + s.expectation B := by
+  simp [expectation, add_mul, Operator.trace]
+
 /-- Expectation respects the Löwner order on observables. -/
 theorem CQState.expectation_mono (s : CQState Store H) {A B : Operator H} (h : A ≤ B) :
     s.expectation A ≤ s.expectation B := by
   simpa only [expectation, sub_mul, Operator.trace, map_sub, Complex.sub_re, sub_nonneg] using
     s.expectation_nonneg (LinearMap.le_def.mp h)
+
+/-- An observable below the identity contributes at most the branch mass as a nonnegative weight. -/
+theorem CQState.ofReal_expectation_le_mass (s : CQState Store H) {A : Operator H} (hA : A ≤ 1) :
+    ENNReal.ofReal (s.expectation A) ≤ s.mass :=
+  (ENNReal.ofReal_le_ofReal ((s.expectation_mono hA).trans_eq s.expectation_one)).trans_eq
+    ENNReal.ofReal_coe_nnreal
 
 /-- Pulling back the output effect gives its expectation in the evolved branch. -/
 theorem CQState.expectation_pullbackEffect {K : Qudit} (s : CQState Store H)
@@ -95,6 +106,11 @@ theorem postAt_eq_sum_frontier (c : Configuration Store Cell H) (n : ℕ) (A : S
   rw [← terminalHistories_map_fst, List.map_map]
   rfl
 
+/-- At a fixed depth, post-expectation distributes over sums of arbitrary observables. -/
+theorem postAt_add (c : Configuration Store Cell H) (n : ℕ) (A B : Store → Operator H) :
+    c.postAt n (fun σ => A σ + B σ) = c.postAt n A + c.postAt n B := by
+  simp only [postAt, CQState.expectation_add, List.sum_map_add]
+
 /-- Positive post-observables contribute a nonnegative sum at each depth. -/
 theorem postAt_nonneg (c : Configuration Store Cell H) (n : ℕ) {A : Store → Operator H}
     (hA : ∀ σ, (A σ).IsPositive) : 0 ≤ c.postAt n A := by
@@ -103,44 +119,52 @@ theorem postAt_nonneg (c : Configuration Store Cell H) (n : ℕ) {A : Store → 
   obtain ⟨p, _, rfl⟩ := List.mem_map.mp hx
   exact p.1.state.expectation_nonneg (hA _)
 
+/-- Pointwise order on observables is preserved at each terminating depth. -/
+theorem postAt_mono (c : Configuration Store Cell H) (n : ℕ) {A B : Store → Operator H}
+    (h : ∀ σ, A σ ≤ B σ) : c.postAt n A ≤ c.postAt n B :=
+  List.sum_le_sum fun p _ => p.1.state.expectation_mono (h _)
+
+/-- The identity observable collects the mass of all histories terminating at exactly depth `n`. -/
+theorem postAt_one (c : Configuration Store Cell H) (n : ℕ) :
+    c.postAt n (fun _ => 1) = c.terminalMassAt n := by
+  simp only [postAt, terminalMassAt_eq_sum_terminalHistories, NNReal.coe_list_sum,
+    List.map_map, Function.comp_def, CQState.expectation_one]
+
 /-- Post-observables bounded by the identity collect at most the mass terminating at this depth. -/
 theorem postAt_le_terminalMassAt (c : Configuration Store Cell H) (n : ℕ) {A : Store → Operator H}
-    (hA : ∀ σ, A σ ≤ 1) : c.postAt n A ≤ c.terminalMassAt n := by
-  rw [terminalMassAt_eq_sum_terminalHistories, NNReal.coe_list_sum, List.map_map]
-  exact List.sum_le_sum fun p _ =>
-    (p.1.state.expectation_mono (hA _)).trans_eq p.1.state.expectation_one
+    (hA : ∀ σ, A σ ≤ 1) : c.postAt n A ≤ c.terminalMassAt n :=
+  (c.postAt_mono n hA).trans_eq (c.postAt_one n)
 
 /-- The post-expectation across all terminating depths of the run. -/
 noncomputable def PostH (c : Configuration Store Cell H) (A : Store → Operator H) : ℝ≥0∞ :=
   ∑' n, ENNReal.ofReal (c.postAt n A)
 
+/-- The full post-expectation is additive on pointwise positive observables. -/
+theorem PostH_add (c : Configuration Store Cell H) {A B : Store → Operator H}
+    (hA : ∀ σ, (A σ).IsPositive) (hB : ∀ σ, (B σ).IsPositive) :
+    c.PostH (fun σ => A σ + B σ) = c.PostH A + c.PostH B := by
+  simp only [PostH, postAt_add, ENNReal.ofReal_add (c.postAt_nonneg _ hA) (c.postAt_nonneg _ hB),
+    tsum_add]
+
 /-- Pointwise order of observables gives the same order of terminal post-expectations. -/
 theorem PostH_mono (c : Configuration Store Cell H) {A B : Store → Operator H}
     (h : ∀ σ, A σ ≤ B σ) : c.PostH A ≤ c.PostH B :=
-  tsum_le_tsum fun _ => ENNReal.ofReal_le_ofReal <|
-    List.sum_le_sum fun p _ => p.1.state.expectation_mono (h _)
+  tsum_le_tsum fun n => ENNReal.ofReal_le_ofReal (c.postAt_mono n h)
+
+/-- The identity post-observable collects exactly the terminating mass. -/
+theorem PostH_one (c : Configuration Store Cell H) :
+    c.PostH (fun _ => 1) = c.terminatingMass := by
+  simp only [PostH, postAt_one, ENNReal.ofReal_coe_nnreal, terminatingMass]
 
 /-- The post-expectation of an effect family is bounded by the total terminating trace. -/
 theorem PostH_le_terminatingMass (c : Configuration Store Cell H) {A : Store → Operator H}
-    (hA : ∀ σ, A σ ≤ 1) : c.PostH A ≤ c.terminatingMass := by
-  apply tsum_le_tsum
-  intro n
-  exact (ENNReal.ofReal_le_ofReal (c.postAt_le_terminalMassAt n hA)).trans_eq
-    ENNReal.ofReal_coe_nnreal
+    (hA : ∀ σ, A σ ≤ 1) : c.PostH A ≤ c.terminatingMass :=
+  (c.PostH_mono hA).trans_eq c.PostH_one
 
 /-- In particular the post-expectation of an effect is bounded by the initial mass. -/
 theorem PostH_le_mass (c : Configuration Store Cell H) {A : Store → Operator H}
     (hA : ∀ σ, A σ ≤ 1) : c.PostH A ≤ c.state.mass :=
   (c.PostH_le_terminatingMass hA).trans c.terminatingMass_le
-
-/-- The identity post-observable collects exactly the terminating mass. -/
-theorem PostH_one (c : Configuration Store Cell H) :
-    c.PostH (fun _ => 1) = c.terminatingMass := by
-  apply tsum_congr
-  intro n
-  rw [postAt, terminalMassAt_eq_sum_terminalHistories, ← ENNReal.ofReal_coe_nnreal,
-    NNReal.coe_list_sum, List.map_map]
-  simp only [CQState.expectation_one, Function.comp_def]
 
 /-- A singleton terminal frontier contributes its endpoint's expectation at that depth. -/
 theorem ofReal_expectation_le_PostH_of_frontier {c : Configuration Store Cell H} {n : ℕ}
@@ -292,18 +316,10 @@ noncomputable def Assertion.pure (v : UnitState H) : Assertion Store H := fun _ 
 theorem Configuration.PostH_mask_split (c : Configuration Store Cell H) (A : Assertion Store H)
     (φ : Store → Prop) : c.PostH (fun σ => A.mask φ σ) +
       c.PostH (fun σ => A.mask (fun τ => ¬ φ τ) σ) = c.PostH (fun σ => A σ) := by
-  unfold PostH
-  rw [← tsum_add]
-  apply tsum_congr
-  intro n
-  rw [← ENNReal.ofReal_add (c.postAt_nonneg n (A.mask φ).isPositive)
-    (c.postAt_nonneg n (A.mask fun σ => ¬ φ σ).isPositive)]
-  apply congrArg ENNReal.ofReal
-  simp only [postAt, ← List.sum_map_add]
-  apply congrArg List.sum
-  apply List.map_congr_left
-  intro p _
-  by_cases hp : φ p.1.state.store <;> simp [Assertion.mask, hp, CQState.expectation_zero]
+  rw [← c.PostH_add (A.mask φ).isPositive (A.mask fun σ => ¬ φ σ).isPositive]
+  apply congrArg c.PostH
+  funext σ
+  by_cases h : φ σ <;> simp [Assertion.mask, h]
 
 /-- If the identity effect on a predicate collects the entire input trace, every assertion
 collects its full post-expectation on that predicate. -/

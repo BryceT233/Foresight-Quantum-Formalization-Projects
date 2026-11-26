@@ -5,17 +5,22 @@ on:
   pull_request:
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
-  contents: read # Read access to repository contents
-  pages: write # Write access to GitHub Pages
-  id-token: write # Write access to ID tokens
+  contents: read
 
 jobs:
   build:
     # Avoid doc-gen4 srcUri.github ENOMEM on Ubuntu 26.04 runners.
     # Upstream workaround: https://github.com/leanprover/cslib/pull/1191
     runs-on: ubuntu-24.04
+    env:
+      PUBLISH_DOCS: >-
+        ${{ github.event_name == 'push' &&
+            github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+      # Give each rerun its own artifact so deploy-pages always finds a single match.
+      PAGES_ARTIFACT: github-pages-${{ github.run_attempt }}
+    outputs:
+      pages_artifact: ${{ steps.upload-pages.outputs.artifact_id && env.PAGES_ARTIFACT }}
 
     steps:
       - uses: actions/checkout@v5
@@ -23,7 +28,7 @@ jobs:
       - name: Build, lint and run regressions
         run: python3 scripts/check.py
       - name: Add swap for documentation generation
-        if: github.event_name == 'push'
+        if: env.PUBLISH_DOCS == 'true'
         shell: bash
         run: |
           free -h
@@ -37,13 +42,42 @@ jobs:
           sudo swapon "$swap_file"
           free -h
           swapon --show
-      - uses: leanprover-community/docgen-action@v1
+      - name: Build API documentation
+        if: env.PUBLISH_DOCS == 'true'
+        uses: leanprover-community/docgen-action@dacc1acc2a3f532cc577266979ba9c36c7593f7c
+        with:
+          build-page: "false"
+          deploy: "false"
         env:
           LEAN_NUM_THREADS: "1"
+      - name: Upload GitHub Pages artifact
+        if: env.PUBLISH_DOCS == 'true'
+        id: upload-pages
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          name: ${{ env.PAGES_ARTIFACT }}
+          path: docs
       - name: Report documentation memory usage
-        if: always() && github.event_name == 'push'
+        if: always() && env.PUBLISH_DOCS == 'true'
         shell: bash
         run: |
           free -h
           swapon --show
           grep -E '^(MemAvailable|SwapTotal|SwapFree|CommitLimit|Committed_AS):' /proc/meminfo
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.pages_artifact != ''
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+        with:
+          artifact_name: ${{ needs.build.outputs.pages_artifact }}

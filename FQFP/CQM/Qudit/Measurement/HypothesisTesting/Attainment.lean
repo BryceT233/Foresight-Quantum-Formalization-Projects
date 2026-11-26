@@ -16,7 +16,7 @@ Authors: Foresight Quantum
 module
 
 public import FQFP.CQM.Qudit.Measurement.HypothesisTesting
-public import FQFP.CQM.Qudit.State.OperatorNorm
+public import FQFP.CQM.Qudit.State.Topology
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Topology.Semicontinuity.Basic
 
@@ -33,23 +33,23 @@ These are the attainment and support-positivity results of physlib's `OptimalHyp
 
 open scoped ComplexOrder
 
-namespace Qudit.Density
+namespace Qudit
 
 variable {H : Qudit}
 
-private lemma continuous_expectation (ρ : Density H) :
-    Continuous (fun A : Operator H => ρ.expectation A) :=
-  Complex.continuous_re.comp <| LinearMap.continuous_of_finiteDimensional
-    ((LinearMap.trace ℂ H.state) ∘ₗ LinearMap.mulRight ℂ ρ.op)
+/-- The order interval of quantum effects is compact in operator norm. -/
+theorem Operator.isCompact_effects : IsCompact (Set.Icc (0 : Operator H) 1) := by
+  have : ProperSpace (Operator H) := FiniteDimensional.proper ℂ _
+  exact Metric.isCompact_of_isClosed_isBounded isClosed_Icc
+    (CStarAlgebra.isBounded_of_bddAbove_of_bddBelow ⟨1, fun _ h => h.2⟩ ⟨0, fun _ h => h.1⟩)
+
+namespace Density
 
 private lemma exists_minimizing_effect (ρ : Density H) (ε : unitInterval) (S : Set (Density H)) :
     ∃ T : Set.Icc (0 : Operator H) 1, ρ.expectation (1 - T.val) ≤ ε ∧
       worstCaseTypeIIError T S = ρ.optimalTypeIIError ε S := by
   let B := Set.Icc (0 : Operator H) 1
-  have : ProperSpace (Operator H) := FiniteDimensional.proper ℂ _
-  have hB : IsCompact B := Metric.isCompact_of_isClosed_isBounded isClosed_Icc
-    (CStarAlgebra.isBounded_of_bddAbove_of_bddBelow ⟨1, fun _ h => h.2⟩ ⟨0, fun _ h => h.1⟩)
-  let : CompactSpace B := isCompact_iff_compactSpace.mp hB
+  let : CompactSpace B := isCompact_iff_compactSpace.mp Operator.isCompact_effects
   let F := {T : B | ρ.expectation (1 - T.val) ≤ ε}
   have hF : IsCompact F := by
     apply IsClosed.isCompact
@@ -128,4 +128,6 @@ theorem optimalTypeIIError_pos_of_absolutelyContinuous (ρ : Density H) {ε : un
     (ρ.expectation_eq_zero_iff (LinearMap.nonneg_iff_isPositive.mp T.2.1)).mpr hr, sub_zero] at hT
   exact (unitInterval.coe_lt_one.mpr hε).not_ge hT
 
-end Qudit.Density
+end Density
+
+end Qudit

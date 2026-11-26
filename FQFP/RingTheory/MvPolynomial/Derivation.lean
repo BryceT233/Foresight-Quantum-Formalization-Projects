@@ -16,6 +16,8 @@ Polynomial vector fields determine derivations through Mathlib's `mkDerivation`.
 ## Main results
 
 * `MvPolynomial.mkDerivation_eq_sum_pderiv`: the finite-coordinate partial derivative formula.
+* `MvPolynomial.mkDerivation_apply_eq_sum_vars`: the corresponding formula over the variables
+  occurring in a polynomial, for any index type.
 * `MvPolynomial.IsHomogeneous.mkDerivation`: homogeneous degree behavior.
 * `MvPolynomial.totalDegree_mkDerivation_le`: the total-degree bound.
 -/
@@ -43,6 +45,17 @@ lemma mkDerivation_eq_sum_pderiv [Fintype σ] (F : σ → MvPolynomial σ R) :
   intro j
   simp [pderiv_X, Pi.single_apply]
 
+/-- At a polynomial `p`, only variables occurring in `p` contribute to the derivation. -/
+lemma mkDerivation_apply_eq_sum_vars (F : σ → MvPolynomial σ R) (p : MvPolynomial σ R) :
+    mkDerivation R F p = ∑ i ∈ p.vars, F i * pderiv i p := by
+  classical
+  calc
+    mkDerivation R F p = (∑ i ∈ p.vars, F i • pderiv i) p := by
+      apply derivation_eq_of_forall_mem_vars
+      intro i hi
+      simp [hi, pderiv_X, Pi.single_apply]
+    _ = _ := by simp [smul_eq_mul]
+
 /- These examples illustrate the existing API without additional wrappers.
 `D.toLinearMap.dualMap` acts on the algebraic dual by `ℓ.comp D.toLinearMap`.
 This is the algebraic content of linearization. -/
@@ -69,17 +82,23 @@ lemma IsHomogeneous.mkDerivation {F : σ → MvPolynomial σ R}
     (hF : ∀ i, (F i).IsHomogeneous r) :
     (mkDerivation R F p).IsHomogeneous (k + r) := by
   classical
-  have hD : MvPolynomial.mkDerivation R F p = ∑ i ∈ p.vars, F i * pderiv i p := by
-    calc
-      MvPolynomial.mkDerivation R F p = (∑ i ∈ p.vars, F i • pderiv i) p := by
-        apply derivation_eq_of_forall_mem_vars
-        intro i hi
-        simp [hi, pderiv_X, Pi.single_apply]
-      _ = _ := by simp [smul_eq_mul]
-  rw [hD]
+  rw [mkDerivation_apply_eq_sum_vars]
   apply IsHomogeneous.sum
   intro i hi
   simpa [Nat.add_sub_cancel, Nat.add_comm] using (hF i).mul (hp.pderiv (i := i))
+
+/-- A partial derivative lowers the total degree by at least one, with subtraction in `ℕ`. -/
+lemma totalDegree_pderiv_le (i : σ) (p : MvPolynomial σ R) :
+    (pderiv i p).totalDegree ≤ p.totalDegree - 1 := by
+  apply Finset.sup_le
+  intro s hs
+  have hc := mem_support_iff.mp hs
+  rw [coeff_pderiv] at hc
+  have h : (s + Finsupp.single i 1).degree ≤ p.totalDegree :=
+    le_totalDegree (mem_support_iff.mpr (left_ne_zero_of_mul hc))
+  simp only [map_add, Finsupp.degree_single] at h
+  change s.degree ≤ p.totalDegree - 1
+  lia
 
 /-- If each vector-field component has degree at most `d`, the resulting total degree is
 bounded by `p.totalDegree + d - 1`. Since `totalDegree 0 = 0`, this includes zero and constants. -/
@@ -91,31 +110,12 @@ lemma totalDegree_mkDerivation_le (F : σ → MvPolynomial σ R) (d : ℕ)
   · rw [totalDegree_eq_zero_iff_eq_C] at hp
     rw [hp, derivation_C, totalDegree_zero]
     exact Nat.zero_le _
-  have hD : mkDerivation R F p = ∑ i ∈ p.vars, F i * pderiv i p := by
-    calc
-      mkDerivation R F p = (∑ i ∈ p.vars, F i • pderiv i) p := by
-        apply derivation_eq_of_forall_mem_vars
-        intro i hi
-        simp [hi, pderiv_X, Pi.single_apply]
-      _ = _ := by simp [smul_eq_mul]
-  have hpartial (i : σ) : (pderiv i p).totalDegree ≤ p.totalDegree - 1 := by
-    apply Finset.sup_le
-    intro s hs
-    have hs' : p.coeff (s + Finsupp.single i 1) ≠ 0 := by
-      have h := mem_support_iff.mp hs
-      rw [coeff_pderiv] at h
-      exact left_ne_zero_of_mul h
-    have hdegree := le_totalDegree (mem_support_iff.mpr hs')
-    change (s + Finsupp.single i 1).degree ≤ p.totalDegree at hdegree
-    change s.degree ≤ p.totalDegree - 1
-    simp only [map_add, Finsupp.degree_single] at hdegree
-    lia
-  rw [hD]
+  rw [mkDerivation_apply_eq_sum_vars]
   apply totalDegree_finsetSum_le
   intro i hi
   have hmul := totalDegree_mul (F i) (pderiv i p)
   have hFi := hF i
-  have hpi := hpartial i
+  have hpi := totalDegree_pderiv_le i p
   lia
 
 /-- For a homogeneous vector field of degree `r`, only the degree block

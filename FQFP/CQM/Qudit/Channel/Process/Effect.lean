@@ -41,8 +41,7 @@ lemma le_one_iff_trace_mul_le {H : Qudit} {E : Operator H} (hE : E.IsPositive) :
     E ≤ 1 ↔ ∀ A : Operator H, A.IsPositive → (E * A).trace ≤ A.trace := by
   constructor
   · intro h A hA
-    have ht := (LinearMap.le_def.mp h).trace_mul_nonneg hA
-    simpa only [sub_mul, one_mul, map_sub, sub_nonneg] using ht
+    simpa only [one_mul] using hA.trace_mul_le_trace_mul_right h
   · intro h
     apply LinearMap.le_def.mpr
     apply (LinearMap.isPositive_iff _).mpr

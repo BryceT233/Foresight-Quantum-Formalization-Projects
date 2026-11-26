@@ -17,64 +17,38 @@ probabilities. The retained receiver purity only involves its typical spectral w
 
 @[expose] public noncomputable section
 open CategoryTheory MonoidalCategory DaggerCategory
-open scoped BigOperators TensorProduct
+open scoped BigOperators ComplexOrder TensorProduct
 namespace Qudit
 
 variable {A B E : Qudit}
 
 open Superoperator
 
-private lemma re_trace_sq_mono {X Y : Operator B} (hX : X.IsPositive) (hY : Y.IsPositive)
-    (h : X ≤ Y) : (X ^ 2).trace.re ≤ (Y ^ 2).trace.re := by
-  have hp := LinearMap.le_def.mp h
-  have h₁ := (Complex.nonneg_iff.mp (hp.trace_mul_nonneg hY)).1
-  have h₂ := (Complex.nonneg_iff.mp (hX.trace_mul_nonneg hp)).1
-  simp only [sub_mul, mul_sub, map_sub, Complex.sub_re] at h₁ h₂
-  change (LinearMap.trace ℂ _ (X * X)).re ≤ (LinearMap.trace ℂ _ (Y * Y)).re
-  linarith only [h₁, h₂]
-
-private lemma trace_conjugate_projection (P X : Operator E) (h : IsStarProjection P) :
-    (conjugate P X).trace = (P * X).trace := by
-  rw [conjugate_apply, Operator.trace, LinearMap.trace_comp_comm', LinearMap.comp_assoc,
-    show P.adjoint = P from h.isSelfAdjoint, show P ∘ₗ P = P from h.isIdempotentElem.eq]
-  exact LinearMap.trace_mul_comm ℂ X P
+private lemma adjoint_comp_self_of_isStarProjection {P : Operator E} (hP : IsStarProjection P) :
+    P.adjoint ∘ₗ P = P := by
+  rw [show P.adjoint = P from hP.isSelfAdjoint]
+  exact hP.isIdempotentElem.eq
 
 private lemma partialTraceLeft_projection_le (P : Operator E) (hP : IsStarProjection P)
     (Q : Operator B) (X : Operator (E ⊗ B)) (hX : X.IsPositive) :
     Operator.partialTraceLeft (conjugate (Operator.tensor P Q) X) ≤
       conjugate Q (Operator.partialTraceLeft X) := by
-  let M (F : Operator E) : Superoperator (E ⊗ B) B :=
-    Operator.partialTraceLeft ∘ₗ conjugate (Operator.tensor F Q)
-  have he : M P + M (1 - P) = conjugate Q ∘ₗ Operator.partialTraceLeft := by
-    apply Operator.tensor_ext
-    intro A C
-    simp only [M, LinearMap.add_apply, LinearMap.comp_apply, Operator.tensor, conjugate_tensor]
-    change Operator.partialTraceLeft (Superoperator.tensor (conjugate P) (conjugate Q)
-      (Operator.tensor A C)) + Operator.partialTraceLeft
-      (Superoperator.tensor (conjugate (1 - P)) (conjugate Q) (Operator.tensor A C)) = _
-    rw [Superoperator.tensor_apply, Superoperator.tensor_apply, Operator.partialTraceLeft_tensor,
-      Operator.partialTraceLeft_tensor, ← add_smul, trace_conjugate_projection _ _ hP,
-      trace_conjugate_projection _ _ hP.one_sub, ← map_add, ← add_mul, add_sub_cancel,
-      one_mul, LinearMap.partialTraceLeft_map, map_smul]
-  have hn : (M (1 - P) X).IsPositive :=
+  let M (R : Operator E) := Operator.partialTraceLeft (conjugate (Operator.tensor R Q) X)
+  have hsum : M P + M (1 - P) = conjugate Q (Operator.partialTraceLeft X) := by
+    simp only [M, Operator.tensor, partialTraceLeft_conjugate_tensor,
+      adjoint_comp_self_of_isStarProjection hP, adjoint_comp_self_of_isStarProjection hP.one_sub]
+    rw [← map_add, ← map_add, ← add_mul, ← map_add, add_sub_cancel, map_one, one_mul]
+  have hn : 0 ≤ M (1 - P) := LinearMap.nonneg_iff_isPositive.mpr
     (hX.conj_adjoint (Operator.tensor (1 - P) Q)).partialTraceLeft
-  have hsum := LinearMap.congr_fun he X
-  change M P X + M (1 - P) X = conjugate Q (Operator.partialTraceLeft X) at hsum
-  change M P X ≤ _
-  rw [← hsum]
-  exact le_add_of_nonneg_right (LinearMap.nonneg_iff_isPositive.mpr hn)
+  exact (le_add_of_nonneg_right hn : M P ≤ _).trans_eq hsum
 
 private lemma tensor_projection (P : Operator E) (Q : Operator B)
     (hp : IsStarProjection P) (hq : IsStarProjection Q) :
     IsStarProjection (Operator.tensor P Q) := by
-  constructor
-  · change TensorProduct.map P Q * TensorProduct.map P Q = _
-    rw [← TensorProduct.map_mul, hp.isIdempotentElem.eq, hq.isIdempotentElem.eq]
-    rfl
-  · change (TensorProduct.map P Q).adjoint = _
-    rw [TensorProduct.adjoint_map, show P.adjoint = P from hp.isSelfAdjoint,
-      show Q.adjoint = Q from hq.isSelfAdjoint]
-    rfl
+  rw [isStarProjection_iff', LinearMap.star_eq_adjoint, Operator.tensor_mul_tensor,
+    Operator.adjoint_tensor, hp.isIdempotentElem.eq, hq.isIdempotentElem.eq,
+    show P.adjoint = P from hp.isSelfAdjoint, show Q.adjoint = Q from hq.isSelfAdjoint]
+  exact ⟨rfl, rfl⟩
 
 private lemma norm_projection_le (P : Operator B) (hp : IsStarProjection P) (x : B.state) :
     ‖P x‖ ≤ ‖x‖ := by
@@ -149,11 +123,9 @@ theorem Dilation.exists_input_of_typical_projections {Φ : QuantumChannel A E}
       (((1 - F) ∘ₗ d.toHom.hom).adjoint ∘ₗ ((1 - F) ∘ₗ d.toHom.hom)) = η.expectation (1 - F) := by
     have he : ((1 - F) ∘ₗ d.toHom.hom).adjoint ∘ₗ ((1 - F) ∘ₗ d.toHom.hom) =
         conjugate d.toHom.hom.adjoint (1 - F) := by
-      rw [LinearMap.adjoint_comp, show (1 - F).adjoint = 1 - F from hf.one_sub.isSelfAdjoint,
-        conjugate_apply, LinearMap.adjoint_adjoint, LinearMap.comp_assoc]
-      have hh : ((1 - F) ∘ₗ (1 - F)) ∘ₗ d.toHom.hom = (1 - F) ∘ₗ d.toHom.hom := by
-        rw [show (1 - F) ∘ₗ (1 - F) = 1 - F from hf.one_sub.isIdempotentElem.eq]
-      exact congrArg (d.toHom.hom.adjoint ∘ₗ ·) hh
+      rw [LinearMap.adjoint_comp, LinearMap.comp_assoc, ← LinearMap.comp_assoc d.toHom.hom,
+        adjoint_comp_self_of_isStarProjection hf.one_sub, conjugate_apply,
+        LinearMap.adjoint_adjoint]
     rw [he]
     exact congrArg Complex.re (trace_conjugate_adjoint d.toHom.hom ρ.op (1 - F))
   have htail := rejection_tensor_le η P Q hp hq
@@ -162,22 +134,24 @@ theorem Dilation.exists_input_of_typical_projections {Φ : QuantumChannel A E}
   rw [hout, henv] at htail
   let Y := conjugate T ρ.op
   have htr : Operator.partialTraceLeft Y = Operator.partialTraceLeft (conjugate F η.op) := by
-    have h := partialTraceLeft_comp_tensor (ofIsometry V) (ofIsometry (𝟙 B))
-    rw [← ofIsometry_tensor, ofIsometry_id, id_comp] at h
-    have he := congrArg (fun Γ => Γ.toSuperoperator Y) h
-    change Operator.partialTraceLeft (conjugate (V ⊗ₘ 𝟙 B).hom (conjugate T ρ.op)) = _ at he
-    have hc : conjugate (V ⊗ₘ 𝟙 B).hom ∘ₗ conjugate T = conjugate F ∘ₗ conjugate d.toHom.hom := by
-      rw [← conjugate_comp, hT, conjugate_comp]
-    exact he.symm.trans (congrArg Operator.partialTraceLeft (LinearMap.congr_fun hc ρ.op))
+    change _ = Operator.partialTraceLeft ((conjugate F ∘ₗ conjugate d.toHom.hom) ρ.op)
+    rw [← conjugate_comp, ← hT, conjugate_comp, LinearMap.comp_apply, hom_tensorHom,
+      partialTraceLeft_conjugate_tensor,
+      show V.hom.adjoint ∘ₗ V.hom = 1 from hom_adjoint_comp_of_isIsometry V,
+      map_one, one_mul, hom_id, conjugate_id, LinearMap.id_apply]
   have hsmall : Operator.partialTraceLeft Y ≤ conjugate Q μ.op := by
     rw [htr]
     exact partialTraceLeft_projection_le P hp Q η.op η.positive
-  have hpur := re_trace_sq_mono (ρ.positive.conj_adjoint T).partialTraceLeft
-    (μ.positive.conj_adjoint Q) hsmall
+  have hY : (Operator.partialTraceLeft Y).IsPositive :=
+    (ρ.positive.conj_adjoint T).partialTraceLeft
+  have hQ : (conjugate Q μ.op).IsPositive := μ.positive.conj_adjoint Q
+  have hpur : ((Operator.partialTraceLeft Y) ^ 2).trace.re ≤ (conjugate Q μ.op ^ 2).trace.re := by
+    rw [pow_two, pow_two]
+    exact Complex.re_le_re
+      ((hY.trace_mul_le_trace_mul_left hsmall).trans (hQ.trace_mul_le_trace_mul_right hsmall))
   have hb := hpur.trans_eq (μ.re_trace_sq_conjugate_typicalProjection u)
-  have hnonneg : 0 ≤ ((Operator.partialTraceLeft Y) ^ 2).trace.re := by
-    exact (Complex.nonneg_iff.mp ((ρ.positive.conj_adjoint T).partialTraceLeft.trace_mul_nonneg
-      (ρ.positive.conj_adjoint T).partialTraceLeft)).1
+  have hnonneg : 0 ≤ ((Operator.partialTraceLeft Y) ^ 2).trace.re :=
+    (Complex.nonneg_iff.mp (hY.trace_mul_nonneg hY)).1
   rw [hL, hloss]
   apply mul_le_mul_of_nonneg_left (add_le_add (mul_le_mul_of_nonneg_left htail (by norm_num))
     (mul_le_mul (Nat.cast_le.mpr (σ.finrank_range_typicalProjection_le w)) hb hnonneg

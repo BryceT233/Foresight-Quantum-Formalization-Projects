@@ -143,13 +143,8 @@ private lemma transfer_adjoint (σ : Density (H ⊗ K)) (z : ℂ) (c : H.state) 
     transfer σ z c e v = inner ℂ ((phase σ z).adjoint
       (((phase σ.partialTraceRight (-z)).adjoint c) ⊗ₜ[ℂ] e)) v := by
   unfold transfer
-  rw [← LinearMap.adjoint_inner_left, ← LinearMap.adjoint_inner_left]
-  congr 2
-  let A := phase σ.partialTraceRight (-z)
-  have he : (Operator.tensor A (1 : Operator K)).adjoint = Operator.tensor A.adjoint 1 := by
-    change (TensorProduct.map A (1 : Operator K)).adjoint = TensorProduct.map A.adjoint 1
-    rw [TensorProduct.adjoint_map, LinearMap.adjoint_one]
-  rw [he, Operator.tensor_apply, one_apply_eq_self]
+  rw [← LinearMap.adjoint_inner_left, ← LinearMap.adjoint_inner_left, Operator.adjoint_tensor,
+    LinearMap.adjoint_one, Operator.tensor_apply, one_apply_eq_self]
 
 private lemma transfer_entire (σ : Density (H ⊗ K)) (c : H.state) (e : K.state)
     (v : (H ⊗ K).state) : StripBoundedEntire (fun z => transfer σ z c e v) := by

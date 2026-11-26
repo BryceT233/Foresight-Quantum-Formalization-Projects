@@ -37,11 +37,15 @@ variable {Store Cell : Type*} {H : Qudit}
 noncomputable def Assertion.compl (A : Assertion Store H) : Assertion Store H := fun σ =>
   ⟨1 - (A σ : Operator H), sub_nonneg.mpr (A σ).2.2, sub_le_self _ (A σ).2.1⟩
 
+/-- An effect and its complement sum to the identity at each store. -/
+theorem Assertion.add_compl_apply (A : Assertion Store H) (σ : Store) :
+    (A σ : Operator H) + (A.compl σ : Operator H) = 1 := by
+  simp [Assertion.compl]
+
 /-- The two complementary expectations sum to the input trace. -/
 theorem CQState.expectation_add_compl (s : CQState Store H) (A : Assertion Store H) :
     s.expectation (A s.store) + s.expectation (A.compl s.store) = s.mass := by
-  rw [← s.expectation_one]
-  simp [expectation, Assertion.compl, sub_mul, Operator.trace]
+  rw [← s.expectation_add, A.add_compl_apply, s.expectation_one]
 
 /-- Complementary branch weights partition the trace in the extended nonnegative reals. -/
 theorem CQState.ofReal_expectation_add_compl (s : CQState Store H) (A : Assertion Store H) :
@@ -55,11 +59,7 @@ theorem CQState.ofReal_expectation_add_compl (s : CQState Store H) (A : Assertio
 theorem Configuration.PostH_add_PostH_compl (c : Configuration Store Cell H)
     (A : Assertion Store H) :
     c.PostH (fun σ => A σ) + c.PostH (fun σ => A.compl σ) = c.terminatingMass := by
-  rw [c.PostH_eq_tsum_terminalWeightAt A.isPositive,
-    c.PostH_eq_tsum_terminalWeightAt A.compl.isPositive, ← tsum_add]
-  exact tsum_congr fun n => by
-    rw [← c.terminalWeightAt_add, ← c.terminalWeightAt_mass]
-    exact congrArg (c.terminalWeightAt n) (funext fun s => s.ofReal_expectation_add_compl A)
+  simp only [← c.PostH_add A.isPositive A.compl.isPositive, A.add_compl_apply, c.PostH_one]
 
 /-- Complementary total triples determine the post-expectation exactly. -/
 theorem PostH_eq_of_complement {A B : Assertion Store H} {p : Command Store Cell H}

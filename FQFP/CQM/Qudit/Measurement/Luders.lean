@@ -142,14 +142,8 @@ lemma luders_ofBasis_branch (b : OrthonormalBasis ι ℂ H.state) (i : ι) (A : 
 /-- Conditioning a basis measurement gives the observed pure basis state. -/
 lemma conditional_luders_ofBasis (b : OrthonormalBasis ι ℂ H.state) (ρ : Density H)
     (i : ι) (hp : 0 < (ofBasis b).luders.probability ρ i) :
-    (ofBasis b).luders.conditional ρ i hp = Density.pure (UnitState.ofBasis b i) := by
-  have ht : ((ofBasis b).luders.probability ρ i : ℂ) = inner ℂ (b i) (ρ.op (b i)) := by
-    rw [Instrument.probability_eq_trace, luders_ofBasis_branch, Operator.trace, map_smul]
-    simp [Operator.trace_outer, smul_eq_mul]
-  apply Density.ext
-  rw [Instrument.op_conditional, luders_ofBasis_branch, ← ht, smul_smul, inv_mul_cancel₀]
-  · exact one_smul _ _
-  · exact_mod_cast hp.ne'
+    (ofBasis b).luders.conditional ρ i hp = Density.pure (UnitState.ofBasis b i) :=
+  (ofBasis b).luders.conditional_eq_of_branch_eq_smul ρ i hp (luders_ofBasis_branch b i ρ.op)
 
 end POVM
 

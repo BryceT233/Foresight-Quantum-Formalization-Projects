@@ -110,10 +110,7 @@ theorem PostH_eq_tsum_terminalWeightAt {A : Store → Operator H} (hA : ∀ σ, 
 theorem postAtE_le_terminalMassAt (n : ℕ) {A : Store → Operator H} (hA : ∀ σ, A σ ≤ 1) :
     c.postAtE n A ≤ c.terminalMassAt n := by
   rw [← terminalWeightAt_mass]
-  apply c.terminalWeightAt_mono
-  intro s
-  exact (ENNReal.ofReal_le_ofReal ((s.expectation_mono (hA _)).trans_eq
-    s.expectation_one)).trans_eq ENNReal.ofReal_coe_nnreal
+  exact c.terminalWeightAt_mono n fun s => s.ofReal_expectation_le_mass (hA _)
 
 /-- The post-expectation collected before depth `N`. -/
 noncomputable def postUpTo (N : ℕ) (A : Store → Operator H) : ℝ≥0∞ :=

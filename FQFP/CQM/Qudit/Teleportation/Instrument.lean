@@ -98,10 +98,8 @@ lemma probability_teleportationMeasurement (ρ : Density Qubit) (i : Fin 4) :
 lemma conditional_teleportationInstrument (ρ : Density Qubit) (i : Fin 4)
     (hp : 0 < teleportationInstrument.probability ρ i) :
     teleportationInstrument.conditional ρ i hp = ρ := by
-  apply Density.ext
-  rw [Instrument.op_conditional, teleportationInstrument_branch,
-    teleportationBranchMap_apply, probability_teleportationInstrument, smul_smul]
-  norm_num
+  apply teleportationInstrument.conditional_eq_of_branch_eq_smul ρ i hp
+  rw [teleportationInstrument_branch, teleportationBranchMap_apply]
 
 /-- Forgetting the observed Bell result gives the existing teleportation channel. -/
 lemma teleportationInstrument_toChannel :

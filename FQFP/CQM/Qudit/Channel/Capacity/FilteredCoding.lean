@@ -26,14 +26,6 @@ open Superoperator
 
 variable {H E B E' B' : Qudit}
 
-private lemma marginal_embedding (V : E' ⟶ E) (W : B' ⟶ B) [IsIsometry V] [IsIsometry W]
-    (A : Operator (E' ⊗ B')) :
-    Operator.partialTraceRight (conjugate (V ⊗ₘ W).hom A) =
-      conjugate V.hom (Operator.partialTraceRight A) := by
-  have h := partialTraceRight_comp_tensor (ofIsometry V) (ofIsometry W)
-  rw [← ofIsometry_tensor] at h
-  exact congrArg (fun F => F.toSuperoperator A) h
-
 private lemma traceNorm_sub_sq_le_three (a b c d : Operator E) :
     LinearMap.traceNorm (a - d) ^ 2 ≤ 3 * (LinearMap.traceNorm (a - b) ^ 2 +
       LinearMap.traceNorm (b - c) ^ 2 + LinearMap.traceNorm (d - c) ^ 2) := by
@@ -68,7 +60,8 @@ theorem Dilation.exists_input_of_compressed_dilation {Φ : QuantumChannel H E} (
     simpa only [U, LinearMap.comp_apply, norm_hom_of_isIsometry] using hT x
   have hcut (A : Operator H) : M U A = conjugate V.hom (C A) := by
     change Operator.partialTraceRight (conjugate ((V ⊗ₘ W).hom ∘ₗ T) A) = _
-    rw [conjugate_comp, LinearMap.comp_apply, marginal_embedding]
+    rw [conjugate_comp, LinearMap.comp_apply, hom_tensorHom, partialTraceRight_conjugate_tensor,
+      show W.hom.adjoint ∘ₗ W.hom = 1 from hom_adjoint_comp_of_isIsometry W, map_one, one_mul]
     rfl
   have h₁ : (𝔼 z, LinearMap.traceNorm (M d.toHom.hom (t z) - M U (t z)) ^ 2) ≤ 4 * loss := by
     simpa only [M, t, loss, L, U, Density.op_pure, LinearMap.comp_apply, conjugate_outer, map_sub,

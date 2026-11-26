@@ -90,9 +90,7 @@ lemma isTracePreserving_discard (H : Qudit) : (discard H).IsTracePreserving := b
 lemma discard_conjugate_apply {H K : Qudit} (f : H.state →ₗ[ℂ] K.state)
     (A : Operator H) :
     discard K (conjugate f A) = Operator.trace ((f.adjoint ∘ₗ f) * A) • 1 := by
-  rw [discard_apply, conjugate_apply, Operator.trace, LinearMap.trace_comp_comm',
-    LinearMap.comp_assoc]
-  rw [← Module.End.mul_eq_comp, LinearMap.trace_mul_comm]
+  rw [discard_apply, trace_conjugate]
 
 /-- The right unit constraint contracts a scalar operator by its trace. -/
 lemma conjugate_rightUnitor_tensor {H : Qudit} (A : Operator H)

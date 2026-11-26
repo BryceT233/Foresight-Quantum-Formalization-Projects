@@ -64,7 +64,6 @@ boundary, not the proof. Keep proof edits trivial during cleanup.
 Names describe mathematical content, not bibliographic provenance.
 `localHomeomorphismOfCentralCharge`, not `bridgelandTheorem_1_2`. Before
 renaming public APIs, check 5-10 nearest Mathlib implementations for precedent.
-See `artifacts/mathlib-naming-notes.md`.
 
 ## Repetition Means Missing API
 
@@ -92,9 +91,3 @@ smell — they mean the synthesizer cannot find the instance, which means
   unification. Pick one form and stick with it in the typeclass parameter.
 - If the instance is only needed in one or two places, a plain argument is
   simpler than a typeclass.
-
-## Reporting & Documentation
-
-Include actual declarations and proposed text in audits — not just file paths
-and line numbers. For Bridgeland theorem statements, prefer paper-faithful
-quotation over paraphrase. Write audit notes to `artifacts/`.

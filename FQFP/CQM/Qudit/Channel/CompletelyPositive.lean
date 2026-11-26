@@ -74,8 +74,7 @@ lemma IsCompletelyPositive.isPositive {Φ : Superoperator H K}
 lemma isCompletelyPositive_id (H : Qudit) :
     IsCompletelyPositive (LinearMap.id : Superoperator H H) := by
   intro R A hA
-  rw [tensor_id_id]
-  exact hA
+  rwa [tensor_id_id]
 
 /-- Composition preserves complete positivity. -/
 lemma IsCompletelyPositive.comp {Φ : Superoperator H K} {Ψ : Superoperator K L}
@@ -174,12 +173,8 @@ lemma IsTracePreserving.tensor {Φ : Superoperator H K} {Ψ : Superoperator L M}
 lemma trace_kraus {ι : Type*} [Fintype ι] (f : ι → H.state →ₗ[ℂ] K.state)
     (A : Operator H) :
     (kraus f A).trace = Operator.trace ((∑ i, (f i).adjoint ∘ₗ f i) * A) := by
-  rw [kraus_apply, Operator.trace, map_sum]
-  simp only [Finset.sum_mul, Operator.trace, map_sum]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [LinearMap.trace_comp_comm', LinearMap.comp_assoc]
-  exact LinearMap.trace_mul_comm ℂ A _
+  change Operator.trace ((∑ i, conjugate (f i)) A) = _
+  simp only [LinearMap.sum_apply, Finset.sum_mul, Operator.trace, map_sum, trace_conjugate]
 
 /-- The usual Kraus completeness identity suffices for trace preservation. -/
 lemma isTracePreserving_kraus {ι : Type*} [Fintype ι]
@@ -204,8 +199,7 @@ lemma isTracePreserving_kraus_iff {ι : Type*} [Fintype ι]
 lemma isTracePreserving_conjugate (f : H.state →ₗ[ℂ] K.state)
     (hf : f.adjoint ∘ₗ f = LinearMap.id) : (conjugate f).IsTracePreserving := by
   intro A
-  change LinearMap.trace ℂ K.state (f ∘ₗ A ∘ₗ f.adjoint) = _
-  rw [LinearMap.trace_comp_comm', LinearMap.comp_assoc, hf, LinearMap.comp_id]
+  rw [trace_conjugate, show f.adjoint ∘ₗ f = 1 from hf, one_mul]
 
 /-- Right partial trace is a finite Kraus sum of basis contractions. -/
 lemma partialTraceRight_eq_kraus {ι : Type*} [Fintype ι]

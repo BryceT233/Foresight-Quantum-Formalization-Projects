@@ -15,6 +15,13 @@ public import Mathlib.Algebra.MonoidAlgebra.Module
 `MvPolynomial.truncTotal` is the paper's `π_N` when its threshold is `N + 1`.
 `AddMonoidAlgebra.supported` is the span of the monomials in a dictionary.
 The truncated operator is linear, although it is generally not a derivation.
+
+`evenDictionary N k` retains the seed `b ^ k` at every order. The bound `N` applies
+to its positive even exponents. Taking `k = 1` gives the second-coordinate dictionary
+and `k = 2` gives the energy dictionary.
+
+`supported_truncatedLie_invariant_iff` characterizes invariance by closure under
+the two degree-raising transitions when the coupling is nonzero.
 -/
 
 @[expose] public section
@@ -54,27 +61,36 @@ private lemma pair_eq_pair_iff (i j k l : ℕ) :
   · rintro ⟨rfl, rfl⟩
     rfl
 
-private lemma pow_mul_pow_mem_supported (S : Set (Fin 2 →₀ ℕ))
-    (i j : ℕ) (h : Finsupp.single 0 i + Finsupp.single 1 j ∈ S) :
+private lemma pow_mul_pow_mem_supported_iff (S : Set (Fin 2 →₀ ℕ)) (i j : ℕ) :
     (X 0 : MvPolynomial (Fin 2) ℝ) ^ i * X 1 ^ j ∈
-      AddMonoidAlgebra.supported ℝ ℝ S := by
-  rw [pow_mul_pow_eq_monomial, AddMonoidAlgebra.supported_eq_span_single]
-  apply Submodule.subset_span
-  exact ⟨_, h, rfl⟩
+      AddMonoidAlgebra.supported ℝ ℝ S ↔ Finsupp.single 0 i + Finsupp.single 1 j ∈ S := by
+  rw [pow_mul_pow_eq_monomial]
+  exact (monomial_mem_restrictSupport ℝ).trans (or_iff_left one_ne_zero)
 
 /-- The paper's odd-exponent dictionary for the first coordinate. -/
 def firstDictionary (N : ℕ) : Set (Fin 2 →₀ ℕ) :=
   {d | d 0 % 2 = 1 ∧ d.degree ≤ N}
 
+/-- Exponents of degree at most `N` whose first coordinate is positive and even. -/
+def positiveEvenIndices (N : ℕ) : Set (Fin 2 →₀ ℕ) :=
+  {d | 0 < d 0 ∧ d 0 % 2 = 0 ∧ d.degree ≤ N}
+
+/-- The even-exponent dictionary with the additional monomial `b ^ k`. -/
+def evenDictionary (N k : ℕ) : Set (Fin 2 →₀ ℕ) :=
+  insert (Finsupp.single 1 k) (positiveEvenIndices N)
+
 /-- The paper's even-exponent dictionary for the second coordinate. -/
-def secondDictionary (N : ℕ) : Set (Fin 2 →₀ ℕ) :=
-  {d | d = Finsupp.single 1 1 ∨
-    (0 < d 0 ∧ d 0 % 2 = 0 ∧ d.degree ≤ N)}
+def secondDictionary (N : ℕ) : Set (Fin 2 →₀ ℕ) := evenDictionary N 1
 
 /-- The paper's even-exponent dictionary for the energy observable. -/
-def energyDictionary (N : ℕ) : Set (Fin 2 →₀ ℕ) :=
-  {d | d = Finsupp.single 1 2 ∨
-    (0 < d 0 ∧ d 0 % 2 = 0 ∧ d.degree ≤ N)}
+def energyDictionary (N : ℕ) : Set (Fin 2 →₀ ℕ) := evenDictionary N 2
+
+/-- Every exponent in the dictionary has even first coordinate, including the seed. -/
+lemma mod_two_eq_zero_of_mem_evenDictionary {N k : ℕ} {d : Fin 2 →₀ ℕ}
+    (hd : d ∈ evenDictionary N k) : d 0 % 2 = 0 := by
+  rcases hd with rfl | hd
+  · simp
+  · exact hd.2.1
 
 /-- The truncated Lie operator `π_N D` on the ambient polynomial ring. -/
 def truncatedLie (α γ β : ℝ) (N : ℕ) :
@@ -143,6 +159,90 @@ private lemma truncatedLie_shift_coefficient (α γ β : ℝ) (N i j : ℕ)
   rw [coeff_truncatedLie_pow_mul_pow α γ β N i j (i + 2) (j - 1) hdegree]
   simp
 
+/-- Closure of an exponent set under the nonlinear transitions retained at order `N`. -/
+structure IsClosedUnderTransitions (N : ℕ) (S : Set (Fin 2 →₀ ℕ)) : Prop where
+  /-- The term with coefficient `β i` raises the second exponent by one. -/
+  rise {i j : ℕ} : Finsupp.single 0 i + Finsupp.single 1 j ∈ S →
+    0 < i → i + j < N → Finsupp.single 0 i + Finsupp.single 1 (j + 1) ∈ S
+  /-- The term with coefficient `-β j` trades one second-coordinate power for two first powers. -/
+  shift {i j : ℕ} : Finsupp.single 0 i + Finsupp.single 1 j ∈ S →
+    0 < j → i + j < N → Finsupp.single 0 (i + 2) + Finsupp.single 1 (j - 1) ∈ S
+
+private lemma index_mem_of_supported {S : Set (Fin 2 →₀ ℕ)}
+    {p : MvPolynomial (Fin 2) ℝ} {d : Fin 2 →₀ ℕ}
+    (hp : p ∈ AddMonoidAlgebra.supported ℝ ℝ S)
+    (hc : p.coeff d ≠ 0) : d ∈ S :=
+  (mem_restrictSupport_iff ℝ).mp hp (mem_support_iff.mpr hc)
+
+/-- In a truncated invariant monomial dictionary, the first nonlinear
+transition must be present whenever its coefficient is nonzero. -/
+theorem dictionary_contains_rise (α γ β : ℝ) (hβ : β ≠ 0) (N : ℕ)
+    (S : Set (Fin 2 →₀ ℕ))
+    (hInv : ∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ S,
+      truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ S)
+    (i j : ℕ) (hi : 0 < i) (hdegree : i + j + 1 ≤ N)
+    (hsource : Finsupp.single 0 i + Finsupp.single 1 j ∈ S) :
+    Finsupp.single 0 i + Finsupp.single 1 (j + 1) ∈ S := by
+  apply index_mem_of_supported
+    (hInv _ ((pow_mul_pow_mem_supported_iff S i j).2 hsource))
+  rw [truncatedLie_rise_coefficient α γ β N i j hdegree]
+  exact mul_ne_zero hβ (by exact_mod_cast (Nat.ne_of_gt hi))
+
+/-- In a truncated invariant monomial dictionary, the second nonlinear
+transition must be present whenever its coefficient is nonzero. -/
+theorem dictionary_contains_shift (α γ β : ℝ) (hβ : β ≠ 0) (N : ℕ)
+    (S : Set (Fin 2 →₀ ℕ))
+    (hInv : ∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ S,
+      truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ S)
+    (i j : ℕ) (hj : 0 < j) (hdegree : i + 2 + (j - 1) ≤ N)
+    (hsource : Finsupp.single 0 i + Finsupp.single 1 j ∈ S) :
+    Finsupp.single 0 (i + 2) + Finsupp.single 1 (j - 1) ∈ S := by
+  apply index_mem_of_supported
+    (hInv _ ((pow_mul_pow_mem_supported_iff S i j).2 hsource))
+  rw [truncatedLie_shift_coefficient α γ β N i j hdegree]
+  exact neg_ne_zero.mpr (mul_ne_zero hβ (by exact_mod_cast (Nat.ne_of_gt hj)))
+
+/-- A monomial span is invariant exactly when nonzero coupling implies closure under the
+retained transitions. In particular every monomial span is invariant when `β = 0`. -/
+theorem supported_truncatedLie_invariant_iff (α γ β : ℝ) (N : ℕ) (S : Set (Fin 2 →₀ ℕ)) :
+    (∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ S,
+      truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ S) ↔
+      (β ≠ 0 → IsClosedUnderTransitions N S) := by
+  constructor
+  · intro hInv hβ
+    exact ⟨fun hs hi hdeg => dictionary_contains_rise α γ β hβ N S hInv _ _ hi hdeg hs,
+      fun hs hj hdeg => dictionary_contains_shift α γ β hβ N S hInv _ _ hj (by lia) hs⟩
+  · intro hS
+    let V := restrictSupport ℝ S
+    have hterm (c : ℝ) (i j : ℕ)
+        (hmem : c ≠ 0 → i + j ≤ N → Finsupp.single 0 i + Finsupp.single 1 j ∈ S) :
+        C c * (if i + j ≤ N then X 0 ^ i * X 1 ^ j else 0) ∈ V := by
+      by_cases hc : c = 0
+      · simp [hc]
+      rw [C_mul']
+      apply V.smul_mem
+      split_ifs with hdegree
+      · exact (pow_mul_pow_mem_supported_iff S i j).2 (hmem hc hdegree)
+      · exact V.zero_mem
+    change restrictSupport ℝ S ≤ V.comap (truncatedLie α γ β N)
+    rw [restrictSupport_eq_span, Submodule.span_le, Set.image_subset_iff]
+    intro d hd
+    change truncatedLie α γ β N (monomial d 1) ∈ V
+    rw [monomial_decompose d, truncatedLie_pow_mul_pow, neg_mul]
+    have hd' : Finsupp.single 0 (d 0) + Finsupp.single 1 (d 1) ∈ S := index_decompose d ▸ hd
+    apply V.sub_mem
+    · apply V.add_mem
+      · exact V.neg_mem (hterm _ _ _ fun _ _ => hd')
+      · rw [Nat.add_assoc]
+        apply hterm
+        intro hc hdegree
+        exact (hS (left_ne_zero_of_mul hc)).rise hd'
+          (Nat.pos_of_ne_zero (by exact_mod_cast right_ne_zero_of_mul hc)) (by lia)
+    · apply hterm
+      intro hc hdegree
+      have hj : 0 < d 1 := Nat.pos_of_ne_zero (by exact_mod_cast right_ne_zero_of_mul hc)
+      exact (hS (left_ne_zero_of_mul hc)).shift hd' hj (by lia)
+
 /-- A monomial support closed under the two retained nonlinear transitions is
 invariant under the truncated Lie operator. -/
 theorem supported_truncatedLie_invariant (α γ β : ℝ) (N : ℕ)
@@ -154,57 +254,9 @@ theorem supported_truncatedLie_invariant (α γ β : ℝ) (N : ℕ)
       0 < j → i + 2 + (j - 1) ≤ N →
         Finsupp.single 0 (i + 2) + Finsupp.single 1 (j - 1) ∈ S) :
     ∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ S,
-      truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ S := by
-  let V := AddMonoidAlgebra.supported ℝ ℝ S
-  have hscalar (c : ℝ) {p : MvPolynomial (Fin 2) ℝ} (hp : p ∈ V) :
-      C c * p ∈ V := by
-    simpa only [Algebra.smul_def, C_eq_algebraMap] using V.smul_mem c hp
-  have hgen (d : Fin 2 →₀ ℕ) (hd : d ∈ S) :
-      truncatedLie α γ β N (monomial d 1) ∈ V := by
-    rw [monomial_decompose d, truncatedLie_pow_mul_pow]
-    have hd' : Finsupp.single 0 (d 0) + Finsupp.single 1 (d 1) ∈ S := by
-      simpa only [← index_decompose d] using hd
-    have hbase : (if d 0 + d 1 ≤ N then
-        (X 0 : MvPolynomial (Fin 2) ℝ) ^ (d 0) * X 1 ^ (d 1) else 0) ∈ V := by
-      split_ifs
-      · exact pow_mul_pow_mem_supported S _ _ hd'
-      · exact V.zero_mem
-    have hnext : C (β * (d 0 : ℝ)) *
-        (if d 0 + d 1 + 1 ≤ N then
-          (X 0 : MvPolynomial (Fin 2) ℝ) ^ (d 0) * X 1 ^ (d 1 + 1) else 0) ∈ V := by
-      by_cases hi : d 0 = 0
-      · simp [hi]
-      · apply hscalar
-        split_ifs with hdegree
-        · exact pow_mul_pow_mem_supported S _ _
-            (hrise _ _ hd' (Nat.pos_of_ne_zero hi) hdegree)
-        · exact V.zero_mem
-    have hlast : C (β * (d 1 : ℝ)) *
-        (if d 0 + 2 + (d 1 - 1) ≤ N then
-          (X 0 : MvPolynomial (Fin 2) ℝ) ^ (d 0 + 2) * X 1 ^ (d 1 - 1) else 0) ∈ V := by
-      by_cases hj : d 1 = 0
-      · simp [hj]
-      · apply hscalar
-        split_ifs with hdegree
-        · exact pow_mul_pow_mem_supported S _ _
-            (hshift _ _ hd' (Nat.pos_of_ne_zero hj) hdegree)
-        · exact V.zero_mem
-    have hfirst : -C (α * (d 0 : ℝ) + γ * (d 1 : ℝ)) *
-        (if d 0 + d 1 ≤ N then
-          (X 0 : MvPolynomial (Fin 2) ℝ) ^ (d 0) * X 1 ^ (d 1) else 0) ∈ V := by
-      simpa only [neg_mul] using
-        V.neg_mem (hscalar (α * (d 0 : ℝ) + γ * (d 1 : ℝ)) hbase)
-    exact V.sub_mem (V.add_mem hfirst hnext) hlast
-  have hle : Submodule.span ℝ
-      ((fun d : Fin 2 →₀ ℕ => monomial d (1 : ℝ)) '' S) ≤
-      V.comap (truncatedLie α γ β N) := by
-    apply Submodule.span_le.mpr
-    rintro p ⟨d, hd, rfl⟩
-    exact hgen d hd
-  intro p hp
-  apply hle
-  simpa only [AddMonoidAlgebra.supported_eq_span_single,
-    MvPolynomial.single_eq_monomial] using hp
+      truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ S :=
+  (supported_truncatedLie_invariant_iff α γ β N S).2 fun _ =>
+    ⟨fun hs hi hdeg => hrise _ _ hs hi hdeg, fun hs hj hdeg => hshift _ _ hs hj (by lia)⟩
 
 /-- The odd-exponent dictionary is invariant under the truncated operator. -/
 theorem firstDictionary_invariant (α γ β : ℝ) (N : ℕ) :
@@ -223,48 +275,20 @@ theorem firstDictionary_invariant (α γ β : ℝ) (N : ℕ) :
       simpa [firstDictionary, Nat.add_mod] using hodd
     · simpa only [pair_degree] using hdegree
 
-private theorem evenDictionary_invariant (α γ β : ℝ) (N k : ℕ) :
-    ∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ
-        {d : Fin 2 →₀ ℕ | d = Finsupp.single 1 k ∨
-          (0 < d 0 ∧ d 0 % 2 = 0 ∧ d.degree ≤ N)},
-      truncatedLie α γ β N p ∈
-        AddMonoidAlgebra.supported ℝ ℝ
-          {d : Fin 2 →₀ ℕ | d = Finsupp.single 1 k ∨
-            (0 < d 0 ∧ d 0 % 2 = 0 ∧ d.degree ≤ N)} := by
+/-- Adding any pure second-coordinate power to the positive even exponents gives an
+invariant dictionary for the truncated operator. -/
+theorem evenDictionary_invariant (α γ β : ℝ) (N k : ℕ) :
+    ∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ (evenDictionary N k),
+      truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ (evenDictionary N k) := by
   apply supported_truncatedLie_invariant
   · intro i j hs hi hdegree
-    rcases hs with hseed | htail
-    · have hi0 : i = 0 := by
-        have h := congrArg (fun d : Fin 2 →₀ ℕ => d 0) hseed
-        simpa using h
-      lia
-    · right
-      refine ⟨by simpa using htail.1, ?_, ?_⟩
-      · simpa using htail.2.1
-      · simpa only [pair_degree, add_assoc] using hdegree
-  · intro i j hs hj hdegree
-    rcases hs with hseed | htail
-    · have hi0 : i = 0 := by
-        have h := congrArg (fun d : Fin 2 →₀ ℕ => d 0) hseed
-        simpa using h
-      right
-      have hval : (Finsupp.single (0 : Fin 2) (i + 2) +
-          Finsupp.single 1 (j - 1) : Fin 2 →₀ ℕ) 0 =
-          i + 2 := by simp
-      refine ⟨?_, ?_, ?_⟩
-      · rw [hval]; lia
-      · rw [hval]; simp [hi0]
-      · simpa only [pair_degree] using hdegree
-    · right
-      have hval : (Finsupp.single (0 : Fin 2) (i + 2) +
-          Finsupp.single 1 (j - 1) : Fin 2 →₀ ℕ) 0 =
-          i + 2 := by simp
-      refine ⟨?_, ?_, ?_⟩
-      · rw [hval]; lia
-      · have heven : i % 2 = 0 := by simpa using htail.2.1
-        rw [hval]
-        simpa [Nat.add_mod] using heven
-      · simpa only [pair_degree] using hdegree
+    right
+    refine ⟨by simpa using hi, ?_, by simpa only [pair_degree, Nat.add_assoc] using hdegree⟩
+    simpa using mod_two_eq_zero_of_mem_evenDictionary hs
+  · intro i j hs _ hdegree
+    right
+    refine ⟨by simp, ?_, by simpa only [pair_degree] using hdegree⟩
+    simpa [Nat.add_mod] using mod_two_eq_zero_of_mem_evenDictionary hs
 
 /-- The second-coordinate dictionary is invariant under truncation. -/
 theorem secondDictionary_invariant (α γ β : ℝ) (N : ℕ) :
@@ -284,90 +308,28 @@ theorem energyDictionary_invariant (α γ β : ℝ) (N : ℕ) :
 theorem first_mem_firstDictionary (N : ℕ) (hN : 1 ≤ N) :
     (X 0 : MvPolynomial (Fin 2) ℝ) ∈
       AddMonoidAlgebra.supported ℝ ℝ (firstDictionary N) := by
-  have h : Finsupp.single 0 1 + Finsupp.single 1 0 ∈ firstDictionary N := by
-    constructor
-    · simp
-    · simpa only [pair_degree] using hN
-  simpa using pow_mul_pow_mem_supported (firstDictionary N) 1 0 h
+  change X 0 ∈ restrictSupport ℝ (firstDictionary N)
+  simpa [X, firstDictionary, Finsupp.degree_single] using hN
 
 /-- The even-exponent dictionary contains the second coordinate. -/
 theorem second_mem_secondDictionary (N : ℕ) :
     (X 1 : MvPolynomial (Fin 2) ℝ) ∈
       AddMonoidAlgebra.supported ℝ ℝ (secondDictionary N) := by
-  have h : Finsupp.single 0 0 + Finsupp.single 1 1 ∈ secondDictionary N := by
-    left
-    simp
-  simpa using pow_mul_pow_mem_supported (secondDictionary N) 0 1 h
+  change X 1 ∈ restrictSupport ℝ (secondDictionary N)
+  simp [X, secondDictionary, evenDictionary]
 
 /-- The even-exponent dictionary contains the energy observable. -/
 theorem energy_mem_energyDictionary (N : ℕ) (hN : 2 ≤ N) :
     energy ∈ AddMonoidAlgebra.supported ℝ ℝ (energyDictionary N) := by
-  let V := AddMonoidAlgebra.supported ℝ ℝ (energyDictionary N)
-  have ha : (X 0 : MvPolynomial (Fin 2) ℝ) ^ 2 ∈ V := by
-    have h : Finsupp.single 0 2 + Finsupp.single 1 0 ∈ energyDictionary N := by
-      right
-      refine ⟨by simp, by simp, ?_⟩
-      simpa only [pair_degree] using hN
-    simpa using pow_mul_pow_mem_supported (energyDictionary N) 2 0 h
-  have hb : (X 1 : MvPolynomial (Fin 2) ℝ) ^ 2 ∈ V := by
-    have h : Finsupp.single 0 0 + Finsupp.single 1 2 ∈ energyDictionary N := by
-      left
-      simp
-    simpa using pow_mul_pow_mem_supported (energyDictionary N) 0 2 h
-  change C (1 / 2 : ℝ) * (X 0 ^ 2 + X 1 ^ 2) ∈ V
-  rw [mul_add]
-  apply V.add_mem
-  · simpa only [Algebra.smul_def, C_eq_algebraMap] using V.smul_mem (1 / 2 : ℝ) ha
-  · simpa only [Algebra.smul_def, C_eq_algebraMap] using V.smul_mem (1 / 2 : ℝ) hb
+  change energy ∈ restrictSupport ℝ (energyDictionary N)
+  rw [energy, C_mul']
+  apply Submodule.smul_mem
+  apply Submodule.add_mem <;>
+    simp [X_pow_eq_monomial, energyDictionary, evenDictionary, positiveEvenIndices,
+      Finsupp.degree_single, hN]
 
-private lemma index_mem_of_supported {S : Set (Fin 2 →₀ ℕ)}
-    {p : MvPolynomial (Fin 2) ℝ} {d : Fin 2 →₀ ℕ}
-    (hp : p ∈ AddMonoidAlgebra.supported ℝ ℝ S)
-    (hc : p.coeff d ≠ 0) : d ∈ S := by
-  by_contra hd
-  exact hc ((AddMonoidAlgebra.mem_supported' (R := ℝ) (S := ℝ)).mp hp d hd)
-
-private lemma pair_mem_of_pow_mul_pow_supported {S : Set (Fin 2 →₀ ℕ)}
-    (i j : ℕ)
-    (h : (X 0 : MvPolynomial (Fin 2) ℝ) ^ i * X 1 ^ j ∈
-      AddMonoidAlgebra.supported ℝ ℝ S) :
-    Finsupp.single 0 i + Finsupp.single 1 j ∈ S := by
-  apply index_mem_of_supported h
-  rw [pow_mul_pow_eq_monomial, coeff_monomial]
-  simp
-
-/-- In a truncated invariant monomial dictionary, the first nonlinear
-transition must be present whenever its coefficient is nonzero. -/
-theorem dictionary_contains_rise (α γ β : ℝ) (hβ : β ≠ 0) (N : ℕ)
-    (S : Set (Fin 2 →₀ ℕ))
-    (hInv : ∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ S,
-      truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ S)
-    (i j : ℕ) (hi : 0 < i) (hdegree : i + j + 1 ≤ N)
-    (hsource : Finsupp.single 0 i + Finsupp.single 1 j ∈ S) :
-    Finsupp.single 0 i + Finsupp.single 1 (j + 1) ∈ S := by
-  apply index_mem_of_supported
-    (hInv _ (pow_mul_pow_mem_supported S i j hsource))
-  rw [truncatedLie_rise_coefficient α γ β N i j hdegree]
-  exact mul_ne_zero hβ (by exact_mod_cast (Nat.ne_of_gt hi))
-
-/-- In a truncated invariant monomial dictionary, the second nonlinear
-transition must be present whenever its coefficient is nonzero. -/
-theorem dictionary_contains_shift (α γ β : ℝ) (hβ : β ≠ 0) (N : ℕ)
-    (S : Set (Fin 2 →₀ ℕ))
-    (hInv : ∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ S,
-      truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ S)
-    (i j : ℕ) (hj : 0 < j) (hdegree : i + 2 + (j - 1) ≤ N)
-    (hsource : Finsupp.single 0 i + Finsupp.single 1 j ∈ S) :
-    Finsupp.single 0 (i + 2) + Finsupp.single 1 (j - 1) ∈ S := by
-  apply index_mem_of_supported
-    (hInv _ (pow_mul_pow_mem_supported S i j hsource))
-  rw [truncatedLie_shift_coefficient α γ β N i j hdegree]
-  exact neg_ne_zero.mpr (mul_ne_zero hβ (by exact_mod_cast (Nat.ne_of_gt hj)))
-
-private lemma dictionary_contains_b_powers (α γ β : ℝ) (hβ : β ≠ 0)
-    (N : ℕ) (S : Set (Fin 2 →₀ ℕ))
-    (hInv : ∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ S,
-      truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ S)
+private lemma IsClosedUnderTransitions.contains_b_powers {N : ℕ} {S : Set (Fin 2 →₀ ℕ)}
+    (hS : IsClosedUnderTransitions N S)
     (i : ℕ) (hi : 0 < i)
     (hseed : Finsupp.single 0 i + Finsupp.single 1 0 ∈ S) :
     ∀ j, i + j ≤ N → Finsupp.single 0 i + Finsupp.single 1 j ∈ S := by
@@ -378,17 +340,14 @@ private lemma dictionary_contains_b_powers (α γ β : ℝ) (hβ : β ≠ 0)
     exact hseed
   | succ j ih =>
     intro hdegree
-    exact dictionary_contains_rise α γ β hβ N S hInv i j hi (by lia)
-      (ih (by lia))
+    exact hS.rise (ih (by lia)) hi (by lia)
 
-private lemma dictionary_contains_positive_tail (α γ β : ℝ) (hβ : β ≠ 0)
-    (N : ℕ) (S : Set (Fin 2 →₀ ℕ))
-    (hInv : ∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ S,
-      truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ S)
+private lemma IsClosedUnderTransitions.contains_positive_tail {N : ℕ} {S : Set (Fin 2 →₀ ℕ)}
+    (hS : IsClosedUnderTransitions N S)
     (k : ℕ) (hk : 0 < k)
-    (hseed : Finsupp.single 0 k + Finsupp.single 1 0 ∈ S) :
-    ∀ r j, k + 2 * r + j ≤ N →
-      Finsupp.single 0 (k + 2 * r) + Finsupp.single 1 j ∈ S := by
+    (hseed : Finsupp.single 0 k + Finsupp.single 1 0 ∈ S)
+    {d : Fin 2 →₀ ℕ} (hstart : k ≤ d 0) (hparity : d 0 % 2 = k % 2)
+    (hdegree : d.degree ≤ N) : d ∈ S := by
   have hpure : ∀ r, k + 2 * r ≤ N →
       Finsupp.single 0 (k + 2 * r) + Finsupp.single 1 0 ∈ S := by
     intro r
@@ -399,14 +358,16 @@ private lemma dictionary_contains_positive_tail (α γ β : ℝ) (hβ : β ≠ 0
     | succ r ih =>
       intro hdegree
       have hprev := ih (by lia)
-      have hnext := dictionary_contains_rise α γ β hβ N S hInv
-        (k + 2 * r) 0 (by lia) (by lia) hprev
-      have hshift := dictionary_contains_shift α γ β hβ N S hInv
-        (k + 2 * r) 1 (by lia) (by lia) hnext
-      convert hshift using 1
-  intro r j hdegree
-  exact dictionary_contains_b_powers α γ β hβ N S hInv (k + 2 * r)
-    (by lia) (hpure r (by lia)) j (by lia)
+      have hnext := hS.rise hprev (by lia) (by lia)
+      exact hS.shift hnext (by lia) (by lia)
+  let r := (d 0 - k) / 2
+  have hrow : k + 2 * r = d 0 := by
+    dsimp [r]
+    lia
+  rw [index_degree] at hdegree
+  have hbase : Finsupp.single 0 (d 0) + Finsupp.single 1 0 ∈ S := hrow ▸ hpure r (by lia)
+  rw [index_decompose d]
+  exact hS.contains_b_powers (d 0) (by lia) hbase (d 1) hdegree
 
 /-- Every truncated invariant monomial dictionary containing the first
 coordinate contains all odd-exponent monomials through degree `N`. -/
@@ -418,49 +379,18 @@ theorem firstDictionary_minimal (α γ β : ℝ) (hβ : β ≠ 0) (N : ℕ)
       truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ S) :
     firstDictionary N ⊆ S := by
   have hseed : Finsupp.single 0 1 + Finsupp.single 1 0 ∈ S :=
-    pair_mem_of_pow_mul_pow_supported 1 0 (by simpa using hX)
+    (pow_mul_pow_mem_supported_iff S 1 0).1 (by simpa using hX)
+  have hS := (supported_truncatedLie_invariant_iff α γ β N S).mp hInv hβ
   intro d hd
-  let r := d 0 / 2
-  have hi : d 0 = 1 + 2 * r := by
-    have hodd : d 0 % 2 = 1 := hd.1
-    dsimp [r]
-    lia
-  have hdegree : 1 + 2 * r + d 1 ≤ N := by
-    have h := hd.2
-    rw [index_degree, hi] at h
-    lia
-  have htail := dictionary_contains_positive_tail α γ β hβ N S hInv
-    1 (by lia) hseed r (d 1) hdegree
-  have heq : d = Finsupp.single 0 (1 + 2 * r) + Finsupp.single 1 (d 1) := by
-    calc
-      d = Finsupp.single 0 (d 0) + Finsupp.single 1 (d 1) := index_decompose d
-      _ = _ := by rw [hi]
-  exact heq.symm ▸ htail
+  have hodd : d 0 % 2 = 1 := hd.1
+  exact hS.contains_positive_tail 1 (by lia) hseed (by lia) hodd hd.2
 
-private lemma even_tail_subset_of_seed (α γ β : ℝ) (hβ : β ≠ 0) (N : ℕ)
-    (S : Set (Fin 2 →₀ ℕ))
-    (hInv : ∀ p ∈ AddMonoidAlgebra.supported ℝ ℝ S,
-      truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ S)
+private lemma IsClosedUnderTransitions.positiveEvenIndices_subset {N : ℕ} {S : Set (Fin 2 →₀ ℕ)}
+    (hS : IsClosedUnderTransitions N S)
     (hseed : Finsupp.single 0 2 + Finsupp.single 1 0 ∈ S) :
-    {d : Fin 2 →₀ ℕ | 0 < d 0 ∧ d 0 % 2 = 0 ∧ d.degree ≤ N} ⊆ S := by
-  intro d htail
-  let r := d 0 / 2 - 1
-  have hi : d 0 = 2 + 2 * r := by
-    have heven : d 0 % 2 = 0 := htail.2.1
-    have hpos : 0 < d 0 := htail.1
-    dsimp [r]
-    lia
-  have hdegree : 2 + 2 * r + d 1 ≤ N := by
-    have h := htail.2.2
-    rw [index_degree, hi] at h
-    lia
-  have hresult := dictionary_contains_positive_tail α γ β hβ N S hInv
-    2 (by lia) hseed r (d 1) hdegree
-  have heq : d = Finsupp.single 0 (2 + 2 * r) + Finsupp.single 1 (d 1) := by
-    calc
-      d = Finsupp.single 0 (d 0) + Finsupp.single 1 (d 1) := index_decompose d
-      _ = _ := by rw [hi]
-  exact heq.symm ▸ hresult
+    positiveEvenIndices N ⊆ S := by
+  rintro d ⟨hpos, heven, hdegree⟩
+  exact hS.contains_positive_tail 2 (by lia) hseed (by lia) heven hdegree
 
 /-- Every truncated invariant monomial dictionary containing the second
 coordinate contains its even-exponent tail and the seed `b`. -/
@@ -472,7 +402,8 @@ theorem secondDictionary_minimal (α γ β : ℝ) (hβ : β ≠ 0) (N : ℕ)
       truncatedLie α γ β N p ∈ AddMonoidAlgebra.supported ℝ ℝ S) :
     secondDictionary N ⊆ S := by
   have hseed : Finsupp.single 0 0 + Finsupp.single 1 1 ∈ S :=
-    pair_mem_of_pow_mul_pow_supported 0 1 (by simpa using hX)
+    (pow_mul_pow_mem_supported_iff S 0 1).1 (by simpa using hX)
+  have hS := (supported_truncatedLie_invariant_iff α γ β N S).mp hInv hβ
   intro d hd
   rcases hd with hsingle | htail
   · simpa [hsingle] using hseed
@@ -483,9 +414,8 @@ theorem secondDictionary_minimal (α γ β : ℝ) (hβ : β ≠ 0) (N : ℕ)
       have heven := htail.2.1
       lia
     have hpure : Finsupp.single 0 2 + Finsupp.single 1 0 ∈ S := by
-      simpa using dictionary_contains_shift α γ β hβ N S hInv
-        0 1 (by lia) (by lia) hseed
-    exact even_tail_subset_of_seed α γ β hβ N S hInv hpure htail
+      simpa using hS.shift hseed (by lia) (by lia)
+    exact hS.positiveEvenIndices_subset hpure htail
 
 private lemma energy_coeff_first_sq :
     energy.coeff (Finsupp.single 0 2 + Finsupp.single 1 0) = 1 / 2 := by
@@ -513,9 +443,7 @@ theorem energyDictionary_minimal (α γ β : ℝ) (hβ : β ≠ 0)
     apply index_mem_of_supported hE
     rw [energy_coeff_second_sq]
     norm_num
-  intro d hd
-  rcases hd with hsingle | htail
-  · simpa [hsingle] using hsecond
-  · exact even_tail_subset_of_seed α γ β hβ N S hInv hfirst htail
+  have hS := (supported_truncatedLie_invariant_iff α γ β N S).mp hInv hβ
+  exact Set.insert_subset (by simpa using hsecond) (hS.positiveEvenIndices_subset hfirst)
 
 end TwoModeBurgers

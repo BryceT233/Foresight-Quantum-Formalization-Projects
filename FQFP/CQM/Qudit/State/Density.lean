@@ -62,6 +62,29 @@ variable {H : Qudit}
 
 attribute [simp] trace_one
 
+/-- The trace of a weighted density operator is its weight. -/
+lemma trace_smul_op (ρ : Density H) (a : ℂ) : (a • ρ.op).trace = a := by
+  simpa only [Operator.trace, map_smul, smul_eq_mul, mul_one] using congrArg (a * ·) ρ.trace_one
+
+/-- Divide a positive operator by its nonzero trace, given explicitly as `t`. -/
+def normalize {A : Operator H} (hA : A.IsPositive) {t : ℂ} (htr : A.trace = t)
+    (ht : t ≠ 0) : Density H where
+  op := t⁻¹ • A
+  positive := hA.smul_of_nonneg (inv_nonneg_of_nonneg (htr ▸ hA.trace_nonneg))
+  trace_one := by
+    rw [Operator.trace, map_smul]
+    change t⁻¹ * A.trace = 1
+    rw [htr, inv_mul_cancel₀ ht]
+
+/-- Normalizing a nonzero multiple of a density operator recovers the original state. -/
+lemma normalize_eq_of_eq_smul {A : Operator H} (hA : A.IsPositive) {t : ℂ}
+    (htr : A.trace = t) (ht : t ≠ 0) {σ : Density H} {a : ℂ} (h : A = a • σ.op) :
+    normalize hA htr ht = σ := by
+  have ha : t = a := by rw [← htr, h, σ.trace_smul_op]
+  apply Density.ext
+  change t⁻¹ • A = σ.op
+  rw [h, ← ha, inv_smul_smul₀ ht]
+
 /-- A density operator is self-adjoint. -/
 @[simp]
 lemma adjoint_op (ρ : Density H) : ρ.op.adjoint = ρ.op := ρ.positive.adjoint_eq
@@ -271,8 +294,8 @@ lemma expectation_nonneg (ρ : Density H) {A : Operator H} (hA : A.IsPositive) :
 /-- An observable bounded above by the identity has expectation at most one. -/
 lemma expectation_le_one (ρ : Density H) {A : Operator H} (hA : A ≤ 1) :
     ρ.expectation A ≤ 1 := by
-  have h := ρ.expectation_nonneg (LinearMap.le_def.mp hA)
-  simpa only [expectation_sub, expectation_one, sub_nonneg] using h
+  rw [← ρ.expectation_one]
+  exact Complex.re_le_re (ρ.positive.trace_mul_le_trace_mul_right hA)
 
 /-- An operator effect has an expectation in the unit interval. -/
 lemma expectation_mem_Icc (ρ : Density H) {A : Operator H} (h₀ : 0 ≤ A) (h₁ : A ≤ 1) :

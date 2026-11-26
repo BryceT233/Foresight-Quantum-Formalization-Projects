@@ -18,9 +18,8 @@ variable {σ : Type*} [Finite σ]
 
 /-- The lifted approximation retaining degrees `0, …, N`. -/
 def carlemanLiftedApproximant (F : σ → MvPolynomial σ ℝ) (x₀ : σ → ℝ) (N : ℕ) :
-    ℝ → Module.Dual ℝ (truncTotal σ ℝ (N + 1)).range := by
-  letI : Module.Finite ℝ (truncTotal σ ℝ (N + 1)).range := finite_range_truncTotal (N + 1)
-  exact Classical.choose
+    ℝ → Module.Dual ℝ (truncTotal σ ℝ (N + 1)).range :=
+  Classical.choose
     ((compressedDerivation (mkDerivation ℝ F) (N + 1)).existsUnique_dualTrajectory
       ((aeval x₀).toLinearMap.comp (truncTotal σ ℝ (N + 1)).range.subtype)).exists
 
@@ -30,9 +29,8 @@ lemma carlemanLiftedApproximant_spec
         (aeval x₀).toLinearMap.comp (truncTotal σ ℝ (N + 1)).range.subtype ∧
       ∀ t p, HasDerivAt (fun s => carlemanLiftedApproximant F x₀ N s p)
         ((compressedDerivation (mkDerivation ℝ F) (N + 1)).dualMap
-          (carlemanLiftedApproximant F x₀ N t) p) t := by
-  let : Module.Finite ℝ (truncTotal σ ℝ (N + 1)).range := finite_range_truncTotal (N + 1)
-  exact Classical.choose_spec
+          (carlemanLiftedApproximant F x₀ N t) p) t :=
+  Classical.choose_spec
     ((compressedDerivation (mkDerivation ℝ F) (N + 1)).existsUnique_dualTrajectory
       ((aeval x₀).toLinearMap.comp (truncTotal σ ℝ (N + 1)).range.subtype)).exists
 
@@ -56,9 +54,8 @@ lemma eq_carlemanLiftedApproximant
     (hinit : Y 0 = (aeval x₀).toLinearMap.comp (truncTotal σ ℝ (N + 1)).range.subtype)
     (hode : ∀ t p, HasDerivAt (fun s => Y s p)
       ((compressedDerivation (mkDerivation ℝ F) (N + 1)).dualMap (Y t) p) t) :
-    Y = carlemanLiftedApproximant F x₀ N := by
-  let : Module.Finite ℝ (truncTotal σ ℝ (N + 1)).range := finite_range_truncTotal (N + 1)
-  exact ((compressedDerivation (mkDerivation ℝ F) (N + 1)).existsUnique_dualTrajectory
+    Y = carlemanLiftedApproximant F x₀ N :=
+  ((compressedDerivation (mkDerivation ℝ F) (N + 1)).existsUnique_dualTrajectory
     ((aeval x₀).toLinearMap.comp (truncTotal σ ℝ (N + 1)).range.subtype)).unique
       ⟨hinit, hode⟩ (carlemanLiftedApproximant_spec F x₀ N)
 

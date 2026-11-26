@@ -8,6 +8,7 @@ module
 public import FQFP.Carleman.TwoModeBurgers.Obstruction
 public import FQFP.Topology.Algebra.MvPolynomial.Identity
 public import FQFP.RingTheory.MvPolynomial.Trunc
+import FQFP.RingTheory.MvPolynomial.DerivationCompression
 
 /-!
 # Obstruction to local polynomial encoders
@@ -42,12 +43,6 @@ private lemma mkDerivation_aeval (α γ β : ℝ) {m : ℕ}
       hp, hΦ]
     simp only [map_add, map_mul, aeval_X, smul_eq_mul]
 
-private lemma mem_truncTotal_range_of_totalDegree_le {m d : ℕ}
-    {p : MvPolynomial (Fin m) ℝ} (hp : p.totalDegree ≤ d) :
-    p ∈ (truncTotal (Fin m) ℝ (d + 1)).range := by
-  refine ⟨p, ?_⟩
-  exact (truncTotal_eq_self_iff (d + 1) (by lia) p).2 (by lia)
-
 /-- A polynomial encoder with a polynomial decoder cannot conjugate the
 two-mode system to a polynomial vector field of degree at most one. -/
 theorem no_polynomial_linear_encoding (α γ β : ℝ) (hβ : β ≠ 0) {m : ℕ}
@@ -60,10 +55,8 @@ theorem no_polynomial_linear_encoding (α γ β : ℝ) (hβ : β ≠ 0) {m : ℕ
   let d := max (Ψ 0).totalDegree (Ψ 1).totalDegree
   let W := (truncTotal (Fin m) ℝ (d + 1)).range
   let V := W.map (aeval Φ).toLinearMap
-  have : FiniteDimensional ℝ W := finite_range_truncTotal (d + 1)
-  have : FiniteDimensional ℝ V := inferInstance
   have hΨmem (i : Fin 2) : Ψ i ∈ W := by
-    apply mem_truncTotal_range_of_totalDegree_le
+    apply (mem_range_truncTotal_succ_iff d (Ψ i)).2
     fin_cases i <;> simp [d]
   have hcoord (i : Fin 2) : (X i : MvPolynomial (Fin 2) ℝ) ∈ V := by
     rw [← hΨ i]
@@ -71,17 +64,10 @@ theorem no_polynomial_linear_encoding (α γ β : ℝ) (hβ : β ≠ 0) {m : ℕ
   have hV : ∀ p ∈ V, (mkDerivation ℝ (vectorField α γ β)) p ∈ V := by
     intro p hp
     obtain ⟨q, hq, rfl⟩ := Submodule.mem_map.mp hp
-    have hqdegree : q.totalDegree ≤ d := by
-      have hfix := truncTotal_eq_self_of_mem_range (d + 1) hq
-      have hlt := (truncTotal_eq_self_iff (d + 1) (by lia) q).1 hfix
-      lia
-    have hDdegree : ((mkDerivation ℝ G) q).totalDegree ≤ d := by
-      have h := totalDegree_mkDerivation_le G 1 hG q
-      lia
     change (mkDerivation ℝ (vectorField α γ β)) (aeval Φ q) ∈ V
     rw [mkDerivation_aeval α γ β Φ G hΦ]
     exact Submodule.mem_map_of_mem
-      (mem_truncTotal_range_of_totalDegree_le hDdegree)
+      (mkDerivation_mem_range_truncTotal_of_totalDegree_le_one G hG (d + 1) hq)
   exact no_finite_polynomial_closure_first α γ β hβ
     ⟨V, inferInstance, hcoord 0, hV⟩
 

@@ -9,6 +9,7 @@ public import FQFP.CQM.Qudit.Channel.Capacity
 public import FQFP.CQM.Qudit.Entropy.VonNeumann.Composite
 public import FQFP.CQM.Qudit.Entropy.VonNeumann.Exchange
 public import FQFP.CQM.Qudit.State.Spectral.Tensor
+public import FQFP.CQM.Qudit.State.TensorPower
 
 /-!
 # Spectral typicality for memoryless channel coding
@@ -28,11 +29,6 @@ namespace Qudit
 variable {H K : Qudit}
 
 namespace Density
-
-/-- The independent input on a block of `n + 1` sites. -/
-def tensorPower (ρ : Density H) : (n : ℕ) → Density (Qudit.tensorPower H n)
-  | 0 => ρ
-  | n + 1 => ρ.tensor (ρ.tensorPower n)
 
 /-- Spectral entropy variance in squared nats. Terms at zero eigenvalues have zero weight. -/
 def entropyVariance (ρ : Density H) : ℝ :=

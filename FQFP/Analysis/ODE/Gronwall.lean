@@ -55,11 +55,7 @@ lemma norm_le_gronwallBound_of_forced
     ‖E t‖ ≤ gronwallBound δ K ε (t - a) := by
   apply norm_le_gronwallBound_of_norm_deriv_right_le hE hode hinit _ t ht
   intro s hs
-  calc
-    ‖A (E s) + r s‖ ≤ ‖A (E s)‖ + ‖r s‖ := norm_add_le _ _
-    _ ≤ ‖A‖ * ‖E s‖ + ε := add_le_add (A.le_opNorm _) (hr s hs)
-    _ ≤ K * ‖E s‖ + ε := add_le_add
-      (mul_le_mul_of_nonneg_right hA (norm_nonneg (E s))) le_rfl
+  exact (norm_add_le _ _).trans (add_le_add (A.le_of_opNorm_le hA (E s)) (hr s hs))
 
 /-- A bound without division by the growth rate, for zero initial error. -/
 lemma norm_le_mul_exp_of_forced_zero_initial

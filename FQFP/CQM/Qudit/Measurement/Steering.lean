@@ -178,24 +178,24 @@ lemma probability_eq_trace_steeredOperator (M : POVM K ι) (ρ : Density (H ⊗ 
 
 /-- The normalized retained state conditioned on a positive-probability auxiliary outcome. -/
 def steeredState (M : POVM K ι) (ρ : Density (H ⊗ K)) (i : ι)
-    (hp : 0 < M.probability ρ.partialTraceLeft i) : Density H where
-  op := (M.probability ρ.partialTraceLeft i : ℂ)⁻¹ • M.steeredOperator ρ i
-  positive := (M.steeredOperator_positive ρ i).smul_of_nonneg (by
-    exact_mod_cast inv_nonneg.mpr hp.le)
-  trace_one := by
-    rw [Operator.trace, map_smul]
-    change (M.probability ρ.partialTraceLeft i : ℂ)⁻¹ * (M.steeredOperator ρ i).trace = 1
-    rw [← M.probability_eq_trace_steeredOperator, inv_mul_cancel₀]
-    exact_mod_cast hp.ne'
+    (hp : 0 < M.probability ρ.partialTraceLeft i) : Density H :=
+  Density.normalize (M.steeredOperator_positive ρ i)
+    (M.probability_eq_trace_steeredOperator ρ i).symm (by exact_mod_cast hp.ne')
+
+/-- An auxiliary outcome has zero probability exactly when its retained operator vanishes. -/
+lemma probability_eq_zero_iff_steeredOperator_eq_zero (M : POVM K ι)
+    (ρ : Density (H ⊗ K)) (i : ι) :
+    M.probability ρ.partialTraceLeft i = 0 ↔ M.steeredOperator ρ i = 0 := by
+  calc
+    _ ↔ (M.steeredOperator ρ i).trace.re = 0 := by
+      rw [← M.probability_eq_trace_steeredOperator, Complex.ofReal_re]
+    _ ↔ _ := (M.steeredOperator_positive ρ i).re_trace_eq_zero_iff
 
 /-- Impossible auxiliary outcomes have zero unnormalized retained state. -/
 lemma steeredOperator_eq_zero_of_probability_eq_zero (M : POVM K ι)
     (ρ : Density (H ⊗ K)) (i : ι) (hp : M.probability ρ.partialTraceLeft i = 0) :
-    M.steeredOperator ρ i = 0 := by
-  apply (LinearMap.traceNorm_eq_zero_iff _).mp
-  rw [(M.steeredOperator_positive ρ i).traceNorm_eq_re_trace]
-  change (M.steeredOperator ρ i).trace.re = 0
-  rw [← M.probability_eq_trace_steeredOperator, Complex.ofReal_re, hp]
+    M.steeredOperator ρ i = 0 :=
+  (M.probability_eq_zero_iff_steeredOperator_eq_zero ρ i).mp hp
 
 /-- A branch equal to a weighted density has exactly that Born probability. -/
 lemma probability_eq_of_steeredOperator_eq_smul (M : POVM K ι)
@@ -203,20 +203,14 @@ lemma probability_eq_of_steeredOperator_eq_smul (M : POVM K ι)
     (h : M.steeredOperator ρ i = (p : ℂ) • σ.op) :
     M.probability ρ.partialTraceLeft i = p := by
   apply Complex.ofReal_injective
-  rw [M.probability_eq_trace_steeredOperator, h, Operator.trace, map_smul]
-  change (p : ℂ) * σ.op.trace = p
-  rw [σ.trace_one, mul_one]
+  rw [M.probability_eq_trace_steeredOperator, h, σ.trace_smul_op]
 
 /-- At positive probability, a prescribed weighted branch yields the prescribed density. -/
 lemma steeredState_eq_of_steeredOperator_eq_smul (M : POVM K ι)
     (ρ : Density (H ⊗ K)) (i : ι) (p : ℝ) (σ : Density H)
     (h : M.steeredOperator ρ i = (p : ℂ) • σ.op)
-    (hp : 0 < M.probability ρ.partialTraceLeft i) : M.steeredState ρ i hp = σ := by
-  apply Density.ext
-  change (M.probability ρ.partialTraceLeft i : ℂ)⁻¹ • M.steeredOperator ρ i = _
-  rw [h, ← M.probability_eq_of_steeredOperator_eq_smul ρ i p σ h,
-    smul_smul, inv_mul_cancel₀, one_smul]
-  exact_mod_cast hp.ne'
+    (hp : 0 < M.probability ρ.partialTraceLeft i) : M.steeredState ρ i hp = σ :=
+  Density.normalize_eq_of_eq_smul _ _ _ h
 
 end POVM
 
@@ -312,8 +306,7 @@ theorem mix_eq_iff_exists_povm (ρ : Density H) (e : Ensemble H ι)
         ∀ i, M.steeredOperator (pure ρ.purifyMinimal) i =
           (e.weight i : ℂ) • (e.state i).op := by
   choose v hv using he
-  have heq : e = Ensemble.ofPure e.distribution v := by
-    exact Ensemble.ext rfl (funext hv)
+  have heq : e = Ensemble.ofPure e.distribution v := Ensemble.ext rfl (funext hv)
   rw [heq]
   exact ρ.mix_ofPure_eq_iff_exists_povm _ v
 

@@ -20,8 +20,6 @@ public import Mathlib.Basic.Real.Basic
 @[expose] public section
 noncomputable section
 
-open scoped BigOperators
-
 namespace LinearMap
 variable {E ι : Type*} [AddCommGroup E] [Module ℝ E]
   [Fintype ι] [DecidableEq ι]
@@ -30,12 +28,8 @@ lemma dualMap_coordinates (B : Module.Basis ι ℝ E) (T : Module.End ℝ E)
     (ℓ : Module.Dual ℝ E) (i : ι) :
     ((LinearMap.toMatrix B B T).transpose).mulVec (fun j => ℓ (B j)) i =
       T.dualMap ℓ (B i) := by
-  change _ = ℓ (T (B i))
-  calc
-    _ = ∑ j, B.repr (T (B i)) j * ℓ (B j) := by
-      simp [Matrix.mulVec, dotProduct, toMatrix_apply]
-    _ = ℓ (∑ j, B.repr (T (B i)) j • B j) := by
-      simp only [map_sum, map_smul, smul_eq_mul]
-    _ = ℓ (T (B i)) := congrArg ℓ (B.sum_repr (T (B i)))
+  change _ = (Module.Dual.transpose T ℓ) (B i)
+  simpa only [toMatrix_transpose, funext (B.dualBasis_repr ℓ), Module.Basis.dualBasis_repr] using
+    congrFun (toMatrix_mulVec_repr B.dualBasis B.dualBasis (Module.Dual.transpose T) ℓ) i
 
 end LinearMap
