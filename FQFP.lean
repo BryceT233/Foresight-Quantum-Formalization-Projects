@@ -481,7 +481,12 @@ public import FQFP.QuantumProgram.Semantics.History
 public import FQFP.QuantumProgram.Semantics.KrausFrame
 public import FQFP.QuantumProgram.Semantics.RegisterFrame
 public import FQFP.QuantumProgram.Semantics.SeqDecomp
+public import FQFP.QuantumProgram.Semantics.TerminalOutput
+public import FQFP.QuantumProgram.Semantics.TerminalOutputSeq
 public import FQFP.QuantumProgram.Semantics.WeakestPrecondition
+public import FQFP.QuantumProgram.Semantics.WhileFixedPoint
+public import FQFP.QuantumProgram.Semantics.WhileTerminalOutput
+public import FQFP.QuantumProgram.Semantics.WhileWeakestPrecondition
 public import FQFP.QuantumProgram.RegisterPermutation
 public import FQFP.QuantumProgram.TensorRegister
 public import FQFP.QuantumProgram.Trotter

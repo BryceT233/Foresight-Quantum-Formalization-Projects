@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -52,14 +52,24 @@ lemma truncTotal_of_isHomogeneous (n k : ℕ) {p : MvPolynomial σ R}
   classical
   simp [truncTotal, homogeneousComponent_of_mem hp]
 
+/-- Homogeneous polynomials at or above the cutoff have zero projected observable. -/
+lemma truncTotal_rangeRestrict_eq_zero_of_isHomogeneous (n : ℕ)
+    {p : MvPolynomial σ R} {k : ℕ} (hp : p.IsHomogeneous k) (hk : n ≤ k) :
+    (truncTotal σ R n).rangeRestrict p = 0 :=
+  Subtype.ext ((truncTotal_of_isHomogeneous n k hp).trans (ite_eq_right (not_lt.mpr hk)))
+
 lemma truncTotal_monomial (n : ℕ) (d : σ →₀ ℕ) (r : R) :
     truncTotal σ R n (monomial d r) = if d.degree < n then monomial d r else 0 :=
   truncTotal_of_isHomogeneous n d.degree (isHomogeneous_monomial r rfl)
 
+/-- Truncation retains a power of a variable exactly when its exponent is below the cutoff. -/
+lemma truncTotal_X_pow (n k : ℕ) (i : σ) :
+    truncTotal σ R n (X i ^ k) = if k < n then X i ^ k else 0 :=
+  truncTotal_of_isHomogeneous n k (isHomogeneous_X_pow i k)
+
 lemma truncTotal_X (n : ℕ) (hn : 1 < n) (i : σ) :
     truncTotal σ R n (X i) = X i := by
-  simpa [X, Finsupp.degree_single, hn] using
-    truncTotal_monomial (R := R) n (Finsupp.single i 1) 1
+  simpa only [pow_one, ite_eq_left hn] using truncTotal_X_pow (R := R) n 1 i
 
 lemma truncTotal_comp (m n : ℕ) :
     (truncTotal σ R m).comp (truncTotal σ R n) = truncTotal σ R (min m n) := by

@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -26,6 +26,7 @@ are explicit reversed exponential products, so no division-ring structure is use
 
 ## Main results
 
+* `expListLogDeriv_append`: the logarithmic derivative of two concatenated products.
 * `symmetricDefect_eq_halfDefect_add`: transport of the even middle defect.
 * `halfDefect_eq_groupedConj`: the conjugation recurrence with generator kicks.
 * `symmetricExpProduct_sub_exp_eq_integral`: the two-sided Duhamel identity.
@@ -85,6 +86,17 @@ lemma expListProduct_append (l m : List A) (t : ℝ) :
     expListProduct (l ++ m) t = expListProduct l t * expListProduct m t := by
   simp [expListProduct]
 
+/-- Transport by a concatenation applies transport by the prefix and then by the suffix. -/
+lemma expListConj_append (l m : List A) (B : A) (t : ℝ) :
+    expListConj (l ++ m) B t = expListConj m (expListConj l B t) t := by
+  simp only [expListConj, List.reverse_append, expListProduct_append, mul_assoc]
+
+/-- Transport by one exponential is conjugation by the negated generator. -/
+lemma expListConj_singleton (a B : A) (t : ℝ) :
+    expListConj [a] B t = expSMulConj (-a) B t := by
+  simp only [expListConj, List.reverse_singleton, expListProduct_singleton, expSMulConj,
+    smul_neg, neg_smul, neg_neg]
+
 end
 
 variable [NormedAlgebra ℚ A] [CompleteSpace A]
@@ -114,6 +126,29 @@ lemma expListProduct_mul_logDeriv (l : List A) (t : ℝ) :
     expListProduct l t * expListLogDeriv l t = deriv (expListProduct l) t := by
   rw [expListLogDeriv, ← mul_assoc, expListProduct_mul_reverse_neg, one_mul]
 
+/-- The logarithmic derivative of a concatenation transports the prefix derivative
+by the suffix and adds the suffix derivative. -/
+lemma expListLogDeriv_append (l m : List A) (t : ℝ) :
+    expListLogDeriv (l ++ m) t =
+      expListConj m (expListLogDeriv l t) t + expListLogDeriv m t := by
+  have hd : deriv (expListProduct (l ++ m)) t =
+      deriv (expListProduct l) t * expListProduct m t +
+        expListProduct l t * deriv (expListProduct m) t := by
+    rw [funext (expListProduct_append l m)]
+    exact ((hasDerivAt_expListProduct l t).mul (hasDerivAt_expListProduct m t)).deriv
+  rw [expListLogDeriv, hd, List.reverse_append, expListProduct_append, mul_add]
+  simp only [expListLogDeriv, expListConj]
+  congr 1
+  · simp only [mul_assoc]
+  · rw [mul_assoc, ← mul_assoc (expListProduct l.reverse (-t)),
+      expListProduct_reverse_neg_mul, one_mul]
+
+/-- The logarithmic derivative of one exponential is its generator. -/
+lemma expListLogDeriv_singleton (a : A) (t : ℝ) : expListLogDeriv [a] t = a := by
+  rw [expListLogDeriv, List.reverse_singleton, funext (expListProduct_singleton a),
+    (hasDerivAt_exp_smul_const a t).deriv, ← mul_assoc]
+  simp only [neg_smul, exp_neg_mul_self, one_mul]
+
 /-- The reversed half-product has the reflected logarithmic derivative on its left. -/
 lemma deriv_reverse_expListProduct (l : List A) (t : ℝ) :
     deriv (expListProduct l.reverse) t = expListLogDeriv l (-t) * expListProduct l.reverse t := by
@@ -128,12 +163,11 @@ lemma deriv_reverse_expListProduct (l : List A) (t : ℝ) :
     _ at hzero
   rw [heq, deriv_const] at hzero
   simp only [Function.comp_apply, neg_one_smul, neg_mul] at hzero
-  have hc := congrArg (fun z ↦ expListProduct l.reverse t * z) hzero
-  simp only [mul_add, mul_neg, ← mul_assoc,
-    show expListProduct l.reverse t * expListProduct l (-t) = 1 from
-      by simpa using expListProduct_reverse_neg_mul l (-t), one_mul, mul_zero] at hc
-  dsimp [expListLogDeriv]
-  simpa [mul_assoc] using (neg_add_eq_zero.mp hc.symm).symm
+  have hcancel : expListProduct l.reverse t * expListProduct l (-t) = 1 := by
+    simpa only [neg_neg] using expListProduct_reverse_neg_mul l (-t)
+  have hc := congrArg (expListProduct l.reverse t * ·)
+    (neg_add_eq_zero.mp hzero.symm).symm
+  simpa only [← mul_assoc, hcancel, one_mul, expListLogDeriv, neg_neg] using hc
 
 /-- The symmetric exponential product is smooth. -/
 lemma contDiff_symmetricExpProduct (l : List A) :
@@ -177,31 +211,12 @@ lemma halfDefect_add_reflected_neg (l : List A) (G : A) (t : ℝ) :
 /-- Appending a factor conjugates the logarithmic derivative and adds its generator. -/
 lemma expListLogDeriv_append_singleton (l : List A) (a : A) (t : ℝ) :
     expListLogDeriv (l ++ [a]) t = expSMulConj (-a) (expListLogDeriv l t) t + a := by
-  have hd : deriv (expListProduct (l ++ [a])) t =
-      deriv (expListProduct l) t * exp (t • a) +
-        expListProduct l t * (a * exp (t • a)) := by
-    have heq : expListProduct (l ++ [a]) =
-        fun x ↦ expListProduct l x * exp (x • a) := by
-      funext x
-      simp [expListProduct_append]
-    rw [heq]
-    exact ((hasDerivAt_expListProduct l t).mul (hasDerivAt_exp_smul_const' a t)).deriv
-  have ha : exp ((-t) • a) * a = a * exp ((-t) • a) :=
-    ((Commute.refl a).smul_left (-t)).exp_left.eq
-  simp only [expListLogDeriv, hd, List.reverse_append, List.reverse_singleton,
-    expListProduct_append, expListProduct_singleton, expSMulConj, smul_neg]
-  rw [mul_add]
-  congr 1
-  · simp only [neg_smul, neg_neg, mul_assoc]
-  · rw [mul_assoc, ← mul_assoc (expListProduct l.reverse (-t)),
-      expListProduct_reverse_neg_mul, one_mul]
-    rw [← mul_assoc, ha, mul_assoc, neg_smul, exp_neg_mul_self, mul_one]
+  rw [expListLogDeriv_append, expListLogDeriv_singleton, expListConj_singleton]
 
 /-- Appending a factor conjugates the transported generator. -/
 lemma expListConj_append_singleton (l : List A) (a B : A) (t : ℝ) :
     expListConj (l ++ [a]) B t = expSMulConj (-a) (expListConj l B t) t := by
-  simp [expListConj, List.reverse_append, expListProduct_append,
-    expSMulConj, mul_assoc]
+  rw [expListConj_append, expListConj_singleton]
 
 /-- A half-defect follows the conjugation recurrence with generator kicks. -/
 lemma halfDefect_append_singleton (l : List A) (a G : A) (t : ℝ) :

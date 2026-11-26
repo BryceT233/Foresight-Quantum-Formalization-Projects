@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -110,11 +110,9 @@ lemma spectralMap_const (ρ : Density H) (c : ℝ) :
 /-- The expectation of a spectral function in its own state is a scalar spectral sum. -/
 lemma expectation_spectralMap_self (ρ : Density H) (f : ℝ → ℝ) :
     ρ.expectation (ρ.spectralMap f) = ∑ i, ρ.eigenvalue i * f (ρ.eigenvalue i) := by
-  rw [expectation, expectationComplex, ρ.op_eq_sum_eigenvalue_smul_outer]
-  simp only [Finset.mul_sum, mul_smul_comm, map_sum, map_smul,
-    Operator.trace_mul_outer, spectralMap_apply_eigenbasis, inner_smul_right,
-    OrthonormalBasis.inner_eq_one, mul_one, smul_eq_mul, Complex.re_sum,
-    ← Complex.ofReal_mul, Complex.ofReal_re]
+  rw [expectation_eq_sum_eigenvalue_mul_re_inner]
+  simp only [spectralMap_apply_eigenbasis, inner_smul_right, OrthonormalBasis.inner_eq_one,
+    mul_one, Complex.ofReal_re]
 
 /-- Natural logarithm on the support, extended by zero on the kernel. -/
 def logOp (ρ : Density H) : Operator H := ρ.spectralMap Real.log
@@ -127,26 +125,16 @@ lemma expectation_eq_sum_of_diagonal {ι : Type*} [Fintype ι] (ρ : Density H)
   rw [expectation, expectationComplex, Operator.trace, LinearMap.trace_mul_comm,
     LinearMap.trace_eq_sum_inner _ b]
   simp only [mul_apply_eq_comp, hA, map_smul, inner_smul_right, Complex.re_sum,
-    Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero]
+    Complex.re_ofReal_mul]
 
 /-- Expectations of spectral functions in another state are overlap-weighted spectral sums. -/
 lemma expectation_spectralMap (ρ σ : Density H) (f : ℝ → ℝ) :
     ρ.expectation (σ.spectralMap f) =
       ∑ i, ∑ j, ρ.eigenvalue i * f (σ.eigenvalue j) *
         ‖inner ℂ (σ.eigenbasis j) (ρ.eigenbasis i)‖ ^ 2 := by
-  rw [expectation, expectationComplex, ρ.op_eq_sum_eigenvalue_smul_outer]
-  simp only [Finset.mul_sum, mul_smul_comm, map_sum, map_smul,
-    Operator.trace_mul_outer, smul_eq_mul, Complex.re_sum]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [spectralMap]
-  simp only [LinearMap.sum_apply, LinearMap.smul_apply, Operator.outer_apply,
-    inner_sum, inner_smul_right, Finset.mul_sum, Complex.re_sum]
-  apply Finset.sum_congr rfl
-  intro j _
-  rw [← mul_assoc,
-    ← inner_conj_symm (ρ.eigenbasis i) (σ.eigenbasis j), Complex.mul_conj']
-  simp only [← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.ofReal_re]
+  rw [expectation_eq_sum_eigenvalue_mul_re_inner]
+  simp only [Operator.re_inner_apply_eq_sum_of_eigenbasis σ.eigenbasis _ _
+    (σ.spectralMap_apply_eigenbasis f), Finset.mul_sum, mul_assoc]
 
 /-- The logarithm acts by the scalar logarithm on any eigenvector, including the kernel. -/
 lemma logOp_apply_of_eigenvector (ρ : Density H) {v : H.state} {a : ℝ}

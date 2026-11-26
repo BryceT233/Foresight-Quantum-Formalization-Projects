@@ -8,9 +8,9 @@ Authors: Alex Meiburg, Leonardo A. Lessa, Rodolfo R. Soldati
 leanprover-community/physlib @ 101e93cf91f0304f5ab9bfbfdec6cebcc031f7cd
 QuantumInfo/ResourceTheory/HypothesisTesting.lean: the single-alternative Rényi converse bound.
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 

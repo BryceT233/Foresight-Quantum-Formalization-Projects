@@ -9,9 +9,9 @@ leanprover-community/mathlib4 @ fc4f59e577feb1a4956671bc04ac18aaaf8cd842
 Mathlib/CategoryTheory/Monoidal/Cartesian/Basic.lean
 Generalize the tensorHom, associator and braiding projection laws to a terminal tensor unit.
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 

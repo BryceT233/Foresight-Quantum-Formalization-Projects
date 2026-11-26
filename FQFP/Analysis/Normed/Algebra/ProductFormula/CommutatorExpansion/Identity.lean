@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -73,14 +73,6 @@ noncomputable def conjCoeff {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸]
   ∑ q ∈ finAntidiagonal s j,
     ((∏ i : Fin s, (Nat.factorial (q i) : ℝ))⁻¹ : ℝ) • adSequence A q B
 
-end TrotterError
-
-namespace TrotterError
-
-open NormedSpace MeasureTheory Finset
-open TrotterError.List
-open scoped ContDiff algebraMap
-
 /-! ### The expansion theorem `commutatorExpansion_conj` -/
 
 /-- Peeling the outermost layer off `multiConj`:
@@ -148,18 +140,7 @@ lemma conjCoeff_succ {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸] {s : ℕ}
 lemma expSMulConj_mul_cast {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
     (A X : 𝔸) (r : ℝ) (τ : ℝ) :
     expSMulConj A (X * (r : 𝔸)) τ = expSMulConj A X τ * (r : 𝔸) := by
-  rw [← smul_eq_mul_right r X]
-  calc
-    expSMulConj A (r • X) τ = r • expSMulConj A X τ := (expSMulConjLin A τ).map_smul' r X
-    _ = expSMulConj A X τ * (r : 𝔸) := smul_eq_mul_right r (expSMulConj A X τ)
-
-/-- `expSMulConj A · τ` distributes over a finite sum. -/
-lemma expSMulConj_map_sum {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
-    (A : 𝔸) (τ : ℝ) {ι : Type*} (s : Finset ι) (f : ι → 𝔸) :
-    expSMulConj A (∑ x ∈ s, f x) τ = ∑ x ∈ s, expSMulConj A (f x) τ := by
-  change (expSMulConjLin A τ).toAddMonoidHom (∑ x ∈ s, f x) =
-    ∑ x ∈ s, (expSMulConjLin A τ).toAddMonoidHom (f x)
-  exact map_sum (expSMulConjLin A τ).toAddMonoidHom f s
+  simp only [← smul_eq_mul_right, expSMulConj_map_smul]
 
 /-- Right multiplication by a central scalar `(c : 𝔸)` commutes with the interval integral. -/
 lemma integral_mul_cast {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] (F : ℝ → 𝔸) (c : ℝ)
@@ -181,9 +162,9 @@ lemma expSMulConj_taylor_remainder_smul {𝔸 : Type*} [NormedRing 𝔸] [Normed
   have hsub : (∫ u in 0..τ, expSMulConj A X (τ - u) * ((u ^ k / (Nat.factorial k : ℝ)) : 𝔸)) =
         ∫ u in 0..τ, ((τ - u) ^ k / (Nat.factorial k : ℝ)) • expSMulConj A X u :=
     (integral_smul_eq_integral_mul_sub (fun u => expSMulConj A X u) k τ).symm
-  rw [hsub, ← intervalIntegral.integral_smul, ← map_pow (algebraMap ℝ 𝔸) τ j]
-  rw [integral_mul_cast (fun u => d⁻¹ • (((τ - u) ^ k / (Nat.factorial k : ℝ)) •
-    expSMulConj A X u)) (τ ^ j) τ]
+  rw [hsub, ← intervalIntegral.integral_smul, ← map_pow (algebraMap ℝ 𝔸) τ j,
+    integral_mul_cast (fun u => d⁻¹ • (((τ - u) ^ k / (Nat.factorial k : ℝ)) •
+      expSMulConj A X u)) (τ ^ j) τ]
   apply intervalIntegral.integral_congr_uIoo
   intro u _
   dsimp
@@ -296,8 +277,7 @@ lemma conjCoeff_sum_of_taylor {s} {𝔸 : Type*} [Ring 𝔸] [Algebra ℝ 𝔸]
               rw [Finset.sum_mul]
               apply Finset.sum_congr rfl
               intro i _
-              rw [mul_assoc]
-              rw [show (τ ^ i : 𝔸) * (τ ^ j : 𝔸) = (τ ^ (i + j) : 𝔸) by rw [← pow_add]]
+              rw [mul_assoc, ← pow_add]
     _ = ∑ m ∈ range p, ∑ i ∈ range (m + 1),
             ((Nat.factorial i : ℝ)⁻¹ •
               (adPow (A (Fin.last s)) i (conjCoeff (fun i : Fin s => A i.castSucc) B (m - i)))) *
@@ -385,19 +365,8 @@ lemma expSMulConj_taylor_remainder_conjCoeff {s} {𝔸 : Type*} [NormedRing 𝔸
                     (expSMulConj A' (adPow A' (p - j) (adSequence A_inner q B)) (τ - u) *
                       ((u ^ (p - j - 1) / (Nat.factorial (p - j - 1) : ℝ)) : 𝔸)) := by
                 intro u
-                rw [expSMulConj_map_sum (A := A') (τ := τ - u) (s := finAntidiagonal s j)
-                  (f := fun q => ((∏ i : Fin s, (Nat.factorial (q i) : ℝ))⁻¹ : ℝ) •
-                    adPow A' (p - j) (adSequence A_inner q B))]
-                rw [Finset.sum_mul]
-                apply Finset.sum_congr rfl
-                intro q _
-                have hsmul : expSMulConj A' (((∏ i : Fin s, (Nat.factorial (q i) : ℝ))⁻¹ : ℝ) •
-                    (adPow A' (p - j) (adSequence A_inner q B))) (τ - u)
-                    = ((∏ i : Fin s, (Nat.factorial (q i) : ℝ))⁻¹ : ℝ) •
-                      expSMulConj A' (adPow A' (p - j) (adSequence A_inner q B)) (τ - u) :=
-                  (expSMulConjLin A' (τ - u)).map_smul' ((∏ i : Fin s, (Nat.factorial (q i) : ℝ))⁻¹)
-                    (adPow A' (p - j) (adSequence A_inner q B))
-                rw [hsmul, smul_mul_assoc]
+                simp only [expSMulConj_map_sum, expSMulConj_map_smul, Finset.sum_mul,
+                  smul_mul_assoc]
               rw [intervalIntegral.integral_congr_uIoo (fun u _ => hpoint u)]
               have hint : ∀ q ∈ finAntidiagonal s j, IntervalIntegrable
                   (fun u : ℝ => ((∏ i : Fin s, (Nat.factorial (q i) : ℝ))⁻¹ : ℝ) •
@@ -516,8 +485,7 @@ theorem commutatorExpansion_conj {𝔸 : Type*} [NormedRing 𝔸]
   | zero =>
       have hmulti : multiConj A B τ = B := by simp [multiConj]
       have hc0 : conjCoeff A B 0 = B := by
-        rw [conjCoeff]
-        rw [Finset.sum_eq_single_of_mem (s := finAntidiagonal 0 0) (a := 0)
+        rw [conjCoeff, Finset.sum_eq_single_of_mem (s := finAntidiagonal 0 0) (a := 0)
           (f := fun q => ((∏ i : Fin 0, (Nat.factorial (q i) : ℝ))⁻¹ : ℝ) • adSequence A q B)]
         · simp [adSequence]
         · rw [mem_finAntidiagonal]
@@ -540,8 +508,7 @@ theorem commutatorExpansion_conj {𝔸 : Type*} [NormedRing 𝔸]
         rw [hempty]
         simp
       have hrem : commutatorRemainder A B p τ = 0 := by simp [commutatorRemainder]
-      rw [hmulti, hrem, add_zero]
-      rw [Finset.sum_eq_single_of_mem (a := 0) (s := Finset.range p)
+      rw [hmulti, hrem, add_zero, Finset.sum_eq_single_of_mem (a := 0) (s := Finset.range p)
         (f := fun j => conjCoeff A B j * (τ ^ j : 𝔸))]
       · simp [hc0]
       · rw [Finset.mem_range]
@@ -549,16 +516,8 @@ theorem commutatorExpansion_conj {𝔸 : Type*} [NormedRing 𝔸]
       · intro j _ hj0
         rw [hcj j (Nat.pos_of_ne_zero hj0), zero_mul]
   | succ s ih =>
-      rw [multiConj_succ A B τ, ih (fun i : Fin s => A i.castSucc)]
-      have hlin : expSMulConj (A (Fin.last s))
-          ((∑ j ∈ range p, conjCoeff (fun i : Fin s => A i.castSucc) B j * (τ ^ j : 𝔸)) +
-            commutatorRemainder (fun i : Fin s => A i.castSucc) B p τ) τ
-          = expSMulConj (A (Fin.last s))
-              (∑ j ∈ range p, conjCoeff (fun i : Fin s => A i.castSucc) B j * (τ ^ j : 𝔸)) τ +
-            expSMulConj (A (Fin.last s))
-              (commutatorRemainder (fun i : Fin s => A i.castSucc) B p τ) τ :=
-        (expSMulConjLin (A (Fin.last s)) τ).map_add' _ _
-      rw [hlin, expSMulConj_taylor_poly A B p τ, commutatorRemainder_succ A B p τ]
+      rw [multiConj_succ A B τ, ih (fun i : Fin s => A i.castSucc), expSMulConj_map_add,
+        expSMulConj_taylor_poly A B p τ, commutatorRemainder_succ A B p τ]
       abel
 
 end TrotterError

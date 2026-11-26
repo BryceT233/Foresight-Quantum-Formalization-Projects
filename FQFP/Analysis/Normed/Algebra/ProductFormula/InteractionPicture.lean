@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -117,7 +117,7 @@ theorem norm_interactionIncrement_sub_midpoint_le (G S L : A)
       h ^ 5 • L‖ ≤ η) (k : ℕ) :
     ‖interactionIncrement G S h k -
       h ^ 5 • expSMulConj (-G) L (((k : ℝ) + 1 / 2) * h)‖ ≤ η := by
-  simpa only [expSMulConj, mul_smul_comm, smul_mul_assoc] using
+  simpa only [expSMulConj_map_smul] using
     norm_interactionIncrement_sub_conj_le G S (h ^ 5 • L) hG h hlocal k
 
 /-- **Discrete operator remainder.** Finite contraction products retain any complete
@@ -156,8 +156,7 @@ theorem norm_interactionProduct_sub_midpoint_le (G S L : A)
     ‖exp (-((r : ℝ) * h) • G) * S ^ r - 1 -
       h ^ 4 • midpointConjugationIntegral G L r h‖ ≤
         (r : ℝ) * η + (r : ℝ) * ((r : ℝ) - 1) / 2 * δ ^ 2 := by
-  simpa only [midpointConjugationIntegral, smul_smul, ← pow_succ, smul_sum,
-    expSMulConj, mul_smul_comm, smul_mul_assoc] using
+  simpa only [smul_midpointConjugationIntegral_eq_sum, ← pow_succ] using
     norm_interactionProduct_sub_sum_conj_le G S (h ^ 5 • L) hG hS h hlocal hδ r
 
 end TrotterError

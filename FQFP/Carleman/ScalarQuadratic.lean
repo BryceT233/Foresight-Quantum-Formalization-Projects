@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -35,13 +35,6 @@ private def liftedCoordinate (a : ℝ) (N k : ℕ) (t : ℝ) : ℝ :=
   carlemanLiftedApproximant vectorField (fun _ => a) N t
     ((truncTotal Unit ℝ (N + 1)).rangeRestrict (X () ^ k))
 
-private lemma truncTotal_X_pow (N k : ℕ) :
-    truncTotal Unit ℝ (N + 1) (X () ^ k) =
-      if k ≤ N then (X () : MvPolynomial Unit ℝ) ^ k else 0 := by
-  have hk : ((X () : MvPolynomial Unit ℝ) ^ k).IsHomogeneous k := by
-    simpa using (isHomogeneous_X ℝ ()).pow k
-  simpa [Nat.lt_succ_iff] using truncTotal_of_isHomogeneous (N + 1) k hk
-
 private lemma derivation_X_pow (k : ℕ) :
     mkDerivation ℝ vectorField (X () ^ k) = (k : ℝ) • (X () : MvPolynomial Unit ℝ) ^ (k + 1) := by
   cases k with
@@ -57,15 +50,13 @@ private lemma compressedDerivation_X_pow (N k : ℕ) :
     compressedDerivation (mkDerivation ℝ vectorField) (N + 1)
         ((truncTotal Unit ℝ (N + 1)).rangeRestrict (X () ^ k)) =
       (k : ℝ) • (truncTotal Unit ℝ (N + 1)).rangeRestrict (X () ^ (k + 1)) := by
-  apply Subtype.ext
-  change truncTotal Unit ℝ (N + 1)
-    (mkDerivation ℝ vectorField (truncTotal Unit ℝ (N + 1) (X () ^ k))) =
-      (k : ℝ) • truncTotal Unit ℝ (N + 1) (X () ^ (k + 1))
-  rw [truncTotal_X_pow]
+  rw [compressedDerivation_rangeRestrict]
+  simp only [truncTotal_X_pow, Nat.lt_succ_iff]
   by_cases hk : k ≤ N
   · rw [ite_eq_left hk, derivation_X_pow, map_smul]
-  · rw [ite_eq_right hk, map_zero, map_zero, truncTotal_X_pow,
-      ite_eq_right (show ¬ k + 1 ≤ N by lia), smul_zero]
+  · have hz := truncTotal_rangeRestrict_eq_zero_of_isHomogeneous (N + 1)
+      (isHomogeneous_X_pow (R := ℝ) () (k + 1)) (by lia)
+    simp only [ite_eq_right hk, map_zero, hz, smul_zero]
 
 private lemma liftedCoordinate_initial (a : ℝ) (N k : ℕ) (hk : k ≤ N) :
     liftedCoordinate a N k 0 = a ^ k := by
@@ -73,10 +64,8 @@ private lemma liftedCoordinate_initial (a : ℝ) (N k : ℕ) (hk : k ≤ N) :
 
 private lemma liftedCoordinate_eq_zero (a : ℝ) (N k : ℕ) (hk : N < k) (t : ℝ) :
     liftedCoordinate a N k t = 0 := by
-  have hz : (truncTotal Unit ℝ (N + 1)).rangeRestrict (X () ^ k) = 0 := by
-    apply Subtype.ext
-    simp [truncTotal_X_pow, not_le.mpr hk]
-  simp [liftedCoordinate, hz]
+  rw [liftedCoordinate, truncTotal_rangeRestrict_eq_zero_of_isHomogeneous (N + 1)
+    (isHomogeneous_X_pow (R := ℝ) () k) (by lia), map_zero]
 
 private lemma liftedCoordinate_hasDerivAt (a : ℝ) (N k : ℕ) (t : ℝ) :
     HasDerivAt (liftedCoordinate a N k) ((k : ℝ) * liftedCoordinate a N (k + 1) t) t := by

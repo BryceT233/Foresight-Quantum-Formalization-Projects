@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -9,6 +9,7 @@ public import FQFP.Analysis.SpecialFunctions.Integrals.IteratedBounds
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.Basic
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.OrderCondition
 public import FQFP.Analysis.Normed.Algebra.RealScalar
+import FQFP.Analysis.Normed.Algebra.Power
 
 /-!
 # Trotter error with `1`-norm scaling
@@ -558,31 +559,10 @@ theorem trotter_error_one_norm_scaling_of_skew_adjoint
 end
 
 /-- Telescoping bound: if `‖A‖ ≤ 1` and `‖B‖ ≤ 1`, then `‖A^r − B^r‖ ≤ r · ‖A − B‖`. -/
-lemma norm_pow_sub_pow_le_of_norm_le_one [NormOneClass 𝔸]
+lemma norm_pow_sub_pow_le_of_norm_le_one
     (A B : 𝔸) (r : ℕ) (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) :
     ‖A ^ r - B ^ r‖ ≤ (r : ℝ) * ‖A - B‖ := by
-  induction r with
-  | zero => simp
-  | succ r ih =>
-      have hBpow : ‖B ^ r‖ ≤ 1 := (norm_pow_le B r).trans (by
-          simpa using pow_le_pow_left₀ (norm_nonneg B) hB r)
-      calc
-        ‖A ^ (r + 1) - B ^ (r + 1)‖
-            = ‖(A ^ r - B ^ r) * A + B ^ r * (A - B)‖ := by
-                congr 1
-                rw [pow_succ, pow_succ, sub_mul, mul_sub]
-                abel
-        _ ≤ ‖(A ^ r - B ^ r) * A‖ + ‖B ^ r * (A - B)‖ := norm_add_le _ _
-        _ ≤ ‖A ^ r - B ^ r‖ * ‖A‖ + ‖B ^ r‖ * ‖A - B‖ :=
-                add_le_add (norm_mul_le _ _) (norm_mul_le _ _)
-        _ ≤ ‖A ^ r - B ^ r‖ + ‖A - B‖ := by
-                refine add_le_add ?_ ?_
-                · simpa using mul_le_mul_of_nonneg_left hA (norm_nonneg (A ^ r - B ^ r))
-                · simpa using mul_le_mul_of_nonneg_right hBpow (norm_nonneg (A - B))
-        _ ≤ (r : ℝ) * ‖A - B‖ + ‖A - B‖ := by linarith [ih]
-        _ = ((r + 1 : ℕ) : ℝ) * ‖A - B‖ := by
-                rw [Nat.cast_succ]
-                ring
+  simpa only [one_pow, mul_one] using FQFP.norm_pow_sub_pow_le_of_common_bound A B hA hB r
 
 /-- `exp (t • x) = exp ((t / (r : ℝ)) • x) ^ r` for `r > 0`. -/
 lemma exp_smul_eq_pow_of_div [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
@@ -662,17 +642,9 @@ theorem trotter_number_one_norm_scaling
     _ ≤ (r : ℝ) * (C * ‖(Snorm * (t / (r : ℝ))) ^ (p + 1)‖) :=
             mul_le_mul_of_nonneg_left hr_le' hr_nonneg
     _ = C * (Snorm * t) ^ (p + 1) * ‖((r : ℝ) ^ p)⁻¹‖ := by
-            rw [Real.norm_of_nonneg (pow_nonneg hnonneg_arg (p + 1)),
-              Real.norm_of_nonneg (inv_nonneg.mpr (pow_nonneg hr_nonneg p))]
-            calc
-              (r : ℝ) * (C * (Snorm * (t / (r : ℝ))) ^ (p + 1))
-                  = C * ((r : ℝ) * ((Snorm * t) / (r : ℝ)) ^ (p + 1)) := by
-                      rw [show Snorm * (t / (r : ℝ)) = (Snorm * t) / (r : ℝ) by
-                        field_simp [hr_ne]]
-                      ring
-              _ = C * (Snorm * t) ^ (p + 1) * ((r : ℝ) ^ p)⁻¹ := by
-                      rw [natCast_mul_pow_div_pow_succ (Snorm * t) r p hr_ne]
-                      ring
+      rw [Real.norm_of_nonneg (pow_nonneg hnonneg_arg (p + 1)),
+        Real.norm_of_nonneg (inv_nonneg.mpr (pow_nonneg hr_nonneg p)), ← mul_div_assoc,
+        mul_left_comm (r : ℝ) C, natCast_mul_pow_div_pow_succ (Snorm * t) r p hr_ne, mul_assoc]
 
 end
 

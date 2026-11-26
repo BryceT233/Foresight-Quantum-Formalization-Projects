@@ -10,7 +10,7 @@ Qhl/Logic/Source/RegisterKraus.lean (registerKrausOps, registerKraus, registerSi
 registerKrausOne, normalization, the distinct-operand domain and krausFrame_register)
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 

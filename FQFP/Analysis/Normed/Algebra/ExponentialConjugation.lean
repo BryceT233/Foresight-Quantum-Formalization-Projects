@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -9,6 +9,7 @@ public import FQFP.Analysis.Normed.Algebra.RealScalar
 public import FQFP.Analysis.Normed.Algebra.Commutator
 public import FQFP.Analysis.Normed.Algebra.ExponentialCalculus
 public import FQFP.Analysis.SpecialFunctions.Integrals.IteratedBounds
+import FQFP.Analysis.Normed.Ring.ContractionProduct
 
 /-!
 # Single-layer conjugation
@@ -288,8 +289,34 @@ theorem norm_expSMulConj_remainder_le {𝔸 : Type*} [NormedRing 𝔸] [NormedAl
 noncomputable def expSMulConjLin {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] (A : 𝔸)
     (τ : ℝ) : 𝔸 →ₗ[ℝ] 𝔸 where
   toFun := fun X => expSMulConj A X τ
-  map_add' _ _ := by unfold expSMulConj; noncomm_ring
+  map_add' _ _ := by simp only [expSMulConj, mul_add, add_mul]
   map_smul' _ _ := by simp [expSMulConj]
+
+section Linearity
+
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
+
+/-- At fixed time, exponential conjugation preserves addition of conjugated elements. -/
+lemma expSMulConj_map_add (A X Y : 𝔸) (τ : ℝ) :
+    expSMulConj A (X + Y) τ = expSMulConj A X τ + expSMulConj A Y τ :=
+  map_add (expSMulConjLin A τ) X Y
+
+/-- At fixed time, exponential conjugation preserves subtraction of conjugated elements. -/
+lemma expSMulConj_map_sub (A X Y : 𝔸) (τ : ℝ) :
+    expSMulConj A (X - Y) τ = expSMulConj A X τ - expSMulConj A Y τ :=
+  map_sub (expSMulConjLin A τ) X Y
+
+/-- At fixed time, exponential conjugation commutes with real scalar multiplication. -/
+lemma expSMulConj_map_smul (A X : 𝔸) (r τ : ℝ) :
+    expSMulConj A (r • X) τ = r • expSMulConj A X τ :=
+  map_smul (expSMulConjLin A τ) r X
+
+/-- At fixed time, exponential conjugation distributes over a finite sum. -/
+lemma expSMulConj_map_sum (A : 𝔸) (τ : ℝ) {ι : Type*} (s : Finset ι) (f : ι → 𝔸) :
+    expSMulConj A (∑ x ∈ s, f x) τ = ∑ x ∈ s, expSMulConj A (f x) τ :=
+  map_sum (expSMulConjLin A τ) f s
+
+end Linearity
 
 end TrotterError
 
@@ -302,23 +329,17 @@ The hypothesis applies to all real parameters, including negative ones. -/
 theorem norm_exp_smul_mul_eq_of_le_one {𝔸 : Type*} [NormedRing 𝔸]
     [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸)
     (hA : ∀ t : ℝ, ‖exp (t • A)‖ ≤ 1) (t : ℝ) :
-    ‖exp (t • A) * X‖ = ‖X‖ := by
-  have bound (s : ℝ) (Y : 𝔸) : ‖exp (s • A) * Y‖ ≤ ‖Y‖ := by
-    simpa only [one_mul] using norm_mul_le_of_le (hA s) (le_refl ‖Y‖)
-  refine le_antisymm (bound t X) ?_
-  simpa only [← mul_assoc, neg_smul, exp_neg_mul_self, one_mul] using
-    bound (-t) (exp (t • A) * X)
+    ‖exp (t • A) * X‖ = ‖X‖ :=
+  FQFP.norm_mul_eq_norm_right_of_mul_eq_one
+    (by simpa only [neg_smul] using exp_neg_mul_self (t • A)) (hA t) (hA (-t)) X
 
 /-- A two-sided contraction bound for the exponential makes right multiplication isometric. -/
 theorem norm_mul_exp_smul_eq_of_le_one {𝔸 : Type*} [NormedRing 𝔸]
     [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] (A X : 𝔸)
     (hA : ∀ t : ℝ, ‖exp (t • A)‖ ≤ 1) (t : ℝ) :
-    ‖X * exp (t • A)‖ = ‖X‖ := by
-  have bound (s : ℝ) (Y : 𝔸) : ‖Y * exp (s • A)‖ ≤ ‖Y‖ := by
-    simpa only [mul_one] using norm_mul_le_of_le (le_refl ‖Y‖) (hA s)
-  refine le_antisymm (bound t X) ?_
-  simpa only [mul_assoc, neg_smul, exp_mul_neg_self, mul_one] using
-    bound (-t) (X * exp (t • A))
+    ‖X * exp (t • A)‖ = ‖X‖ :=
+  FQFP.norm_mul_eq_norm_left_of_mul_eq_one
+    (by simpa only [neg_smul] using exp_mul_neg_self (t • A)) (hA t) (hA (-t)) X
 
 /-- Two-sided exponential bounds give an isometric conjugation in a normed algebra. -/
 theorem norm_expSMulConj_eq_of_le_one {𝔸 : Type*} [NormedRing 𝔸]

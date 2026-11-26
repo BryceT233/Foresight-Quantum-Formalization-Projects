@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -63,12 +63,8 @@ theorem _root_.Qudit.isPositive_iff_hom_isPositive (A : CategoryTheory.End H) :
 /-- The quadratic form of a positive operator is the squared norm of its square root. -/
 lemma re_inner_apply_eq_norm_sqrt_sq (A : Operator H) (hA : A.IsPositive) (v : H.state) :
     (inner ℂ v (A v)).re = ‖A.sqrt v‖ ^ 2 := by
-  calc
-    _ = (inner ℂ v (A.sqrt.adjoint (A.sqrt v))).re := by
-      rw [adjoint_sqrt, ← mul_apply_eq_comp A.sqrt A.sqrt v, sqrt_mul_sqrt A hA]
-    _ = _ := by
-      rw [LinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K]
-      norm_cast
+  rw [← re_inner_adjoint_comp_self A.sqrt, ← Module.End.mul_eq_comp, adjoint_sqrt,
+    sqrt_mul_sqrt A hA]
 
 /-- A positive operator annihilates a vector exactly when its quadratic form vanishes. -/
 lemma apply_eq_zero_iff_re_inner_eq_zero (A : Operator H) (hA : A.IsPositive) (v : H.state) :

@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -10,11 +10,11 @@ public import Mathlib.Tactic.NoncommRing
 public import Mathlib.Tactic.Ring
 
 /-!
-# Finite products of contractions
+# Contractions and their finite products
 
-The difference between an ordered product of contractions and its linear part
-has a quadratic bound. The proof uses the contraction of each factor, without
-assuming multiplicativity of the norm or a normalized identity.
+Multiplication by a contraction preserves the norm when it has a contractive
+inverse on the appropriate side. Ordered products of contractions also have a
+quadratic remainder after subtracting their linear part.
 
 ## Main definitions
 
@@ -22,6 +22,8 @@ assuming multiplicativity of the norm or a normalized identity.
 
 ## Main results
 
+* `FQFP.norm_mul_eq_norm_right_of_mul_eq_one`: left multiplication by a contraction
+  with a contractive left inverse preserves the norm.
 * `FQFP.norm_contractionProduct_sub_one_le`: the linear telescoping bound.
 * `FQFP.norm_contractionProduct_sub_one_sub_sum_le`: the quadratic remainder bound.
 -/
@@ -61,6 +63,23 @@ lemma eq_contractionProduct_of_recurrence (D P : ℕ → A) (h0 : P 0 = 1)
 end Algebra
 
 variable [NormedRing A]
+
+/-- Left multiplication by a contraction with a contractive left inverse preserves the norm. -/
+lemma norm_mul_eq_norm_right_of_mul_eq_one {a b : A} (h : b * a = 1)
+    (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) (x : A) : ‖a * x‖ = ‖x‖ := by
+  apply le_antisymm
+  · simpa only [one_mul] using norm_mul_le_of_le ha (le_refl ‖x‖)
+  · simpa only [← mul_assoc, h, one_mul] using norm_mul_le_of_le hb (le_refl ‖a * x‖)
+
+/-- Right multiplication by a contraction with a contractive right inverse preserves the norm. -/
+lemma norm_mul_eq_norm_left_of_mul_eq_one {a b : A} (h : a * b = 1)
+    (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) (x : A) : ‖x * a‖ = ‖x‖ :=
+  norm_mul_eq_norm_right_of_mul_eq_one (congrArg MulOpposite.op h) ha hb (MulOpposite.op x)
+
+/-- Two elements in the closed unit ball have distance at most two. -/
+lemma norm_sub_le_two_of_le_one {E : Type*} [SeminormedAddCommGroup E] {x y : E}
+    (hx : ‖x‖ ≤ 1) (hy : ‖y‖ ≤ 1) : ‖x - y‖ ≤ 2 :=
+  (norm_sub_le x y).trans ((add_le_add hx hy).trans_eq (one_add_one_eq_two : (1 : ℝ) + 1 = 2))
 
 /-- Telescoping bounds the distance of a product of contractions from the identity. -/
 theorem norm_contractionProduct_sub_one_le (D : ℕ → A) {δ : ℝ}

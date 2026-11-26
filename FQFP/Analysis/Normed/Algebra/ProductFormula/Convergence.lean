@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -52,8 +52,8 @@ theorem isBigO_pow_sub_exp_of_local_error (S : ℝ → A) (H : A) {K : ℝ}
         gcongr
         exact Nat.sub_le ..
       _ = _ := by
-        rw [show ‖h‖ = ‖t‖ / r by simp [h, norm_div]]
-        field_simp
+        rw [show ‖h‖ = ‖t‖ / r by simp [h, norm_div], ← mul_assoc,
+          mul_div_cancel₀ ‖t‖ hr'.ne']
   change ‖S h - exp (h • H)‖ ≤ C * ‖h ^ (p + 1)‖ at hstep
   calc
     _ ≤ (r : ℝ) * Real.exp (‖h‖ * M) ^ (r - 1) * ‖S h - exp (h • H)‖ := by
@@ -61,9 +61,9 @@ theorem isBigO_pow_sub_exp_of_local_error (S : ℝ → A) (H : A) {K : ℝ}
       exact FQFP.norm_pow_sub_pow_le_of_common_bound _ _ hS hE r
     _ ≤ (r : ℝ) * Real.exp (‖t‖ * M) * (C * ‖h ^ (p + 1)‖) := by gcongr
     _ = _ := by
-      simp only [h, norm_pow, norm_div, norm_inv, Real.norm_natCast]
-      rw [div_pow, pow_succ (r : ℝ), inv_pow]
-      field_simp
+      simp only [h, norm_pow, norm_div, norm_inv, Real.norm_natCast, inv_pow]
+      linear_combination (Real.exp (‖t‖ * M) * C) *
+        natCast_mul_pow_div_pow_succ ‖t‖ r p hr'.ne'
 
 /-- The native order condition gives a fixed-time global convergence rate for arbitrary
 generators of a finite product formula. -/

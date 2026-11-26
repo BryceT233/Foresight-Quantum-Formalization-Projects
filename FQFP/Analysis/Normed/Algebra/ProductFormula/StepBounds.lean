@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -34,6 +34,24 @@ lemma quadratic_accumulation_le_of_step_le_pow {r : ℕ} {t h δ C : ℝ} {p : �
       exact sub_le_self _ zero_le_one
     _ = _ := by
       rw [← ht, pow_succ, Nat.mul_comm 2 p, pow_mul]
+      ring
+
+/-- Combine the linear accumulation of a local remainder with the quadratic accumulation
+of a local distance bound at the same global power. -/
+lemma linear_quadratic_accumulation_le_of_step_le_pow {r p q : ℕ}
+    {t h η δ B C : ℝ} (hr : 1 ≤ r) (ht : (r : ℝ) * h = t)
+    (hlocal : η ≤ h ^ (q + 1) * B) (hδ : 0 ≤ δ) (hstep : δ ≤ h ^ (p + 1) * C)
+    (hpow : h ^ (2 * p) ≤ h ^ q) :
+    (r : ℝ) * η + (r : ℝ) * ((r : ℝ) - 1) / 2 * δ ^ 2 ≤
+      h ^ q * (t * B + t ^ 2 / 2 * C ^ 2) := by
+  have hquad := quadratic_accumulation_le_of_step_le_pow hr ht hδ hstep
+  calc
+    _ ≤ (r : ℝ) * (h ^ (q + 1) * B) + t ^ 2 / 2 * h ^ q * C ^ 2 :=
+      add_le_add (mul_le_mul_of_nonneg_left hlocal (Nat.cast_nonneg r))
+        (hquad.trans (mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_left hpow (div_nonneg (sq_nonneg t) zero_le_two)) (sq_nonneg C)))
+    _ = _ := by
+      rw [← ht, pow_succ h q]
       ring
 
 /-- A bound valid for every positive subdivision with step size at most `ε`

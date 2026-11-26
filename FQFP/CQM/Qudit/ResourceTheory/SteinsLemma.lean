@@ -10,9 +10,9 @@ QuantumInfo/ResourceTheory/SteinsLemma.lean: the direct part and the final conve
 The direct part uses the regularized infimum to turn the likelihood estimate into a
 contradiction without iterating the improvement of the alternatives.
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 

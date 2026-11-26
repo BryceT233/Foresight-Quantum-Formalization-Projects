@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -18,8 +18,10 @@ It defines a dagger on `CPQudit`. Trace preservation is dual to unitality.
 
 * `Qudit.CPMap.dual`: the Heisenberg dual of a completely positive map.
 * `Qudit.CPMap.trace_dual`: duality for the bilinear trace pairing.
+* `Qudit.CPMap.dual_toSuperoperator_eq_kraus`: Kraus operators for the dual.
 * `Qudit.CPMap.dual_dual`: duality is involutive.
 * `Qudit.CPMap.isTracePreserving_iff_dual_one`: trace preservation is unitality of the dual.
+* `Qudit.QuantumChannel.pullbackEffect_comp`: pullbacks compose in reverse channel order.
 -/
 
 @[expose] public section
@@ -45,8 +47,8 @@ lemma conjugate_smul_of_norm_eq_one {H K : Qudit} (f : H.state →ₗ[ℂ] K.sta
 lemma trace_conjugate_adjoint {H K : Qudit} (f : H.state →ₗ[ℂ] K.state)
     (A : Operator H) (B : Operator K) :
     (conjugate f.adjoint B * A).trace = (B * conjugate f A).trace := by
-  simp only [conjugate_apply, LinearMap.adjoint_adjoint, Module.End.mul_eq_comp]
-  simpa only [LinearMap.comp_assoc] using
+  simpa only [conjugate_apply, LinearMap.adjoint_adjoint, Module.End.mul_eq_comp,
+    LinearMap.comp_assoc] using
     (LinearMap.trace_comp_comm' f.adjoint (B ∘ₗ f ∘ₗ A)).symm
 
 /-- Adjoint Kraus operators give the dual of a finite Kraus process. -/
@@ -90,20 +92,30 @@ lemma trace_dual (f : CPMap H K) (A : Operator H) (B : Operator K) :
     (f.dual.toSuperoperator B * A).trace = (B * f.toSuperoperator A).trace :=
   f.exists_dual.choose_spec A B
 
-/-- Characterize the dual without reference to a chosen Kraus decomposition. -/
-lemma dual_eq_iff (f : CPMap H K) (g : CPMap K H) :
-    f.dual = g ↔ ∀ A B,
-      (g.toSuperoperator B * A).trace = (B * f.toSuperoperator A).trace := by
+/-- The trace pairing characterizes the dual among all linear maps on operators. -/
+lemma dual_toSuperoperator_eq_iff (f : CPMap H K) (g : Superoperator K H) :
+    f.dual.toSuperoperator = g ↔ ∀ A B, (g B * A).trace = (B * f.toSuperoperator A).trace := by
   constructor
   · rintro rfl
     exact f.trace_dual
   · intro h
-    apply CPMap.ext
     apply LinearMap.ext
     intro B
-    apply Operator.ext_trace
-    intro A
-    exact (f.trace_dual A B).trans (h A B).symm
+    exact Operator.ext_trace fun A ↦ (f.trace_dual A B).trans (h A B).symm
+
+/-- Characterize the dual without reference to a chosen Kraus decomposition. -/
+lemma dual_eq_iff (f : CPMap H K) (g : CPMap K H) :
+    f.dual = g ↔ ∀ A B,
+      (g.toSuperoperator B * A).trace = (B * f.toSuperoperator A).trace := by
+  rw [CPMap.ext_iff, dual_toSuperoperator_eq_iff]
+
+/-- Taking the Heisenberg dual takes the adjoint of each Kraus operator. -/
+lemma dual_toSuperoperator_eq_kraus {ι : Type*} [Fintype ι] (f : CPMap H K)
+    {a : ι → H.state →ₗ[ℂ] K.state} (ha : f.toSuperoperator = Superoperator.kraus a) :
+    f.dual.toSuperoperator = Superoperator.kraus (fun i ↦ (a i).adjoint) := by
+  apply (f.dual_toSuperoperator_eq_iff _).mpr
+  rw [ha]
+  exact Superoperator.trace_kraus_adjoint a
 
 /-- Taking the Heisenberg dual twice returns the original CP process. -/
 @[simp]
@@ -147,8 +159,7 @@ instance : DaggerCategory CPQudit where
     intro A B
     change (f.dual.toSuperoperator (g.dual.toSuperoperator B) * A).trace =
       (B * g.toSuperoperator (f.toSuperoperator A)).trace
-    rw [f.trace_dual, Operator.trace, LinearMap.trace_mul_comm,
-      ← g.trace_dual, LinearMap.trace_mul_comm]
+    rw [f.trace_dual, g.trace_dual]
   dagger_id H := by
     apply (CPMap.dual_eq_iff _ _).mpr
     intro A B
@@ -185,13 +196,9 @@ lemma dagger_tensor {H K L M : CPQudit} (f : H ⟶ K) (g : L ⟶ M) :
     induction B using Operator.tensor_induction_on with
     | htensor B D =>
       rw [Superoperator.tensor_apply f.dual.toSuperoperator g.dual.toSuperoperator B D,
-        Superoperator.tensor_apply f.toSuperoperator g.toSuperoperator A C]
-      simp only [Operator.tensor, Module.End.mul_eq_comp,
-        ← TensorProduct.map_comp]
-      change (Operator.tensor (f.dual.toSuperoperator B * A)
-        (g.dual.toSuperoperator D * C)).trace =
-        (Operator.tensor (B * f.toSuperoperator A) (D * g.toSuperoperator C)).trace
-      rw [Operator.trace_tensor, Operator.trace_tensor, f.trace_dual, g.trace_dual]
+        Superoperator.tensor_apply f.toSuperoperator g.toSuperoperator A C,
+        Operator.tensor_mul_tensor, Operator.tensor_mul_tensor,
+        Operator.trace_tensor, Operator.trace_tensor, f.trace_dual, g.trace_dual]
     | hadd B D hB hD =>
       simpa only [map_add, add_mul, Operator.trace] using congrArg₂ (· + ·) hB hD
   | hadd A C hA hC =>
@@ -221,6 +228,31 @@ lemma isCausal_pure_iff {H K : Qudit} (f : H ⟶ K) :
   separatesPure.isCausal_map_iff f
 
 end CPQudit
+
+namespace QuantumChannel
+
+variable {H K L : Qudit}
+
+/-- Pullback along the identity channel fixes every bounded effect. -/
+lemma pullbackEffect_id (H : Qudit) (E : Set.Icc (0 : Operator H) 1) :
+    (id H).pullbackEffect E = E := by
+  apply Subtype.ext
+  change ((𝟙 (⟨H⟩ : CPQudit))†).toSuperoperator E.val = E.val
+  rw [dagger_id]
+  rfl
+
+/-- Pulling an effect back along a composite pulls it back along the second channel first. -/
+lemma pullbackEffect_comp (Ψ : QuantumChannel K L) (Φ : QuantumChannel H K)
+    (E : Set.Icc (0 : Operator L) 1) :
+    (Ψ.comp Φ).pullbackEffect E = Φ.pullbackEffect (Ψ.pullbackEffect E) := by
+  apply Subtype.ext
+  let f : (⟨H⟩ : CPQudit) ⟶ ⟨K⟩ := Φ.toCPMap
+  let g : (⟨K⟩ : CPQudit) ⟶ ⟨L⟩ := Ψ.toCPMap
+  change ((f ≫ g)†).toSuperoperator E.val = f†.toSuperoperator (g†.toSuperoperator E.val)
+  rw [dagger_comp]
+  rfl
+
+end QuantumChannel
 
 end
 

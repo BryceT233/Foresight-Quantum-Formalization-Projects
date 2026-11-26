@@ -11,9 +11,9 @@ boundedness of achievable rates, and the input dimension bound on capacity.
 These statements are informal upstream. The file also proposes the capacities of identity
 and replacement channels and monotonicity under composition. The proofs below are local.
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 

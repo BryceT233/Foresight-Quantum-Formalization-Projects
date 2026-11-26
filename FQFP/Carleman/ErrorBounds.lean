@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -67,8 +67,8 @@ lemma hasDerivAt_aeval_sub_carlemanLiftedApproximant_coordinates
   intro i
   let E := (aeval (x t)).toLinearMap.comp (truncTotal σ ℝ (N + 1)).range.subtype -
     carlemanLiftedApproximant F x₀ N t
-  convert hasDerivAt_aeval_sub_carlemanLiftedApproximant F x₀ x t hx N (B i) using 1
-  exact congrArg (· + _) (LinearMap.dualMap_coordinates B _ E i)
+  exact (hasDerivAt_aeval_sub_carlemanLiftedApproximant F x₀ x t hx N (B i)).congr_deriv
+    (congrArg (· + _) (LinearMap.dualMap_coordinates B _ E i).symm)
 
 /-- A quantitative lifted error bound in any finite observable basis.
 The residual is exactly the evaluation of the discarded high-degree part. -/

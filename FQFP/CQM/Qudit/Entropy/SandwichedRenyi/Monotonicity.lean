@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -81,9 +81,7 @@ private def overlap (ρ σ : Density H) (v : H.state) (i : Fin (Module.finrank �
 private lemma gram_diagonal (ρ σ : Density H) (a : ℝ) (v : H.state) :
     (inner ℂ v (((factor ρ σ a).adjoint ∘ₗ factor ρ σ a) v)).re =
       ∑ i, overlap ρ σ v i * σ.eigenvalue i ^ (a⁻¹ - 1) := by
-  rw [LinearMap.comp_apply, LinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K]
-  simp only [RCLike.ofReal_eq_complex_ofReal, ← Complex.ofReal_pow, Complex.ofReal_re]
-  rw [← σ.eigenbasis.sum_sq_norm_inner_right]
+  rw [Operator.re_inner_adjoint_comp_self, ← σ.eigenbasis.sum_sq_norm_inner_right]
   apply Finset.sum_congr rfl
   intro i _
   simp only [factor, LinearMap.comp_apply, ← LinearMap.adjoint_inner_left (σ.spectralMap _),

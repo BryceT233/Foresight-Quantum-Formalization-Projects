@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -54,8 +54,7 @@ private lemma Density.sum_norm_sq_spectralAmplitude (ρ : Density H) (T : H.stat
     ∑ i, ‖T (ρ.spectralAmplitude i)‖ ^ 2 = ρ.expectation (T.adjoint ∘ₗ T) := by
   rw [expectation, expectationComplex, ← ρ.sum_outer_spectralAmplitude]
   simp only [Finset.mul_sum, map_sum, Operator.trace_mul_outer,
-    LinearMap.comp_apply, LinearMap.adjoint_inner_right, ← RCLike.re_eq_complex_re,
-    inner_self_eq_norm_sq]
+    Complex.re_sum, Operator.re_inner_adjoint_comp_self]
 
 /-- The average squared norm after any linear filter is its acceptance probability
 in the original mixed state. Taking the rejected part of a projection gives its mean loss. -/
@@ -245,8 +244,9 @@ theorem Dilation.exists_input_traceDistance_sq_le {Φ : QuantumChannel H B} (d :
     map_tensor, map_id] at hav
   obtain ⟨z, _, hz⟩ := Finset.exists_le_of_expect_le Finset.univ_nonempty hav
   refine ⟨(ρ.tensor τ).spectralPhaseState z, ?_⟩
-  rw [Density.traceDistance, show ∀ x : ℝ, 2 * (x / 2) = x by intro x; ring]
-  exact hz
+  rwa [Density.traceDistance, show ∀ x : ℝ, 2 * (x / 2) = x by
+    intro x
+    ring]
 
 /-- A dimension-purity bound produces an actual finite-block code with entanglement root
 fidelity at least `1 - ε`. The target may be any pure state on the logical input and reference. -/

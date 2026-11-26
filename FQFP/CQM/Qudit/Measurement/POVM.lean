@@ -9,9 +9,9 @@ Physlib reference for POVMs and the outcome distribution.
 leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
 QuantumInfo/Measurements/POVM.lean
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 
@@ -203,9 +203,7 @@ lemma probability_ofBasis_pure (b : OrthonormalBasis ι ℂ H.state)
     (ofBasis b).probability (Density.pure v) i = ‖inner ℂ (b i) (v : H.state)‖ ^ 2 := by
   rw [probability_pure]
   change (inner ℂ (v : H.state) (Operator.outer (b i) (b i) v)).re = _
-  simp only [Operator.outer_apply, inner_smul_right]
-  rw [← inner_conj_symm v.val (b i), Complex.mul_conj']
-  rw [← Complex.ofReal_pow, Complex.ofReal_re]
+  rw [Operator.inner_outer_self, Complex.ofReal_re]
 
 /-- The new Born probabilities recover the existing categorical amplitude measurement. -/
 lemma probability_ofBasis_pure_eq_scalar (b : OrthonormalBasis ι ℂ H.state)

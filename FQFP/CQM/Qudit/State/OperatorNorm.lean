@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -60,6 +60,18 @@ def continuousLinearMapEquiv : Operator H ≃ₗᵢ[ℂ] (H.state →L[ℂ] H.st
 /-- Mathlib's operator norm agrees with the norm on qudit operators. -/
 @[simp] theorem norm_toContinuousLinearMap {H : Qudit} (A : Operator H) :
     ‖LinearMap.toContinuousLinearMap A‖ = ‖A‖ := rfl
+
+/-- The operator norm of a positive operator is bounded by its real trace. -/
+theorem norm_le_re_trace_of_isPositive {H : Qudit} {A : Operator H} (hA : A.IsPositive) :
+    ‖A‖ ≤ A.trace.re := by
+  obtain ⟨v, rfl⟩ := exists_sum_outer_of_isPositive A hA
+  apply (norm_sum_le _ _).trans
+  simp only [trace, map_sum, Complex.re_sum]
+  apply Finset.sum_le_sum
+  intro i _
+  rw [← trace, trace_outer, inner_self_eq_norm_sq_to_K]
+  change ‖InnerProductSpace.rankOne ℂ (v i) (v i)‖ ≤ _
+  simp [InnerProductSpace.norm_rankOne, pow_two]
 
 end
 

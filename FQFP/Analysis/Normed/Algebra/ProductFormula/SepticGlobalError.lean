@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -43,9 +43,8 @@ lemma septicMidpointTerm_eq_sum {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
     septicMidpointTerm G L N r h =
       ∑ k ∈ range r, expSMulConj (-G) (h ^ 5 • L + h ^ 7 • N)
         (((k : ℝ) + 1 / 2) * h) := by
-  simp only [septicMidpointTerm, midpointConjugationIntegral, smul_smul, ← pow_succ,
-    expSMulConj, mul_add, add_mul, mul_smul_comm, smul_mul_assoc,
-    sum_add_distrib, smul_sum]
+  simp only [septicMidpointTerm, smul_midpointConjugationIntegral_eq_sum, ← pow_succ,
+    expSMulConj_map_add, sum_add_distrib]
 
 /-- At zero step the complete discrete main term vanishes. -/
 @[simp] lemma septicMidpointTerm_zero_step {A : Type*}

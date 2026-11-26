@@ -10,9 +10,9 @@ leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
 QuantumInfo/Channels/CPTP.lean
 QuantumInfo/Channels/DegradableOrder.lean
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 

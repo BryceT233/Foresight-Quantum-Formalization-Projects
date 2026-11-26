@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -40,6 +40,12 @@ lemma compressedDerivation_apply
     (D : Derivation R (MvPolynomial σ R) (MvPolynomial σ R)) (n : ℕ)
     (p : (truncTotal σ R n).range) :
     (compressedDerivation D n p : MvPolynomial σ R) = truncTotal σ R n (D p) := rfl
+
+/-- Compression on a projected polynomial truncates again after applying the derivation. -/
+lemma compressedDerivation_rangeRestrict
+    (D : Derivation R (MvPolynomial σ R) (MvPolynomial σ R)) (n : ℕ) (p : MvPolynomial σ R) :
+    compressedDerivation D n ((truncTotal σ R n).rangeRestrict p) =
+      (truncTotal σ R n).rangeRestrict (D (truncTotal σ R n p)) := rfl
 
 lemma compressedDerivation_basis_repr
     (D : Derivation R (MvPolynomial σ R) (MvPolynomial σ R)) (n : ℕ)

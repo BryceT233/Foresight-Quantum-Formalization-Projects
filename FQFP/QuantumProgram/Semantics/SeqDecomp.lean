@@ -10,7 +10,7 @@ qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
 Qhl/History/SeqDecomp.lean
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
@@ -41,14 +41,9 @@ theorem PostH_eq_sum_next {p : Command Store Cell H} (s : CQState Store H)
     {A : Store → Operator H} (hA : ∀ σ, (A σ).IsPositive) :
     (Configuration.mk (some p) s).PostH A =
       ((Configuration.mk (some p) s).next.map (fun d => d.PostH A)).sum := by
-  let r := Configuration.mk (some p) s
-  let w (t : CQState Store H) := ENNReal.ofReal (t.expectation (A t.store))
   simp only [PostH_eq_tsum_terminalWeightAt _ hA]
-  change (∑' n, r.terminalWeightAt n w) = _
-  rw [tsum_eq_zero_add' CompleteLattice.summable]
-  have hzero : r.terminalWeightAt 0 w = 0 := by simp [r, terminalWeightAt, frontier]
-  simp only [hzero, zero_add, terminalWeightAt_succ, ← List.ofFn_getElem_eq_map, List.sum_ofFn]
-  exact Summable.tsum_finsetSum fun _ _ => CompleteLattice.summable
+  rw [tsum_terminalWeightAt_eq_zero_add_sum_next]
+  simp [terminalWeightAt_zero]
 
 /-- At depth `n`, split a sequential execution at every possible handover depth. -/
 theorem terminalWeightAt_seqWith (n : ℕ) (w : CQState Store H → ℝ≥0∞) :
@@ -57,7 +52,7 @@ theorem terminalWeightAt_seqWith (n : ℕ) (w : CQState Store H → ℝ≥0∞) 
         c.terminalWeightAt j (fun t =>
           (Configuration.mk (some q) t).terminalWeightAt (n - j) w) := by
   induction n generalizing c with
-  | zero => simp [terminalWeightAt, frontier, seqWith]
+  | zero => simp [terminalWeightAt_zero, seqWith]
   | succ n ih =>
     obtain ⟨_ | p, s⟩ := c
     · rw [Finset.sum_range_succ']
@@ -65,13 +60,13 @@ theorem terminalWeightAt_seqWith (n : ℕ) (w : CQState Store H → ℝ≥0∞) 
           (Configuration.mk (Cell := Cell) none s).terminalWeightAt (j + 1) v = 0 := by
         simp [terminalWeightAt_succ, next]
       simp only [hz, Finset.sum_const_zero, zero_add, Nat.sub_zero]
-      simp [terminalWeightAt, frontier, seqWith]
+      simp [terminalWeightAt_zero, seqWith]
     · let c := Configuration.mk (some p) s
       change (c.seqWith q).terminalWeightAt (n + 1) w = _
       have step : (c.seqWith q).next = c.next.map (·.seqWith q) := rfl
       rw [terminalWeightAt_succ, step, List.map_map, Finset.sum_range_succ']
       have hz (v : CQState Store H → ℝ≥0∞) : c.terminalWeightAt 0 v = 0 := by
-        simp [terminalWeightAt, frontier, c]
+        simp [terminalWeightAt_zero, c]
       rw [hz, add_zero]
       simp only [Function.comp_def, ih, TrotterError.List.sum_map_sum, Nat.succ_sub_succ,
         terminalWeightAt_succ]

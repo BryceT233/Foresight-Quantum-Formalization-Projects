@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -48,6 +48,17 @@ lemma carlemanLiftedApproximant_hasDerivAt
         (carlemanLiftedApproximant F x₀ N t) p) t :=
   (carlemanLiftedApproximant_spec F x₀ N).2 t p
 
+/-- Differentiate a projected observable by truncating before and after applying the derivation. -/
+lemma carlemanLiftedApproximant_hasDerivAt_rangeRestrict
+    (F : σ → MvPolynomial σ ℝ) (x₀ : σ → ℝ) (N : ℕ) (t : ℝ) (p : MvPolynomial σ ℝ) :
+    HasDerivAt (fun s => carlemanLiftedApproximant F x₀ N s
+      ((truncTotal σ ℝ (N + 1)).rangeRestrict p))
+      (carlemanLiftedApproximant F x₀ N t
+        ((truncTotal σ ℝ (N + 1)).rangeRestrict
+          (mkDerivation ℝ F (truncTotal σ ℝ (N + 1) p)))) t := by
+  simpa only [LinearMap.dualMap_apply, compressedDerivation_rangeRestrict] using
+    carlemanLiftedApproximant_hasDerivAt F x₀ N t ((truncTotal σ ℝ (N + 1)).rangeRestrict p)
+
 lemma eq_carlemanLiftedApproximant
     (F : σ → MvPolynomial σ ℝ) (x₀ : σ → ℝ) (N : ℕ)
     (Y : ℝ → Module.Dual ℝ (truncTotal σ ℝ (N + 1)).range)
@@ -65,18 +76,11 @@ lemma carlemanLiftedApproximant_one
       ((truncTotal σ ℝ (N + 1)).rangeRestrict 1) = 1 := by
   have htrunc : truncTotal σ ℝ (N + 1) 1 = 1 :=
     (truncTotal_eq_self_iff (N + 1) (by lia) 1).mpr (by simp)
-  have hz : compressedDerivation (mkDerivation ℝ F) (N + 1)
-      ((truncTotal σ ℝ (N + 1)).rangeRestrict 1) = 0 := by
-    apply Subtype.ext
-    change truncTotal σ ℝ (N + 1) (mkDerivation ℝ F (truncTotal σ ℝ (N + 1) 1)) = 0
-    rw [htrunc]
-    simp
   have hderiv (s : ℝ) : HasDerivAt
       (fun t => carlemanLiftedApproximant F x₀ N t
         ((truncTotal σ ℝ (N + 1)).rangeRestrict 1)) 0 s := by
-    simpa only [LinearMap.dualMap_apply, hz, map_zero] using
-      carlemanLiftedApproximant_hasDerivAt F x₀ N s
-        ((truncTotal σ ℝ (N + 1)).rangeRestrict 1)
+    simpa only [htrunc, Derivation.map_one_eq_zero, map_zero] using
+      carlemanLiftedApproximant_hasDerivAt_rangeRestrict F x₀ N s 1
   calc
     _ = carlemanLiftedApproximant F x₀ N 0
         ((truncTotal σ ℝ (N + 1)).rangeRestrict 1) :=
@@ -100,11 +104,9 @@ lemma carlemanApproximant_initial
 lemma carlemanApproximant_zero_order
     (F : σ → MvPolynomial σ ℝ) (x₀ : σ → ℝ) (t : ℝ) :
     carlemanApproximant F x₀ 0 t = 0 := by
-  have hX (i : σ) : truncTotal σ ℝ 1 (X i) = 0 := by
-    simp [X, truncTotal_monomial, Finsupp.degree_single]
   funext i
-  have hp : (truncTotal σ ℝ 1).rangeRestrict (X i) = 0 := Subtype.ext (hX i)
-  simp [carlemanApproximant, hp]
+  have hp := truncTotal_rangeRestrict_eq_zero_of_isHomogeneous 1 (isHomogeneous_X ℝ i) le_rfl
+  simp only [carlemanApproximant, hp, map_zero, Pi.zero_apply]
 
 lemma carlemanApproximant_hasDerivAt
     (F : σ → MvPolynomial σ ℝ) (x₀ : σ → ℝ) (N : ℕ) (hN : 1 ≤ N)
@@ -112,16 +114,8 @@ lemma carlemanApproximant_hasDerivAt
     HasDerivAt (fun s => carlemanApproximant F x₀ N s i)
       (carlemanLiftedApproximant F x₀ N t
         ((truncTotal σ ℝ (N + 1)).rangeRestrict (F i))) t := by
-  have hgen : compressedDerivation (mkDerivation ℝ F) (N + 1)
-      ((truncTotal σ ℝ (N + 1)).rangeRestrict (X i)) =
-        (truncTotal σ ℝ (N + 1)).rangeRestrict (F i) := by
-    apply Subtype.ext
-    change truncTotal σ ℝ (N + 1) (mkDerivation ℝ F (truncTotal σ ℝ (N + 1) (X i))) = _
-    rw [truncTotal_X (N + 1) (by lia), mkDerivation_X]
-    rfl
-  simpa only [carlemanApproximant, LinearMap.dualMap_apply, hgen] using
-    carlemanLiftedApproximant_hasDerivAt F x₀ N t
-      ((truncTotal σ ℝ (N + 1)).rangeRestrict (X i))
+  simpa only [carlemanApproximant, truncTotal_X (N + 1) (by lia), mkDerivation_X] using
+    carlemanLiftedApproximant_hasDerivAt_rangeRestrict F x₀ N t (X i)
 
 lemma hasDerivAt_aeval_sub_carlemanLiftedApproximant
     (F : σ → MvPolynomial σ ℝ) (x₀ : σ → ℝ) (x : ℝ → σ → ℝ) (t : ℝ)
@@ -134,10 +128,9 @@ lemma hasDerivAt_aeval_sub_carlemanLiftedApproximant
       (fun s => aeval (x s) (p : MvPolynomial σ ℝ) - carlemanLiftedApproximant F x₀ N s p)
       ((compressedDerivation D (N + 1)).dualMap E p +
         aeval (x t) (D p - truncTotal σ ℝ (N + 1) (D p))) t := by
-  convert (hasDerivAt_aeval_compressed_with_residual F x t hx (N + 1) p).sub
-    (carlemanLiftedApproximant_hasDerivAt F x₀ N t p) using 1
-  simp only [map_sub, LinearMap.sub_apply]
-  ring
+  refine ((hasDerivAt_aeval_compressed_with_residual F x t hx (N + 1) p).sub
+    (carlemanLiftedApproximant_hasDerivAt F x₀ N t p)).congr_deriv ?_
+  simp only [map_sub, LinearMap.sub_apply, add_sub_right_comm]
 
 lemma carlemanLiftedApproximant_error_initial
     (F : σ → MvPolynomial σ ℝ) (x₀ : σ → ℝ) (x : ℝ → σ → ℝ)
@@ -168,9 +161,8 @@ lemma carlemanLiftedApproximant_eq_aeval_of_invariant_range
   apply eq_carlemanLiftedApproximant
   · rw [hx₀]
   · intro t p
-    simpa [LinearMap.dualMap_apply, compressedDerivation,
-      truncTotal_eq_self_of_mem_range _ (hinv p p.property)] using
-        hasDerivAt_aeval_of_hasDerivAt_coordinates F x t (hx t) p
+    refine (hasDerivAt_aeval_compressed_with_residual F x t (hx t) (N + 1) p).congr_deriv ?_
+    rw [truncTotal_eq_self_of_mem_range _ (hinv p p.property), sub_self, map_zero, add_zero]
 
 /-- Every positive-order approximant is exact for an affine vector field. -/
 lemma carlemanApproximant_eq_of_totalDegree_le_one

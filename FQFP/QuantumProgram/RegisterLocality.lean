@@ -10,7 +10,7 @@ Qhl/Program/LocalConjugation.lean (liftSO_conj_liftF, conj_regLift_conj, mapSO_i
 Qhl/Program/KrausFrame.lean (frame obligations for local program primitives)
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 

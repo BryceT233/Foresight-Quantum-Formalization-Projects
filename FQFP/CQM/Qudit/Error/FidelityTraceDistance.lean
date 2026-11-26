@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -98,13 +98,11 @@ lemma re_trace_pure_sub_mul_self (v w : UnitState H) :
   rw [sub_mul, mul_sub, mul_sub, map_sub, map_sub, map_sub,
     pure_mul_self, pure_mul_self, LinearMap.trace_mul_comm ℂ (pure w).op (pure v).op]
   have ht : LinearMap.trace ℂ H.state ((pure v).op * (pure w).op) =
-      (‖inner ℂ v.val w.val‖ ^ 2 : ℂ) := by
-    change Operator.trace ((pure v).op * Operator.outer w.val w.val) = _
-    rw [Operator.trace_mul_outer, pure_apply, inner_smul_right,
-      ← inner_conj_symm w.val v.val, Complex.mul_conj']
+      ((‖inner ℂ v.val w.val‖ ^ 2 : ℝ) : ℂ) :=
+    (Operator.trace_mul_outer (pure v).op w.val w.val).trans (Operator.inner_outer_self w.val v.val)
   rw [ht, show LinearMap.trace ℂ H.state (pure v).op = 1 from (pure v).trace_one,
     show LinearMap.trace ℂ H.state (pure w).op = 1 from (pure w).trace_one]
-  simp only [← Complex.ofReal_pow, Complex.sub_re, Complex.one_re, Complex.ofReal_re]
+  simp only [Complex.sub_re, Complex.one_re, Complex.ofReal_re]
   ring
 
 /-- For pure states the upper **Fuchs–van de Graaf bound** is an equality. -/

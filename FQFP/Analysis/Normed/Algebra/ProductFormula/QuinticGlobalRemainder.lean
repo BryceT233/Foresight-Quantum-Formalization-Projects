@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -67,7 +67,6 @@ theorem quinticGlobalRemainder_le_pow_six {ℓ C alpha J t h : ℝ} {r : ℕ}
     quinticGlobalRemainder ℓ C alpha J t h r ≤ h ^ 6 *
       (t * (C + 5 / 14 * alpha + J / 24) + t / 2 * ℓ ^ 2 +
         5 * t / 12 * ℓ * C + t ^ 2 / 2 * (ℓ + C) ^ 2) := by
-  have ht0 : 0 ≤ t := ht ▸ mul_nonneg (Nat.cast_nonneg _) hh
   have hd : quinticStepBound ℓ C h ≤ h ^ 5 * (ℓ + C) := by
     calc
       _ ≤ h ^ 5 * ℓ + h ^ 7 * C := min_le_right _ _
@@ -75,24 +74,21 @@ theorem quinticGlobalRemainder_le_pow_six {ℓ C alpha J t h : ℝ} {r : ℕ}
         gcongr h ^ 5 * ℓ + ?_ * C
         exact pow_le_pow_of_le_one hh hh1 (by decide : 5 ≤ 7)
       _ = _ := by ring
-  have hpow {k : ℕ} (hk : 6 ≤ k) : h ^ k ≤ h ^ 6 := pow_le_pow_of_le_one hh hh1 hk
-  have hquad : (r : ℝ) * ((r : ℝ) - 1) / 2 * quinticStepBound ℓ C h ^ 2 ≤
-      t ^ 2 / 2 * h ^ 6 * (ℓ + C) ^ 2 := by
+  have hlocal : quinticCenteredRemainder ℓ C alpha h ≤
+      h ^ 7 * (C + 5 / 14 * alpha + ℓ ^ 2 / 2 + 5 / 12 * ℓ * C) := by
+    unfold quinticCenteredRemainder
     calc
-      _ ≤ t ^ 2 / 2 * h ^ 8 * (ℓ + C) ^ 2 :=
-        quadratic_accumulation_le_of_step_le_pow (p := 4) hr ht
-          (quinticStepBound_nonneg hℓ hC hh) hd
-      _ ≤ t ^ 2 / 2 * h ^ 6 * (ℓ + C) ^ 2 := by
-        gcongr t ^ 2 / 2 * ?_ * (ℓ + C) ^ 2
-        exact hpow (by decide)
-  unfold quinticGlobalRemainder
-  calc
-    _ ≤ t * h ^ 6 * (C + 5 / 14 * alpha + J / 24) + t / 2 * h ^ 6 * ℓ ^ 2 +
-        5 * t / 12 * h ^ 6 * ℓ * C + t ^ 2 / 2 * h ^ 6 * (ℓ + C) ^ 2 := by
-      apply add_le_add _ hquad
-      gcongr t * h ^ 6 * _ + t / 2 * ?_ * ℓ ^ 2 + 5 * t / 12 * ?_ * ℓ * C <;>
-        exact hpow (by decide)
-    _ = _ := by ring
+      _ ≤ h ^ 7 * (C + 5 / 14 * alpha) + 1 / 2 * h ^ 7 * ℓ ^ 2 +
+          5 / 12 * h ^ 7 * ℓ * C := by
+        gcongr h ^ 7 * _ + 1 / 2 * ?_ * ℓ ^ 2 + 5 / 12 * ?_ * ℓ * C
+        · exact pow_le_pow_of_le_one hh hh1 (by decide : 7 ≤ 10)
+        · exact pow_le_pow_of_le_one hh hh1 (by decide : 7 ≤ 12)
+      _ = _ := by ring
+  have hacc := linear_quadratic_accumulation_le_of_step_le_pow (p := 4) (q := 6) hr ht hlocal
+    (quinticStepBound_nonneg hℓ hC hh) hd (pow_le_pow_of_le_one hh hh1 (by decide))
+  rw [quinticGlobalRemainder_eq _ _ _ _ _ _ _ ht]
+  refine (add_le_add hacc le_rfl).trans_eq ?_
+  ring
 
 /-- At fixed nonnegative time, the sixth-power remainder bound holds
 eventually along positive integer step counts. -/

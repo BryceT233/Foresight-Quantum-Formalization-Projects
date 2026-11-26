@@ -11,7 +11,7 @@ Qhl/Logic/Source/AccumulationDomain.lean (restricting total and partial validity
 Qhl/Logic/Source/Rules.lean (Accum1 and Accum2 with preserved operand domains)
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 

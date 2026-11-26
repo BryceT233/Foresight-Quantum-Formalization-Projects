@@ -1,13 +1,13 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 
 /-
 google-deepmind/formal-quantum-computation @ 489edc7039aa4cdded53724b39ea90e33d2c88b4
 QuantumComputation/QuantumHoareLogic/WP.lean: compositional weakest preconditions and expect_wp.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 
 Copyright 2026 Google LLC
 
@@ -108,22 +108,9 @@ private theorem expectation_preUpTo (B : Assertion Store H) (n : ℕ)
   induction n generalizing c with
   | zero => simp [preUpTo, Assertion.zero, CQState.expectation_zero, Configuration.postUpTo]
   | succ n ih =>
-    obtain ⟨_ | p, s⟩ := c
-    · simp only [preUpTo, Configuration.postUpTo, Finset.sum_range_succ', Configuration.postAtE,
-        Configuration.terminalWeightAt, Configuration.frontier_succ_terminal]
-      simp [Configuration.frontier]
-    · let c := Configuration.mk (some p) s
-      change ENNReal.ofReal (s.expectation (stepPre p (preUpTo B n) s.store)) =
-        c.postUpTo (n + 1) _
-      rw [ofReal_expectation_stepPre]
-      let w (t : CQState Store H) := ENNReal.ofReal (t.expectation (B t.store))
-      have hz : c.terminalWeightAt 0 w = 0 := by
-        simp [c, Configuration.terminalWeightAt, Configuration.frontier]
-      change _ = ∑ j ∈ Finset.range (n + 1), c.terminalWeightAt j w
-      rw [Finset.sum_range_succ', hz, add_zero]
-      simp only [Configuration.terminalWeightAt_succ, ← List.ofFn_getElem_eq_map, List.sum_ofFn]
-      rw [Finset.sum_comm]
-      exact Finset.sum_congr rfl fun i _ => ih _
+    obtain ⟨_ | p, s⟩ := c <;>
+      simp [preUpTo, Configuration.postUpTo_succ, Configuration.postAtE,
+        Configuration.terminalWeightAt_zero, Configuration.next, ofReal_expectation_stepPre, ih]
 
 private theorem exists_wp_effect (p : Command Store Cell H) (B : Assertion Store H) (σ : Store) :
     ∃ E : Set.Icc (0 : Operator H) 1, ∀ (ρ : Operator H) (hρ : ρ.IsPositive),

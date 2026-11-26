@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -76,19 +76,10 @@ theorem septicGlobalRemainder_le_pow_eight {ℓ μ C D t h : ℝ} {r : ℕ}
     (hr : 1 ≤ r) (ht : (r : ℝ) * h = t) :
     septicGlobalRemainder ℓ μ C D h r ≤ h ^ 8 *
       (t * (D + ℓ ^ 2 / 2 + ℓ * μ + (5 * ℓ * C + 7 * μ ^ 2) / 14 +
-        7 * μ * C / 16) + t ^ 2 / 2 * (ℓ + μ + C) ^ 2) := by
-  have hquad := quadratic_accumulation_le_of_step_le_pow (p := 4) hr ht
-    (septicStepBound_nonneg hℓ hμ hC hh) (septicStepBound_le_pow_five hμ hC hh hh1)
-  unfold septicGlobalRemainder
-  calc
-    _ ≤ (r : ℝ) * (h ^ 9 *
-          (D + ℓ ^ 2 / 2 + ℓ * μ + (5 * ℓ * C + 7 * μ ^ 2) / 14 +
-            7 * μ * C / 16)) + t ^ 2 / 2 * h ^ 8 * (ℓ + μ + C) ^ 2 :=
-      add_le_add (mul_le_mul_of_nonneg_left
-        (septicCenteredRemainder_le_pow_nine hℓ hμ hC hh hh1) (Nat.cast_nonneg _)) hquad
-    _ = _ := by
-      rw [← ht]
-      ring
+        7 * μ * C / 16) + t ^ 2 / 2 * (ℓ + μ + C) ^ 2) :=
+  linear_quadratic_accumulation_le_of_step_le_pow (p := 4) (q := 8) hr ht
+    (septicCenteredRemainder_le_pow_nine hℓ hμ hC hh hh1) (septicStepBound_nonneg hℓ hμ hC hh)
+    (septicStepBound_le_pow_five hμ hC hh hh1) le_rfl
 
 /-- The eighth-order estimate holds eventually at fixed nonnegative time. -/
 theorem eventually_septicGlobalRemainder_le_pow_eight {ℓ μ C t : ℝ} (D : ℝ)

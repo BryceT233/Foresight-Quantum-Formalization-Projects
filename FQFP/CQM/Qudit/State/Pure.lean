@@ -14,9 +14,9 @@ Copyright (c) 2025 Leonardo A Lessa. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Leonardo A Lessa
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 
@@ -151,9 +151,7 @@ lemma pure_eq_pure_iff (v w : UnitState H) :
 /-- The overlap of two pure states is the squared modulus of their vector inner product. -/
 lemma expectation_pure_pure (v w : UnitState H) :
     (pure v).expectation (pure w).op = ‖inner ℂ w.val v.val‖ ^ 2 := by
-  rw [expectation_pure, pure_apply, inner_smul_right, ← inner_conj_symm v.val w.val,
-    Complex.mul_conj']
-  rw [← Complex.ofReal_pow, Complex.ofReal_re]
+  rw [expectation_pure, op_pure, Operator.inner_outer_self, Complex.ofReal_re]
 
 /-- A pure-state overlap is at most one. -/
 lemma expectation_pure_pure_le_one (v w : UnitState H) :

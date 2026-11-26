@@ -10,9 +10,9 @@ QuantumInfo/Capacity/Capacity.lean: the informal coherent-information lower boun
 and regularized capacity formula. We normalize the entropic side in qubits per use
 and prove the operational statements for channels with an exact decoder and replacements.
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 

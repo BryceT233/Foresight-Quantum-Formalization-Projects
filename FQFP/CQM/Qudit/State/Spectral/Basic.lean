@@ -14,9 +14,9 @@ Copyright (c) 2025 Leonardo A Lessa. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Leonardo A Lessa
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 
@@ -33,6 +33,7 @@ singular states and zero eigenvalues. This is the coordinate-free counterpart of
 ## Main definitions and results
 
 * `Qudit.Density.eigenvalue`: ordered eigenvalues with multiplicities.
+* `Qudit.Density.expectation_eq_sum_eigenvalue_mul_re_inner`: expectations in the eigenbasis.
 * `Qudit.Density.spectralEnsemble`: the pure eigenstates weighted by their eigenvalues.
 * `Qudit.Density.mix_spectralEnsemble`: the spectral ensemble recovers the density.
 * `Qudit.Density.card_positiveEigenIndex`: positive spectral labels count the operator rank.
@@ -62,6 +63,13 @@ def eigenbasis (ρ : Density H) :
 lemma apply_eigenbasis (ρ : Density H) (i : Fin (Module.finrank ℂ H.state)) :
     ρ.op (ρ.eigenbasis i) = (ρ.eigenvalue i : ℂ) • ρ.eigenbasis i :=
   ρ.positive.isSymmetric.apply_eigenvectorBasis rfl i
+
+/-- The expectation is the eigenvalue-weighted sum of the real diagonal entries of an operator. -/
+lemma expectation_eq_sum_eigenvalue_mul_re_inner (ρ : Density H) (A : Operator H) :
+    ρ.expectation A = ∑ i, ρ.eigenvalue i * (inner ℂ (ρ.eigenbasis i) (A (ρ.eigenbasis i))).re := by
+  rw [expectation, expectationComplex, Operator.trace, LinearMap.trace_eq_sum_inner _ ρ.eigenbasis]
+  simp only [mul_apply_eq_comp, apply_eigenbasis, map_smul, inner_smul_right, Complex.re_sum,
+    Complex.re_ofReal_mul]
 
 /-- Product eigenbases diagonalize tensor products of density operators. -/
 lemma tensor_apply_eigenbasis {K : Qudit} (ρ : Density H) (σ : Density K)
@@ -199,9 +207,9 @@ lemma op_eq_sum_positiveEigenvalue_smul_outer (ρ : Density H) :
     ρ.op = ∑ i : ρ.PositiveEigenIndex, (ρ.eigenvalue i.val : ℂ) •
       Operator.outer (ρ.eigenbasis i.val) (ρ.eigenbasis i.val) := by
   classical
-  rw [ρ.op_eq_sum_eigenvalue_smul_outer]
-  rw [← Finset.sum_subtype (Finset.univ.filter (fun i => 0 < ρ.eigenvalue i)) (by simp)
-    (fun i => (ρ.eigenvalue i : ℂ) • Operator.outer (ρ.eigenbasis i) (ρ.eigenbasis i)),
+  rw [ρ.op_eq_sum_eigenvalue_smul_outer,
+    ← Finset.sum_subtype (Finset.univ.filter (fun i => 0 < ρ.eigenvalue i)) (by simp)
+      (fun i => (ρ.eigenvalue i : ℂ) • Operator.outer (ρ.eigenbasis i) (ρ.eigenbasis i)),
     Finset.sum_filter]
   apply Finset.sum_congr rfl
   intro i _

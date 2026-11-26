@@ -12,7 +12,7 @@ Qhl/History/SeqDecomp.lean
 Qhl/Logic/Assertion.lean
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
@@ -36,6 +36,11 @@ namespace QuantumProgram
 
 variable {Store Cell : Type*} {H : Qudit}
 
+private theorem tsum_sum_map {α ι : Type*} (l : List α) (f : α → ι → ℝ≥0∞) :
+    (∑' i, (l.map fun a => f a i).sum) = (l.map fun a => ∑' i, f a i).sum := by
+  simp only [← List.ofFn_getElem_eq_map, List.sum_ofFn]
+  exact Summable.tsum_finsetSum fun _ _ => CompleteLattice.summable
+
 namespace Configuration
 
 variable (c : Configuration Store Cell H)
@@ -44,15 +49,33 @@ variable (c : Configuration Store Cell H)
 noncomputable def terminalWeightAt (n : ℕ) (w : CQState Store H → ℝ≥0∞) : ℝ≥0∞ :=
   (((c.frontier n).filter (·.control.isNone)).map (fun d => w d.state)).sum
 
+/-- At depth zero only an already terminal configuration contributes a weight. -/
+theorem terminalWeightAt_zero (w : CQState Store H → ℝ≥0∞) :
+    c.terminalWeightAt 0 w = if c.control.isNone then w c.state else 0 := by
+  by_cases h : c.control.isNone <;> simp [terminalWeightAt, frontier, h]
+
 /-- Exact-depth terminal weights after one step sum over all one-step successors. -/
 theorem terminalWeightAt_succ (n : ℕ) (w : CQState Store H → ℝ≥0∞) :
     c.terminalWeightAt (n + 1) w = (c.next.map (·.terminalWeightAt n w)).sum := by
   unfold terminalWeightAt
-  rw [frontier_succ]
-  induction c.next with
-  | nil => simp
-  | cons d l ih => simp only [List.flatMap_cons, List.filter_append, List.map_append,
-      List.sum_append, List.map_cons, List.sum_cons, ih]
+  rw [frontier_succ, List.filter_flatMap, List.map_flatMap, List.flatMap_def,
+    List.sum_flatten, List.map_map, Function.comp_def]
+
+/-- A positive horizon counts the root and sums each successor's contribution at the shorter
+horizon. -/
+theorem sum_terminalWeightAt_succ (N : ℕ) (w : CQState Store H → ℝ≥0∞) :
+    ∑ i ∈ Finset.range (N + 1), c.terminalWeightAt i w =
+      c.terminalWeightAt 0 w + (c.next.map fun d => ∑ i ∈ Finset.range N,
+        d.terminalWeightAt i w).sum := by
+  rw [Finset.sum_range_succ', add_comm]
+  simp only [terminalWeightAt_succ, TrotterError.List.sum_map_sum]
+
+/-- Total terminal weight splits into the root's contribution and the sums for each successor. -/
+theorem tsum_terminalWeightAt_eq_zero_add_sum_next (w : CQState Store H → ℝ≥0∞) :
+    (∑' n, c.terminalWeightAt n w) =
+      c.terminalWeightAt 0 w + (c.next.map fun d => ∑' n, d.terminalWeightAt n w).sum := by
+  rw [tsum_eq_zero_add' CompleteLattice.summable]
+  simp only [terminalWeightAt_succ, tsum_sum_map]
 
 /-- Pointwise bounds on branch weights pass to the terminal frontier. -/
 theorem terminalWeightAt_mono (n : ℕ) {f g : CQState Store H → ℝ≥0∞} (h : ∀ s, f s ≤ g s) :
@@ -73,8 +96,8 @@ theorem terminalWeightAt_finsetSum {ι : Type*} (n : ℕ) (u : Finset ι)
 /-- Nonnegative series commute with the finite sum over terminal occurrences at any depth. -/
 theorem terminalWeightAt_tsum {ι : Type*} (n : ℕ) (f : ι → CQState Store H → ℝ≥0∞) :
     c.terminalWeightAt n (fun s => ∑' i, f i s) = ∑' i, c.terminalWeightAt n (f i) := by
-  simp only [terminalWeightAt, ← List.ofFn_getElem_eq_map, List.sum_ofFn]
-  exact (Summable.tsum_finsetSum fun _ _ => CompleteLattice.summable).symm
+  unfold terminalWeightAt
+  exact (tsum_sum_map _ (fun (d : Configuration Store Cell H) i => f i d.state)).symm
 
 /-- A constant factor can be pulled out of the sum over a terminal frontier. -/
 theorem terminalWeightAt_const_mul (n : ℕ) (a : ℝ≥0∞) (w : CQState Store H → ℝ≥0∞) :
@@ -116,6 +139,11 @@ theorem postAtE_le_terminalMassAt (n : ℕ) {A : Store → Operator H} (hA : ∀
 noncomputable def postUpTo (N : ℕ) (A : Store → Operator H) : ℝ≥0∞ :=
   ∑ n ∈ Finset.range N, c.postAtE n A
 
+/-- At a positive horizon, add the root's post-weight to those of the one-step successors. -/
+theorem postUpTo_succ (N : ℕ) (A : Store → Operator H) :
+    c.postUpTo (N + 1) A = c.postAtE 0 A + (c.next.map (·.postUpTo N A)).sum :=
+  c.sum_terminalWeightAt_succ N _
+
 /-- The trace of all branches terminating before depth `N`. -/
 noncomputable def terminalMassUpTo (N : ℕ) : ℝ≥0∞ :=
   ∑ n ∈ Finset.range N, (c.terminalMassAt n : ℝ≥0∞)
@@ -148,17 +176,15 @@ theorem Val_succ_singleton {c d : Configuration Store Cell H} (hnext : c.next = 
   have shift (w : CQState Store H → ℝ≥0∞) :
       ∑ i ∈ Finset.range (N + 1), c.terminalWeightAt i w =
         ∑ i ∈ Finset.range N, d.terminalWeightAt i w := by
-    have hz : c.terminalWeightAt 0 w = 0 := by simp [terminalWeightAt, frontier, hrun]
-    simp [Finset.sum_range_succ', c.terminalWeightAt_succ, hnext, hz]
+    simp [sum_terminalWeightAt_succ, terminalWeightAt_zero, hrun, hnext]
   simp only [Val, postUpTo, terminalMassUpTo, postAtE, ← terminalWeightAt_mass, shift, hm]
 
 /-- A positive horizon sees the whole post-weight of an already terminated configuration. -/
 theorem Val_succ_terminal (s : CQState Store H) (N : ℕ) (A : Store → Operator H) :
     (Configuration.mk (Cell := Cell) none s).Val (N + 1) A =
       ENNReal.ofReal (s.expectation (A s.store)) := by
-  simp only [Val, postUpTo, terminalMassUpTo, Finset.sum_range_succ', postAtE,
-    terminalWeightAt, terminalMassAt, frontier_succ_terminal]
-  simp [frontier]
+  simp [Val, postUpTo, terminalMassUpTo, postAtE, ← terminalWeightAt_mass,
+    sum_terminalWeightAt_succ, terminalWeightAt_zero, next]
 
 /-- Extending the horizon decreases the upper bound for observables bounded by one. -/
 theorem antitone_Val {A : Store → Operator H} (hA : ∀ σ, A σ ≤ 1) :
@@ -179,6 +205,12 @@ theorem tendsto_postUpTo {A : Store → Operator H} (hA : ∀ σ, (A σ).IsPosit
     Tendsto (fun N => c.postUpTo N A) atTop (𝓝 (c.PostH A)) := by
   simpa only [postUpTo, PostH, c.postAtE_eq_ofReal_postAt _ hA] using
     ENNReal.tendsto_nat_tsum (fun n => c.postAtE n A)
+
+/-- A finite horizon collects at most the full terminal expectation of a positive observable. -/
+theorem postUpTo_le_PostH (N : ℕ) {A : Store → Operator H} (hA : ∀ σ, (A σ).IsPositive) :
+    c.postUpTo N A ≤ c.PostH A := by
+  simp only [postUpTo, PostH, c.postAtE_eq_ofReal_postAt _ hA]
+  exact sum_le_tsum _
 
 /-- The finite-depth values converge to the post-expectation plus residual trace. -/
 theorem tendsto_Val {A : Store → Operator H} (hA : ∀ σ, (A σ).IsPositive) :

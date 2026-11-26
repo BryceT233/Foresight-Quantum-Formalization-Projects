@@ -10,9 +10,9 @@ QuantumInfo/Capacity/Capacity.lean: the informal coherent-information coding bou
 and the lower-bound direction of regularized capacity. The proofs here use Qudit's
 forward coherent information and its worst-case root-fidelity error criterion.
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 

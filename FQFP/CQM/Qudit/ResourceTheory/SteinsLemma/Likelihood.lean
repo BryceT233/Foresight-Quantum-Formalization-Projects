@@ -9,9 +9,9 @@ leanprover-community/physlib @ 101e93cf91f0304f5ab9bfbfdec6cebcc031f7cd
 QuantumInfo/ResourceTheory/SteinsLemma.lean: likelihood tests after pinching in the
 direct part of the generalized Stein lemma.
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 
@@ -35,7 +35,6 @@ namespace Qudit.Density
 
 variable {H : Qudit} {ι : Type*} [Fintype ι]
 
-open Classical in
 private lemma exists_common_basis (ρ σ : Density H) (h : Commute ρ.op σ.op) :
     ∃ (b : OrthonormalBasis (Fin (Module.finrank ℂ H.state)) ℂ H.state)
       (p q : Fin (Module.finrank ℂ H.state) → ℝ),
@@ -109,7 +108,6 @@ private lemma probability_of_pinching (ρ σ : Density H) (b : OrthonormalBasis 
 
 private def basisTest (b : OrthonormalBasis ι ℂ H.state) (s : Finset ι) :
     Set.Icc (0 : Operator H) 1 := by
-  classical
   refine ⟨∑ i ∈ s, Operator.outer (b i) (b i),
     LinearMap.nonneg_iff_isPositive.mpr (LinearMap.isPositive_sum _ fun i _ =>
       Operator.isPositive_outer (b i)), ?_⟩
@@ -251,7 +249,6 @@ theorem relativeEntropyReal_pinching_le_of_test_and_renyi
     (τ.pinching.map ρ).relativeEntropyReal τ ≤ hi - ε.val * (hi - lo) +
       Real.exp ((α.val - 1) *
         ((ρ.sandwichedRenyiRelativeEntropy η α).toReal + Real.log C - hi)) / (α.val - 1) := by
-  classical
   let ω := τ.pinching.map ρ
   obtain ⟨b, p, q, hpb, hqb⟩ := exists_common_basis ω τ (τ.commute_pinching ρ.op).symm
   have heq (i) : (POVM.ofBasis b).probability τ i = q i :=

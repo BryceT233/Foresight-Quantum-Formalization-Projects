@@ -9,7 +9,7 @@ qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
 Qhl/Program/FrameParameters.lean (Prog.AvoidsRegister and krausFrame_of_parameters)
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 

@@ -1,11 +1,12 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.SymmetricDefect
+import FQFP.Analysis.Normed.Ring.ContractionProduct
 
 /-!
 # Local error from an even symmetric defect
@@ -42,16 +43,24 @@ lemma norm_expListProduct_mul_eq_of_le_one (l : List A) (B : A)
         norm_exp_smul_mul_eq_of_le_one Z _ (hZ Z (by simp)) t]
       exact ih (fun Z hmem ↦ hZ Z (by simp [hmem]))
 
+/-- Under two-sided contraction bounds, an ordered exponential product has the norm of one. -/
+lemma norm_expListProduct_eq_norm_one (l : List A)
+    (hZ : ∀ Z ∈ l, ∀ t : ℝ, ‖exp (t • Z)‖ ≤ 1) (t : ℝ) :
+    ‖expListProduct l t‖ = ‖(1 : A)‖ := by
+  simpa only [mul_one] using norm_expListProduct_mul_eq_of_le_one l 1 hZ t
+
 /-- A product of exponentials with two-sided contraction bounds acts isometrically on the right. -/
 lemma norm_mul_expListProduct_eq_of_le_one (l : List A) (B : A)
     (hZ : ∀ Z ∈ l, ∀ t : ℝ, ‖exp (t • Z)‖ ≤ 1) (t : ℝ) :
     ‖B * expListProduct l t‖ = ‖B‖ := by
-  induction l generalizing B with
-  | nil => simp
-  | cons Z l ih =>
-      rw [expListProduct_cons, ← mul_assoc,
-        ih _ (fun Z hmem ↦ hZ Z (by simp [hmem])),
-        norm_mul_exp_smul_eq_of_le_one Z B (hZ Z (by simp)) t]
+  cases l with
+  | nil => simp only [expListProduct_nil, mul_one]
+  | cons Z l =>
+    have h1 : ‖(1 : A)‖ ≤ 1 := by simpa only [zero_smul, exp_zero] using hZ Z List.mem_cons_self 0
+    have hrev := norm_expListProduct_eq_norm_one (Z :: l).reverse
+      (by simpa only [List.mem_reverse] using hZ) (-t)
+    exact norm_mul_eq_norm_left_of_mul_eq_one (expListProduct_mul_reverse_neg (Z :: l) t)
+      ((norm_expListProduct_eq_norm_one _ hZ t).le.trans h1) (hrev.le.trans h1) B
 
 /-- The two exterior half-products preserve the norm of the middle defect. -/
 lemma norm_symmetricDefect_eq_of_le_one (l : List A) (G : A)

@@ -14,9 +14,9 @@ Qhl/Gate/Phase.lean and Qhl/Gate/ControlledU.lean: phase shifts and coherent con
 Qhl/Examples/BellStateTriple.lean: CNOT as a computational basis permutation.
 Copyright 2026 Qedia contributors.
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 

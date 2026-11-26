@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -22,6 +22,7 @@ These estimates form a common analytic foundation for BCH and product-formula er
 * `norm_sub_sum_le_real_exp_tail`: a factorial coefficient bound controls a series tail.
 * `norm_exp_sub_sum_le`: the Taylor remainder is bounded by the scalar exponential tail.
 * `real_exp_sub_sum_le_geometric`: a factorial-geometric bound for every scalar tail.
+* `real_exp_sub_sum_le_pow_of_le_one_sub_inv_factorial`: a power bound at an order-dependent radius.
 * `norm_exp_mul_exp_sub_one_le`: a product estimate independent of convergence thresholds.
 * `TrotterError.exp_neg_mul_self`, `TrotterError.exp_mul_neg_self`: inverse cancellation.
 * `exp_log_two_denominator_bounds`: positivity and upper bound for the BCH denominator.
@@ -199,23 +200,32 @@ theorem real_exp_sub_sum_le_geometric {s : ℝ} (hs : 0 ≤ s) (hs1 : s < 1) (n 
       rw [div_eq_mul_inv, mul_inv_rev]
       ring
 
+/-- When `s ≤ 1 - 1 / n!`, the exponential tail is bounded by the first omitted power `s ^ n`. -/
+lemma real_exp_sub_sum_le_pow_of_le_one_sub_inv_factorial {s : ℝ} (hs : 0 ≤ s)
+    (n : ℕ) (hsn : s ≤ 1 - (n.factorial : ℝ)⁻¹) :
+    Real.exp s - ∑ i ∈ range n, s ^ i / Nat.factorial i ≤ s ^ n := by
+  have hf : 0 < (n.factorial : ℝ) := by positivity
+  have h : (n.factorial : ℝ)⁻¹ ≤ 1 - s := by linarith only [hsn]
+  have hs1 : s < 1 := sub_pos.mp ((inv_pos.mpr hf).trans_le h)
+  have hd : 1 ≤ (n.factorial : ℝ) * (1 - s) := calc
+    1 = (n.factorial : ℝ) * (n.factorial : ℝ)⁻¹ := (mul_inv_cancel₀ hf.ne').symm
+    _ ≤ _ := mul_le_mul_of_nonneg_left h hf.le
+  calc
+    _ ≤ s ^ n / ((n.factorial : ℝ) * (1 - s)) := by
+      simpa only [div_eq_inv_mul] using real_exp_sub_sum_le_geometric hs hs1 n
+    _ ≤ s ^ n := by
+      rw [div_le_iff₀ (lt_of_lt_of_le zero_lt_one hd)]
+      exact le_mul_of_one_le_right (pow_nonneg hs n) hd
+
 /-- Every exponential tail of order at least two is bounded by its first omitted power
 on the nonnegative half-radius ball. -/
 lemma real_exp_sub_sum_le_pow {s : ℝ} (hs : 0 ≤ s) (hs_half : s < 1 / 2)
     (n : ℕ) (hn : 2 ≤ n) :
     Real.exp s - ∑ i ∈ range n, s ^ i / Nat.factorial i ≤ s ^ n := by
-  have hf : (2 : ℝ) ≤ Nat.factorial n := by
-    exact_mod_cast (show 2 ≤ Nat.factorial n from Nat.factorial_le hn)
-  have hd : 1 ≤ (Nat.factorial n : ℝ) * (1 - s) := by
-    have h := mul_le_mul_of_nonneg_right hf (show 0 ≤ 1 - s by linarith only [hs_half])
-    linarith only [h, hs_half]
-  calc
-    _ ≤ s ^ n / ((Nat.factorial n : ℝ) * (1 - s)) := by
-      simpa only [div_eq_inv_mul] using
-        real_exp_sub_sum_le_geometric hs (show s < 1 by linarith only [hs_half]) n
-    _ ≤ s ^ n := by
-      rw [div_le_iff₀ (lt_of_lt_of_le zero_lt_one hd)]
-      exact le_mul_of_one_le_right (pow_nonneg hs n) hd
+  have hf : (2 : ℝ) ≤ n.factorial := by
+    exact_mod_cast (show 2 ≤ n.factorial from Nat.factorial_le hn)
+  have hinv := inv_anti₀ zero_lt_two hf
+  exact real_exp_sub_sum_le_pow_of_le_one_sub_inv_factorial hs n (by linarith only [hs_half, hinv])
 
 /-- **Third-order Taylor remainder of `Real.exp`, `1/(1 - r)` form**:
 `exp r - 1 - r - r²/2 ≤ r³ / (6 (1 - r))` for `0 ≤ r < 1`. -/
@@ -228,34 +238,26 @@ theorem real_exp_third_order_le_div {r : ℝ} (hr : 0 ≤ r) (hr1 : r < 1) :
 `exp r - 1 - r - r²/2 ≤ r³` for `0 ≤ r < 5/6`. -/
 theorem real_exp_third_order_le_cube {r : ℝ} (hr : 0 ≤ r) (hr1 : r < 5 / 6) :
     Real.exp r - 1 - r - r ^ 2 / 2 ≤ r ^ 3 := by
-  have hr1' : r < 1 := by linarith
-  calc Real.exp r - 1 - r - r ^ 2 / 2 ≤ r ^ 3 / (6 * (1 - r)) :=
-        real_exp_third_order_le_div hr hr1'
-    _ ≤ r ^ 3 := by
-        rw [div_le_iff₀ (by linarith : (0 : ℝ) < 6 * (1 - r))]
-        nlinarith [sq_nonneg r, pow_nonneg hr 3]
+  have h := real_exp_sub_sum_le_pow_of_le_one_sub_inv_factorial hr 3
+    (hr1.le.trans (by norm_num [Nat.factorial]))
+  norm_num [sum_range_succ, Nat.factorial] at h
+  linarith only [h]
 
 /-- The real exponential tail is bounded by the first omitted power on `[0, 3/4)`. -/
 lemma real_exp_fourth_order_le_quartic {s : ℝ} (hs : 0 ≤ s) (hs1 : s < 3 / 4) :
     Real.exp s - 1 - s - s ^ 2 / 2 - s ^ 3 / 6 ≤ s ^ 4 := by
-  have ht := real_exp_sub_sum_le_geometric hs (show s < 1 by linarith only [hs1]) 4
-  norm_num [sum_range_succ, Nat.factorial] at ht
-  calc _ ≤ s ^ 4 / (24 * (1 - s)) := by linarith only [ht]
-       _ ≤ s ^ 4 := by
-         rw [div_le_iff₀ (by linarith only [hs1] : (0 : ℝ) < 24 * (1 - s))]
-         nlinarith only [mul_nonneg (pow_nonneg hs 4)
-           (show 0 ≤ 24 * (1 - s) - 1 by linarith only [hs1])]
+  have h := real_exp_sub_sum_le_pow_of_le_one_sub_inv_factorial hs 4
+    (hs1.le.trans (by norm_num [Nat.factorial]))
+  norm_num [sum_range_succ, Nat.factorial] at h
+  linarith only [h]
 
 /-- The real exponential tail is bounded by the first omitted power on `[0, 3/4)`. -/
 lemma real_exp_fifth_order_le_quintic {s : ℝ} (hs : 0 ≤ s) (hs1 : s < 3 / 4) :
     Real.exp s - 1 - s - s ^ 2 / 2 - s ^ 3 / 6 - s ^ 4 / 24 ≤ s ^ 5 := by
-  have ht := real_exp_sub_sum_le_geometric hs (show s < 1 by linarith only [hs1]) 5
-  norm_num [sum_range_succ, Nat.factorial] at ht
-  calc _ ≤ s ^ 5 / (120 * (1 - s)) := by linarith only [ht]
-       _ ≤ s ^ 5 := by
-         rw [div_le_iff₀ (by linarith only [hs1] : (0 : ℝ) < 120 * (1 - s))]
-         nlinarith only [mul_nonneg (pow_nonneg hs 5)
-           (show 0 ≤ 120 * (1 - s) - 1 by linarith only [hs1])]
+  have h := real_exp_sub_sum_le_pow_of_le_one_sub_inv_factorial hs 5
+    (hs1.le.trans (by norm_num [Nat.factorial]))
+  norm_num [sum_range_succ, Nat.factorial] at h
+  linarith only [h]
 
 /-- The quadratic real exponential error on `[0, 1]`. -/
 lemma real_exp_sub_one_sub_id_le_sq {s : ℝ} (hs : 0 ≤ s) (hs1 : s ≤ 1) :

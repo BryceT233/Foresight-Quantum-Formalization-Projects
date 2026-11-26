@@ -14,7 +14,7 @@ Qhl/Logic/Source/AccumulationOneOrder.lean (exclusive exits and state-side domin
 Qhl/Logic/Source/AccumulationOne.lean (total and partial Accum1 validity)
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 

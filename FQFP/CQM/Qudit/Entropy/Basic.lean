@@ -14,15 +14,16 @@ Copyright (c) 2025 Leonardo A Lessa. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Leonardo A Lessa
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 
 public import FQFP.Analysis.SpecialFunctions.Entropy
 public import FQFP.CQM.Qudit.State.Pure
 public import FQFP.CQM.Qudit.State.Spectral.FunctionalCalculus
+import FQFP.CQM.Qudit.State.Spectral.Tensor
 
 /-!
 # Von Neumann entropy
@@ -93,18 +94,15 @@ lemma vonNeumannEntropy_pure (ψ : UnitState H) : (pure ψ).vonNeumannEntropy = 
   apply Finset.sum_eq_zero
   intro i _
   let ρ := pure ψ
-  have he := congrArg (fun A : Operator H => inner ℂ (ρ.eigenbasis i) (A (ρ.eigenbasis i)))
-    (pure_mul_self ψ)
-  change inner ℂ (ρ.eigenbasis i) ((ρ.op * ρ.op) (ρ.eigenbasis i)) =
-    inner ℂ (ρ.eigenbasis i) (ρ.op (ρ.eigenbasis i)) at he
-  simp only [mul_apply_eq_comp, apply_eigenbasis, map_smul, inner_smul_right,
-    OrthonormalBasis.inner_eq_one, mul_one] at he
-  have hr : ρ.eigenvalue i * ρ.eigenvalue i = ρ.eigenvalue i := by exact_mod_cast he
-  have hz : ρ.eigenvalue i = 0 ∨ ρ.eigenvalue i = 1 := by
-    have h : ρ.eigenvalue i * (ρ.eigenvalue i - 1) = 0 := by nlinarith [hr]
-    simpa only [mul_eq_zero, sub_eq_zero] using h
-  rcases hz with hz | hz <;> simp only [show (pure ψ).eigenvalue i = _ from hz,
-    Real.negMulLog_zero, Real.negMulLog_one]
+  change Real.negMulLog (ρ.eigenvalue i) = 0
+  have hsq : ρ.eigenvalue i ^ 2 = ρ.eigenvalue i := by
+    rw [pow_two]
+    have he := LinearMap.congr_fun (pure_mul_self ψ) (ρ.eigenbasis i)
+    change (ρ.op * ρ.op) (ρ.eigenbasis i) = ρ.op (ρ.eigenbasis i) at he
+    simp only [mul_apply_eq_comp, apply_eigenbasis, map_smul, smul_smul] at he
+    exact_mod_cast smul_left_injective ℂ (ρ.eigenbasis.toBasis.ne_zero i) he
+  rcases eq_zero_or_one_of_sq_eq_self hsq with h | h <;>
+    simp only [h, Real.negMulLog_zero, Real.negMulLog_one]
 
 /-- Every density known to be pure has zero entropy. -/
 lemma IsPure.vonNeumannEntropy_eq_zero {ρ : Density H} (hρ : ρ.IsPure) :
@@ -123,12 +121,8 @@ lemma vonNeumannEntropy_mix_ofBasis {ι : Type*} [Fintype ι]
 @[simp]
 lemma vonNeumannEntropy_map_unitary (ρ : Density H) (U : H ⟶ K) [IsUnitary U] :
     (ρ.map U).vonNeumannEntropy = ρ.vonNeumannEntropy := by
-  rw [vonNeumannEntropy_eq_sum_of_eigenbasis (ρ.map U)
-    (ρ.eigenbasis.map (LIEquivOfIsUnitary U)) ρ.eigenvalue ?_, vonNeumannEntropy_eq_sum]
-  intro i
-  change (ρ.map U).op (U.hom (ρ.eigenbasis i)) =
-    (ρ.eigenvalue i : ℂ) • U.hom (ρ.eigenbasis i)
-  rw [op_map_apply, ρ.apply_eigenbasis, map_smul]
+  apply vonNeumannEntropy_eq_of_nonzeroEigenvalues_eq
+  simp only [nonzeroEigenvalues, ρ.eigenvalues_map_unitary U]
 
 /-- Von Neumann entropy is the trace of the spectral function `x ↦ -x log x`. -/
 lemma vonNeumannEntropy_eq_trace_spectralMap (ρ : Density H) :

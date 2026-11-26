@@ -22,9 +22,9 @@ leanprover-community/physlib @ 101e93cf91f0304f5ab9bfbfdec6cebcc031f7cd
 QuantumInfo/ResourceTheory/HypothesisTesting.lean: the classical Rényi sum used in
 the measurement converse, stated here for any common eigenbasis.
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 

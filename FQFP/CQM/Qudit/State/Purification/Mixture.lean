@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -17,6 +17,7 @@ Zero weights are allowed; no division by a weight is used.
 
 ## Main definitions and results
 
+* `Qudit.Operator.partialTraceRight_outer_sum_sqrt_smul`: the weighted outer-product sum.
 * `Qudit.UnitState.purifyMixture`: purification of a finite pure-state mixture with orthogonal
   labels.
 * `Qudit.UnitState.partialTraceRight_pure_purifyMixture`: discarding labels recovers the mixture.
@@ -27,6 +28,32 @@ Zero weights are allowed; no division by a weight is used.
 
 open CategoryTheory MonoidalCategory
 open scoped BigOperators TensorProduct
+
+namespace Qudit.Operator
+
+variable {H K : Qudit}
+
+/-- Tracing an outer product after discarding the right factor recovers its inner product. -/
+lemma trace_partialTraceRight_outer (v w : (H ⊗ K).state) :
+    (partialTraceRight (outer v w)).trace = inner ℂ w v :=
+  (LinearMap.trace_partialTraceRight _).trans (trace_outer (H := H ⊗ K) v w)
+
+/-- With common orthonormal labels, the partial trace pairs vectors with the same label and
+recovers the weight from the two square-root coefficients. -/
+lemma partialTraceRight_outer_sum_sqrt_smul {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℂ K.state) (w : ι → ℝ) (hw : ∀ i, 0 ≤ w i)
+    (v u : ι → H.state) :
+    partialTraceRight (outer (∑ i, ((Real.sqrt (w i) : ℂ) • v i) ⊗ₜ[ℂ] b i)
+      (∑ i, ((Real.sqrt (w i) : ℂ) • u i) ⊗ₜ[ℂ] b i)) =
+      ∑ i, (w i : ℂ) • outer (v i) (u i) := by
+  rw [partialTraceRight_outer_sum_tmul]
+  apply Finset.sum_congr rfl
+  intro i _
+  ext x
+  simp only [outer_apply, LinearMap.smul_apply, inner_smul_left, Complex.conj_ofReal, smul_smul]
+  rw [mul_right_comm, ← pow_two, ← Complex.ofReal_pow, Real.sq_sqrt (hw i)]
+
+end Qudit.Operator
 
 namespace Qudit.UnitState
 
@@ -41,24 +68,17 @@ lemma partialTraceRight_outer_sum_sqrt_smul (b : OrthonormalBasis ι ℂ K.state
     Operator.partialTraceRight
       (Operator.outer (∑ i, ((Real.sqrt (w i) : ℂ) • (ψ i).val) ⊗ₜ[ℂ] b i)
         (∑ i, ((Real.sqrt (w i) : ℂ) • (ψ i).val) ⊗ₜ[ℂ] b i)) =
-      ∑ i, (w i : ℂ) • (Density.pure (ψ i)).op := by
-  rw [Operator.partialTraceRight_outer_sum_tmul]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [Operator.outer_smul_self, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_nonneg (Real.sqrt_nonneg _), ← Complex.ofReal_pow, Real.sq_sqrt (hw i)]
-  rfl
+      ∑ i, (w i : ℂ) • (Density.pure (ψ i)).op :=
+  Operator.partialTraceRight_outer_sum_sqrt_smul b w hw (fun i => (ψ i).val) (fun i => (ψ i).val)
 
 /-- Purify a finite mixture of unit states by coherently recording an orthonormal label. -/
 def purifyMixture (b : OrthonormalBasis ι ℂ K.state) (w : ι → ℝ)
     (hw : ∀ i, 0 ≤ w i) (hs : ∑ i, w i = 1) (ψ : ι → UnitState H) :
     UnitState (H ⊗ K) :=
   ⟨∑ i, ((Real.sqrt (w i) : ℂ) • (ψ i).val) ⊗ₜ[ℂ] b i, by
-    have ht := (LinearMap.trace_partialTraceRight _).symm.trans
-      (congrArg (Operator.trace (H := H))
-        (partialTraceRight_outer_sum_sqrt_smul b w hw ψ))
-    exact (Operator.trace_outer _ _).symm.trans
-      (ht.trans (Density.mixture w hw hs (fun i => Density.pure (ψ i))).trace_one)⟩
+    rw [state.Normalized, ← Operator.trace_partialTraceRight_outer,
+      partialTraceRight_outer_sum_sqrt_smul b w hw ψ]
+    exact (Density.mixture w hw hs (fun i => Density.pure (ψ i))).trace_one⟩
 
 /-- Discarding the orthogonal label recovers the mixture of the original pure densities. -/
 lemma partialTraceRight_pure_purifyMixture (b : OrthonormalBasis ι ℂ K.state)
@@ -75,23 +95,11 @@ lemma inner_purifyMixture (b : OrthonormalBasis ι ℂ K.state)
     (ψ φ : ι → UnitState H) :
     inner ℂ (purifyMixture b w hw hs ψ).val (purifyMixture b w hw hs φ).val =
       ∑ i, (w i : ℂ) * inner ℂ (ψ i).val (φ i).val := by
-  have h := congrArg (Operator.trace (H := H))
-    (Operator.partialTraceRight_outer_sum_tmul b
-      (fun i => (Real.sqrt (w i) : ℂ) • (φ i).val)
-      (fun i => (Real.sqrt (w i) : ℂ) • (ψ i).val))
-  have hi : inner ℂ (purifyMixture b w hw hs ψ).val (purifyMixture b w hw hs φ).val =
-      Operator.trace (H := H) (∑ i, Operator.outer
-        ((Real.sqrt (w i) : ℂ) • (φ i).val) ((Real.sqrt (w i) : ℂ) • (ψ i).val)) :=
-    (Operator.trace_outer _ _).symm.trans
-      ((LinearMap.trace_partialTraceRight _).symm.trans h)
-  rw [hi]
-  change LinearMap.trace ℂ H.state _ = _
-  rw [map_sum]
-  apply Finset.sum_congr rfl
-  intro i _
-  change Operator.trace (H := H) (Operator.outer _ _) = _
-  rw [Operator.trace_outer, inner_smul_left, inner_smul_right, Complex.conj_ofReal,
-    ← mul_assoc, ← pow_two, ← Complex.ofReal_pow, Real.sq_sqrt (hw i)]
+  change inner ℂ (∑ i, ((Real.sqrt (w i) : ℂ) • (ψ i).val) ⊗ₜ[ℂ] b i)
+    (∑ i, ((Real.sqrt (w i) : ℂ) • (φ i).val) ⊗ₜ[ℂ] b i) = _
+  rw [← Operator.trace_partialTraceRight_outer,
+    Operator.partialTraceRight_outer_sum_sqrt_smul b w hw]
+  simp only [Operator.trace, map_sum, map_smul, smul_eq_mul, Operator.trace_outer]
 
 end
 

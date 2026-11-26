@@ -11,7 +11,7 @@ Qhl/Logic/Soundness.lean
 Qhl/Logic/Source/RulesSoundness.lean (soundness of Kraus accumulation)
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 

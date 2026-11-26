@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -76,6 +76,12 @@ namespace Operator
 
 variable {H : Qudit}
 
+/-- The quadratic form of `T.adjoint ∘ₗ T` is the squared norm of `T v`. -/
+lemma re_inner_adjoint_comp_self {K : Qudit} (T : H.state →ₗ[ℂ] K.state) (v : H.state) :
+    (inner ℂ v ((T.adjoint ∘ₗ T) v)).re = ‖T v‖ ^ 2 := by
+  rw [LinearMap.comp_apply, LinearMap.adjoint_inner_right, ← RCLike.re_eq_complex_re,
+    inner_self_eq_norm_sq]
+
 /-- The basis-independent complex trace. -/
 noncomputable abbrev trace (A : Operator H) : ℂ := LinearMap.trace ℂ H.state A
 
@@ -85,6 +91,11 @@ noncomputable def outer (v w : H.state) : Operator H := (bra w).smulRight v
 /-- An outer product acts by an inner product followed by scalar multiplication. -/
 @[simp]
 lemma outer_apply (v w x : H.state) : outer v w x = inner ℂ w x • v := rfl
+
+/-- The diagonal matrix coefficient of an outer square is a squared overlap. -/
+lemma inner_outer_self (v w : H.state) :
+    inner ℂ v (outer w w v) = ((‖inner ℂ w v‖ ^ 2 : ℝ) : ℂ) := by
+  rw [outer_apply, inner_smul_right, ← inner_conj_symm v w, Complex.mul_conj', Complex.ofReal_pow]
 
 /-- An outer product is the composite of a bra followed by a ket. -/
 lemma outer_eq_ket_comp_bra (v w : H.state) : outer v w = ket v ∘ₗ bra w := rfl
@@ -97,8 +108,8 @@ lemma hom_outerHom_ketArrow {K : Qudit} (u : K.state) (v : H.state) :
 
 /-- Interpreting a categorical outer product of kets gives the linear outer product. -/
 lemma endAlgEquiv_outer (v w : H.state) :
-    endAlgEquiv H (End.outer (ketArrow v) (ketArrow w)) = outer v w := by
-  exact hom_outerHom_ketArrow v w
+    endAlgEquiv H (End.outer (ketArrow v) (ketArrow w)) = outer v w :=
+  hom_outerHom_ketArrow v w
 
 /-- The adjoint of an outer product exchanges its vectors. -/
 @[simp]
@@ -195,12 +206,8 @@ lemma re_inner_apply_eq_sum_of_eigenbasis (b : OrthonormalBasis ι ℂ H.state) 
     (w : ι → ℝ) (hw : ∀ i, A (b i) = (w i : ℂ) • b i) (v : H.state) :
     (inner ℂ v (A v)).re = ∑ i, w i * ‖inner ℂ (b i) v‖ ^ 2 := by
   rw [← sum_outer_basis b A]
-  simp only [LinearMap.sum_apply, hw, outer_smul_left, LinearMap.smul_apply, outer_apply,
-    inner_sum, inner_smul_right, Complex.re_sum]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [← inner_conj_symm v (b i), Complex.mul_conj']
-  simp only [← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.ofReal_re]
+  simp only [LinearMap.sum_apply, hw, outer_smul_left, LinearMap.smul_apply, inner_sum,
+    inner_smul_right, inner_outer_self, Complex.re_sum, ← Complex.ofReal_mul, Complex.ofReal_re]
 
 /-- A linear map on operators is determined on basis matrix units. -/
 lemma basis_outer_ext {V : Type*} [AddCommGroup V] [Module ℂ V]

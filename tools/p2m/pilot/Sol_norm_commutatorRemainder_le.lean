@@ -22,9 +22,9 @@ import Mathlib.Data.Nat.Choose.Multinomial
 
 -- ===== from FQFP.TrotterError.Calculus =====
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 
 
@@ -831,9 +831,9 @@ end TrotterError
 
 -- ===== from FQFP.TrotterError.Commutator =====
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 
 
@@ -1447,9 +1447,9 @@ end TrotterError
 
 -- ===== from FQFP.TrotterError.Integrals =====
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 
 
@@ -1593,9 +1593,9 @@ end TrotterError
 
 -- ===== from FQFP.TrotterError.ListLemmas =====
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 
 
@@ -1881,9 +1881,9 @@ end TrotterError.List
 
 -- ===== from FQFP.TrotterError.TimeOrderedExp =====
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 
 
@@ -2984,9 +2984,9 @@ end TrotterError
 
 -- ===== from FQFP.TrotterError.ExpSMulConj =====
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 
 
@@ -3283,9 +3283,9 @@ end TrotterError
 
 -- ===== from FQFP.TrotterError.CommutatorExpansion =====
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 
 

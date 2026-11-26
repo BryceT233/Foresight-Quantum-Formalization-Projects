@@ -1,6 +1,6 @@
 # Foresight Quantum Formalization Projects (FQFP)
 
-FQFP is a Lean 4 library developed by a research group at Foresight Quantum.
+FQFP is a Lean 4 library developed by a research group at Shanghai Fuxi Quantum Technology Co., Ltd.
 It builds on Mathlib. The modules under `FQFP/` are organized by mathematical
 subject, following roughly the same layout as Mathlib.
 

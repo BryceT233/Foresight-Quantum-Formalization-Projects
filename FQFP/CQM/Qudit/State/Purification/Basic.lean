@@ -9,14 +9,15 @@ Physlib reference for purification and recovery by partial trace.
 leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
 QuantumInfo/States/Mixed/MState.lean
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 
 public import FQFP.CQM.Qudit.State.Composite.Schmidt
 public import FQFP.Analysis.InnerProductSpace.Orthonormal
+import FQFP.CQM.Qudit.State.Purification.Mixture
 
 /-!
 # Purification of density operators
@@ -64,21 +65,16 @@ lemma partialTraceRight_outer_spectral_sum (ρ : Density H)
     Operator.partialTraceRight
       (Operator.outer (∑ i, ((Real.sqrt (ρ.eigenvalue i) : ℂ) • ρ.eigenbasis i) ⊗ₜ[ℂ] b i)
         (∑ i, ((Real.sqrt (ρ.eigenvalue i) : ℂ) • ρ.eigenbasis i) ⊗ₜ[ℂ] b i)) = ρ.op := by
-  rw [Operator.partialTraceRight_outer_sum_tmul, ρ.op_eq_sum_eigenvalue_smul_outer]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [Operator.outer_smul_self, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_nonneg (Real.sqrt_nonneg _), ← Complex.ofReal_pow,
-    Real.sq_sqrt (ρ.eigenvalue_nonneg i)]
+  rw [Operator.partialTraceRight_outer_sum_sqrt_smul b ρ.eigenvalue ρ.eigenvalue_nonneg,
+    ← ρ.op_eq_sum_eigenvalue_smul_outer]
 
 /-- Purify a density operator using an explicit orthonormal basis for the auxiliary system. -/
 def purifyWith (ρ : Density H)
     (b : OrthonormalBasis (Fin (Module.finrank ℂ H.state)) ℂ K.state) :
     UnitState (H ⊗ K) :=
   ⟨∑ i, ((Real.sqrt (ρ.eigenvalue i) : ℂ) • ρ.eigenbasis i) ⊗ₜ[ℂ] b i, by
-    have ht := (LinearMap.trace_partialTraceRight _).symm.trans
-      (congrArg Operator.trace (ρ.partialTraceRight_outer_spectral_sum b))
-    exact (Operator.trace_outer _ _).symm.trans (ht.trans ρ.trace_one)⟩
+    rw [state.Normalized, ← Operator.trace_partialTraceRight_outer,
+      ρ.partialTraceRight_outer_spectral_sum b, ρ.trace_one]⟩
 
 /-- The vector of an explicit-basis purification is its square-root-weighted spectral sum. -/
 lemma coe_purifyWith (ρ : Density H)

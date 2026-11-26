@@ -1,12 +1,13 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
 public import FQFP.CQM.Qudit.State.Purification.Basic
 public import FQFP.CQM.Qudit.State.Composite.SchmidtRank
+import FQFP.CQM.Qudit.State.Purification.Mixture
 
 /-!
 # Minimal purification
@@ -56,20 +57,15 @@ lemma partialTraceRight_outer_positive_spectral_sum (ρ : Density H)
         (∑ i, ((Real.sqrt (ρ.eigenvalue i.val) : ℂ) • ρ.eigenbasis i.val) ⊗ₜ[ℂ] b i)
         (∑ i, ((Real.sqrt (ρ.eigenvalue i.val) : ℂ) • ρ.eigenbasis i.val) ⊗ₜ[ℂ] b i)) =
       ρ.op := by
-  rw [Operator.partialTraceRight_outer_sum_tmul, ρ.op_eq_sum_positiveEigenvalue_smul_outer]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [Operator.outer_smul_self, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_nonneg (Real.sqrt_nonneg _), ← Complex.ofReal_pow,
-    Real.sq_sqrt (ρ.eigenvalue_nonneg i.val)]
+  rw [Operator.partialTraceRight_outer_sum_sqrt_smul b (fun i => ρ.eigenvalue i.val)
+    (fun i => ρ.eigenvalue_nonneg i.val), ← ρ.op_eq_sum_positiveEigenvalue_smul_outer]
 
 /-- Purify using an auxiliary basis indexed by exactly the positive eigenvalues. -/
 def purifyMinimalWith (ρ : Density H)
     (b : OrthonormalBasis ρ.PositiveEigenIndex ℂ K.state) : UnitState (H ⊗ K) :=
   ⟨∑ i, ((Real.sqrt (ρ.eigenvalue i.val) : ℂ) • ρ.eigenbasis i.val) ⊗ₜ[ℂ] b i, by
-    have ht := (LinearMap.trace_partialTraceRight _).symm.trans
-      (congrArg Operator.trace (ρ.partialTraceRight_outer_positive_spectral_sum b))
-    exact (Operator.trace_outer _ _).symm.trans (ht.trans ρ.trace_one)⟩
+    rw [state.Normalized, ← Operator.trace_partialTraceRight_outer,
+      ρ.partialTraceRight_outer_positive_spectral_sum b, ρ.trace_one]⟩
 
 /-- The vector of a minimal explicit-basis purification is its positive spectral sum. -/
 lemma coe_purifyMinimalWith (ρ : Density H)

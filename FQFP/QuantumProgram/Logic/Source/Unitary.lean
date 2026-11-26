@@ -10,7 +10,7 @@ qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
 Qhl/Logic/Source/BasicDerived.lean
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 

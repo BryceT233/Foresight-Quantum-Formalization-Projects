@@ -11,7 +11,7 @@ Qhl/Examples/InverseQFTClassicalTriple.lean (inverse decoding and its source der
 Qhl/Examples/QFTClassicalTriple.lean (forward correctness for a stored word and arbitrary input)
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 

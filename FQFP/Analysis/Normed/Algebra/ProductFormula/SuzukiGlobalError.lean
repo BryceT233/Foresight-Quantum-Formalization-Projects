@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -59,9 +59,8 @@ lemma norm_fiveStageStrangProduct_le_one (a b : A) (p : ℝ)
     exact norm_exp_smul_fiveStageStrangHalfGenerator_le_one a b p ha hb i t
   rw [fiveStageStrangProduct_eq_symmetricExpProduct, symmetricExpProduct,
     norm_expListProduct_mul_eq_of_le_one _ _ hZ,
-    ← mul_one (expListProduct _ _), norm_expListProduct_mul_eq_of_le_one _ _
-      (fun Z hZ' ↦ hZ Z (List.mem_reverse.mp hZ'))]
-  simpa using ha 0
+    norm_expListProduct_eq_norm_one _ (by simpa only [List.mem_reverse] using hZ)]
+  simpa only [zero_smul, exp_zero] using ha 0
 
 /-- **Discrete Suzuki global bound.** Before quadrature, the finite midpoint
 sum retains cancellation between all time steps. -/
@@ -183,7 +182,7 @@ theorem norm_fiveStageStrangProduct_pow_sub_exp_le_two (a b : A) (p : ℝ)
     | succ r ih =>
       rw [pow_succ]
       simpa using norm_mul_le_of_le ih (norm_fiveStageStrangProduct_le_one a b p ha hb h)
-  exact (norm_sub_le _ _).trans (by linarith [hG t])
+  exact norm_sub_le_two_of_le_one hS (hG t)
 
 /-- **Canonical C*-algebra global operator bound.** Only skew-adjoint input
 generators, nonnegative time, and a positive integer step count are required. -/

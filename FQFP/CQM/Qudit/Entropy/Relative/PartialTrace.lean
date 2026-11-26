@@ -9,9 +9,9 @@ Physlib reference for relative entropy under a partial trace.
 leanprover-community/physlib @ adccea9195c7c347a5f8cde1ddf6874f89ea6a9a
 QuantumInfo/Entropy/DPI.lean
 
-Modified by Foresight Quantum in 2026
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
-Authors: Foresight Quantum
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
+Authors: FQFP authors
 -/
 module
 
@@ -43,10 +43,8 @@ variable {H K : Qudit}
 
 private lemma expectation_adjoint_mul (ρ : Density H) (X : Operator H) :
     ρ.expectation (X.adjoint * X) = ∑ i, ρ.eigenvalue i * ‖X (ρ.eigenbasis i)‖ ^ 2 := by
-  rw [expectation, expectationComplex, Operator.trace, LinearMap.trace_eq_sum_inner _ ρ.eigenbasis]
-  simp only [mul_apply_eq_comp, ρ.apply_eigenbasis, map_smul, inner_smul_right,
-    LinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K, Complex.re_sum,
-    RCLike.ofReal_eq_complex_ofReal, ← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.ofReal_re]
+  rw [expectation_eq_sum_eigenvalue_mul_re_inner]
+  simp only [Module.End.mul_eq_comp, Operator.re_inner_adjoint_comp_self]
 
 private def cost (ρ σ : Density H) (t : ℝ) (X : Operator H) : ℝ :=
   (1 - t) * ρ.expectation ((1 - X).adjoint * (1 - X)) + t * σ.expectation (X * X.adjoint)

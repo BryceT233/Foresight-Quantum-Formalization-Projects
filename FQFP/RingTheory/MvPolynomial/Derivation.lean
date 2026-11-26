@@ -1,12 +1,13 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 public import Mathlib.LinearAlgebra.Dual.Defs
+import FQFP.RingTheory.MvPolynomial.Trunc
 
 /-!
 # Polynomial derivations and degree bounds
@@ -20,6 +21,7 @@ Polynomial vector fields determine derivations through Mathlib's `mkDerivation`.
   occurring in a polynomial, for any index type.
 * `MvPolynomial.IsHomogeneous.mkDerivation`: homogeneous degree behavior.
 * `MvPolynomial.totalDegree_mkDerivation_le`: the total-degree bound.
+* `MvPolynomial.homogeneousComponent_mkDerivation_eq_zero_of_totalDegree_le`: vanishing blocks.
 -/
 
 @[expose] public section
@@ -128,32 +130,20 @@ lemma homogeneousComponent_mkDerivation_eq_zero
   have h := (homogeneousComponent_isHomogeneous (k + 1) p).mkDerivation hF
   simpa [hm] using homogeneousComponent_of_mem (m := m) h
 
-/-- A quadratic vector field couples only three adjacent degree blocks; degree zero has
-zero derivative. This describes the observable operator, whose dual gives the block
-structure of the Carleman state. -/
-lemma homogeneousComponent_mkDerivation_quadratic_eq_zero
-    (F : σ → MvPolynomial σ R) (hF : ∀ i, (F i).totalDegree ≤ 2)
-    (k m : ℕ) (hm : m + 1 < k ∨ k + 1 < m) (p : MvPolynomial σ R) :
-    homogeneousComponent m (mkDerivation R F (homogeneousComponent k p)) = 0 := by
+/-- A vector field of degree at most `d` sends the degree-`k + 1` block into degrees
+from `k` through `k + d`. -/
+lemma homogeneousComponent_mkDerivation_eq_zero_of_totalDegree_le
+    (F : σ → MvPolynomial σ R) {d : ℕ} (hF : ∀ i, (F i).totalDegree ≤ d)
+    (k m : ℕ) (hm : m < k ∨ k + d < m) (p : MvPolynomial σ R) :
+    homogeneousComponent m (mkDerivation R F (homogeneousComponent (k + 1) p)) = 0 := by
   classical
-  obtain _ | k := k
-  · simp [homogeneousComponent_zero]
-  have hsplit (i : σ) :
-      (∑ r ∈ Finset.range 3, homogeneousComponent r (F i)) = F i := by
-    ext s
-    by_cases hs : s.degree < 3
-    · simp [coeff_homogeneousComponent, hs]
-    · have hz : (F i).coeff s = 0 := by
-        apply coeff_eq_zero_of_totalDegree_lt
-        change (F i).totalDegree < s.degree
-        have hi := hF i
-        lia
-      simp [coeff_homogeneousComponent, hz]
   have hD : mkDerivation R F =
-      ∑ r ∈ Finset.range 3, mkDerivation R (fun i => homogeneousComponent r (F i)) := by
+      ∑ r ∈ Finset.range (d + 1), mkDerivation R (fun i => homogeneousComponent r (F i)) := by
     apply derivation_ext
     intro i
-    simpa using (hsplit i).symm
+    have h := (truncTotal_eq_self_iff (d + 1) (Nat.succ_ne_zero d) (F i)).mpr
+      (Nat.lt_succ_of_le (hF i))
+    simpa [truncTotal] using h.symm
   rw [hD]
   simp only [← Derivation.coeFn_coe, Derivation.coe_sum_linearMap,
     LinearMap.sum_apply, map_sum]
@@ -164,5 +154,17 @@ lemma homogeneousComponent_mkDerivation_quadratic_eq_zero
     exact homogeneousComponent_isHomogeneous r (F i)
   · have hr' := Finset.mem_range.mp hr
     lia
+
+/-- A quadratic vector field couples only three adjacent degree blocks. Constants have zero
+derivative. This describes the observable operator, whose dual gives the block structure of the
+Carleman state. -/
+lemma homogeneousComponent_mkDerivation_quadratic_eq_zero
+    (F : σ → MvPolynomial σ R) (hF : ∀ i, (F i).totalDegree ≤ 2)
+    (k m : ℕ) (hm : m + 1 < k ∨ k + 1 < m) (p : MvPolynomial σ R) :
+    homogeneousComponent m (mkDerivation R F (homogeneousComponent k p)) = 0 := by
+  cases k with
+  | zero => simp [homogeneousComponent_zero]
+  | succ k =>
+    exact homogeneousComponent_mkDerivation_eq_zero_of_totalDegree_le F hF k m (by lia) p
 
 end MvPolynomial

@@ -11,7 +11,7 @@ Qhl/Logic/Source/Rules.lean (total loop with a ghost rank premise)
 Qhl/Logic/Source/RulesSoundness.lean (soundness of the ghost rank premise)
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 

@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -33,7 +33,8 @@ lemma hasDerivAt_aeval_compressed_with_residual
     HasDerivAt (fun s ↦ aeval (x s) (p : MvPolynomial σ 𝕜))
       ((compressedDerivation D n).dualMap Y p +
         aeval (x t) (D p - truncTotal σ 𝕜 n (D p))) t := by
-  simpa [LinearMap.dualMap_apply, compressedDerivation, map_sub] using
-    hasDerivAt_aeval_of_hasDerivAt_coordinates F x t hx p
+  apply (hasDerivAt_aeval_of_hasDerivAt_coordinates F x t hx p).congr_deriv
+  exact LinearMap.congr_fun (sub_eq_iff_eq_add'.mp
+    (dualMap_restriction_sub_compressed (mkDerivation 𝕜 F) n (aeval (x t)).toLinearMap)) p
 
 end MvPolynomial

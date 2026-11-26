@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -59,10 +59,8 @@ theorem exists_subspace_norm_sq_le_of_trace (T : H.state →ₗ[ℂ] K.state) {�
   have hμ i : 0 ≤ μ i := hA.nonneg_eigenvalues rfl i
   let bad := Finset.univ.filter (fun i => 2 * δ < μ i)
   let W := Submodule.span ℂ (↑(bad.image b) : Set H.state)
-  have hsum : ∑ i, μ i ≤ Module.finrank ℂ H.state * δ := by
-    change (LinearMap.trace ℂ H.state A).re ≤ _ at ht
-    simpa only [LinearMap.trace_eq_sum_inner A b, he, inner_smul_right,
-      b.inner_eq_ite, ite_true, mul_one, Complex.re_sum, Complex.ofReal_re] using ht
+  have hsum : ∑ i, μ i ≤ Module.finrank ℂ H.state * δ :=
+    (hA.isSymmetric.re_trace_eq_sum_eigenvalues rfl).symm.le.trans ht
   have hc : (bad.card : ℝ) * (2 * δ) ≤ (Module.finrank ℂ H.state : ℝ) * δ := by
     calc
       _ = ∑ _ ∈ bad, 2 * δ := by simp
@@ -78,15 +76,8 @@ theorem exists_subspace_norm_sq_le_of_trace (T : H.state →ₗ[ℂ] K.state) {�
   refine ⟨Wᗮ, by have := W.finrank_add_finrank_orthogonal; lia, ?_⟩
   intro x hx
   have energy : ‖T x‖ ^ 2 = ∑ i, μ i * ‖inner ℂ (b i) x‖ ^ 2 := by
-    rw [← inner_self_eq_norm_sq (𝕜 := ℂ), ← LinearMap.adjoint_inner_right]
-    change (inner ℂ x (A x)).re = _
-    rw [← b.sum_inner_mul_inner x (A x), Complex.re_sum]
-    apply Finset.sum_congr rfl
-    intro i _
-    rw [← hA.isSymmetric, he, inner_smul_left, ← inner_conj_symm x (b i)]
-    simp only [Complex.conj_ofReal, Complex.mul_re, Complex.mul_im, Complex.conj_re,
-      Complex.conj_im, Complex.ofReal_re, Complex.ofReal_im, Complex.sq_norm, Complex.normSq_apply]
-    ring
+    rw [← Operator.re_inner_adjoint_comp_self T x]
+    exact Operator.re_inner_apply_eq_sum_of_eigenbasis b A μ he x
   rw [energy, ← b.sum_sq_norm_inner_right x, Finset.mul_sum]
   apply Finset.sum_le_sum
   intro i _
@@ -253,8 +244,8 @@ theorem AchievesEntanglementRate.achievesRate {Φ : QuantumChannel H K} {R r : �
   have hlog := Real.logb_le_logb_of_le (by norm_num : (1 : ℝ) < 2)
     (by positivity : 0 < (d + 1 : ℝ)) (by exact_mod_cast hk : (d + 1 : ℝ) ≤ 2 * (k : ℝ))
   rw [Real.logb_mul (by norm_num) (by positivity), Real.logb_self_eq_one (by norm_num)] at hlog
-  have hlen : 1 / (R - r) < (n + 1 : ℝ) := by
-    exact hN.trans (by exact_mod_cast Nat.lt_succ_of_le hn)
+  have hlen : 1 / (R - r) < (n + 1 : ℝ) :=
+    hN.trans (by exact_mod_cast Nat.lt_succ_of_le hn)
   have hgap := (div_lt_iff₀ (sub_pos.mpr hr)).mp hlen
   refine ⟨n, k, Γ, he.trans hΓ, by linarith only [hgap, hR, hlog], ?_⟩
   simpa only [mul_div_cancel₀ ε (by norm_num : (2 : ℝ) ≠ 0)] using ha

@@ -11,7 +11,7 @@ Qhl/Logic/Source/Initialization.lean (singleton, finite-block and dynamic-block 
 Qhl/Logic/InitBlock.lean (initPre_ancCells_op for a pure ancillary block)
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
@@ -43,21 +43,6 @@ def SourceAssertion.initializePre (A : SourceAssertion S (tensorMemory D))
     (s : S → Finset (Fin n)) : SourceAssertion S (tensorMemory D) :=
   ⟨A.classical, A.quantum.defined, A.quantum.effect.channelPre (fun σ => initializeCells D τ (s σ))⟩
 
-private theorem pullback_id {H : Qudit} (E : Set.Icc (0 : Operator H) 1) :
-    (QuantumChannel.id H).pullbackEffect E = E := by
-  apply Subtype.ext
-  exact Operator.ext_trace (fun X => (QuantumChannel.id H).toCPMap.trace_dual X E.val)
-
-private theorem pullback_comp {H : Qudit} (Φ Ψ : QuantumChannel H H)
-    (E : Set.Icc (0 : Operator H) 1) :
-    Φ.pullbackEffect (Ψ.pullbackEffect E) = (Ψ.comp Φ).pullbackEffect E := by
-  apply Subtype.ext
-  apply Operator.ext_trace
-  intro X
-  exact (Φ.toCPMap.trace_dual X (Ψ.pullbackEffect E).val).trans
-    ((Ψ.toCPMap.trace_dual (Φ.toSuperoperator X) E.val).trans
-      ((Ψ.comp Φ).toCPMap.trace_dual X E.val).symm)
-
 /-- Resetting a right-hand ancilla to a pure vector compresses the post-effect to that vector
 and tensors the resulting system observable with the ancillary identity. -/
 theorem Register.initializeTo_right_pullbackEffect {H R : Qudit} (v : UnitState R)
@@ -84,7 +69,7 @@ theorem SourceAssertion.initializePre_empty (A : SourceAssertion S (tensorMemory
     A.initializePre τ (fun _ => ∅) = A := by
   have he : A.quantum.effect.channelPre (fun _ => initializeCells D τ ∅) = A.quantum.effect :=
     funext fun σ => (congrArg (fun f : QuantumChannel _ _ => f.pullbackEffect (A.quantum.effect σ))
-      (initializeCells_empty D τ)).trans (pullback_id _)
+      (initializeCells_empty D τ)).trans (QuantumChannel.pullbackEffect_id _ _)
   simp only [initializePre, he]
 
 /-- Composing two backward transformers collects their selected sites into a union. -/
@@ -99,8 +84,7 @@ theorem SourceAssertion.initializePre_union (A : SourceAssertion S (tensorMemory
   change (initializeCells D τ (s σ)).pullbackEffect
     ((initializeCells D τ (t σ)).pullbackEffect _) =
       (initializeCells D τ (s σ ∪ t σ)).pullbackEffect _
-  rw [Finset.union_comm (s σ) (t σ), initializeCells_union]
-  exact pullback_comp ..
+  rw [Finset.union_comm (s σ) (t σ), initializeCells_union, QuantumChannel.pullbackEffect_comp]
 
 /-- Both source calculi admit the exact finite-block precondition for the atomic reset. -/
 theorem initializeCells_derivations (A : SourceAssertion S (tensorMemory D))
@@ -119,12 +103,8 @@ theorem SourceAssertion.initializePre_singleton_op (A : SourceAssertion S (tenso
   intro K
   let Φ := initializeCells D (fun j => Density.pure (v j)) {q σ}
   have he : Φ.toSuperoperator = Superoperator.kraus K := initializeCells_singleton_kraus D v _ b
-  apply Operator.ext_trace
-  intro X
-  change (Φ.toCPMap.dual.toSuperoperator _ * X).trace = _
-  rw [Φ.toCPMap.trace_dual]
-  change (_ * Φ.toSuperoperator X).trace = _
-  rw [he, ← Superoperator.trace_kraus_adjoint]
+  change Φ.toCPMap.dual.toSuperoperator (A.quantum.effect σ).val = _
+  rw [Φ.toCPMap.dual_toSuperoperator_eq_kraus he]
   simp only [Superoperator.kraus_apply, LinearMap.adjoint_adjoint]
 
 /-- Execute singleton resets in list order, evaluating each address in the current store. -/

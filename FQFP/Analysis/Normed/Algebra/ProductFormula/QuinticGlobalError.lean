@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -40,9 +40,8 @@ theorem norm_interactionProduct_sub_integral_le (G S L : A) (C alpha : ℝ)
     ‖exp (-((r : ℝ) * h) • G) * S ^ r - 1 -
       h ^ 4 • conjugationIntegral G L ((r : ℝ) * h)‖ ≤
         quinticGlobalRemainder ‖L‖ C alpha ‖⁅G, ⁅G, L⁆⁆‖ ((r : ℝ) * h) h r := by
-  have hcap : ‖S - exp (h • G)‖ ≤ quinticStepBound ‖L‖ C h := by
-    apply le_min _ hstep
-    exact (norm_sub_le S _).trans (by linarith [hG h])
+  have hcap : ‖S - exp (h • G)‖ ≤ quinticStepBound ‖L‖ C h :=
+    le_min (norm_sub_le_two_of_le_one hS (hG h)) hstep
   have hd := norm_interactionProduct_sub_midpoint_le G S L hG hS h hlocal hcap r
   have hq := norm_midpointConjugationIntegral_sub_conjugationIntegral_le G L hG r h hh
   rw [quinticGlobalRemainder_eq _ _ _ _ _ _ _ rfl]

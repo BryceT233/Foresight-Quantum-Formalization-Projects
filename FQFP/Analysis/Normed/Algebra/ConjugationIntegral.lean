@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Foresight Quantum. All rights reserved.
+Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Foresight Quantum
+Authors: FQFP authors
 -/
 module
 
@@ -44,6 +44,12 @@ def conjugationIntegral (G L : A) (t : ℝ) : A :=
 /-- The midpoint sum of a conjugation orbit over `r` intervals of length `h`. -/
 def midpointConjugationIntegral (G L : A) (r : ℕ) (h : ℝ) : A :=
   h • ∑ k ∈ range r, expSMulConj (-G) L (((k : ℝ) + 1 / 2) * h)
+
+/-- A scalar multiple of the midpoint sum scales each conjugated element by `c * h`. -/
+lemma smul_midpointConjugationIntegral_eq_sum (G L : A) (r : ℕ) (h c : ℝ) :
+    c • midpointConjugationIntegral G L r h =
+      ∑ k ∈ range r, expSMulConj (-G) ((c * h) • L) (((k : ℝ) + 1 / 2) * h) := by
+  simp only [midpointConjugationIntegral, smul_smul, smul_sum, expSMulConj_map_smul]
 
 /-- The conjugation integral over a zero-length interval vanishes. -/
 @[simp] lemma conjugationIntegral_zero (G L : A) : conjugationIntegral G L 0 = 0 := by
@@ -91,14 +97,9 @@ theorem norm_expSMulConj_sub_linear_le (G L : A)
   rw [sq_abs] at hr
   have heq : expSMulConj G L x - expSMulConj G L c -
       (x - c) • expSMulConj G ⁅G, L⁆ c =
-      expSMulConjLin G c (expSMulConj G L (x - c) - L - (x - c) • ⁅G, L⁆) := by
-    rw [map_sub, map_sub, map_smul]
-    change _ = expSMulConj G (expSMulConj G L (x - c)) c -
-      expSMulConj G L c - (x - c) • expSMulConj G ⁅G, L⁆ c
-    rw [← expSMulConj_add, add_sub_cancel]
-  rw [heq]
-  change ‖expSMulConj G _ c‖ ≤ _
-  rw [norm_expSMulConj_eq_of_le_one G _ hG]
+      expSMulConj G (expSMulConj G L (x - c) - L - (x - c) • ⁅G, L⁆) c := by
+    simp only [expSMulConj_map_sub, expSMulConj_map_smul, ← expSMulConj_add, add_sub_cancel]
+  rw [heq, norm_expSMulConj_eq_of_le_one G _ hG]
   convert hr using 1
   · rw [sub_add_eq_sub_sub]
   · ring

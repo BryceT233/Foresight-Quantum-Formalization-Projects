@@ -11,7 +11,7 @@ Qhl/Logic/Rules.lean
 Qhl/Logic/Source/Rules.lean (evaluated Kraus accumulation for total derivations)
 
 Copyright 2026 Qedia contributors.
-Modified by Foresight Quantum in 2026
+Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
