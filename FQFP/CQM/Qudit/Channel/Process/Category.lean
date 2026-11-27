@@ -161,35 +161,17 @@ lemma assoc_natural {H K L H' K' L' : CPQudit}
 lemma left_natural {H K : CPQudit} (f : H ⟶ K) :
     (𝟙 (𝟙_ CPQudit) ⊗ₘ f) ≫ (λ_ K).hom = (λ_ H).hom ≫ f := by
   apply hom_ext
-  obtain ⟨n, a, ha⟩ := f.completelyPositive.exists_kraus
-  apply LinearMap.ext
-  intro A
-  simp only [hom_comp, hom_tensor, ha, Superoperator.kraus,
-    Superoperator.tensor_sum_right, LinearMap.comp_apply, LinearMap.sum_apply, map_sum]
-  apply Finset.sum_congr rfl
-  intro i _
-  have e := congrArg (fun f => (pure.map f).toSuperoperator A)
-    (leftUnitor_naturality (ofHom (a i) : H.toQudit ⟶ K.toQudit))
-  simp only [← id_tensorHom, pure.map_comp, pure_tensor, pure.map_id] at e
-  dsimp only [pure, tensor] at e
-  convert e using 1 <;> rfl
+  simpa only [hom_comp, hom_tensor, hom_id, hom_leftUnitor, Qudit.hom_hom_leftUnitor,
+    Superoperator.relabel_eq_conjugate, TensorProduct.toLinearEquiv_lidIsometry] using
+    Superoperator.relabel_lid_comp_tensor f.toSuperoperator
 
 /-- Naturality of the right unit for arbitrary CP processes. -/
 lemma right_natural {H K : CPQudit} (f : H ⟶ K) :
     (f ⊗ₘ 𝟙 (𝟙_ CPQudit)) ≫ (ρ_ K).hom = (ρ_ H).hom ≫ f := by
   apply hom_ext
-  obtain ⟨n, a, ha⟩ := f.completelyPositive.exists_kraus
-  apply LinearMap.ext
-  intro A
-  simp only [hom_comp, hom_tensor, ha, Superoperator.kraus,
-    Superoperator.tensor_sum_left, LinearMap.comp_apply, LinearMap.sum_apply, map_sum]
-  apply Finset.sum_congr rfl
-  intro i _
-  have e := congrArg (fun f => (pure.map f).toSuperoperator A)
-    (rightUnitor_naturality (ofHom (a i) : H.toQudit ⟶ K.toQudit))
-  simp only [← tensorHom_id, pure.map_comp, pure_tensor, pure.map_id] at e
-  dsimp only [pure, tensor] at e
-  convert e using 1 <;> rfl
+  simpa only [hom_comp, hom_tensor, hom_id, hom_rightUnitor, Qudit.hom_hom_rightUnitor,
+    Superoperator.relabel_eq_conjugate, TensorProduct.toLinearEquiv_ridIsometry] using
+    Superoperator.relabel_rid_comp_tensor f.toSuperoperator
 
 instance : MonoidalCategory CPQudit := MonoidalCategory.ofTensorHom
   (id_tensorHom_id := fun H K => hom_ext (Superoperator.tensor_id_id H.toQudit K.toQudit))
@@ -214,17 +196,14 @@ lemma swap_natural {H K L M : CPQudit} (f : H ⟶ K) (g : L ⟶ M) :
     (f ⊗ₘ g) ≫ pure.map (β_ K.toQudit M.toQudit).hom =
       pure.map (β_ H.toQudit L.toQudit).hom ≫ (g ⊗ₘ f) := by
   apply hom_ext
-  apply Operator.tensor_ext
-  intro A B
   change Superoperator.conjugate (TensorProduct.commIsometry ℂ K.toQudit.state
-      M.toQudit.state).toLinearMap (Superoperator.tensor f.toSuperoperator
-        g.toSuperoperator (Operator.tensor A B)) =
-    Superoperator.tensor g.toSuperoperator f.toSuperoperator
-      (Superoperator.conjugate (TensorProduct.commIsometry ℂ H.toQudit.state
-        L.toQudit.state).toLinearMap (Operator.tensor A B))
-  rw [← Superoperator.relabel_eq_conjugate, ← Superoperator.relabel_eq_conjugate,
-    Superoperator.tensor_apply, Superoperator.relabel_comm_tensor,
-    Superoperator.relabel_comm_tensor, Superoperator.tensor_apply]
+      M.toQudit.state).toLinearMap ∘ₗ
+      Superoperator.tensor f.toSuperoperator g.toSuperoperator =
+    Superoperator.tensor g.toSuperoperator f.toSuperoperator ∘ₗ
+      Superoperator.conjugate (TensorProduct.commIsometry ℂ H.toQudit.state
+        L.toQudit.state).toLinearMap
+  simpa only [Superoperator.relabel_eq_conjugate] using
+    Superoperator.relabel_comm_comp_tensor f.toSuperoperator g.toSuperoperator
 
 instance : BraidedCategory CPQudit where
   braiding H K := pure.mapIso (β_ H.toQudit K.toQudit)

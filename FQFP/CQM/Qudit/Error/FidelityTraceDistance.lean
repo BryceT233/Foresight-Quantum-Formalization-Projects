@@ -45,20 +45,12 @@ theorem one_sub_fidelity_le_traceDistance (ρ σ : Density H) :
     1 - ρ.fidelity σ ≤ ρ.traceDistance σ := by
   have h := ρ.op.sqrt_positive.re_trace_sub_mul_self_le_traceNorm σ.op.sqrt_positive
   rw [ρ.op.sqrt_mul_sqrt ρ.positive, σ.op.sqrt_mul_sqrt σ.positive] at h
-  have ht : LinearMap.trace ℂ H.state
-      ((ρ.op.sqrt - σ.op.sqrt) * (ρ.op.sqrt - σ.op.sqrt)) =
-      2 - 2 * LinearMap.trace ℂ H.state (ρ.op.sqrt * σ.op.sqrt) := by
-    rw [sub_mul, mul_sub, mul_sub, map_sub, map_sub, map_sub,
-      ρ.op.sqrt_mul_sqrt ρ.positive, σ.op.sqrt_mul_sqrt σ.positive,
-      LinearMap.trace_mul_comm ℂ σ.op.sqrt ρ.op.sqrt,
-      show LinearMap.trace ℂ H.state ρ.op = 1 from ρ.trace_one,
-      show LinearMap.trace ℂ H.state σ.op = 1 from σ.trace_one]
-    ring
-  rw [ht] at h
+  rw [LinearMap.trace_sub_mul_self, ρ.op.sqrt_mul_sqrt ρ.positive,
+    σ.op.sqrt_mul_sqrt σ.positive, show LinearMap.trace ℂ H.state ρ.op = 1 from ρ.trace_one,
+    show LinearMap.trace ℂ H.state σ.op = 1 from σ.trace_one] at h
   have hf : (LinearMap.trace ℂ H.state (ρ.op.sqrt * σ.op.sqrt)).re ≤ ρ.fidelity σ :=
     (Complex.re_le_norm _).trans (LinearMap.norm_trace_le_traceNorm _)
-  simp only [Complex.sub_re, Complex.mul_re] at h
-  norm_num at h
+  norm_num [Complex.sub_re, Complex.add_re, Complex.mul_re] at h
   dsimp only [traceDistance]
   linarith
 
@@ -95,15 +87,13 @@ lemma re_trace_pure_sub_mul_self (v w : UnitState H) :
     (LinearMap.trace ℂ H.state
       (((pure v).op - (pure w).op) * ((pure v).op - (pure w).op))).re =
       2 * (1 - ‖inner ℂ v.val w.val‖ ^ 2) := by
-  rw [sub_mul, mul_sub, mul_sub, map_sub, map_sub, map_sub,
-    pure_mul_self, pure_mul_self, LinearMap.trace_mul_comm ℂ (pure w).op (pure v).op]
-  have ht : LinearMap.trace ℂ H.state ((pure v).op * (pure w).op) =
-      ((‖inner ℂ v.val w.val‖ ^ 2 : ℝ) : ℂ) :=
-    (Operator.trace_mul_outer (pure v).op w.val w.val).trans (Operator.inner_outer_self w.val v.val)
-  rw [ht, show LinearMap.trace ℂ H.state (pure v).op = 1 from (pure v).trace_one,
+  have ht : (LinearMap.trace ℂ H.state ((pure v).op * (pure w).op)).re =
+      ‖inner ℂ v.val w.val‖ ^ 2 := expectation_pure_pure w v
+  rw [LinearMap.trace_sub_mul_self, pure_mul_self, pure_mul_self,
+    show LinearMap.trace ℂ H.state (pure v).op = 1 from (pure v).trace_one,
     show LinearMap.trace ℂ H.state (pure w).op = 1 from (pure w).trace_one]
-  simp only [Complex.sub_re, Complex.one_re, Complex.ofReal_re]
-  ring
+  simp only [Complex.sub_re, Complex.add_re, Complex.mul_re, ht]
+  norm_num [mul_sub]
 
 /-- For pure states the upper **Fuchs–van de Graaf bound** is an equality. -/
 theorem traceDistance_pure_pure (v w : UnitState H) :

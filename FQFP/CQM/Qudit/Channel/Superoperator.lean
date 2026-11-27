@@ -264,6 +264,42 @@ lemma isPositive_relabel (e : H.state ≃ₗᵢ[ℂ] K.state) {A : Operator H}
   rw [relabel_eq_conjugate]
   exact hA.conj_adjoint e.toLinearMap
 
+/-- The left unit constraint scales the right factor by the value of the scalar operator at one. -/
+lemma relabel_lid_tensor (A : ℂ →ₗ[ℂ] ℂ) (B : Operator H) :
+    relabel (TensorProduct.lidIsometry ℂ H.state) (Operator.tensor (H := 𝟙_ Qudit) A B) =
+      A 1 • B := by
+  ext x
+  change TensorProduct.lid ℂ H.state
+    (TensorProduct.map A B ((TensorProduct.lid ℂ H.state).symm x)) = A 1 • B x
+  rw [TensorProduct.lid_symm_apply, TensorProduct.map_tmul, TensorProduct.lid_tmul]
+
+/-- The right unit constraint scales the left factor by the value of the scalar operator at one. -/
+lemma relabel_rid_tensor (A : Operator H) (B : ℂ →ₗ[ℂ] ℂ) :
+    relabel (TensorProduct.ridIsometry ℂ H.state) (Operator.tensor (K := 𝟙_ Qudit) A B) =
+      B 1 • A := by
+  ext x
+  change TensorProduct.rid ℂ H.state
+    (TensorProduct.map A B ((TensorProduct.rid ℂ H.state).symm x)) = B 1 • A x
+  rw [TensorProduct.rid_symm_apply, TensorProduct.map_tmul, TensorProduct.rid_tmul]
+
+/-- Removing the left tensor unit commutes with applying a superoperator on the right. -/
+lemma relabel_lid_comp_tensor (Φ : Superoperator H K) :
+    relabel (TensorProduct.lidIsometry ℂ K.state) ∘ₗ
+        tensor (LinearMap.id : Superoperator (𝟙_ Qudit) (𝟙_ Qudit)) Φ =
+      Φ ∘ₗ relabel (TensorProduct.lidIsometry ℂ H.state) := by
+  apply Operator.tensor_ext
+  intro A B
+  simp only [LinearMap.comp_apply, tensor_apply, LinearMap.id_apply, relabel_lid_tensor, map_smul]
+
+/-- Removing the right tensor unit commutes with applying a superoperator on the left. -/
+lemma relabel_rid_comp_tensor (Φ : Superoperator H K) :
+    relabel (TensorProduct.ridIsometry ℂ K.state) ∘ₗ
+        tensor Φ (LinearMap.id : Superoperator (𝟙_ Qudit) (𝟙_ Qudit)) =
+      Φ ∘ₗ relabel (TensorProduct.ridIsometry ℂ H.state) := by
+  apply Operator.tensor_ext
+  intro A B
+  simp only [LinearMap.comp_apply, tensor_apply, LinearMap.id_apply, relabel_rid_tensor, map_smul]
+
 /-- Swapping the factors of an operator swaps its product components. -/
 lemma relabel_comm_tensor (A : Operator H) (B : Operator K) :
     relabel (TensorProduct.commIsometry ℂ H.state K.state) (Operator.tensor A B) =
@@ -274,6 +310,14 @@ lemma relabel_comm_tensor (A : Operator H) (B : Operator K) :
     (TensorProduct.map A B (TensorProduct.comm ℂ K.state H.state (x ⊗ₜ y))) = _
   rw [TensorProduct.comm_tmul, TensorProduct.map_tmul, TensorProduct.comm_tmul]
   rfl
+
+/-- Swapping the output systems of a tensor product swaps the corresponding superoperators. -/
+lemma relabel_comm_comp_tensor (Φ : Superoperator H K) (Ψ : Superoperator L M) :
+    relabel (TensorProduct.commIsometry ℂ K.state M.state) ∘ₗ tensor Φ Ψ =
+      tensor Ψ Φ ∘ₗ relabel (TensorProduct.commIsometry ℂ H.state L.state) := by
+  apply Operator.tensor_ext
+  intro A B
+  simp only [LinearMap.comp_apply, tensor_apply, relabel_comm_tensor]
 
 /-- Reassociation of operator products agrees with Hilbert-space reassociation. -/
 lemma relabel_assoc_tensor (A : Operator H) (B : Operator K) (C : Operator L) :

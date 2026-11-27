@@ -15,7 +15,7 @@ Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Semantics.Denotation
+public import FQFP.QuantumProgram.Semantics.Output.FiniteDepth
 public import FQFP.CQM.Qudit.Channel.Process.Dual
 import FQFP.Analysis.InnerProductSpace.PositiveTrace
 import FQFP.CQM.Qudit.Channel.Choi
@@ -184,7 +184,37 @@ theorem PostH_singleton {p : Command Store Cell H} {s : CQState Store H}
   rw [tsum_eq_zero_add' CompleteLattice.summable, hz, ENNReal.ofReal_zero, zero_add]
   apply tsum_congr
   intro n
-  simp only [postAt_eq_sum_frontier, frontier_succ, c, h, List.flatMap_singleton]
+  simp only [postAt_eq_sum_frontier, c, frontier_succ_of_next_eq_singleton h]
+
+/-- A terminated configuration evaluates the observable in its current state. -/
+theorem PostH_terminal (s : CQState Store H) (A : Store → Operator H) :
+    (Configuration.mk (Cell := Cell) none s).PostH A =
+      ENNReal.ofReal (s.expectation (A s.store)) := by
+  rw [PostH, tsum_eq_zero_add' CompleteLattice.summable]
+  have hz (n : ℕ) : (Configuration.mk (Cell := Cell) none s).postAt (n + 1) A = 0 := by
+    simp [postAt_eq_sum_frontier, frontier_succ_terminal]
+  simp [hz, postAt_eq_sum_frontier, frontier]
+
+/-- A conditional's post-expectation is that of the selected branch. -/
+theorem PostH_ite (b : Store → Bool) (p q : Command Store Cell H) (s : CQState Store H)
+    (A : Store → Operator H) :
+    (Configuration.mk (some (.ite b p q)) s).PostH A =
+      (Configuration.mk (some (if b s.store then p else q)) s).PostH A :=
+  PostH_singleton (next_ite b p q s) A
+
+/-- A conditional returns exactly the terminating trace of the selected branch. -/
+theorem terminatingMass_ite (b : Store → Bool) (p q : Command Store Cell H) (s : CQState Store H) :
+    (Configuration.mk (some (.ite b p q)) s).terminatingMass =
+      (Configuration.mk (some (if b s.store then p else q)) s).terminatingMass := by
+  simp only [← PostH_one, PostH_ite]
+
+/-- A conditional leaves exactly the residual trace of the selected branch. -/
+theorem nonterminatingMass_ite (b : Store → Bool) (p q : Command Store Cell H)
+    (s : CQState Store H) :
+    (Configuration.mk (some (.ite b p q)) s).nonterminatingMass =
+      (Configuration.mk (some (if b s.store then p else q)) s).nonterminatingMass := by
+  rw [nonterminatingMass, terminatingMass_ite]
+  rfl
 
 /-- If all one-step successors are terminal, only depth one contributes to the post-expectation. -/
 theorem PostH_of_step_terminals {p : Command Store Cell H} {s : CQState Store H}
@@ -209,9 +239,8 @@ theorem PostH_of_step_terminals {p : Command Store Cell H} {s : CQState Store H}
 /-- A command that terminates in one step with a single output evaluates the observable there. -/
 theorem PostH_of_step_terminal {p : Command Store Cell H} {s t : CQState Store H}
     (h : p.step s = [⟨none, t⟩]) (A : Store → Operator H) :
-    (Configuration.mk (some p) s).PostH A = ENNReal.ofReal (t.expectation (A t.store)) := by
-  simpa only [List.map_singleton, List.sum_singleton] using
-    PostH_of_step_terminals (outputs := [t]) h A
+    (Configuration.mk (some p) s).PostH A = ENNReal.ofReal (t.expectation (A t.store)) :=
+  (PostH_singleton h A).trans (PostH_terminal t A)
 
 /-- A measurement evaluates its postcondition after writing each outcome to the classical store.
 The empty successor list of a blocked register contributes zero. -/

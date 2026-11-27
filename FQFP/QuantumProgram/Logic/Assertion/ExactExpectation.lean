@@ -37,6 +37,14 @@ variable {Store Cell : Type*} {H : Qudit}
 noncomputable def Assertion.compl (A : Assertion Store H) : Assertion Store H := fun σ =>
   ⟨1 - (A σ : Operator H), sub_nonneg.mpr (A σ).2.2, sub_le_self _ (A σ).2.1⟩
 
+/-- Complementing twice recovers the original effect. -/
+@[simp] theorem Assertion.compl_compl (A : Assertion Store H) : A.compl.compl = A :=
+  funext fun σ => Subtype.ext (sub_sub_cancel 1 (A σ : Operator H))
+
+/-- Complementation reverses the pointwise Löwner order. -/
+theorem Assertion.antitone_compl : Antitone (Assertion.compl (Store := Store) (H := H)) :=
+  fun _ _ h σ => sub_le_sub_left (show (_ : Operator H) ≤ _ from h σ) 1
+
 /-- An effect and its complement sum to the identity at each store. -/
 theorem Assertion.add_compl_apply (A : Assertion Store H) (σ : Store) :
     (A σ : Operator H) + (A.compl σ : Operator H) = 1 := by

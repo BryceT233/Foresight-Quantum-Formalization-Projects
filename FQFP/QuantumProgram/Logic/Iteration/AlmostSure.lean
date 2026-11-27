@@ -57,7 +57,7 @@ theorem LoopBodyContraction.of_complement {b : Store → Bool} {p : Command Stor
         add_le_add le_rfl ((hA s hb).trans (h s))
     _ = c.terminatingMass := c.PostH_add_PostH_compl (J.mand b)
     _ ≤ s.mass := c.terminatingMass_le
-    _ ≤ bound + ((s.mass : ℝ≥0∞) - bound) := by rw [add_comm]; exact le_tsub_add
+    _ ≤ bound + ((s.mass : ℝ≥0∞) - bound) := le_add_tsub
 
 /-- A totally valid invariant and a uniform contraction factor below one give a totally valid
 loop triple, including when the number of iterations has no deterministic bound. -/
@@ -82,20 +82,18 @@ theorem validTot_while_of_contraction {b : Store → Bool} {p : Command Store Ce
       cases hb : b s.store with
       | false => exact (exitBound s hb).trans le_self_add
       | true =>
-        let c := Configuration.mk (some p) s
-        have step : exitWeight s = ∑' j, c.terminalWeightAt j exitWeight :=
+        have step : exitWeight s = p.outputWeight exitWeight s :=
           Configuration.PostH_whileDo_of_true p hb (J.mandNot b).isPositive
         have body := hbody s
-        rw [J.mand_of_true hb, Configuration.PostH_eq_tsum_terminalWeightAt _ J.isPositive] at body
+        rw [J.mand_of_true hb, ← p.outputWeight_expectation s J.isPositive] at body
         apply body.trans
-        calc (∑' j, c.terminalWeightAt j (fun t => ENNReal.ofReal (t.expectation (J t.store))))
-            ≤ ∑' j, c.terminalWeightAt j (fun t => exitWeight t + (a : ℝ≥0∞) ^ n * retry t) :=
-              tsum_le_tsum fun j => c.terminalWeightAt_mono j ih
-          _ = exitWeight s + (a : ℝ≥0∞) ^ n * c.PostH (fun σ => J.mand b σ) := by
-              simp only [Configuration.terminalWeightAt_add,
-                Configuration.terminalWeightAt_const_mul, tsum_add, ENNReal.tsum_mul_left,
-                ← step]
-              rw [c.PostH_eq_tsum_terminalWeightAt (J.mand b).isPositive]
+        calc p.outputWeight (fun t => ENNReal.ofReal (t.expectation (J t.store))) s
+            ≤ p.outputWeight (fun t => exitWeight t + (a : ℝ≥0∞) ^ n * retry t) s :=
+              p.outputWeight_mono ih s
+          _ = exitWeight s + (a : ℝ≥0∞) ^ n *
+              (Configuration.mk (some p) s).PostH (fun σ => J.mand b σ) := by
+              rw [p.outputWeight_add, p.outputWeight_const_mul, ← step,
+                p.outputWeight_expectation s (J.mand b).isPositive]
           _ ≤ exitWeight s + (a : ℝ≥0∞) ^ n *
               ((a : ℝ≥0∞) * ENNReal.ofReal (s.expectation (J s.store))) :=
             add_le_add le_rfl (mul_le_mul' le_rfl (hcontract s hb))

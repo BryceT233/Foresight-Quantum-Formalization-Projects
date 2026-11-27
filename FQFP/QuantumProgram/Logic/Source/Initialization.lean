@@ -15,8 +15,8 @@ Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Initialization
-public import FQFP.QuantumProgram.Logic.Source.Rules
+public import FQFP.QuantumProgram.Command.Initialization
+public import FQFP.QuantumProgram.Logic.PredicateGuard
 public import FQFP.QuantumProgram.Logic.Iteration.For
 import FQFP.CQM.Qudit.Measurement.ClassicalRegister
 
@@ -166,8 +166,8 @@ theorem Command.initializeSelected_preservesParameters {E : Type*} (s : S → Fi
   | cons q qs ih => exact ⟨⟨trivial, trivial⟩, ih⟩
 
 private theorem branch_entails (A : SourceAssertion S (tensorMemory D)) (s t : S → Finset (Fin n))
-    (b : S → Bool) (v : Bool) (h : ∀ σ, b σ = v → s σ = t σ) :
-    ((A.initializePre τ s).toCQAssertion.onBranch b v).Entails
+    (P : S → Prop) (h : ∀ σ, P σ → s σ = t σ) :
+    ((A.initializePre τ s).toCQAssertion.restrict P).Entails
       (A.initializePre τ t).toCQAssertion := by
   intro σ hσ
   refine ⟨hσ.1, ?_⟩
@@ -229,21 +229,19 @@ theorem initializeSelected_derivations (A : SourceAssertion S (tensorMemory D))
   | cons i qs ih =>
     let t := fun σ => s σ ∩ qs.toFinset
     let u := fun σ => s σ ∩ (i :: qs).toFinset
-    let b := fun σ => decide (i ∈ s σ)
+    let P := fun σ => i ∈ s σ
     let B := A.initializePre τ t
-    have hyes := branch_entails τ A u (fun σ => {i} ∪ t σ) b true (by
-      intro σ h
-      have hm : i ∈ s σ := of_decide_eq_true h
+    have hyes := branch_entails τ A u (fun σ => {i} ∪ t σ) P (by
+      intro σ hm
       simp only [u, t, List.toFinset_cons, Finset.inter_insert_of_mem hm, Finset.singleton_union])
     rw [← A.initializePre_union τ (fun _ => {i}) t] at hyes
-    have hno := branch_entails τ A u t b false (by
-      intro σ h
-      have hm : i ∉ s σ := of_decide_eq_false h
+    have hno := branch_entails τ A u t (fun σ => ¬ P σ) (by
+      intro σ hm
       simp only [u, t, List.toFinset_cons, Finset.inter_insert_of_notMem hm])
     have h := initializeCells_derivations τ B (fun _ => {i})
     have refl : B.toCQAssertion.Entails B.toCQAssertion := fun _ h => ⟨h, le_rfl⟩
-    exact ⟨.seq (.cond b (.conseq hyes h.1 refl) (.conseq hno (.skip _) refl)) ih.1,
-      .seq (.cond b (.conseq hyes h.2 refl) (.conseq hno (.skip _) refl)) ih.2⟩
+    exact ⟨.seq (.cond_decide P (.conseq hyes h.1 refl) (.conseq hno (.skip _) refl)) ih.1,
+      .seq (.cond_decide P (.conseq hyes h.2 refl) (.conseq hno (.skip _) refl)) ih.2⟩
 
 /-- Scanning all sites implements a store-dependent block of any size. -/
 theorem initializeDynamicBlock_derivations (A : SourceAssertion S (tensorMemory D))

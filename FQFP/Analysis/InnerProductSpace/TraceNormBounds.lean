@@ -6,6 +6,7 @@ Authors: FQFP authors
 module
 
 public import FQFP.Analysis.InnerProductSpace.TraceNorm
+import Mathlib.Algebra.Order.Chebyshev
 
 /-!
 # Spectral bounds for the trace norm
@@ -16,6 +17,8 @@ estimate used in the Fuchs–van de Graaf inequalities (Watrous, Lemma 3.34).
 
 ## Main results
 
+* `LinearMap.IsSymmetric.traceNorm_sq_le_finrank_mul_re_trace_mul_self` bounds the squared trace
+  norm by the dimension times the squared Hilbert–Schmidt norm.
 * `LinearMap.IsPositive.re_trace_sub_mul_self_le_traceNorm` bounds the squared Hilbert–Schmidt
   distance between positive operators by the trace norm of the difference of their squares.
 * `LinearMap.IsSymmetric.traceNorm_mul_eq_re_trace_sq` evaluates the real trace of the square of a
@@ -30,6 +33,14 @@ namespace LinearMap
 
 noncomputable section
 
+/-- Cyclicity of trace combines the two cross terms in the trace of a squared difference. -/
+lemma trace_sub_mul_self {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    (A B : M →ₗ[R] M) :
+    trace R M ((A - B) * (A - B)) = trace R M (A * A) + trace R M (B * B) -
+      2 * trace R M (A * B) := by
+  simp only [sub_mul, mul_sub, map_sub]
+  linear_combination trace_mul_comm R A B
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
   [FiniteDimensional ℂ E]
 
@@ -42,6 +53,14 @@ lemma IsSymmetric.re_trace_mul_self_eq_sum_sq {A : E →ₗ[ℂ] E} (hA : A.IsSy
   simp only [mul_apply_eq_comp, hA.apply_eigenvectorBasis, map_smul,
     inner_smul_right, (hA.eigenvectorBasis rfl).inner_eq_ite, ite_true, mul_one]
   simp [Complex.mul_re, pow_two]
+
+/-- For a self-adjoint operator, the squared trace norm is at most the dimension times
+the real trace of its square. -/
+lemma IsSymmetric.traceNorm_sq_le_finrank_mul_re_trace_mul_self {A : E →ₗ[ℂ] E}
+    (hA : A.IsSymmetric) : traceNorm A ^ 2 ≤ Module.finrank ℂ E * (trace ℂ E (A * A)).re := by
+  rw [hA.traceNorm_eq_sum_abs_eigenvalues, hA.re_trace_mul_self_eq_sum_sq]
+  simpa only [Finset.card_univ, Fintype.card_fin, sq_abs] using
+    sq_sum_le_card_mul_sum_sq (s := Finset.univ) (f := fun i => |hA.eigenvalues rfl i|)
 
 /-- For positive operators, the squared Hilbert–Schmidt distance is bounded by the
 trace norm of the difference of their squares. No invertibility is required. -/

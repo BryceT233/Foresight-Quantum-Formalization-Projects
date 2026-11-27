@@ -15,7 +15,7 @@ Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 module
 
 public import FQFP.CQM.Qudit.State.Pure.Qubit
-public import FQFP.QuantumProgram.Unitary
+public import FQFP.QuantumProgram.Circuit.Unitary
 public import FQFP.CQM.Qudit.Teleportation.BellDensity
 
 /-!

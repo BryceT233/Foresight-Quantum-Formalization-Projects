@@ -122,8 +122,7 @@ lemma exists_isometryEquiv_norm_trace_eq (A : Operator H) :
     conv_lhs => rw [hV]
     ext x
     exact V.symm_apply_apply _
-  have hn : LinearMap.traceNorm A = LinearMap.traceNorm P := by
-    exact (congrArg LinearMap.traceNorm hV).trans (traceNorm_isometryEquiv_mul V P)
+  have hn := (congrArg LinearMap.traceNorm hV).trans (traceNorm_isometryEquiv_mul V P)
   refine ⟨V.symm, ?_⟩
   rw [he, hn]
   apply le_antisymm (LinearMap.norm_trace_le_traceNorm P)
@@ -194,6 +193,11 @@ lemma inner_vectorize_vectorize (b : OrthonormalBasis ι ℂ K.state)
   apply Finset.sum_congr rfl
   intro i _
   rw [inner_vectorize, LinearMap.comp_apply, LinearMap.adjoint_inner_right]
+
+/-- The squared norm of a vectorized operator is the real trace of its Gram operator. -/
+lemma norm_vectorize_sq (b : OrthonormalBasis ι ℂ K.state) (A : K.state →ₗ[ℂ] H.state) :
+    ‖vectorize b A‖ ^ 2 = (LinearMap.trace ℂ K.state (A.adjoint ∘ₗ A)).re := by
+  rw [← inner_self_eq_norm_sq (𝕜 := ℂ), inner_vectorize_vectorize, RCLike.re_eq_complex_re]
 
 /-- The retained marginal of a vectorized amplitude is its left Gram operator. -/
 lemma partialTraceRight_outer_vectorize (b : OrthonormalBasis ι ℂ K.state)
@@ -338,8 +342,7 @@ theorem exists_purification_norm_inner_eq_fidelity (ρ σ : Density H)
     rw [← Superoperator.inner_vectorize_vectorize b, Superoperator.vectorize_unvectorize]
   rw [hi, ρ.fidelity_eq_traceNorm_cross σ A B hA hB]
   change ‖LinearMap.trace ℂ K.state (A.adjoint ∘ₗ B ∘ₗ U.toLinearMap)‖ = _
-  rw [← LinearMap.comp_assoc, LinearMap.trace_comp_comm']
-  exact hU
+  rwa [← LinearMap.comp_assoc, LinearMap.trace_comp_comm']
 
 /-- **Uhlmann's theorem** with the phase chosen so that the overlap itself is the nonnegative
 real fidelity, rather than only having that modulus. -/

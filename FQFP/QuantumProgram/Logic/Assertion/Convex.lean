@@ -8,6 +8,7 @@ Authors: Qedia contributors
 Qhl source for weighted sums of effects and validity under subprobability mixtures.
 qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
 Qhl/Logic/Source/Convex.lean
+Qhl/Logic/InitBlock.lean: Assn.scaled and its underlying operator.
 
 Copyright 2026 Qedia contributors.
 Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
@@ -69,6 +70,23 @@ theorem CQState.ofReal_expectation_convex (s : CQState Store H) (w : ι → ℝ�
     (fun i _ => mul_nonneg (w i).2 (s.expectation_nonneg ((A i).isPositive s.store)))]
   simp [ENNReal.ofReal_mul]
 
+/-- Scale every effect by a probability, as a singleton subprobability mixture. -/
+noncomputable def Assertion.scaled (A : Assertion Store H) (r : ℝ≥0) (hr : r ≤ 1) :
+    Assertion Store H :=
+  Assertion.convex (fun _ : Unit => r) (by simpa using hr) fun _ => A
+
+/-- The operator of a scaled assertion is the scalar multiple of the original operator. -/
+theorem Assertion.scaled_apply (A : Assertion Store H) (r : ℝ≥0) (hr : r ≤ 1) (σ : Store) :
+    (A.scaled r hr σ).val = ((r : ℝ) : ℂ) • (A σ).val := by
+  simp [Assertion.scaled, Assertion.convex]
+
+/-- Scaling an effect scales its expectation on every weighted input. -/
+theorem CQState.ofReal_expectation_scaled (s : CQState Store H) (A : Assertion Store H)
+    (r : ℝ≥0) (hr : r ≤ 1) :
+    ENNReal.ofReal (s.expectation (A.scaled r hr s.store)) =
+      r * ENNReal.ofReal (s.expectation (A s.store)) := by
+  simp [Assertion.scaled, s.ofReal_expectation_convex]
+
 /-- Finite sums commute with the sum over terminal occurrences at an exact depth. -/
 theorem Configuration.terminalWeightAt_sum (c : Configuration Store Cell H) (n : ℕ)
     (f : ι → CQState Store H → ℝ≥0∞) :
@@ -80,10 +98,9 @@ theorem Configuration.PostH_convex (c : Configuration Store Cell H) (w : ι → 
     (hw : ∑ i, w i ≤ 1) (A : ι → Assertion Store H) :
     c.PostH (fun σ => Assertion.convex w hw A σ) =
       ∑ i, (w i : ℝ≥0∞) * c.PostH (fun σ => A i σ) := by
-  rw [c.PostH_eq_tsum_terminalWeightAt (Assertion.convex w hw A).isPositive]
-  simp_rw [CQState.ofReal_expectation_convex, c.terminalWeightAt_sum, c.terminalWeightAt_const_mul]
-  rw [Summable.tsum_finsetSum (fun _ _ => CompleteLattice.summable)]
-  simp_rw [ENNReal.tsum_mul_left, ← c.PostH_eq_tsum_terminalWeightAt ((A _).isPositive)]
+  rw [← c.terminalWeight_expectation (Assertion.convex w hw A).isPositive]
+  simp_rw [CQState.ofReal_expectation_convex, c.terminalWeight_finsetSum,
+    c.terminalWeight_const_mul, c.terminalWeight_expectation ((A _).isPositive)]
 
 /-- Total validity is closed under finite subprobability combinations. -/
 theorem validTot_convex (w : ι → ℝ≥0) (hw : ∑ i, w i ≤ 1) {A B : ι → Assertion Store H}

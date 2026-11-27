@@ -148,9 +148,8 @@ private lemma sum_sq_cross_gram (f : ι → B.state →ₗ[ℂ] E.state)
       (LinearMap.trace ℂ B.state ((∑ i, (f i).adjoint ∘ₗ f i) ^ 2)).re := by
   have hpair i j : ‖vectorize b (f i ∘ₗ (f j).adjoint)‖ ^ 2 =
       (LinearMap.trace ℂ B.state (((f i).adjoint ∘ₗ f i) * ((f j).adjoint ∘ₗ f j))).re := by
-    rw [← inner_self_eq_norm_sq (𝕜 := ℂ), inner_vectorize_vectorize, RCLike.re_eq_complex_re,
-      LinearMap.adjoint_comp, LinearMap.adjoint_adjoint, LinearMap.comp_assoc,
-      ← LinearMap.trace_comp_comm' (f j)]
+    rw [norm_vectorize_sq, LinearMap.adjoint_comp, LinearMap.adjoint_adjoint,
+      LinearMap.comp_assoc, ← LinearMap.trace_comp_comm' (f j)]
     simp only [Module.End.mul_eq_comp, LinearMap.comp_assoc]
   simp only [sq, Finset.sum_mul, Finset.mul_sum, map_sum, Complex.re_sum, Fintype.sum_prod_type,
     hpair]
@@ -176,13 +175,8 @@ times its squared Hilbert–Schmidt norm. -/
 private lemma traceNorm_sq_le_dim_mul {X : Operator E} (hX : X.IsSymmetric)
     (b : OrthonormalBasis (Fin (Module.finrank ℂ E.state)) ℂ E.state) :
     LinearMap.traceNorm X ^ 2 ≤ Module.finrank ℂ E.state * ‖vectorize b X‖ ^ 2 := by
-  have he : ‖vectorize b X‖ ^ 2 = (LinearMap.trace ℂ E.state (X * X)).re := by
-    rw [← inner_self_eq_norm_sq (𝕜 := ℂ), inner_vectorize_vectorize, RCLike.re_eq_complex_re,
-      hX.adjoint_eq]
-    rfl
-  rw [he, hX.traceNorm_eq_sum_abs_eigenvalues, hX.re_trace_mul_self_eq_sum_sq]
-  simpa only [Finset.card_univ, Fintype.card_fin, sq_abs] using
-    (sq_sum_le_card_mul_sum_sq (s := Finset.univ) (f := fun i => |hX.eigenvalues rfl i|))
+  rw [norm_vectorize_sq, hX.adjoint_eq]
+  exact hX.traceNorm_sq_le_finrank_mul_re_trace_mul_self
 
 /-- The mean squared trace-norm error costs at most environment dimension times receiver
 purity. The expectation can be combined with truncation errors before selecting a phase.

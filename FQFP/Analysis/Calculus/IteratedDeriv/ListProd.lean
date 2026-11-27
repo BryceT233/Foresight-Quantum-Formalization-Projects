@@ -9,6 +9,7 @@ public import FQFP.Algebra.BigOperators.FinAntidiagonal
 public import FQFP.Analysis.Calculus.ListProd
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.Analysis.InnerProductSpace.Basic
+import Mathlib.Data.List.NodupEquivFin
 
 /-!
 # Higher derivatives of ordered finite products
@@ -20,6 +21,7 @@ The multinomial Leibniz expansion preserves multiplication order without commuta
 * `TrotterError.natCast_mul_smul_eq`.
 * `TrotterError.iteratedDeriv_ofFn_prod`.
 * `TrotterError.iteratedDeriv_list_prod_general`.
+* `TrotterError.iteratedDeriv_list_prod_of_nodup`.
 -/
 
 @[expose] public section
@@ -112,14 +114,25 @@ theorem iteratedDeriv_list_prod_general {𝔸 : Type*} [NormedRing 𝔸] [Normed
       ∑ q ∈ Finset.piAntidiag (Finset.univ : Finset (Fin l.length)) n,
         (Nat.multinomial (Finset.univ : Finset (Fin l.length)) q : ℝ) •
           (List.ofFn (fun j : Fin l.length => iteratedDeriv (q j) (f (l.get j)) t)).prod := by
-  have hprod : (fun t : ℝ => (List.ofFn (fun j : Fin l.length => f (l.get j) t)).prod) =
-      fun t : ℝ => (l.map (fun i => f i t)).prod := by
-    funext t
-    congr 1
-    simpa using (List.ofFn_getElem_eq_map l (fun i : ι => f i t))
-  rw [← hprod]
-  simpa [finAntidiagonal_eq_piAntidiag_univ] using
+  simp_rw [← List.ofFn_getElem_eq_map l]
+  simpa only [finAntidiagonal_eq_piAntidiag_univ, List.get_eq_getElem] using
     iteratedDeriv_ofFn_prod (fun j : Fin l.length => f (l.get j)) n t
       (fun j => hf (l.get j) (List.get_mem l j))
+
+/-- If `l` enumerates a finite type without duplicates, index the multinomial Leibniz expansion
+by its elements. The factors are still multiplied in the order of `l`. -/
+theorem iteratedDeriv_list_prod_of_nodup {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (l : List ι) (hl : l.Nodup) (hmem : ∀ i, i ∈ l)
+    (f : ι → ℝ → 𝔸) (n : ℕ) (t : ℝ) (hf : ∀ i, ContDiffAt ℝ n (f i) t) :
+    iteratedDeriv n (fun s : ℝ => (l.map (fun i => f i s)).prod) t =
+      ∑ q ∈ Finset.piAntidiag (Finset.univ : Finset ι) n,
+        (Nat.multinomial (Finset.univ : Finset ι) q : ℝ) •
+          (l.map (fun i => iteratedDeriv (q i) (f i) t)).prod := by
+  let e := List.Nodup.getEquivOfForallMemList l hl hmem
+  rw [iteratedDeriv_list_prod_general l f n t (fun i _ => hf i), sum_piAntidiag_univ_equiv e]
+  refine Finset.sum_congr rfl fun q _ => ?_
+  rw [← multinomial_univ_equiv e q]
+  congr 1
+  exact congrArg List.prod (List.ofFn_getElem_eq_map l (fun i => iteratedDeriv (q i) (f i) t))
 
 end TrotterError

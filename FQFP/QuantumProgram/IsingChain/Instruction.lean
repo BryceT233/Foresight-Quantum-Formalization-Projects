@@ -21,7 +21,7 @@ public import FQFP.CQM.Qudit.TensorPower
 public import FQFP.QuantumProgram.Logic.Assertion.ExactExpectation
 public import FQFP.QuantumProgram.Logic.Iteration.For
 public import FQFP.QuantumProgram.Logic.Source.Unitary
-public import FQFP.QuantumProgram.Trotter
+public import FQFP.QuantumProgram.Circuit.Trotter
 
 /-!
 # Physical gates of the open transverse-field Ising chain

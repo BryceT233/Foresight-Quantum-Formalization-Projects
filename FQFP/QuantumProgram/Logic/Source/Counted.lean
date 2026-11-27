@@ -15,8 +15,8 @@ Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.CountedLoop
-public import FQFP.QuantumProgram.Logic.Source.Rules
+public import FQFP.QuantumProgram.Command.CountedLoop
+public import FQFP.QuantumProgram.Logic.PredicateGuard
 
 /-!
 # Source derivations for counted iteration
@@ -46,34 +46,35 @@ theorem countedWhile (c : CounterLens Store) (bound : Store → ℕ) (φ : Store
     SourceDerivTot (.ofEffect (A ∘ fun σ => c.set σ 0) φ) (.counted c bound body)
       (.ofEffect A fun σ => φ σ ∧ c.get σ = bound σ) := by
   let inv := fun σ => φ σ ∧ c.get σ ≤ bound σ
-  let guard := fun σ => decide (c.get σ < bound σ)
+  let guard := fun σ => c.get σ < bound σ
   let inc := fun σ => c.set σ (c.get σ + 1)
   let rank := fun σ => ((bound σ - c.get σ : ℕ) : ℤ)
-  have step : SourceDerivTot (.ofEffect A fun σ => inv σ ∧ guard σ = true)
+  have step : SourceDerivTot (.ofEffect A fun σ => inv σ ∧ guard σ)
       (body.seq (.assign inc)) (.ofEffect A inv) := by
     refine .conseq ?_ (.seq hbody (.conseq ?_ (.assign inc A inv) (fun _ h => ⟨h, le_rfl⟩)))
       (fun _ h => ⟨h, le_rfl⟩)
-    · exact fun _ h => ⟨⟨h.1.1, of_decide_eq_true h.2⟩, le_rfl⟩
+    · exact fun _ h => ⟨⟨h.1.1, h.2⟩, le_rfl⟩
     · intro σ h
       exact ⟨⟨(hφ σ _).mpr h.1, by simpa only [inc, c.get_set, hbound] using Nat.succ_le_of_lt h.2⟩,
         le_rfl⟩
   have decrease (z : ℤ) : SourceDerivTot
-      (.ofEffect Assertion.identity fun σ => inv σ ∧ guard σ = true ∧ rank σ = z)
+      (.ofEffect Assertion.identity fun σ => inv σ ∧ guard σ ∧ rank σ = z)
       (body.seq (.assign inc)) (.ofEffect Assertion.identity fun σ => rank σ < z) := by
     refine .conseq ?_ (.seq (hrank z) (.conseq ?_ (.assign inc _ _) (fun _ h => ⟨h, le_rfl⟩)))
       (fun _ h => ⟨h, le_rfl⟩)
-    · exact fun _ h => ⟨⟨h.1.1, of_decide_eq_true h.2.1, h.2.2⟩, le_rfl⟩
+    · exact fun _ h => ⟨⟨h.1.1, h.2⟩, le_rfl⟩
     · intro σ h
       refine ⟨?_, le_rfl⟩
       change ((bound (c.set σ _) - c.get (c.set σ _) : ℕ) : ℤ) < z
       rw [c.get_set, hbound]
       obtain ⟨_, hlt, hz⟩ := h
       lia
-  have loop := SourceDerivTot.whileLoop rank (fun _ _ => Int.natCast_nonneg _) step decrease
+  have loop := SourceDerivTot.whileLoop_decide guard rank (fun _ _ => Int.natCast_nonneg _)
+    step decrease
   refine .conseq ?_ (.seq (.assign (fun σ => c.set σ 0) A inv) loop) ?_
   · exact fun σ h => ⟨⟨(hφ σ 0).mpr h, by rw [c.get_set]; exact Nat.zero_le _⟩, le_rfl⟩
   · intro σ h
-    exact ⟨⟨h.1.1, le_antisymm h.1.2 (Nat.le_of_not_gt (of_decide_eq_false h.2))⟩, le_rfl⟩
+    exact ⟨⟨h.1.1, le_antisymm h.1.2 (Nat.le_of_not_gt h.2)⟩, le_rfl⟩
 
 /-- Iterate a counter-indexed family of effects whose individual members ignore counter writes.
 At exit the family index is the bound read from the final store. -/

@@ -16,7 +16,7 @@ module
 
 public import FQFP.QuantumProgram.Logic.Iteration.For
 public import FQFP.QuantumProgram.Logic.Source.Unitary
-public import FQFP.QuantumProgram.TensorRegister
+public import FQFP.QuantumProgram.Register.Tensor
 
 /-!
 # Finite iteration of disjoint one-site unitaries

@@ -15,7 +15,7 @@ Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Semantics.GhostStore
+public import FQFP.QuantumProgram.Semantics.Execution.GhostStore
 public import FQFP.QuantumProgram.Logic.Source.Rules
 
 /-!

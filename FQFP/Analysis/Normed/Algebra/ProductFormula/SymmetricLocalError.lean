@@ -7,6 +7,7 @@ module
 
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.SymmetricDefect
 import FQFP.Analysis.Normed.Ring.ContractionProduct
+import FQFP.Analysis.SpecialFunctions.Integrals.Monomial
 
 /-!
 # Local error from an even symmetric defect
@@ -89,22 +90,11 @@ theorem norm_symmetricExpProduct_sub_exp_le_abs_integral (l : List A) (G : A)
 with an absolute value accounting for either interval orientation. -/
 lemma abs_integral_localError_polynomial_le (N C : ℝ) (hN : 0 ≤ N) (hC : 0 ≤ C) (h : ℝ) :
     |∫ x in 0..h, 5 * |x| ^ 4 * N + 7 * C * |x| ^ 6| ≤ |h| ^ 5 * N + |h| ^ 7 * C := by
-  have h4 : Even (4 : ℕ) := by decide
-  have h6 : Even (6 : ℕ) := by decide
-  simp_rw [h4.pow_abs, h6.pow_abs]
-  rw [intervalIntegral.integral_add
-    ((by fun_prop : Continuous (fun x : ℝ ↦ 5 * x ^ 4 * N)).intervalIntegrable 0 h)
-    ((by fun_prop : Continuous (fun x : ℝ ↦ 7 * C * x ^ 6)).intervalIntegrable 0 h),
-    intervalIntegral.integral_mul_const, intervalIntegral.integral_const_mul,
-    intervalIntegral.integral_const_mul, integral_pow, integral_pow]
-  norm_num
-  calc
-    _ = |h ^ 5 * N + C * h ^ 7| := by
-      congr 1
-      ring
-    _ ≤ |h ^ 5 * N| + |C * h ^ 7| := abs_add_le _ _
-    _ = _ := by rw [abs_mul, abs_pow, abs_of_nonneg hN,
-      abs_mul, abs_pow, abs_of_nonneg hC, mul_comm C]
+  have hpoly := abs_integral_sum_mul_abs_pow univ ![4, 6] ![N, C] (by
+    intro i _
+    fin_cases i <;> assumption) h
+  norm_num [Fin.sum_univ_two] at hpoly
+  simpa only [mul_right_comm 7 C] using hpoly.le
 
 /-- **Local symmetric product error.** A fourth-degree middle defect with a
 sixth-degree remainder gives the sharp unsplit fifth-degree coefficient. -/

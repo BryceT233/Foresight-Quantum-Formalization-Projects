@@ -6,7 +6,7 @@ Authors: FQFP authors
 module
 
 public import FQFP.QuantumProgram.Examples.BellPreparation
-public import FQFP.QuantumProgram.FeedForward
+public import FQFP.QuantumProgram.Circuit.FeedForward
 public import FQFP.CQM.Qudit.Teleportation.Instrument
 
 /-!

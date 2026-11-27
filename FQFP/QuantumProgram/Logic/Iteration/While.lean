@@ -15,7 +15,7 @@ Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Semantics.SeqDecomp
+public import FQFP.QuantumProgram.Semantics.Execution.Seq
 
 /-!
 # Partial and total correctness of a guarded loop
@@ -34,19 +34,6 @@ open scoped ENNReal
 namespace QuantumProgram
 
 variable {Store Cell : Type*} {H : Qudit}
-
-/-- A true guard hands control to the body followed by the same loop. -/
-theorem next_whileDo_of_true {b : Store → Bool} (p : Command Store Cell H)
-    {s : CQState Store H} (hb : b s.store = true) :
-    (Configuration.mk (some (.whileDo b p)) s).next =
-      [(Configuration.mk (some p) s).seqWith (.whileDo b p)] := by
-  simp [Configuration.next, Command.step, Configuration.seqWith, hb]
-
-/-- A false guard terminates the loop in the current state. -/
-theorem next_whileDo_of_false {b : Store → Bool} (p : Command Store Cell H)
-    {s : CQState Store H} (hb : b s.store = false) :
-    (Configuration.mk (some (.whileDo b p)) s).next = [⟨none, s⟩] := by
-  simp [Configuration.next, Command.step, hb]
 
 /-- With a false guard, the loop evaluates the post-observable in the current state. -/
 theorem Configuration.PostH_whileDo_of_false {b : Store → Bool} (p : Command Store Cell H)
@@ -111,9 +98,9 @@ theorem validTot_while {b : Store → Bool} {J : Assertion Store H} {p : Command
       have prem := h n s
       rw [(J.mand b).mask_of_pos (φ := fun σ => t σ = n) hn, J.mand_of_true hb] at prem
       apply prem.trans
-      let c := Configuration.mk (some p) s
-      rw [c.PostH_eq_tsum_terminalWeightAt (J.mask fun σ => t σ < n).isPositive]
-      refine tsum_le_tsum fun j => c.terminalWeightAt_mono j fun u => ?_
+      change _ ≤ p.outputWeight _ s
+      rw [← p.outputWeight_expectation s (J.mask fun σ => t σ < n).isPositive]
+      refine p.outputWeight_mono (fun u => ?_) s
       by_cases hu : t u.store < n
       · simpa only [J.mask_of_pos (φ := fun σ => t σ < n) hu] using ih (t u.store) hu u rfl
       · simp [J.mask_of_neg (φ := fun σ => t σ < n) hu, CQState.expectation_zero]

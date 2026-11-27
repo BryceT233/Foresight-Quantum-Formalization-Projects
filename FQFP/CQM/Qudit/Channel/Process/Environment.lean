@@ -97,11 +97,7 @@ lemma conjugate_rightUnitor_tensor {H : Qudit} (A : Operator H)
     (B : Operator (of ℂ)) :
     conjugate (ρ_ H).hom.hom (Operator.tensor A B) = B.trace • A := by
   change conjugate (H := H ⊗ of ℂ) (K := H) (TensorProduct.ridIsometry ℂ H.state).toLinearMap _ = _
-  rw [← relabel_eq_conjugate, Operator.trace_scalar]
-  ext x
-  change (TensorProduct.rid ℂ H.state)
-    (TensorProduct.map A B ((TensorProduct.rid ℂ H.state).symm x)) = B (1 : ℂ) • A x
-  simp
+  simpa only [Operator.trace_scalar, relabel_eq_conjugate] using relabel_rid_tensor A B
 
 end Superoperator
 

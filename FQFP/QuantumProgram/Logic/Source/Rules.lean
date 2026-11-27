@@ -324,6 +324,26 @@ theorem SourceDerivPar.conseq {A A' B B' : CQAssertion Store H} {p : Command Sto
     ((B'.toSourceAssertion_entails_iff B).mpr hB)
   simpa only [CQAssertion.toCQAssertion_toSourceAssertion] using h
 
+/-- A total source proof supplies a partial source proof with the same assertions.
+At a loop the partial proof uses the invariant premise. -/
+theorem SourceDerivTot.toSourceDerivPar {A B : CQAssertion Store H} {p : Command Store Cell H}
+    (d : SourceDerivTot A p B) : SourceDerivPar A p B := by
+  induction d with
+  | skip A => exact .skip A
+  | cond b _ _ ih₁ ih₀ => exact .cond b ih₁ ih₀
+  | assign f A φ => exact .assign f A φ
+  | channel f A φ => exact .channel f A φ
+  | unitary r U A φ hr => exact .unitary r U A φ hr
+  | measureAll r I upd A φ => exact .measureAll r I upd A φ
+  | mask _ ih => exact .mask ih
+  | seq _ _ ih₁ ih₂ => exact .seq ih₁ ih₂
+  | whileLoop _ _ _ _ ihInv _ => exact .whileLoop ihInv
+  | convex1 φ χ A B w hw p hx _ ih => exact .convex1 φ χ A B w hw p hx ih
+  | convex2 φ χ A B w hw p hd _ ih => exact .convex2 φ χ A B w hw p hd ih
+  | accum2 φ ψ A B K hK p hp hd _ ih => exact .accum2 φ ψ A B K hK p hp hd ih
+  | accum1 φ ψ A B K hK J hJ p hp hx hd _ ih => exact .accum1 φ ψ A B K hK J hJ p hp hx hd ih
+  | sourceConseq hA _ hB ih => exact .sourceConseq hA ih hB
+
 /-- Partial source proofs are sound for the masked assertions. The atomic rules have
 the same preconditions as their total counterparts. -/
 theorem SourceDerivPar.sound {P Q : CQAssertion Store H} {p : Command Store Cell H}

@@ -45,7 +45,7 @@ noncomputable def convex (w : ι → ℝ≥0) (hw : ∑ i, w i ≤ 1) (A : ι �
 /-- Scaling preserves the domain of the common postpredicate. -/
 noncomputable def scaled (B : SourceEffect Store H) (r : ℝ≥0) (hr : r ≤ 1) :
     SourceEffect Store H :=
-  ⟨B.defined, Assertion.convex (fun _ : Unit => r) (by simpa using hr) fun _ => B.effect⟩
+  ⟨B.defined, B.effect.scaled r hr⟩
 
 /-- Largest branch weight, with value zero on the empty index type. -/
 noncomputable def maxWeight (w : ι → ℝ≥0) : ℝ≥0 := univ.sup w
@@ -109,7 +109,7 @@ theorem convex1_post_le (w : ι → ℝ≥0) (hw : ∑ i, w i ≤ 1) (B : Source
     · obtain ⟨j, hj⟩ := he
       rw [sum_eq_single j]
       · simp [CQAssertion.toAssn, CQAssertion.ofEffect, CQAssertion.effect, under, Assertion.mask,
-          scaled, Assertion.convex, hd, hj, show ∃ i, χ i σ from ⟨j, hj⟩]
+          scaled, Assertion.scaled_apply, hd, hj, show ∃ i, χ i σ from ⟨j, hj⟩]
         simpa using smul_le_smul_of_nonneg_right
           (Complex.real_le_real.mpr (show (w j : ℝ) ≤ maxWeight w from le_maxWeight w j))
           (B.effect σ).2.1

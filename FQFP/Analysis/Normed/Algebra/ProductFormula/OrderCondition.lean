@@ -52,6 +52,12 @@ section ErrorOrderCond
 
 open NormedSpace
 
+private theorem isTheta_exp_mul [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸] {S : ℝ → 𝔸}
+    (hS : Continuous S) (F : ℝ → 𝔸) :
+    (fun t => exp (S t) * F t) =Θ[𝓝 (0 : ℝ)] F :=
+  isTheta_mul_left_of_continuousAt_isUnit F
+    (NormedSpace.exp_continuous.comp hS).continuousAt (isUnit_exp (S 0))
+
 /-- Every value of the product formula `𝒮(τ)` is a unit (a product of unit exponentials). -/
 lemma isUnit_eval [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (H : Fin Γ → 𝔸) (τ : ℝ) :
@@ -71,26 +77,14 @@ lemma eval_sub_exp_eq_exp_mul_integral [NormedAlgebra ℚ 𝔸] [CompleteSpace �
         (exp ((-τ) • ∑ γ, H γ) * P.eval H τ) * additiveKernel P H τ := by
   have hsub : P.eval H t - exp (t • ∑ γ, H γ) =
       ∫ τ in 0..t, exp ((t - τ) • ∑ γ, H γ) * P.eval H τ * additiveKernel P H τ := by
-    rw [errorType_additive P H t]
-    abel
-  rw [hsub]
+    rw [errorType_additive P H t, add_sub_cancel_left]
   have hfactor : ∀ τ, exp ((t - τ) • ∑ γ, H γ) =
       exp (t • ∑ γ, H γ) * exp ((-τ) • ∑ γ, H γ) := by
     intro τ
-    have h' := timeOrderedExp_mul (H := fun _ : ℝ => ∑ γ, H γ) continuous_const τ 0 t
-    simpa [timeOrderedExp_const (∑ γ, H γ)] using h'
-  have hcongr : (∫ τ in 0..t, exp ((t - τ) • ∑ γ, H γ) * P.eval H τ * additiveKernel P H τ) =
-      ∫ τ in 0..t, exp (t • ∑ γ, H γ) *
-        ((exp ((-τ) • ∑ γ, H γ) * P.eval H τ) * additiveKernel P H τ) := by
-    apply intervalIntegral.integral_congr_uIoo
-    intro τ _
-    change exp ((t - τ) • ∑ γ, H γ) * P.eval H τ * additiveKernel P H τ =
-      exp (t • ∑ γ, H γ) * (exp ((-τ) • ∑ γ, H γ) * P.eval H τ * additiveKernel P H τ)
-    rw [hfactor τ]
-    noncomm_ring
-  rw [hcongr]
+    rw [exp_smul_mul_exp_smul, sub_eq_add_neg]
+  simp_rw [hsub, hfactor, mul_assoc]
   exact integral_mul_left (exp (t • ∑ γ, H γ))
-    (fun τ => (exp ((-τ) • ∑ γ, H γ) * P.eval H τ) * additiveKernel P H τ)
+    (fun τ => exp ((-τ) • ∑ γ, H γ) * (P.eval H τ * additiveKernel P H τ))
     (by fun_prop) 0 t
 
 /-- `thm:error_order_cond`, additive part: the additive-kernel order condition `𝒯 = O(τ^p)` is
@@ -99,77 +93,21 @@ lemma errorOrderCond_additive_iff [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
     (p : ℕ) (H : Fin Γ → 𝔸) :
     P.IsOrderOf p H ↔
       (fun τ => ‖additiveKernel P H τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) := by
-  let K : ℝ → 𝔸 := fun τ => (exp ((-τ) • ∑ γ, H γ) * P.eval H τ) * additiveKernel P H τ
-  have hK_contDiff : ContDiff ℝ ∞ K := (((contDiff_exp_smul_const (∑ γ, H γ)).comp contDiff_neg).mul
-      (contDiff_eval P H)).mul (contDiff_additiveKernel P H)
-  constructor
-  · intro hIs
-    have hEmul : (fun t => ‖exp (t • ∑ γ, H γ) * ∫ τ in 0..t, K τ‖) =O[𝓝 (0 : ℝ)]
-        (fun t => t ^ (p + 1)) :=
-      hIs.congr_left (fun t => congrArg (norm : 𝔸 → ℝ)
-        (eval_sub_exp_eq_exp_mul_integral P H t))
-    have hexp_neg : (fun t => ‖exp ((-t) • ∑ γ, H γ)‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) :=
-      isBigO_norm_one_of_continuous (by fun_prop)
-    have hIntegral : (fun t => ‖∫ τ in 0..t, K τ‖) =O[𝓝 (0 : ℝ)] (fun t => t ^ (p + 1)) := by
-      have h := orderCond_mul_left (p + 1) hexp_neg hEmul
-      exact h.congr_left (fun t => congrArg (norm : 𝔸 → ℝ) (by
-        rw [← mul_assoc]
-        have he : exp ((-t) • ∑ γ, H γ) * exp (t • ∑ γ, H γ) = 1 := by
-          simpa [neg_smul] using exp_neg_mul_self (t • ∑ γ, H γ)
-        rw [he, one_mul]))
-    have hK : (fun τ => ‖K τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) :=
-      (orderCond_integral_iff K p hK_contDiff).mpr hIntegral
-    have hinv : (fun τ => ‖Ring.inverse (P.eval H τ)‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) :=
-      inverse_isBigO_one_of_continuous_unit (U := fun τ => P.eval H τ) (continuous_eval P H)
-        (by rw [ProductFormulaData.eval_zero]; exact isUnit_one)
-    have hexp_pos : (fun τ => ‖exp (τ • ∑ γ, H γ)‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) :=
-      isBigO_norm_one_of_continuous
-        (NormedSpace.exp_continuous.comp (continuous_id.smul continuous_const))
-    have hL : (fun τ => ‖Ring.inverse (P.eval H τ) * exp (τ • ∑ γ, H γ)‖) =O[𝓝 (0 : ℝ)]
-        (fun _ => (1 : ℝ)) :=
-      orderCond_mul_left 0 hinv hexp_pos
-    have h𝒯 : (fun τ => ‖additiveKernel P H τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) := by
-      have h := orderCond_mul_left p hL hK
-      exact h.congr_left (fun τ => congrArg (norm : 𝔸 → ℝ) (by
-        dsimp [K]
-        have hexp : exp (τ • ∑ γ, H γ) * exp ((-τ) • ∑ γ, H γ) = 1 := by
-          simpa [neg_smul] using exp_mul_neg_self (τ • ∑ γ, H γ)
-        have hinv : Ring.inverse (P.eval H τ) * P.eval H τ = 1 :=
-          Ring.inverse_mul_cancel (P.eval H τ) (isUnit_eval P H τ)
-        calc
-          (Ring.inverse (P.eval H τ) * exp (τ • ∑ γ, H γ)) *
-              ((exp ((-τ) • ∑ γ, H γ) * P.eval H τ) * additiveKernel P H τ)
-              = Ring.inverse (P.eval H τ) *
-                  ((exp (τ • ∑ γ, H γ) * exp ((-τ) • ∑ γ, H γ)) *
-                    (P.eval H τ * additiveKernel P H τ)) := by noncomm_ring
-          _ = additiveKernel P H τ := by
-              rw [hexp, one_mul, ← mul_assoc, hinv, one_mul]))
-    exact h𝒯
-  · intro h𝒯
-    have h𝒮 : (fun τ => ‖P.eval H τ‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) :=
-      isBigO_norm_one_of_continuous (continuous_eval P H)
-    have hexp_neg : (fun τ => ‖exp ((-τ) • ∑ γ, H γ)‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) :=
-      isBigO_norm_one_of_continuous (by fun_prop)
-    have h𝒮𝒯 : (fun τ => ‖P.eval H τ * additiveKernel P H τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) :=
-      orderCond_mul_left p h𝒮 h𝒯
-    have hK : (fun τ => ‖K τ‖) =O[𝓝 (0 : ℝ)] (fun τ => τ ^ p) := by
-      have h := orderCond_mul_left p hexp_neg h𝒮𝒯
-      exact h.congr_left (fun τ => congrArg (norm : 𝔸 → ℝ) (by
-        dsimp [K]
-        noncomm_ring))
-    have hIntegral : (fun t => ‖∫ τ in 0..t, K τ‖) =O[𝓝 (0 : ℝ)] (fun t => t ^ (p + 1)) :=
-      (orderCond_integral_iff K p hK_contDiff).mp hK
-    have hexp : (fun t => ‖exp (t • ∑ γ, H γ)‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) :=
-      isBigO_norm_one_of_continuous
-        (NormedSpace.exp_continuous.comp (continuous_id.smul continuous_const))
-    have hEmul : (fun t => ‖exp (t • ∑ γ, H γ) * ∫ τ in 0..t, K τ‖) =O[𝓝 (0 : ℝ)]
-        (fun t => t ^ (p + 1)) :=
-      orderCond_mul_left (p + 1) hexp hIntegral
-    have hdiff : (fun t => ‖P.eval H t - exp (t • ∑ γ, H γ)‖) =O[𝓝 (0 : ℝ)]
-        (fun t => t ^ (p + 1)) :=
-      hEmul.congr_left (fun t => congrArg (norm : 𝔸 → ℝ)
-        (eval_sub_exp_eq_exp_mul_integral P H t).symm)
-    simpa [ProductFormulaData.IsOrderOf] using hdiff
+  let K : ℝ → 𝔸 := fun τ => exp ((-τ) • ∑ γ, H γ) * (P.eval H τ * additiveKernel P H τ)
+  have hK_contDiff : ContDiff ℝ ∞ K :=
+    ((contDiff_exp_smul_const (∑ γ, H γ)).comp contDiff_neg).mul
+      ((contDiff_eval P H).mul (contDiff_additiveKernel P H))
+  have hIntegral := isTheta_exp_mul (S := fun t => t • ∑ γ, H γ) (by fun_prop)
+    (fun t => ∫ τ in 0..t, K τ)
+  have hEval := isTheta_mul_left_of_continuousAt_isUnit (x := (0 : ℝ)) (additiveKernel P H)
+    (continuous_eval P H).continuousAt (by simp only [ProductFormulaData.eval_zero, isUnit_one])
+  have hK : K =Θ[𝓝 (0 : ℝ)] additiveKernel P H :=
+    (isTheta_exp_mul (S := fun t => (-t) • ∑ γ, H γ) (by fun_prop) _).trans hEval
+  simp_rw [ProductFormulaData.IsOrderOf, eval_sub_exp_eq_exp_mul_integral, mul_assoc]
+  change (fun t => ‖exp (t • ∑ γ, H γ) * ∫ τ in 0..t, K τ‖) =O[𝓝 (0 : ℝ)]
+    (fun t => t ^ (p + 1)) ↔ _
+  rw [hIntegral.norm_left.norm_right.isBigO_congr_left, ← orderCond_integral_iff K p hK_contDiff]
+  exact hK.norm_left.norm_right.isBigO_congr_left
 
 /-- `thm:error_order_cond`, exponentiated part: the exponentiated-error order condition
 `ℰ = O(τ^p)` is equivalent to the `p`-th order condition. -/
@@ -218,32 +156,10 @@ lemma errorOrderCond_multiplicative_iff [NormedAlgebra ℚ 𝔸] [CompleteSpace 
   have hmul : ∀ t, P.eval H t - exp (t • ∑ γ, H γ) =
       exp (t • ∑ γ, H γ) * multiplicativeError P H t := by
     intro t
-    rw [errorType_multiplicative P H t]
-    noncomm_ring
-  constructor
-  · intro hIs
-    have hsub : (fun t => ‖exp (t • ∑ γ, H γ) * multiplicativeError P H t‖) =O[𝓝 (0 : ℝ)]
-        (fun t => t ^ (p + 1)) :=
-      hIs.congr_left (fun t => congrArg (norm : 𝔸 → ℝ) (hmul t))
-    have hexp_neg : (fun t => ‖exp ((-t) • ∑ γ, H γ)‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) :=
-      isBigO_norm_one_of_continuous (by fun_prop)
-    have hℳ : (fun t => ‖multiplicativeError P H t‖) =O[𝓝 (0 : ℝ)] (fun t => t ^ (p + 1)) := by
-      have h := orderCond_mul_left (p + 1) hexp_neg hsub
-      exact h.congr_left (fun t => congrArg (norm : 𝔸 → ℝ) (by
-        rw [← mul_assoc]
-        have he : exp ((-t) • ∑ γ, H γ) * exp (t • ∑ γ, H γ) = 1 := by
-          simpa [neg_smul] using exp_neg_mul_self (t • ∑ γ, H γ)
-        rw [he, one_mul]))
-    exact hℳ
-  · intro hℳ
-    have hexp : (fun t => ‖exp (t • ∑ γ, H γ)‖) =O[𝓝 (0 : ℝ)] (fun _ => (1 : ℝ)) :=
-      isBigO_norm_one_of_continuous
-        (NormedSpace.exp_continuous.comp (continuous_id.smul continuous_const))
-    have hsub : (fun t => ‖exp (t • ∑ γ, H γ) * multiplicativeError P H t‖) =O[𝓝 (0 : ℝ)]
-        (fun t => t ^ (p + 1)) :=
-      orderCond_mul_left (p + 1) hexp hℳ
-    simpa [ProductFormulaData.IsOrderOf] using
-      (hsub.congr_left (fun t => congrArg (norm : 𝔸 → ℝ) (hmul t).symm))
+    rw [errorType_multiplicative P H t, mul_add, mul_one, add_sub_cancel_left]
+  simp_rw [ProductFormulaData.IsOrderOf, hmul]
+  exact (isTheta_exp_mul (S := fun t => t • ∑ γ, H γ) (by fun_prop)
+    (multiplicativeError P H)).norm_left.norm_right.isBigO_congr_left
 
 /-- `thm:error_order_cond` (order.tex:124): the additive (`𝒯 = O(τ^p)`), exponentiated
 (`ℰ = O(τ^p)`), and multiplicative (`ℳ = O(t^{p+1})`) order conditions are all equivalent to the

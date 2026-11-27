@@ -14,7 +14,7 @@ Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Semantics.RegisterFrame
+public import FQFP.QuantumProgram.Semantics.Frame.Register
 public import FQFP.QuantumProgram.Logic.Source.Domain
 import FQFP.CQM.Qudit.State.OperatorNorm
 

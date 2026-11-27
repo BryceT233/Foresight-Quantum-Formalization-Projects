@@ -41,8 +41,8 @@ theorem validTot_seq {A B C : Assertion Store H} {p q : Command Store Cell H}
   apply (hp s).trans
   let c := Configuration.mk (some p) s
   change c.PostH _ ≤ (c.seqWith q).PostH _
-  rw [Configuration.PostH_seqWith _ _ C.isPositive, c.PostH_eq_tsum_terminalWeightAt B.isPositive]
-  exact tsum_le_tsum fun j => c.terminalWeightAt_mono j hq
+  rw [Configuration.PostH_seqWith _ _ C.isPositive, ← c.terminalWeight_expectation B.isPositive]
+  exact c.terminalWeight_mono hq
 
 /-- Partial correctness composes with the residual mass of both execution phases. -/
 theorem validPar_seq {A B C : Assertion Store H} {p q : Command Store Cell H}
@@ -50,23 +50,21 @@ theorem validPar_seq {A B C : Assertion Store H} {p q : Command Store Cell H}
   intro s
   apply (hp s).trans
   let c := Configuration.mk (some p) s
+  let d (t : CQState Store H) : Configuration Store Cell H := ⟨some q, t⟩
   change c.PostH _ + c.nonterminatingMass ≤ (c.seqWith q).PostH _ + (c.seqWith q).nonterminatingMass
-  rw [Configuration.PostH_seqWith _ _ C.isPositive, Configuration.nonterminatingMass_seqWith,
-    add_comm c.nonterminatingMass, ← add_assoc, ← tsum_add]
-  refine add_le_add (tsum_le_tsum fun j => ?_) le_rfl
-  rw [← c.postAtE_eq_ofReal_postAt j B.isPositive, ← c.terminalWeightAt_add]
-  exact c.terminalWeightAt_mono j hq
-
-private theorem next_ite (b : Store → Bool) (p q : Command Store Cell H) (s : CQState Store H) :
-    (Configuration.mk (some (.ite b p q)) s).next =
-      [Configuration.mk (some (if b s.store then p else q)) s] := rfl
+  rw [Configuration.PostH_seqWith _ _ C.isPositive, Configuration.nonterminatingMass_seqWith]
+  change _ ≤ c.terminalWeight (fun t => (d t).PostH _) +
+    (c.nonterminatingMass + c.terminalWeight (fun t => (d t).nonterminatingMass))
+  rw [add_comm c.nonterminatingMass, ← add_assoc, ← c.terminalWeight_add,
+    ← c.terminalWeight_expectation B.isPositive]
+  exact add_le_add (c.terminalWeight_mono hq) le_rfl
 
 /-- A conditional selects the totally valid branch at the current store. -/
 theorem validTot_cond {b : Store → Bool} {A₁ A₀ B : Assertion Store H}
     {p q : Command Store Cell H} (hp : validTot A₁ p B) (hq : validTot A₀ q B) :
     validTot (Assertion.guard b A₁ A₀) (.ite b p q) B := by
   intro s
-  rw [Configuration.PostH_singleton (next_ite b p q s)]
+  rw [Configuration.PostH_ite]
   cases hb : b s.store with
   | false => simpa [Assertion.guard, hb] using hq s
   | true => simpa [Assertion.guard, hb] using hp s
@@ -76,13 +74,10 @@ theorem validPar_cond {b : Store → Bool} {A₁ A₀ B : Assertion Store H}
     {p q : Command Store Cell H} (hp : validPar A₁ p B) (hq : validPar A₀ q B) :
     validPar (Assertion.guard b A₁ A₀) (.ite b p q) B := by
   intro s
-  simp only [Configuration.nonterminatingMass, ← Configuration.PostH_one,
-    Configuration.PostH_singleton (next_ite b p q s)]
+  rw [Configuration.PostH_ite, Configuration.nonterminatingMass_ite]
   cases hb : b s.store with
-  | false => simpa [Assertion.guard, hb, Configuration.nonterminatingMass, Configuration.PostH_one]
-      using hq s
-  | true => simpa [Assertion.guard, hb, Configuration.nonterminatingMass, Configuration.PostH_one]
-      using hp s
+  | false => simpa [Assertion.guard, hb] using hq s
+  | true => simpa [Assertion.guard, hb] using hp s
 
 /-- Every derivation in the partial-correctness system is semantically valid. -/
 theorem DerivPar.sound {A B : Assertion Store H} {p : Command Store Cell H} (h : DerivPar A p B) :

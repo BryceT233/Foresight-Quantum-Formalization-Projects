@@ -54,8 +54,11 @@ python scripts/api_snapshot.py compare scratch/before.jsonl scratch/after.jsonl 
 
 `api_migrations.json` records the original 109 file relocations, the five
 generic category modules moved out of `CQM`, fourteen Carleman module moves,
-and 23 modules reorganized under `QuantumProgram.Logic`. Its `modules`
-dictionary remaps only module-qualified private identities and references;
+and the reorganization of 23 `QuantumProgram.Logic` modules, 17
+`QuantumProgram.Semantics` modules, and 18 `QuantumProgram.Examples` modules.
+The 18 former top-level `QuantumProgram` modules are grouped under `Circuit`,
+`Command`, `Register`, and `Examples.RUS`. The `modules` dictionary remaps
+only module-qualified private identities and references;
 public declaration namespaces are not automatically renamed. `declarations`
 supports explicit identity moves for split modules. A custom map must identify
 the actual private destination when one old module splits into several files:
@@ -71,6 +74,10 @@ destinations. Monoidal, braided, scalar and state declarations retain their
 public names, independently of their new module locations.
 Two generated macro/unexpander declarations for the dagger notation also have
 explicit name moves, since Lean embeds their source module in their names.
+The two local notations in `QuantumProgram.Examples.Fourier.Uniform` likewise
+have four explicit macro/unexpander moves. Those four helpers and the two parser
+descriptors (`termZeroBit` and `termPlusBit`) embed their module path in literal
+`Lean.Name` values. The comparator reports these six value changes on relocation.
 The Carleman split has twelve explicit helper moves: three for monomial-basis
 coordinates, one for augmentation-ideal membership, one for the polynomial
 derivative example, and seven for the scalar Grönwall budget. Helpers belonging

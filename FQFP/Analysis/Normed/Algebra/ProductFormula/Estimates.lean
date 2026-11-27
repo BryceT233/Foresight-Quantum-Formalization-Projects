@@ -96,49 +96,11 @@ theorem eval_iteratedDeriv_succ [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
             (((List.finRange Γ).reverse).map (fun γ : Fin Γ =>
               ((P.generator H (υ, γ)) ^ (q (υ, γ))) *
                 exp ((t * P.coeff (υ, γ)) • H (P.perm υ γ)))).prod)).prod := by
-  let l : List (Fin Υ × Fin Γ) := evalIndexList Υ Γ
-  let f : Fin Υ × Fin Γ → ℝ → 𝔸 := fun i t => P.evalFactor H i t
-  have hf : ∀ i ∈ l, ContDiffAt ℝ (p + 1) (f i) t := by
-    intro i _
-    simpa [f, evalFactor] using contDiffAt_exp_smul_const (P.generator H i) (p + 1) t
-  rw [show (fun t : ℝ => P.eval H t) = fun t : ℝ => (l.map (fun i => f i t)).prod by rfl,
-    iteratedDeriv_list_prod_general l f (p + 1) t hf]
-  let e : Fin l.length ≃ Fin Υ × Fin Γ := evalIndexEquiv Υ Γ
-  rw [sum_piAntidiag_univ_equiv e (p + 1)
-    (fun q : Fin l.length → ℕ =>
-      (Nat.multinomial (univ : Finset (Fin l.length)) q : ℝ) •
-        (List.ofFn (fun j : Fin l.length =>
-          iteratedDeriv (q j) (f (l.get j)) t)).prod)]
-  apply sum_congr rfl
-  intro q' hq'
-  rw [← multinomial_univ_equiv e q']
-  congr 1
-  have hfac : (fun i : Fin Υ × Fin Γ => iteratedDeriv (q' i) (f i) t) =
-      fun i : Fin Υ × Fin Γ =>
-        P.generator H i ^ (q' i) * P.evalFactor H i t := by
-    funext i; rw [evalFactor_iteratedDeriv P H i (q' i) t]
-  calc
-    (List.ofFn (fun j : Fin l.length => iteratedDeriv ((q' ∘ e) j) (f (l.get j)) t)).prod
-        = (l.map (fun i => iteratedDeriv (q' i) (f i) t)).prod := by
-            congr 1
-            rw [show (fun j : Fin l.length => iteratedDeriv ((q' ∘ e) j) (f (l.get j)) t) =
-                fun j : Fin l.length => iteratedDeriv (q' (l.get j)) (f (l.get j)) t by
-              funext j
-              rw [show ((q' ∘ e) j) = q' (l.get j) by rfl]]
-            simpa using (List.ofFn_getElem_eq_map l (fun i => iteratedDeriv (q' i) (f i) t))
-    _ = (l.map (fun i => P.generator H i ^ (q' i) *
-          P.evalFactor H i t)).prod := by rw [hfac]
-    _ = (((List.finRange Υ).reverse).map (fun υ : Fin Υ =>
-            (((List.finRange Γ).reverse).map (fun γ : Fin Γ =>
-              P.generator H (υ, γ) ^ (q' (υ, γ)) *
-                P.evalFactor H (υ, γ) t)).prod)).prod := by
-            rw [evalIndexList_map_prod (fun i =>
-              P.generator H i ^ (q' i) * P.evalFactor H i t)]
-    _ = (((List.finRange Υ).reverse).map (fun υ : Fin Υ =>
-            (((List.finRange Γ).reverse).map (fun γ : Fin Γ =>
-              ((P.generator H (υ, γ)) ^ (q' (υ, γ))) *
-                exp ((t * P.coeff (υ, γ)) • H (P.perm υ γ)))).prod)).prod := by
-            simp [evalFactor, generator, mul_smul]
+  change iteratedDeriv (p + 1)
+    (fun s => ((evalIndexList Υ Γ).map (fun i => P.evalFactor H i s)).prod) t = _
+  rw [iteratedDeriv_list_prod_of_nodup _ evalIndexList_nodup evalIndexList_mem (P.evalFactor H)
+    (p + 1) t (fun i => contDiffAt_exp_smul_const (P.generator H i) (p + 1) t)]
+  simp only [evalFactor_iteratedDeriv, evalIndexList_map_prod, evalFactor, generator, mul_smul]
 
 /-! ### Norm bounds for the derivative expansion (prelim.tex:182–188) -/
 
@@ -364,8 +326,8 @@ lemma norm_eval_le [NormedAlgebra ℚ 𝔸] [NormedAlgebra ℝ 𝔸] [NormOneCla
             · intro i _
               exact P.norm_evalFactor_le H i s
     _ = ∏ i : Fin Υ × Fin Γ, Real.exp (|s| * ‖H (P.perm i.1 i.2)‖) := by
-            rw [evalIndexList_map_prod (fun i => Real.exp (|s| * ‖H (P.perm i.1 i.2)‖))]
-            rw [ProductFormulaData.nested_prod_eq_finset_prod
+            rw [evalIndexList_map_prod (fun i => Real.exp (|s| * ‖H (P.perm i.1 i.2)‖)),
+              ProductFormulaData.nested_prod_eq_finset_prod
               (fun i => Real.exp (|s| * ‖H (P.perm i.1 i.2)‖))]
     _ = Real.exp (|s| * (Υ : ℝ) * ∑ γ : Fin Γ, ‖H γ‖) := by
             rw [(Real.exp_sum (univ : Finset (Fin Υ × Fin Γ))

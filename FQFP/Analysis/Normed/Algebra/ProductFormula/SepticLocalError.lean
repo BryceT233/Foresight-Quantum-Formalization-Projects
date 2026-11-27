@@ -7,6 +7,7 @@ module
 
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.SymmetricCenteredLocalError
 public import FQFP.Analysis.Normed.Algebra.ProductFormula.SepticRemainder
+import FQFP.Analysis.SpecialFunctions.Integrals.Monomial
 
 /-!
 # Ninth-order local bounds for symmetric products
@@ -59,25 +60,11 @@ lemma abs_integral_septicError_polynomial_le (ℓ μ C h : ℝ) (hℓ : 0 ≤ �
     (hμ : 0 ≤ μ) (hC : 0 ≤ C) :
     |∫ x in 0..h, 5 * |x| ^ 4 * ℓ + 7 * |x| ^ 6 * μ + 9 * C * |x| ^ 8| ≤
       septicStepBound ℓ μ C |h| := by
-  simp_rw [(show Even (4 : ℕ) by decide).pow_abs,
-    (show Even (6 : ℕ) by decide).pow_abs, (show Even (8 : ℕ) by decide).pow_abs]
-  rw [intervalIntegral.integral_add
-    ((by fun_prop : Continuous (fun x : ℝ ↦ 5 * x ^ 4 * ℓ +
-      7 * x ^ 6 * μ)).intervalIntegrable 0 h)
-    ((by fun_prop : Continuous (fun x : ℝ ↦ 9 * C * x ^ 8)).intervalIntegrable 0 h),
-    intervalIntegral.integral_add
-      ((by fun_prop : Continuous (fun x : ℝ ↦ 5 * x ^ 4 * ℓ)).intervalIntegrable 0 h)
-      ((by fun_prop : Continuous (fun x : ℝ ↦ 7 * x ^ 6 * μ)).intervalIntegrable 0 h)]
-  simp only [intervalIntegral.integral_mul_const, intervalIntegral.integral_const_mul,
-    integral_pow]
-  norm_num
-  calc
-    _ = |h ^ 5 * ℓ + h ^ 7 * μ + h ^ 9 * C| := by
-      congr 1
-      ring
-    _ ≤ |h ^ 5 * ℓ| + |h ^ 7 * μ| + |h ^ 9 * C| := abs_add_three ..
-    _ = _ := by simp [septicStepBound, abs_mul, abs_pow, abs_of_nonneg hℓ,
-      abs_of_nonneg hμ, abs_of_nonneg hC]
+  have hpoly := abs_integral_sum_mul_abs_pow univ ![4, 6, 8] ![ℓ, μ, C] (by
+    intro i _
+    fin_cases i <;> assumption) h
+  norm_num [Fin.sum_univ_three] at hpoly
+  simpa only [septicStepBound, add_assoc, mul_right_comm 9 C] using hpoly.le
 
 /-- **Ninth-order local symmetric product bound**, valid for every real step. -/
 theorem norm_symmetricExpProduct_sub_exp_le_septic (l : List A) (G L M : A) (C : ℝ)

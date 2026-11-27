@@ -27,10 +27,13 @@ namespace IsingChain
 
 variable {e : ℕ}
 
-/-- Count native CNOT instructions, including both parity gates on every edge. -/
-def cnotCount (gs : List (Gate e)) : ℕ := gs.countP fun g => match g with
+/-- Select the native CNOT instructions. -/
+def Gate.isCNOT : Gate e → Bool
   | .cnot _ => true
   | _ => false
+
+/-- Count native CNOT instructions, including both parity gates on every edge. -/
+def cnotCount (gs : List (Gate e)) : ℕ := gs.countP Gate.isCNOT
 
 /-- Counts add when two instruction lists are concatenated. -/
 theorem cnotCount_append (xs ys : List (Gate e)) :
@@ -44,14 +47,14 @@ private theorem count_flatten (gs : List (List (Gate e))) :
 
 /-- A transverse-field layer emits no CNOTs. -/
 theorem cnotCount_fieldGates (h : Fin (e + 1) → ℝ) (δ : ℝ) :
-    cnotCount (fieldGates h δ) = 0 := by simp [fieldGates, cnotCount]
+    cnotCount (fieldGates h δ) = 0 := by simp [fieldGates, cnotCount, Gate.isCNOT]
 
 /-- Every edge contributes a compute and an uncompute CNOT. -/
 theorem cnotCount_interactionGates (J : Fin e → ℝ) (δ : ℝ) :
     cnotCount (interactionGates J δ) = 2 * e := by
   unfold interactionGates
   rw [count_flatten, List.map_ofFn, List.sum_ofFn]
-  simp [cnotCount, edgeGates, Nat.mul_comm]
+  simp [cnotCount, edgeGates, List.countP_cons, Gate.isCNOT, Nat.mul_comm]
 
 /-- Repeating a physical gate list multiplies its CNOT count by the repetition count. -/
 theorem cnotCount_replicate (n : ℕ) (gs : List (Gate e)) :

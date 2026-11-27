@@ -3,7 +3,7 @@ Copyright (c) 2026 Shanghai Fuxi Quantum Technology Co., Ltd.. All rights reserv
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: FQFP authors
 -/
-import FQFP.QuantumProgram.Measurement
+import FQFP.QuantumProgram.Command.Measurement
 import Qhl.Program.Spec
 
 /-!

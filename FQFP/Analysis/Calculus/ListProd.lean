@@ -51,38 +51,15 @@ lemma hasDerivAt_list_prod_at {ι 𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra
   induction l with
   | nil => simpa using (hasDerivAt_const t (1 : 𝔸))
   | cons a l ih =>
-      have hf' : ∀ i ∈ l, HasDerivAt (f i) (Df i) t := by
-        intro i hi
-        exact hf i (List.mem_cons_of_mem a hi)
-      have ih' : HasDerivAt (fun s : ℝ => (l.map (fun i => f i s)).prod)
-          (∑ k : Fin l.length,
-            ((l.take (k : ℕ)).map (fun i => f i t)).prod * Df (l.get k) *
-              ((l.drop ((k : ℕ) + 1)).map (fun i => f i t)).prod) t := ih hf'
-      have hfa : HasDerivAt (f a) (Df a) t := hf a (show a ∈ a :: l from List.mem_cons_self)
-      have hprod : HasDerivAt (fun s : ℝ => f a s * (l.map (fun i => f i s)).prod)
-          (Df a * (l.map (fun i => f i t)).prod + f a t *
-            (∑ k : Fin l.length,
-              ((l.take (k : ℕ)).map (fun i => f i t)).prod * Df (l.get k) *
-                ((l.drop ((k : ℕ) + 1)).map (fun i => f i t)).prod)) t := hfa.mul ih'
-      have hsum :
-          (∑ k : Fin (l.length + 1),
-            (((a :: l).take (k : ℕ)).map (fun i => f i t)).prod * Df ((a :: l).get k) *
-              (((a :: l).drop ((k : ℕ) + 1)).map (fun i => f i t)).prod)
-            = Df a * (l.map (fun i => f i t)).prod + f a t *
-                (∑ k : Fin l.length,
-                  ((l.take (k : ℕ)).map (fun i => f i t)).prod * Df (l.get k) *
-                    ((l.drop ((k : ℕ) + 1)).map (fun i => f i t)).prod) := by
-        rw [Fin.sum_univ_succ]
-        congr 1; · simp
-        · rw [Finset.mul_sum]
-          apply Finset.sum_congr rfl
-          intro k hk
-          simp [mul_assoc]
-      change HasDerivAt (fun s : ℝ => f a s * (l.map (fun i => f i s)).prod)
-        (∑ k : Fin (l.length + 1),
-          (((a :: l).take (k : ℕ)).map (fun i => f i t)).prod * Df ((a :: l).get k) *
-            (((a :: l).drop ((k : ℕ) + 1)).map (fun i => f i t)).prod) t
-      rwa [hsum]
+      simp only [List.map_cons, List.prod_cons]
+      have htail := ih (fun i hi => hf i (List.mem_cons_of_mem a hi))
+      refine ((hf a List.mem_cons_self).mul htail).congr_deriv ?_
+      simp only [List.length_cons, Fin.sum_univ_succ, Finset.mul_sum]
+      congr 1
+      · simp
+      · apply Finset.sum_congr rfl
+        intro k _
+        simp [mul_assoc]
 
 /-- The pointwise product of a finite list of `C^n` functions is `C^n`. -/
 lemma contDiff_list_prod {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸]

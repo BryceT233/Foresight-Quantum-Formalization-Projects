@@ -14,8 +14,8 @@ Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.CountedLoop
-public import FQFP.QuantumProgram.HeraldedBlock
+public import FQFP.QuantumProgram.Command.CountedLoop
+public import FQFP.QuantumProgram.Examples.RUS.HeraldedBlock
 
 /-!
 # Bounded repeat until a heralded gate succeeds

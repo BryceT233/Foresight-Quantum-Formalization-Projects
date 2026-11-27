@@ -5,9 +5,8 @@ Authors: Qedia contributors
 -/
 
 /-
-Qhl source for finite sequential iteration and its derivation rules.
+Qhl source for the derivation rules of finite sequential iteration.
 qedia/quantum-formal-verification @ 3dfe80b893e2ab949a0428a2e18c06153b310bd0
-Qhl/Program/For.lean
 Qhl/Logic/ForRule.lean
 Qhl/Logic/ForSeqRule.lean
 
@@ -16,6 +15,7 @@ Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
+public import FQFP.QuantumProgram.Command.For
 public import FQFP.QuantumProgram.Logic.Rules
 
 /-!
@@ -31,21 +31,7 @@ open Qudit
 
 namespace QuantumProgram
 
-variable {ι Store Cell : Type*} {H : Qudit}
-
-/-- Sequence the indexed commands from left to right, ending with skip. -/
-def Command.forList (l : List ι) (body : ι → Command Store Cell H) : Command Store Cell H :=
-  l.foldr (fun i rest => (body i).seq rest) .skip
-
-/-- The empty iteration performs a skip. -/
-@[simp] theorem Command.forList_nil (body : ι → Command Store Cell H) :
-    forList [] body = .skip := rfl
-
-/-- A nonempty iteration executes its head before its tail. -/
-@[simp] theorem Command.forList_cons (i : ι) (l : List ι) (body : ι → Command Store Cell H) :
-    forList (i :: l) body = (body i).seq (forList l body) := rfl
-
-variable {body : ι → Command Store Cell H}
+variable {ι Store Cell : Type*} {H : Qudit} {body : ι → Command Store Cell H}
 
 /-- Fold the certified precondition transformers back from the final assertion. -/
 theorem DerivTot.forList {pre : ι → Assertion Store H → Assertion Store H}

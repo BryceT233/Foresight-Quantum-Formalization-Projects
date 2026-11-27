@@ -16,7 +16,7 @@ Modified by Shanghai Fuxi Quantum Technology Co., Ltd. in 2026
 -/
 module
 
-public import FQFP.QuantumProgram.Semantics.KrausFrame
+public import FQFP.QuantumProgram.Semantics.Frame.Kraus
 public import FQFP.QuantumProgram.Logic.Assertion.Convex
 
 /-!

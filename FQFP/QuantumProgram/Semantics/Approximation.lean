@@ -25,6 +25,7 @@ import FQFP.Algebra.BigOperators.Group.List.Fin
 Following `Qhl/History/Approx.lean`, a horizon `N` includes terminal occurrences at depths
 strictly below `N`. Each such branch contributes its post-expectation; all remaining mass
 receives full credit. For effects these upper bounds decrease to `PostH + nonterminatingMass`.
+Summing terminal weights over all depths also gives a common form for full execution statistics.
 -/
 
 @[expose] public section
@@ -69,6 +70,15 @@ theorem sum_terminalWeightAt_succ (N : ℕ) (w : CQState Store H → ℝ≥0∞)
         d.terminalWeightAt i w).sum := by
   rw [Finset.sum_range_succ', add_comm]
   simp only [terminalWeightAt_succ, TrotterError.List.sum_map_sum]
+
+/-- A single successor consumes one unit of the horizon for any terminal weight. -/
+theorem sum_terminalWeightAt_succ_of_next_eq_singleton {c d : Configuration Store Cell H}
+    (h : c.next = [d]) (N : ℕ) (w : CQState Store H → ℝ≥0∞) :
+    ∑ i ∈ Finset.range (N + 1), c.terminalWeightAt i w =
+      ∑ i ∈ Finset.range N, d.terminalWeightAt i w := by
+  obtain ⟨_ | p, s⟩ := c
+  · simp [next] at h
+  · simp [sum_terminalWeightAt_succ, terminalWeightAt_zero, h]
 
 /-- Total terminal weight splits into the root's contribution and the sums for each successor. -/
 theorem tsum_terminalWeightAt_eq_zero_add_sum_next (w : CQState Store H → ℝ≥0∞) :
@@ -129,6 +139,77 @@ theorem PostH_eq_tsum_terminalWeightAt {A : Store → Operator H} (hA : ∀ σ, 
     c.PostH A = ∑' n, c.terminalWeightAt n (fun s => ENNReal.ofReal (s.expectation (A s.store))) :=
   tsum_congr fun n => (c.postAtE_eq_ofReal_postAt n hA).symm
 
+/-- Sum a continuation weight over all terminal occurrences of the configuration. -/
+noncomputable def terminalWeight (w : CQState Store H → ℝ≥0∞) : ℝ≥0∞ :=
+  ∑' n, c.terminalWeightAt n w
+
+/-- The root's contribution and its successors' weights account for every terminal occurrence. -/
+theorem terminalWeight_eq_zero_add_sum_next (w : CQState Store H → ℝ≥0∞) :
+    c.terminalWeight w = c.terminalWeightAt 0 w + (c.next.map (·.terminalWeight w)).sum :=
+  c.tsum_terminalWeightAt_eq_zero_add_sum_next w
+
+/-- A running configuration with one successor has that successor's total terminal weight. -/
+theorem terminalWeight_singleton {p : Command Store Cell H} {s : CQState Store H}
+    {d : Configuration Store Cell H} (h : (Configuration.mk (some p) s).next = [d])
+    (w : CQState Store H → ℝ≥0∞) : (Configuration.mk (some p) s).terminalWeight w =
+      d.terminalWeight w := by
+  rw [terminalWeight_eq_zero_add_sum_next, h]
+  simp [terminalWeightAt_zero]
+
+/-- Comparing weights at reachable terminal states suffices to compare their sums. -/
+theorem terminalWeight_le_of_mem_frontier {v w : CQState Store H → ℝ≥0∞}
+    (h : ∀ n t, ⟨none, t⟩ ∈ c.frontier n → v t ≤ w t) :
+    c.terminalWeight v ≤ c.terminalWeight w := by
+  refine tsum_le_tsum fun n => List.sum_le_sum ?_
+  rintro ⟨control, t⟩ ht
+  obtain ⟨hmem, hnone⟩ := List.mem_filter.mp ht
+  cases control with
+  | none => exact h n t hmem
+  | some q => contradiction
+
+/-- Weights that agree at reachable terminal states have the same total terminal weight. -/
+theorem terminalWeight_congr_of_mem_frontier {v w : CQState Store H → ℝ≥0∞}
+    (h : ∀ n t, ⟨none, t⟩ ∈ c.frontier n → v t = w t) :
+    c.terminalWeight v = c.terminalWeight w :=
+  le_antisymm (c.terminalWeight_le_of_mem_frontier fun n t ht => (h n t ht).le)
+    (c.terminalWeight_le_of_mem_frontier fun n t ht => (h n t ht).ge)
+
+/-- Pointwise comparison of weights passes to the total terminal weight. -/
+theorem terminalWeight_mono : Monotone c.terminalWeight :=
+  fun _ _ h => tsum_le_tsum fun n => c.terminalWeightAt_mono n h
+
+/-- Adding two weights adds their total terminal weights. -/
+theorem terminalWeight_add (v w : CQState Store H → ℝ≥0∞) :
+    c.terminalWeight (fun t => v t + w t) = c.terminalWeight v + c.terminalWeight w := by
+  simp only [terminalWeight, terminalWeightAt_add, tsum_add]
+
+/-- A constant factor can be pulled out of the total terminal weight. -/
+theorem terminalWeight_const_mul (a : ℝ≥0∞) (w : CQState Store H → ℝ≥0∞) :
+    c.terminalWeight (fun t => a * w t) = a * c.terminalWeight w := by
+  simp only [terminalWeight, terminalWeightAt_const_mul, ENNReal.tsum_mul_left]
+
+/-- Total terminal weight commutes with a finite sum of weights. -/
+theorem terminalWeight_finsetSum {ι : Type*} (u : Finset ι) (w : ι → CQState Store H → ℝ≥0∞) :
+    c.terminalWeight (fun t => ∑ i ∈ u, w i t) = ∑ i ∈ u, c.terminalWeight (w i) := by
+  simp only [terminalWeight, terminalWeightAt_finsetSum]
+  exact Summable.tsum_finsetSum fun _ _ => CompleteLattice.summable
+
+/-- Total terminal weight commutes with a nonnegative series of weights. -/
+theorem terminalWeight_tsum {ι : Type*} (w : ι → CQState Store H → ℝ≥0∞) :
+    c.terminalWeight (fun t => ∑' i, w i t) = ∑' i, c.terminalWeight (w i) := by
+  simp only [terminalWeight, terminalWeightAt_tsum]
+  exact tsum_comm
+
+/-- Weighting each terminal occurrence by its trace gives the terminating mass. -/
+theorem terminalWeight_mass : c.terminalWeight (fun t => t.mass) = c.terminatingMass := by
+  simp only [terminalWeight, terminalWeightAt_mass, terminatingMass]
+
+/-- Weighting terminal occurrences by expectations of a positive observable gives its
+post-expectation. -/
+theorem terminalWeight_expectation {A : Store → Operator H} (hA : ∀ σ, (A σ).IsPositive) :
+    c.terminalWeight (fun t => ENNReal.ofReal (t.expectation (A t.store))) = c.PostH A :=
+  (c.PostH_eq_tsum_terminalWeightAt hA).symm
+
 /-- The post-weight at each depth is at most the trace terminating there for tests below one. -/
 theorem postAtE_le_terminalMassAt (n : ℕ) {A : Store → Operator H} (hA : ∀ σ, A σ ≤ 1) :
     c.postAtE n A ≤ c.terminalMassAt n := by
@@ -143,6 +224,11 @@ noncomputable def postUpTo (N : ℕ) (A : Store → Operator H) : ℝ≥0∞ :=
 theorem postUpTo_succ (N : ℕ) (A : Store → Operator H) :
     c.postUpTo (N + 1) A = c.postAtE 0 A + (c.next.map (·.postUpTo N A)).sum :=
   c.sum_terminalWeightAt_succ N _
+
+/-- With one successor, the post-expectation before the horizon resumes one step later. -/
+theorem postUpTo_succ_singleton {c d : Configuration Store Cell H} (h : c.next = [d])
+    (N : ℕ) (A : Store → Operator H) : c.postUpTo (N + 1) A = d.postUpTo N A :=
+  sum_terminalWeightAt_succ_of_next_eq_singleton h N _
 
 /-- The trace of all branches terminating before depth `N`. -/
 noncomputable def terminalMassUpTo (N : ℕ) : ℝ≥0∞ :=
@@ -169,15 +255,8 @@ theorem Val_one_of_running (p : Command Store Cell H) (s : CQState Store H)
 theorem Val_succ_singleton {c d : Configuration Store Cell H} (hnext : c.next = [d])
     (hm : c.state.mass = d.state.mass) (N : ℕ) (A : Store → Operator H) :
     c.Val (N + 1) A = d.Val N A := by
-  have hrun : c.control.isNone = false := by
-    obtain ⟨_ | p, s⟩ := c
-    · simp [next] at hnext
-    · rfl
-  have shift (w : CQState Store H → ℝ≥0∞) :
-      ∑ i ∈ Finset.range (N + 1), c.terminalWeightAt i w =
-        ∑ i ∈ Finset.range N, d.terminalWeightAt i w := by
-    simp [sum_terminalWeightAt_succ, terminalWeightAt_zero, hrun, hnext]
-  simp only [Val, postUpTo, terminalMassUpTo, postAtE, ← terminalWeightAt_mass, shift, hm]
+  simp only [Val, postUpTo, terminalMassUpTo, postAtE, ← terminalWeightAt_mass,
+    sum_terminalWeightAt_succ_of_next_eq_singleton hnext, hm]
 
 /-- A positive horizon sees the whole post-weight of an already terminated configuration. -/
 theorem Val_succ_terminal (s : CQState Store H) (N : ℕ) (A : Store → Operator H) :

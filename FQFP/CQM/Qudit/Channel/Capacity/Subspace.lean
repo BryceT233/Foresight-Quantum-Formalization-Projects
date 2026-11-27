@@ -194,15 +194,10 @@ theorem Dilation.exists_trace_embeddingError_le_of_entangled {Φ : QuantumChanne
     exact congrArg (c • ·) (Finset.sum_congr rfl fun i _ => rfl)
   rw [hu', hw', ← map_sub, norm_hom_of_isIsometry, ← smul_sub, ← map_sub, norm_smul,
     mul_pow] at hd
-  let T := d.embeddingError e
-  have hnorm : ‖Superoperator.vectorize b T‖ ^ 2 =
-      (LinearMap.trace ℂ H.state (T.adjoint ∘ₗ T)).re := by
-    rw [← Superoperator.inner_vectorize_vectorize b, RCLike.re_eq_complex_re.symm]
-    exact (inner_self_eq_norm_sq (𝕜 := ℂ) _).symm
-  change ‖c‖ ^ 2 * ‖Superoperator.vectorize b T‖ ^ 2 ≤ 2 * δ at hd
+  change ‖c‖ ^ 2 * ‖Superoperator.vectorize b (d.embeddingError e)‖ ^ 2 ≤ 2 * δ at hd
   have hc : ‖c‖ ^ 2 = (Fintype.card ι : ℝ)⁻¹ := by
     simp [c, Complex.norm_real, Real.sq_sqrt]
-  rw [hc, hnorm, ← div_eq_inv_mul] at hd
+  rw [hc, Superoperator.norm_vectorize_sq, ← div_eq_inv_mul] at hd
   rw [Module.finrank_eq_card_basis b.toBasis, mul_comm]
   exact (div_le_iff₀ (by positivity)).mp hd
 

@@ -5,9 +5,9 @@ Authors: FQFP authors
 -/
 module
 
-public import FQFP.QuantumProgram.OrderedChannel
-public import FQFP.QuantumProgram.Semantics.WeakestPrecondition
-public import FQFP.QuantumProgram.Semantics.RegisterFrame
+public import FQFP.QuantumProgram.Register.OrderedChannel
+public import FQFP.QuantumProgram.Semantics.Precondition.Weakest
+public import FQFP.QuantumProgram.Semantics.Frame.Register
 public import FQFP.QuantumProgram.Logic.Assertion.Kraus
 import FQFP.CQM.Qudit.State.OperatorNorm
 

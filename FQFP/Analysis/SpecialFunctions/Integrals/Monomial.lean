@@ -10,12 +10,14 @@ public import Mathlib.Analysis.Asymptotics.Basic
 public import Mathlib.Algebra.BigOperators.Fin
 
 /-!
-# Nested monomial integrals
+# Monomial integrals
 
-Successive interval integrals admit an explicit coefficient and power-order formula.
+Finite sums of absolute powers and successive interval integrals of monomials admit
+explicit formulas.
 
 ## Main results
 
+* `TrotterError.abs_integral_sum_mul_abs_pow`.
 * `TrotterError.iteratedIntegralMonomial`.
 * `TrotterError.monomialConstant`.
 * `TrotterError.iteratedIntegralMonomial_eq`.
@@ -28,6 +30,24 @@ namespace TrotterError
 
 open Asymptotics Finset
 open scoped Topology BigOperators
+
+/-- Integrating a finite nonnegative sum of normalized absolute powers raises each exponent by
+one. Taking the absolute value accounts for either orientation of the interval. -/
+theorem abs_integral_sum_mul_abs_pow {ι : Type*} (s : Finset ι) (p : ι → ℕ) (c : ι → ℝ)
+    (hc : ∀ i ∈ s, 0 ≤ c i) (t : ℝ) :
+    |∫ x in 0..t, ∑ i ∈ s, ((p i : ℝ) + 1) * |x| ^ p i * c i| =
+      ∑ i ∈ s, |t| ^ (p i + 1) * c i := by
+  rw [intervalIntegral.abs_integral_eq_abs_integral_uIoc,
+    abs_of_nonneg (MeasureTheory.integral_nonneg fun x => Finset.sum_nonneg fun i hi =>
+      mul_nonneg (by positivity) (hc i hi)),
+    MeasureTheory.integral_finsetSum s fun i _ => by
+      have h : Continuous (fun x : ℝ => ((p i : ℝ) + 1) * |x| ^ p i * c i) := by fun_prop
+      exact (h.intervalIntegrable 0 t).def']
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [MeasureTheory.integral_mul_const, MeasureTheory.integral_const_mul]
+  have h := integral_pow_abs_sub_uIoc (a := 0) (b := t) (p i)
+  simp only [sub_zero] at h
+  rw [h, ← mul_div_assoc, mul_comm ((p i : ℝ) + 1), mul_div_cancel_right₀ _ (by positivity)]
 
 /-- The canonical nested iterated integral of a monomial: `Γ` nested integrals, the `(i+1)`-st
 integration variable carrying the power `p i`, each integral running from `0` to the immediately
